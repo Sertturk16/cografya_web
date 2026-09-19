@@ -1,5 +1,3 @@
-import styles from "./marine.module.css";
-
 interface DirectionArrowProps {
   /** Degrees to rotate the glyph, already resolved by `arrowRotationDeg`. */
   rotationDeg: number;
@@ -24,7 +22,12 @@ interface DirectionArrowProps {
 export function DirectionArrow({ rotationDeg }: DirectionArrowProps) {
   return (
     <svg
-      className={styles.arrow}
+      // `fill-accent` reads `--color-accent` from the bridge (`@theme inline` maps it to
+      // `--accent`), so the glyph follows the theme. The frozen raw `--color-accent` it used
+      // to read is a light-mode-only value; measured 5.44:1 on `--card` in dark, 6.13:1 in
+      // light (`lib/theme/contrast.ts`), both over 1.4.11's 3:1 — belt and braces for a glyph
+      // that is `aria-hidden` and carries no meaning of its own.
+      className="flex-none self-center fill-accent [transform-origin:50%_50%]"
       viewBox="0 0 24 24"
       width="13"
       height="13"

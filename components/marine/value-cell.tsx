@@ -20,7 +20,33 @@ import {
   marineValueView,
 } from "@/lib/marine/value-state";
 import { DirectionArrow } from "./direction-arrow";
-import styles from "./marine.module.css";
+
+/**
+ * THE VALUE VOCABULARY, AS BRIDGE TOKENS.
+ *
+ * Every line below used to read a raw Terra token through `marine.module.css`
+ * (`--color-ink` for the magnitude, `--color-slate` for everything quieter). The `.dark`
+ * block redefines neither, so in dark mode the whole cell was frozen at its light value and
+ * only stayed legible because `.provinceBlock` painted a literal `#fff` behind it — the white
+ * card on the dark page. `text-foreground`/`text-muted-foreground` are the same two voices
+ * bound to tokens that move with the theme: measured (`lib/theme/contrast.ts`) 14.73:1 and
+ * 7.79:1 on `--card` in dark, 14.97:1 and 7.92:1 in light.
+ *
+ * The SIZES are the module's own, to the hundredth of a rem, so the conversion moves colour
+ * and nothing else.
+ */
+/** The published magnitude: the one thing in the cell that is not quiet. */
+const PRIMARY = "block font-semibold tabular-nums whitespace-nowrap text-foreground";
+/** The km/h companion, riding along inside `PRIMARY`'s own weight. */
+const SECONDARY = "ml-[5px] font-normal text-muted-foreground";
+/** The direction line: arrow, screen-reader convention, compass name. */
+const DIRECTION = "mt-[3px] flex items-baseline gap-[5px] text-[0.8rem] text-muted-foreground";
+/** "Sakin" and the stale marker — WORDS, sharing one voice (WCAG 1.4.1). */
+const NOTE = "mt-[3px] block text-[0.8rem] text-muted-foreground";
+/** "Sakin" alone carries the module's extra weight. Composed, so the voice cannot drift. */
+const CALM = `${NOTE} font-semibold`;
+/** The three non-numeric states, which render instead of a number rather than beside one. */
+const STATUS = "inline-block text-[0.85rem] text-muted-foreground";
 
 interface ValueCellProps {
   /** The magnitude (wave height, wind speed, sea temperature). */
@@ -86,7 +112,7 @@ export async function ValueCell({
 
   if (!hasNumber(view)) {
     return (
-      <span className={styles.valueStatus} data-state={view.status}>
+      <span className={STATUS} data-state={view.status}>
         {tm(MARINE_VALUE_STATUS_KEY[view.status])}
       </span>
     );
@@ -118,10 +144,10 @@ export async function ValueCell({
 
   return (
     <>
-      <span className={styles.valuePrimary}>
+      <span className={PRIMARY}>
         {primary}
         {kmh !== null && (
-          <span className={styles.valueSecondary}>
+          <span className={SECONDARY}>
             {tm("values.kmh", {
               value: format.number(kmh, {
                 minimumFractionDigits: KMH_FRACTION_DIGITS,
@@ -137,7 +163,7 @@ export async function ValueCell({
           frequent state, not a failure. The instant is absolute UTC — a relative phrase
           would be computed once and then cached by ISR into being wrong. */}
       {view.stale && (
-        <span className={styles.valueStale}>
+        <span className={NOTE}>
           {staleSince === null
             ? tm("freshness.staleNoInstant")
             : tm(MARINE_FRESHNESS_STALE_KEY, {
@@ -147,9 +173,9 @@ export async function ValueCell({
       )}
 
       {directionView?.kind === "arrow" && (
-        <span className={styles.valueDirection}>
+        <span className={DIRECTION}>
           <DirectionArrow rotationDeg={directionView.rotationDeg} />
-          <span className={styles.srOnly}>
+          <span className="sr-only">
             {tm(MARINE_DIRECTION_CONVENTION_KEY[directionView.convention])}:{" "}
           </span>
           {tm("values.direction", {
@@ -159,16 +185,14 @@ export async function ValueCell({
         </span>
       )}
 
-      {directionView?.kind === "calm" && (
-        <span className={styles.valueCalm}>{tm("calm.label")}</span>
-      )}
+      {directionView?.kind === "calm" && <span className={CALM}>{tm("calm.label")}</span>}
 
       {/* `kind: "none"` splits into two honest renders: a bearing we have but cannot
           interpret (no published convention) is printed bare, and a bearing we do not have
           reports its own state rather than silently vanishing under a wind speed that IS
           present. */}
       {directionView?.kind === "none" && directionValue !== null && (
-        <span className={styles.valueDirection}>
+        <span className={DIRECTION}>
           {hasNumber(directionValue)
             ? tm("values.bearingOnly", {
                 // Same rounding rule as the arrow branch: 359.6° is "0°", never "360°".

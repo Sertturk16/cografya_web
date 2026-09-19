@@ -39,7 +39,7 @@ function parseHex(hex: string): readonly [number, number, number] {
           .join("")
       : cleaned;
   if (!/^[0-9a-fA-F]{6}$/.test(full)) {
-    throw new Error(`Not a hex or oklch colour: ${hex}`);
+    throw new Error(`Not a hex, oklch or lab colour: ${hex}`);
   }
   return [
     Number.parseInt(full.slice(0, 2), 16),
@@ -64,7 +64,7 @@ function parseHex(hex: string): readonly [number, number, number] {
  */
 function parseOklch(css: string): readonly [number, number, number] {
   const match = /^oklch\(\s*([\d.]+%?)\s+([\d.]+)\s+([\d.]+)\s*\)$/i.exec(css.trim());
-  if (match === null) throw new Error(`Not a hex or oklch colour: ${css}`);
+  if (match === null) throw new Error(`Not a hex, oklch or lab colour: ${css}`);
   const [, rawL, rawC, rawH] = match;
   const L = rawL!.endsWith("%") ? Number.parseFloat(rawL!) / 100 : Number.parseFloat(rawL!);
   const C = Number.parseFloat(rawC!);
@@ -87,14 +87,82 @@ function parseOklch(css: string): readonly [number, number, number] {
 }
 
 /**
- * Accepts either syntax this codebase authors colours in.
+ * CIE `lab(L a b)` to sRGB 0-255.
+ *
+ * THE SYNTAX A BROWSER HANDS BACK, which is why it is here and not only the two this repo
+ * authors. `getComputedStyle` does not echo `oklch(…)`: Chrome serializes a resolved oklch
+ * colour as `lab(73.7049 29.9329 29.6267)`. So every instrument that measures what a page
+ * ACTUALLY PAINTS — rather than what a token declares — met this notation the moment `.dark`
+ * started authoring brand values in oklch, and a parser that rejected it fell back silently to
+ * the declaration. T-033 task 8 is where that was caught: a whole dark column of readings was
+ * taken from `app/globals.css` while the harness recorded `null` for the resolved ink beside it.
+ * The two agreed to within 0.12 when it was checked by hand, which is exactly the kind of
+ * agreement that has to be MEASURED rather than assumed.
+ *
+ * CSS Color 4's `lab()` is CIE Lab against the **D50** white point, not D65 — the single thing
+ * an implementation of this gets wrong. The chain is therefore Lab → XYZ(D50) → XYZ(D65) via
+ * the spec's Bradford matrix → linear sRGB → the transfer function in `toByte`. Skipping the
+ * adaptation shifts a saturated colour by several bytes and, worse, does it in a direction that
+ * still looks plausible.
+ *
+ * Out-of-gamut components are clamped, which is what a browser does when it paints one.
+ *
+ * Accepted subset, matching `parseOklch`'s: space-separated `L a b`, with an optional `%` on L
+ * only, and NO alpha (the `/ A` suffix) — a translucent colour has no contrast of its own and
+ * belongs in `blendOver` with its backdrop named.
+ */
+function parseLab(css: string): readonly [number, number, number] {
+  const match = /^lab\(\s*(-?[\d.]+%?)\s+(-?[\d.]+)\s+(-?[\d.]+)\s*\)$/i.exec(css.trim());
+  if (match === null) throw new Error(`Not a hex, oklch or lab colour: ${css}`);
+  const [, rawL, rawA, rawB] = match;
+  const L = Number.parseFloat(rawL!);
+  const a = Number.parseFloat(rawA!);
+  const b = Number.parseFloat(rawB!);
+
+  // CIE Lab inverse, with the spec's exact rational constants rather than the 0.008856/903.3
+  // decimal approximations — same reasoning as the sRGB knee above.
+  const EPSILON = 216 / 24389;
+  const KAPPA = 24389 / 27;
+  const fy = (L + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  const finv = (t: number) => (t ** 3 > EPSILON ? t ** 3 : (116 * t - 16) / KAPPA);
+
+  // D50 reference white, the CSS Color 4 values.
+  const D50 = [0.3457 / 0.3585, 1, (1 - 0.3457 - 0.3585) / 0.3585] as const;
+  const x = finv(fx) * D50[0];
+  const y = (L > KAPPA * EPSILON ? fy ** 3 : L / KAPPA) * D50[1];
+  const z = finv(fz) * D50[2];
+
+  // Bradford chromatic adaptation D50 → D65, then XYZ(D65) → linear sRGB. Both matrices are
+  // CSS Color 4's own.
+  const x65 = 0.955473421488075 * x - 0.02309845494876471 * y + 0.06325924320057072 * z;
+  const y65 = -0.0283697093338637 * x + 1.0099953980813041 * y + 0.021041441191917323 * z;
+  const z65 = 0.012314014864481998 * x - 0.020507649298898964 * y + 1.330365926242124 * z;
+
+  const linear: readonly number[] = [
+    (12831 / 3959) * x65 + (-329 / 214) * y65 + (-1974 / 3959) * z65,
+    (-851781 / 878810) * x65 + (1648619 / 878810) * y65 + (36519 / 878810) * z65,
+    (705 / 12673) * x65 + (-2585 / 12673) * y65 + (705 / 667) * z65,
+  ];
+
+  return [toByte(linear[0]!), toByte(linear[1]!), toByte(linear[2]!)] as const;
+}
+
+/**
+ * Accepts every syntax a colour reaches this module in: the two this codebase AUTHORS (hex and
+ * `oklch()`), and the one a BROWSER hands back for the second of those (`lab()`).
  *
  * Exported because `delta-e.ts` and `cvd.ts` need the same contract and a second parser is
  * exactly the shape this repo has been bitten by: two readers of one notation that nothing
- * compares.
+ * compares. That is also why `lab()` landed here rather than in the measurement harness that
+ * first needed it — a harness-local converter is the second reader.
  */
 export function parseColor(css: string): readonly [number, number, number] {
-  return /^oklch\(/i.test(css.trim()) ? parseOklch(css) : parseHex(css);
+  const trimmed = css.trim();
+  if (/^oklch\(/i.test(trimmed)) return parseOklch(trimmed);
+  if (/^lab\(/i.test(trimmed)) return parseLab(trimmed);
+  return parseHex(trimmed);
 }
 
 /** WCAG 2.x relative luminance of an sRGB hex or oklch colour, 0 (black) to 1 (white). */

@@ -264,11 +264,21 @@ describe("the literal extractor's hole semantics", () => {
  * disagreement PR4's guard measured is 0.
  *
  * The number 22 did not disappear with it: the population it named — `<div>`s whose className
- * carries a template hole — is still there and still 22, so it is pinned directly rather than as a
- * difference between two rules. A new hole-bearing `<div>` moves it exactly as it moved the
- * disagreement count before.
+ * carries a template hole — was still there and still 22, so it is pinned directly rather than as
+ * a difference between two rules. A new hole-bearing `<div>` moves it exactly as it moved the
+ * disagreement count before. **21** since T-033 task 4: `climate-section.tsx`'s detail row was
+ * `` `${styles.detailRow} ${styles.d2Rails}` `` — two CSS-Module lookups joined by a hole — and
+ * the conversion made it one constant.
+ *
+ * **18** since T-033 task 7, which took the same shape three at a time: `deneme-video.tsx`
+ * built the stage's cover and player boxes as two CSS-Module lookups joined by a hole (the
+ * cover's spelling renders twice, in the external and the rich branch), so three `<div>`s
+ * carried one. They are the hoisted `PLAYER_BOX` and `THUMB_BOX` now — still compositions, but
+ * of constants rather than of `styles.x` lookups, and `components/book/bench.structure.test.ts`
+ * asserts the composed strings still carry `FRAME`'s cap, its ratio and its 200px floor rather
+ * than overriding them.
  */
-const TEMPLATE_HOLE_DIVS = 22;
+const TEMPLATE_HOLE_DIVS = 18;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {

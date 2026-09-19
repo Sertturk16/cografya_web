@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
+import { stripComments } from "@/lib/test-support/strip-comments";
+import { classConstant, renderSites } from "@/lib/test-support/converted-floor";
 
 /**
  * SOURCE-SCAN TRIPWIRE for the workbench's SEO and no-JavaScript contract.
@@ -50,25 +51,30 @@ const BENCH = stripComments(sourceOf("./video-bench.tsx"));
 const STAGE = stripComments(sourceOf("./bench-stage.tsx"));
 const TIMELINE = stripComments(sourceOf("./bench-timeline.tsx"));
 const IDENTITY = stripComments(sourceOf("../../lib/book/video-identity.ts"));
-
-/** CSS comments use only the C-style form, so the `//`-line filter above would be wrong here —
- *  a `//` inside a `url()` is not a comment. */
-const STYLES = stripCssComments(sourceOf("./book-video.module.css"));
+const VIDEO = stripComments(sourceOf("./deneme-video.tsx"));
+const CONTROLS = stripComments(sourceOf("./video-progress-controls.tsx"));
 
 /**
- * Every value a named property takes inside every rule matching `selector`, in source order.
+ * WHERE THIS FILE'S GEOMETRY ASSERTIONS USED TO READ FROM, AND WHY THEY MOVED.
  *
- * A list rather than a single string, and every caller asserts its length: a selector that
- * stopped matching, or a property that quietly gained a second declaration, both look like a
- * clean pass to `indexOf`. The `(?:^|;)` anchor is what keeps `top` from matching inside
- * `scroll-margin-top`.
+ * Until T-033 task 7 the four cases below parsed `book-video.module.css` directly — a
+ * `declaredValues(selector, property)` helper over the raw stylesheet text. That file is gone:
+ * its 19 raw Terra-token reads were frozen at light values, so the stage rendered a white
+ * timeline card and a parchment cover box on a night page. The declarations those cases pinned
+ * are Tailwind class strings in the five consumers now, and
+ * `components/css-module-fixed-widths.test.ts` — the census that used to hold the `max-width`
+ * and `width` half of them — cannot read a class in JSX. So the pins live here, per
+ * `lib/test-support/converted-floor.ts`, whose `classConstant` reads a TOP-LEVEL
+ * `const NAME = "…";`: a value left inline on a `className` hands it back `null` and every
+ * assertion built on it asserts nothing, with the suite green. Each pin therefore rules the
+ * `null` out first, and the last case in the file de-hoists a real constant to prove the
+ * reading reds when the hoist goes.
  */
-const declaredValues = (selector: string, property: string): string[] =>
-  [...STYLES.matchAll(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`, "g"))].flatMap((rule) =>
-    [...(rule[1] ?? "").matchAll(new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;]+)`, "g"))].map(
-      (declaration) => (declaration[1] ?? "").trim(),
-    ),
-  );
+const classOf = (source: string, name: string, file: string): string => {
+  const found = classConstant(source, name);
+  expect(found, `${file} has no top-level ${name} constant`).not.toBeNull();
+  return found!;
+};
 
 /**
  * Whitespace-collapsed copies, for every assertion that spans more than one token.
@@ -207,7 +213,11 @@ describe("the delegated listener stays narrow", () => {
     expect(FLAT_PAGE).toMatch(/<article[^>]*\bdata-deneme=\{video\.orderNo\}/);
     expect(FLAT_PAGE).not.toMatch(/<ul[^>]*\bdata-deneme=/);
     // And the id that landing resolves to is inside it.
-    expect(FLAT_PAGE).toMatch(/<article[^>]*>\s*<div className=\{styles\.denemeHead\}>\s*<h3 id=/);
+    // `DENEME_HEAD`, not `styles.denemeHead`: T-033 task 8 retired `book-detail.module.css` and
+    // hoisted its fourteen rules into class constants on the page. The SHAPE this line asserts —
+    // article, then the head div, then the `<h3>` carrying the id — is unchanged; only the
+    // expression naming the class is.
+    expect(FLAT_PAGE).toMatch(/<article[^>]*>\s*<div className=\{DENEME_HEAD\}>\s*<h3 id=/);
   });
 
   it("names each of the thirty index rows", () => {
@@ -272,21 +282,50 @@ describe("the stage reserves its height in every cover state", () => {
     // smaller instead of gone. Both branches build `.timeline` around `.timelineBar`, whose 6px
     // height and 38px label lane are fixed and whose ticks are absolutely positioned.
     expect(TIMELINE).toMatch(
-      /return \(\s*<div className=\{styles\.timeline\}>\s*<div className=\{styles\.timelineBar\} \/>/,
+      /return \(\s*<div className=\{TIMELINE\}>\s*<div className=\{TIMELINE_BAR\} \/>/,
     );
     expect(FLAT_TIMELINE).toContain(
-      '<div className={styles.timeline} role="group" aria-label={t("timelineLabel")}>',
+      '<div className={TIMELINE} role="group" aria-label={t("timelineLabel")}>',
     );
     expect(FLAT_TIMELINE).not.toContain("return null");
-    // The card's height must stay a composition rather than a restated number: a `min-height`
+    // Both branches must wear the SAME two constants, not merely two constants each — that is
+    // what makes "the same box" a fact about one string rather than about two that agree today.
+    expect(renderSites(TIMELINE, "TIMELINE")).toBe(2);
+    expect(renderSites(TIMELINE, "TIMELINE_BAR")).toBe(2);
+    // The card's height must stay a composition rather than a restated number: a `min-h-*`
     // here would be a second declaration of one measurement, free to drift from the first.
-    expect(declaredValues(".timeline", "min-height")).toEqual([]);
-    expect(declaredValues(".timelineBar", "height")).toEqual(["6px"]);
-    expect(declaredValues(".timelineBar", "margin-bottom")).toEqual(["38px"]);
+    expect(classOf(TIMELINE, "TIMELINE", "bench-timeline.tsx")).not.toMatch(/\bmin-h-/);
+    const bar = classOf(TIMELINE, "TIMELINE_BAR", "bench-timeline.tsx");
+    expect(bar, "TIMELINE_BAR lost the 6px lane").toContain("h-1.5");
+    expect(bar, "TIMELINE_BAR lost the 38px label lane").toContain("mb-[38px]");
   });
 
   it("keeps the caption's floor and the two-line measurement behind it", () => {
-    expect(declaredValues(".stageCaption", "min-height")).toHaveLength(1);
+    const caption = classOf(STAGE, "STAGE_CAPTION", "bench-stage.tsx");
+    expect(caption, "STAGE_CAPTION lost the two-line floor").toContain("min-h-[3.1rem]");
+    expect(renderSites(STAGE, "STAGE_CAPTION")).toBe(1);
+  });
+
+  it("cancels the base <p> margin on all three paragraphs that used to carry margin: 0", () => {
+    // `app/globals.css`'s base rule gives every `<p>` `margin: 0 0 1rem`, and the retired
+    // stylesheet cancelled it on three of them with a `margin` shorthand. A Tailwind conversion
+    // that writes only `mt-*` lets that 16px straight back in — under the caption it would push
+    // the timeline card and the whole 30-row index down, and inside the cover it would break
+    // the CLS guarantee the absolutely-positioned CTA holds. Measured before/after in the
+    // browser; asserted here so it cannot come back.
+    expect(classOf(STAGE, "STAGE_CAPTION", "bench-stage.tsx")).toContain("mb-0");
+    expect(classOf(CONTROLS, "RESUME_LINE", "video-progress-controls.tsx")).toContain("m-0");
+    expect(classOf(VIDEO, "SIGN_IN_CTA", "deneme-video.tsx")).toContain("m-0");
+  });
+
+  it("keeps the two decorative separators on ONE spelling", () => {
+    // The retired stylesheet gave the reason for putting them on one token: the question count,
+    // the duration and the date sit on ONE line inside one fact strip, so a separator that
+    // drifted in either file would split that line into two colours.
+    const meta = stripComments(sourceOf("./deneme-meta.tsx"));
+    expect(classOf(STAGE, "META_SEPARATOR", "bench-stage.tsx")).toBe(
+      classOf(meta, "META_SEPARATOR", "deneme-meta.tsx"),
+    );
   });
 
   it("aligns the caption and the strip with the player they describe", () => {
@@ -294,12 +333,85 @@ describe("the stage reserves its height in every cover state", () => {
     // 84px to the player's left and the strip placed its questions against nothing
     // (→ PR #70 review `CODE70-M2`). One cap, three elements — asserted as EQUALITY rather than
     // as three separate presence checks, because a cap that drifts on one of them is the defect.
-    const caps = [".frame", ".stageCaption", ".timeline"].map((selector) => {
-      const values = declaredValues(selector, "max-width");
-      expect(values).toHaveLength(1);
-      return values[0];
+    //
+    // FOUR now, not three. The fourth is `PROGRESS_CONTROLS`, which wore the same cap in the
+    // stylesheet for visual alignment rather than as a CLS mechanism; it is in the equality
+    // because the drift question is identical and nothing else was watching it.
+    const sources: ReadonlyArray<readonly [string, string, string]> = [
+      [VIDEO, "FRAME", "deneme-video.tsx"],
+      [STAGE, "STAGE_CAPTION", "bench-stage.tsx"],
+      [TIMELINE, "TIMELINE", "bench-timeline.tsx"],
+      [CONTROLS, "PROGRESS_CONTROLS", "video-progress-controls.tsx"],
+    ];
+    const caps = sources.map(([source, name, file]) => {
+      const declaration = classOf(source, name, file);
+      const found = [...declaration.matchAll(/max-w-\[[^\]]+\]/g)].map((m) => m[0]);
+      expect(found, `${name} declares ${found.length} caps, not exactly one`).toHaveLength(1);
+      return found[0];
     });
-    expect(new Set(caps).size).toBe(1);
+    expect(new Set(caps).size, `the four caps disagree: ${caps.join(", ")}`).toBe(1);
+    expect(caps[0]).toBe("max-w-[560px]");
+  });
+
+  it("keeps the cover box's own floor — the cap, the ratio and the 200px minimum together", () => {
+    // `components/css-module-fixed-widths.test.ts` held `max-width: 560px` for this box until
+    // T-033 deleted the stylesheet. The three declarations are one mechanism: at a 320px
+    // viewport the column is ~280px, so a pure 16:9 box would be 280x157 — under the
+    // provenance ledger's 200x200 player minimum — and `min-h-[200px]` is what wins there.
+    // Lose the ratio and the box stops being a video box; lose the floor and it drops under the
+    // ledger's minimum; lose the cap and it stops agreeing with the three elements above.
+    const frame = classOf(VIDEO, "FRAME", "deneme-video.tsx");
+    expect(frame).toContain("aspect-video");
+    expect(frame).toContain("min-h-[200px]");
+    expect(frame).toContain("max-w-[560px]");
+
+    // FRAME is COMPOSED into the two boxes that render, so `renderSites` reports zero for it by
+    // design — `lib/test-support/converted-floor.ts` calls that the safe direction and asks for
+    // an assertion that the composed result still carries the value. This is that assertion.
+    const boxes = ["PLAYER_BOX", "THUMB_BOX"] as const;
+    for (const name of boxes) {
+      const box = classOf(VIDEO, name, "deneme-video.tsx");
+      expect(box, `${name} no longer builds on FRAME`).toContain("${FRAME}");
+      // …and adds nothing that would override the three declarations above it.
+      expect(box.replace("${FRAME}", " ")).not.toMatch(/\b(max-w-|min-h-|aspect-)/);
+    }
+    expect(renderSites(VIDEO, "PLAYER_BOX")).toBe(1);
+    expect(renderSites(VIDEO, "THUMB_BOX")).toBe(2);
+  });
+
+  it("keeps the tick dot at WCAG 2.2 §2.5.8's 24px exactly", () => {
+    // `width: 24px` was this module's other census entry, and it is a floor in BOTH directions:
+    // §2.5.8 (AA) sets 24px as the minimum, and the dot's POSITION is its meaning, so a 44px dot
+    // would overlap its neighbours at the measured spacings and stop reporting where the
+    // question is — §2.5.8's own "Essential" exception. The question is never reachable only
+    // here: the same six links sit in the index row below at 44px.
+    const dot = classOf(TIMELINE, "TICK_DOT", "bench-timeline.tsx");
+    expect(dot, "TICK_DOT lost the 24px target").toContain("size-6");
+    expect(dot.split("size-6").join(" ")).not.toMatch(/\b(size|w|h)-(?!6\b)[0-9]/);
+    expect(renderSites(TIMELINE, "TICK_DOT")).toBe(1);
+  });
+
+  it("POSITIVE CONTROL — the same reading reds when the dot's target is removed", () => {
+    // Anti-vacuity against a MUTATION of the real declaration rather than an invented string.
+    const real = classOf(TIMELINE, "TICK_DOT", "bench-timeline.tsx");
+    const poisoned = real.split("size-6").join("size-4");
+    expect(poisoned).not.toBe(real);
+    expect(poisoned).not.toContain("size-6");
+    expect(poisoned.split("size-6").join(" ")).toMatch(/\b(size|w|h)-(?!6\b)[0-9]/);
+  });
+
+  it("POSITIVE CONTROL — de-hoisting a floor makes classConstant return null", () => {
+    // THE FAILURE THESE PINS ARE SHAPED AROUND. `classConstant` finds only a top-level `const`;
+    // a floor written inline on the JSX `className` hands back `null`, and a pin that skipped
+    // the `not.toBeNull()` would then pass every `toContain` it never ran. Built by DE-HOISTING
+    // this file's real subject, so the control cannot drift from what it is controlling for.
+    const real = classConstant(TIMELINE, "TICK_DOT")!;
+    const deHoisted = TIMELINE.replace(real, "")
+      .split("className={TICK_DOT}")
+      .join('className="grid size-6"');
+    expect(deHoisted).toContain("size-6");
+    expect(classConstant(deHoisted, "TICK_DOT")).toBeNull();
+    expect(renderSites(deHoisted, "TICK_DOT")).toBe(0);
   });
 });
 
@@ -311,11 +423,23 @@ describe("the two scroll offsets that have to be one number", () => {
     // expressions drift and every İzle press at desktop fires a `scrollIntoView` that yanks a box
     // already in view — invisible in a static frame, and the source calls the pairing
     // load-bearing without anything checking it (→ PR #70 review `TA70-M4`).
-    const stickyTop = declaredValues(".stage", "top");
-    const playerMargin = declaredValues(".player", "scroll-margin-top");
-    expect(stickyTop).toHaveLength(1);
-    expect(playerMargin).toHaveLength(1);
+    const bracketed = (declaration: string, prefix: string): string[] =>
+      [...declaration.matchAll(new RegExp(`${prefix}\\[([^\\]]+)\\]`, "g"))].map((m) => m[1]!);
+    const stickyTop = bracketed(classOf(STAGE, "STAGE", "bench-stage.tsx"), "lg:top-");
+    const playerMargin = bracketed(classOf(VIDEO, "PLAYER", "deneme-video.tsx"), "scroll-mt-");
+    expect(stickyTop, "STAGE declares no lg:top-[…]").toHaveLength(1);
+    expect(playerMargin, "PLAYER declares no scroll-mt-[…]").toHaveLength(1);
     expect(stickyTop[0]).toBe(playerMargin[0]);
+    // And the offset is still the header's height plus a rem, not some other expression that
+    // happens to match on both sides.
+    expect(stickyTop[0]).toBe("calc(var(--header-height)+1rem)");
+    // The sticky itself only applies where there is a second column to stick beside — below
+    // `lg` (64rem, the media query the stylesheet wrote) a sticky player would take 200px+ off
+    // a 568px viewport.
+    expect(classOf(STAGE, "STAGE", "bench-stage.tsx")).toContain("lg:sticky");
+    // `min-w-0` is not boilerplate: without it the grid item refuses to shrink below FRAME's
+    // intrinsic 355.6px min-content width and the page scrolls sideways at 320 (WCAG 1.4.10).
+    expect(classOf(STAGE, "STAGE", "bench-stage.tsx")).toContain("min-w-0");
   });
 });
 
@@ -357,7 +481,7 @@ describe("the jump strip emits no dead fragment", () => {
     // it existed to guard against. Every number this strip can name now has a target by
     // construction, so there is no second branch to get backwards.
     expect(FLAT_PAGE).toMatch(
-      /\{jumpNumbers\.map\(\(no\) => \(\s*<li key=\{no\}>\s*<a className=\{styles\.jumpItem\} href=\{`#\$\{videoFragment\(no\)\}`\}/,
+      /\{jumpNumbers\.map\(\(no\) => \(\s*<li key=\{no\}>\s*<a className=\{JUMP_ITEM\} href=\{`#\$\{videoFragment\(no\)\}`\}/,
     );
     expect(FLAT_PAGE).not.toContain("jumpItemEmpty");
     expect(FLAT_PAGE).not.toContain("coveredDenemeNumbers");

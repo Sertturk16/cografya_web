@@ -4,7 +4,53 @@ import type { Locale } from "@/i18n/routing";
 import { cellFallbackDisplayKm } from "@/lib/climate/cell-fallback";
 import { ClimateChart } from "./climate-chart";
 import { ClimateTable } from "./climate-table";
-import styles from "./climate.module.css";
+
+/**
+ * Every colour below is a bridge token. This whole block renders on `--card` (the province page
+ * wraps it in `<Card variant="panel">`), so it themes; measured in dark with `lib/theme/contrast.ts`,
+ * `text-foreground` is 14.73:1, `text-muted-foreground` 7.79:1 and the source-line anchor's
+ * `text-link` 8.20:1, all on `--card`. Only `climate-chart.tsx`'s plot stays frozen, and its own
+ * docblock says why.
+ *
+ * `scroll-mt-*`: the heading is a permanent, shareable deep-link target (`CHART_ANCHOR`). Without
+ * it, a followed `#…-grafigi` fragment scrolls the heading flush to the top, hidden under the
+ * opaque sticky header. Offset it by the header height + breathing room (a11y).
+ */
+const HEADING =
+  "text-[1.15rem] font-semibold text-foreground mb-3.5 scroll-mt-[calc(var(--header-height)+1rem)]";
+
+/**
+ * D2 "rails" — the two columns reuse the chart row's OWN flex basis values (chart frame 420px /
+ * summary 220px), so the table's left edge lands under the chart's and the notices' under the
+ * summary's: alignment by construction rather than by two independently tuned numbers that drift
+ * apart. 1024px (`lg:`) is where the 1080px content column can actually hold two readable columns;
+ * below it this is a plain block box and the single-column stack is untouched, which is what the
+ * UX tour praised.
+ */
+const DETAIL_ROW = "block lg:flex lg:flex-wrap lg:items-start lg:gap-x-7 lg:gap-y-5";
+/** The notices already cap themselves at 78ch; inside a ~410px rail that cap never binds. */
+const DETAIL_ASIDE = "block lg:flex-[1_1_220px] lg:min-w-[280px] lg:mt-[22px]";
+
+/** The editorial source citation, and the Turkish sentence that introduces the licence block. */
+const SOURCE_LINE =
+  "mt-4 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground [&_a]:text-link [&_a]:underline";
+/**
+ * Quieter than the licence notice on purpose, and sized to match `components/air`'s own
+ * disclosure exactly. That is not a coincidence to be tidied away later: the PM2.5 block on the
+ * SAME page carries the same class of statement about the same kind of value, and giving the two
+ * different weights would tell a reader they are different kinds of claim. No border rule either —
+ * the indented rule is what marks where our prose stops and licensed text begins.
+ */
+const NOTICE = "m-0 mb-1 last:mb-0 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground";
+/**
+ * The mandatory C3S notice — an UNTOUCHABLE copy class, set in a quieter, indented block so a
+ * Turkish reader can see at a glance where the platform's prose stops and the licence text begins.
+ * Sized 0.85rem, a notch ABOVE the 0.8rem source line it follows: the licence asks for the notice
+ * "prominently", so where the two precedents disagreed the larger one won. It is never hidden
+ * behind a disclosure and never collapsed.
+ */
+const LICENCE_NOTICE =
+  "mt-2 mb-0 border-l-2 border-border py-0.5 pl-3.5 max-w-[78ch] text-[0.85rem] leading-[1.5] text-muted-foreground";
 
 interface ClimateSectionProps {
   climate: Climate;
@@ -67,7 +113,7 @@ const SOURCE_OWES_METHOD_DISCLOSURE: Record<Climate["source"], boolean> = {
 /**
  * D2 — the wide-screen dead space under the climate table (UX tour D2, frames `11`/`13`).
  *
- * At 1440 the page's content column is 1080 px. The chart row fills it, then `.tableScroll`
+ * At 1440 the page's content column is 1080 px. The chart row fills it, then the table
  * stops at its deliberate 560 px cap and leaves ~520 × 500 px of empty parchment to its right,
  * while the "Benzer İklime Sahip İller" grid below fills 1080 again — one page, two rhythms.
  * The 560 px cap itself is CORRECT and stays (a 3-column table sprayed across 1080 px pulls
@@ -160,27 +206,27 @@ export async function ClimateSection({
   const fallbackKm = cellFallbackDisplayKm(plateCode);
 
   return (
-    <div className={styles.section}>
+    <div className="mt-7">
       {/* tabIndex={-1} makes this permanent deep-link target programmatically focusable,
           so Safari/VoiceOver actually move AT focus to (and announce) the heading when the
           fragment is followed — matching the skip-link `<main>` fix (ENGINEERING.md §5, PR#2).
-          `.heading`'s scroll-margin-top clears the sticky header so it is not visually
+          `HEADING`'s `scroll-mt-*` clears the sticky header so it is not visually
           obscured on arrival. */}
-      <h3 id={CHART_ANCHOR[locale]} tabIndex={-1} className={styles.heading}>
+      <h3 id={CHART_ANCHOR[locale]} tabIndex={-1} className={HEADING}>
         {t("chartHeading")}
       </h3>
 
       <ClimateChart climate={climate} provinceName={provinceName} idSuffix={plateCode} />
 
-      {/* D2 — see the D2_VARIANT docblock. `.detailRow` carries NO layout of its own below the
+      {/* D2 — see the D2_VARIANT docblock. `DETAIL_ROW` carries NO layout of its own below the
           1024 px breakpoint, so narrow viewports render exactly today's single-column stack.
           Nothing here reorders the DOM. */}
-      <div className={`${styles.detailRow} ${styles.d2Rails}`}>
+      <div className={DETAIL_ROW}>
         <ClimateTable climate={climate} provinceName={provinceName} />
 
         {/* ALWAYS RENDERED — see the "no `hideAttribution` prop" note above. */}
-        <div className={styles.detailAside}>
-          <p className={styles.sourceLine}>
+        <div className={DETAIL_ASIDE}>
+          <p className={SOURCE_LINE}>
             {t.rich("sourceLine", {
               // Strings so ICU never group-separates the years (1991, not 1.991).
               start: String(climate.periodStartYear),
@@ -231,9 +277,9 @@ export async function ClimateSection({
             coverage (which starts in 1950), and the copy says "referans dönemi" rather than
             claiming a dataset period. */}
           {SOURCE_OWES_METHOD_DISCLOSURE[climate.source] && (
-            <div className={styles.notices}>
-              <p className={styles.notice}>{t("notice.reanalysis")}</p>
-              <p className={styles.notice}>{t("notice.readingPoint")}</p>
+            <div className="mt-3">
+              <p className={NOTICE}>{t("notice.reanalysis")}</p>
+              <p className={NOTICE}>{t("notice.readingPoint")}</p>
               {/* A-1's declared shift, on the five provinces it applies to (A-5 ruled: static
                     web copy, `lib/climate/cell-fallback.ts`). The other 76 render nothing here —
                     the line above already describes them correctly, and an "eksik veri"
@@ -245,7 +291,7 @@ export async function ClimateSection({
                     string keeps ICU from touching the number a second time — the same reason the
                     source line above passes its years as strings. */}
               {fallbackKm !== null && (
-                <p className={styles.notice}>
+                <p className={NOTICE}>
                   {t("notice.cellFallback", {
                     km: format.number(fallbackKm, {
                       minimumFractionDigits: 1,
@@ -269,8 +315,8 @@ export async function ClimateSection({
             the Copernicus information was generated, and this series comes from a committed
             2026 artifact. `new Date().getFullYear()` would silently claim a later year for
             data that did not change. */}
-          <p className={styles.sourceLine}>{t("sourceC3sNoticeIntro")}</p>
-          <p className={styles.licenceNotice} lang="en">
+          <p className={SOURCE_LINE}>{t("sourceC3sNoticeIntro")}</p>
+          <p className={LICENCE_NOTICE} lang="en">
             {t("attribution.c3sNotice")}
           </p>
         </div>

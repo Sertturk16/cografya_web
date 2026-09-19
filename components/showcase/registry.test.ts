@@ -188,8 +188,9 @@ describe("showcase coverage", () => {
  * `map-attribution` with no product consumer at all (T-042), and it went on naming `callout`,
  * `empty-state`, `map-legend` and `theme-pair` after they were deleted or moved. A roster that
  * can be wrong without anything failing is documentation of a tree that does not exist — the
- * exact defect class `components/orphan.test.ts` and `orphan-stylesheets.test.ts` measure one
- * level down.
+ * exact defect class `components/orphan.test.ts` measures one level down — and which
+ * `orphan-stylesheets.test.ts` measured for stylesheets until T-033 retired the last of them and
+ * deleted it with its subject.
  *
  * Both directions, because they fail differently. A file the roster omits is a component nobody
  * reading the docs knows exists; a name with no file is a reader sent to a path that 404s.

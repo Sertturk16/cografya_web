@@ -289,6 +289,65 @@ Shipped data token sets (all in `:root`, separate from chrome):
 A new chart adds only the tokens it needs, next to these, and records why the choice
 satisfies the five rules. A general scales module is deliberately unbuilt.
 
+**Both chart plots are frozen light in dark mode, and that is load-bearing, not leftover.**
+No `--chart-*` token has a dark half, so a plot that followed the theme would take its own
+series with it: `--chart-pm25-line` measures 9.86:1 on the white plot and **1.73:1 on
+`--card`**, and the climate chart is worse — `--chart-precip-bar` is 6.88:1 on the plot and
+**2.47:1 on `--card`**, `--chart-temp-line` 5.18:1 against 3.29:1 — all below rule 5's and
+WCAG 1.4.11's 3:1 floor. Conversely a bridge token inside a frozen plot fails the other way —
+`--muted-foreground` is 2.19:1 there and `--foreground` 1.16:1 — so a plot's scaffolding
+(gridlines, axis numbers) stays on the same frozen ground as its surface, as alphas of a frozen
+neutral. T-033 converted `components/air` and `components/climate` this way. The tripwire is
+the "keeps the plot LIGHT" assertion in `components/air/air-pollution.structure.test.ts`, which
+pins both directions.
+
+**Which frozen neutral is not a free choice, and the two charts differ.** `components/air` uses
+`--color-ink`. `components/climate` may not: the province page renders its chart inside
+`.climate-dark-scope`, the T-018 subtree where `app/globals.css` shadows `--color-ink` to
+`--color-bg`, so `fill-ink/80` measures **1.05:1** on the chart's own white plot. It uses
+`--color-ink-dark` instead, which `app/globals.css` defines as the palette's darkest line ink and
+the one neutral measured to clear 3:1 over every surface the theme does not reach — a frozen plot
+being exactly that — and which is not one of the four properties that wrapper shadows. A new chart
+inside a token-shadowing subtree owes the same check. One caveat for that token's owner: its
+docblock says every reader depends on the 3:1 floor rather than on the shade, and the climate
+chart is the exception, since its `/77` alpha is tuned to a text-grade 7.97:1.
+
+**A frozen plot's scaffolding is theme-invariant, and the rules it replaces were not.** Read both
+columns before calling a conversion here "reproduces the deleted rule" — it is true in light only.
+The climate chart's scaffolding used two of the four tokens `.climate-dark-scope` shadows, so in
+dark they resolved elsewhere, and the two rows point opposite ways. All figures on the white plot:
+
+| element               | deleted rule     | light  | dark, inside the scope          | now           | both themes |
+| --------------------- | ---------------- | ------ | ------------------------------- | ------------- | ----------- |
+| axis numbers, months  | `--color-slate`  | 7.92:1 | `--muted-foreground` **2.19:1** | `ink-dark/77` | 7.97:1      |
+| 0 °C gridline         | `--color-slate`  | 7.92:1 | `--muted-foreground` **2.19:1** | `ink-dark/77` | 7.97:1      |
+| gridlines, frame edge | `--color-border` | 1.45:1 | `--border` 11.09:1              | `ink-dark/15` | 1.36:1      |
+
+So T-033 task 4 fixed a live sub-floor reading — the axis numbers, month labels and freezing
+reference were 2.19:1 against a 4.5:1 text floor in dark — and, in the other row, made the
+gridlines the same hairline weight in both themes instead of a near-black grid in dark. The second
+is intended: a figure that does not follow the theme must not carry scaffolding that does, or its
+grid changes weight under a mode switch its data never sees.
+
+**A legend swatch is the same residue pointing outward.** `climate-chart.tsx`'s two swatches
+carry the data tokens on `--card`, where they measure 2.47:1 and 3.29:1 in dark, because a
+legend that did not match the marks it names would be worse than a quiet one. Neither is a sole
+carrier — each sits beside its own name in `text-muted-foreground` and the two differ in shape —
+and both clear the floor the moment the `--chart-*` tokens get their dark halves.
+
+The real fix is a dark half for `--chart-pm25-line`, `--chart-temp-line` and
+`--chart-precip-bar`, and it belongs to whoever owns `app/globals.css` — not to a T-033 task.
+Retiring the now-inert `.climate-dark-scope` rule belongs to that same branch: T-033 task 4
+deleted the stylesheet it existed for, and the wrapper stays only because the air section's
+structure test pins it.
+**Two rules in this document collide on the route there, and both are right within their
+scope.** The raw-vs-converted rule above sanctions leaving a data colour raw and giving it its
+missing `dark:` half; T-033's own constraints forbid a hand-written `dark:` outright, and the
+table above keeps data tokens in `:root` with no themed variant. So the `dark:stroke-[…]`
+spelling that rule would reach for is unavailable inside T-033, and the token-level fix is
+unavailable to a branch that may not touch `globals.css`. Neither rule is wrong; the work
+simply sits in a third place, and until it lands the frozen plot is the correct residue.
+
 ## Review ritual for visible changes
 
 Before calling a UI task done: light and dark screenshots at 390 px and desktop, no

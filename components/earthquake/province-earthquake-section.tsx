@@ -3,7 +3,37 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { EarthquakeList } from "@/lib/api/types";
 import { EarthquakeList as EarthquakeListTable } from "./earthquake-list";
-import styles from "./earthquake.module.css";
+
+/**
+ * The magnitude-floor note (PR #114 fix round, FENER114-I1) — the established "small-print
+ * label: sentence" shape this page already uses for its own Kaynaklar line: 0.85rem body in
+ * secondary ink, bold label in primary ink.
+ *
+ * `text-[0.85rem]`, not `text-sm`: the paragraph inherits `line-height: 1.6` from `body`, so
+ * 0.85rem renders at 13.6px/21.76px. `text-sm` would have set 14px/20px and changed both.
+ *
+ * `mb-3` is the stylesheet's `margin: 0 0 12px`. It is written out rather than left to the base
+ * `p` rule because that rule supplies 1rem, not 12px — `app/globals.css`'s `p { margin: 0 0
+ * 1rem }` lives in `@layer base`, which a utility beats, so an omitted `mb-*` here is a 4px
+ * regression rather than a no-op.
+ */
+const FLOOR_NOTE = "mt-0 mb-3 text-[0.85rem] text-muted-foreground";
+
+/** The bold label half of that pair. */
+const FLOOR_LABEL = "font-bold text-foreground";
+
+/**
+ * The unconditional hub link back to `/deprem` — same shape as `ProvinceMarineSection`'s own
+ * `hubLinkAll`, present regardless of this province's event count.
+ *
+ * **`mb-0` IS LOAD-BEARING.** The stylesheet wrote `margin: 12px 0 0`, a shorthand that set the
+ * bottom margin to 0 and so cancelled the base `p { margin: 0 0 1rem }`. A lone `mt-3` sets only
+ * `margin-top` and lets that 16px back in, which is the trap `docs/design.md` records for
+ * shorthand-to-utility conversions: measured before/after, `mb-0` is what keeps this paragraph's
+ * computed `margin-bottom` at 0px. The anchor inside takes its colour from the base `a` rule
+ * (`--link`), which is theme-aware already and is not restated here.
+ */
+const HUB_LINK = "mt-3 mb-0 text-[0.85rem]";
 
 interface ProvinceEarthquakeSectionProps {
   locale: Locale;
@@ -101,8 +131,8 @@ export async function ProvinceEarthquakeSection({
     <section className="mt-10" aria-labelledby={headingId}>
       <h2 id={headingId}>{t("earthquakeHeading", { name: provinceName })}</h2>
 
-      <p className={styles.magnitudeFloorNote}>
-        <span className={styles.magnitudeFloorLabel}>{te("meta.magnitudeFloorLabel")}:</span>{" "}
+      <p className={FLOOR_NOTE}>
+        <span className={FLOOR_LABEL}>{te("meta.magnitudeFloorLabel")}:</span>{" "}
         {te("meta.magnitudeFloorValue", { value: minMagnitudeLabel })}
       </p>
 
@@ -117,7 +147,7 @@ export async function ProvinceEarthquakeSection({
           static internal link every province page carries independently of nav
           (`SEO-POLICY.md` §B8.1, §5.12's own reachability mechanism), mirroring
           `ProvinceMarineSection`'s own unconditional `hubLinkAll`. */}
-      <p className={styles.provinceHubLink}>
+      <p className={HUB_LINK}>
         <Link href="/deprem">{t("earthquakeHubLink")}</Link>
       </p>
     </section>

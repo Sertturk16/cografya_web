@@ -399,7 +399,8 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * A ratchet that falls because dead code was removed is not progress on the adoption it counts,
  * which is why the cause is written down beside the number.
  *
- * RE-CHECKED AT 188 / 166 / 231 / 354, Ruling AZ again — a control proved at 192 proves nothing
+ * RE-CHECKED AT 188 / 166 / 231 / 354 (T-033's arrival then took cards, spellings and the
+ * total to 189 / 232 / 355 — see the docblock on {@link HAND_DRAWN_CARDS}), Ruling AZ again — a control proved at 192 proves nothing
  * at 188. All three probes on `app/[locale]/(site)/hakkimizda/page.tsx`, each reverted:
  *
  *   - the two-tile `rounded-2xl bg-card border border-border` stat grid — RED at `expected 190
@@ -413,12 +414,30 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 232 to be 231` with `HAND_DRAWN_CARDS` RED
  *     at 189 alongside.
  */
-export const HAND_DRAWN_CARDS = 188;
+/**
+ * T-033: **188 → 189 cards, 231 → 232 spellings, 354 → 355 total**, wells unmoved at 166.
+ *
+ * ONE element, and it is an ARRIVAL, not a migration: `components/marine/province-marine-
+ * section.tsx`'s reference-point block. It was a hand-drawn card all along — `.provinceBlock`
+ * in `marine.module.css`, `background: #fff` plus a `--color-border` hairline — and this
+ * census could not see it, because a `styles.x` lookup resolves to a CSS-Module class and
+ * never to Tailwind tokens. Retiring that stylesheet made the surface legible to the scanner
+ * for the first time, so the number goes UP while the tree gets smaller. That is the census
+ * working: the population it measures is "hand-drawn cards the scanner can read", and one
+ * just stopped hiding behind a module.
+ *
+ * It is written INLINE at `rounded-2xl`, not hoisted into a constant and not left at the
+ * module's own 10px `--radius`, precisely so it lands here rather than in
+ * {@link COMPUTED_CARD_CLASSNAMES}'s invisible population or outside {@link CARD_ROUNDING}
+ * altogether. Both of those spellings were available and both would have kept this counter
+ * at 188 while the element existed.
+ */
+export const HAND_DRAWN_CARDS = 189;
 
 export const HAND_DRAWN_WELLS = 166;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 231;
+export const HAND_DRAWN_CARD_SPELLINGS = 232;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -596,16 +615,198 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  *
  * Both reverted.
  */
-export const COMPUTED_CARD_CLASSNAMES = 23;
+/**
+ * T-033: **23 → 44**, `member` 186 → 164 one door down. **−22 and +21, NOT a swap** — an
+ * earlier draft of this note said "the same 22 elements, re-spelled, equal and opposite",
+ * and that is wrong in the direction that matters. Measured, retiring `marine.module.css`:
+ *
+ *   - 22 `className={styles.x}` elements left the `member` bucket, across
+ *     `components/marine/{province-marine-section,value-cell,vintage-line,direction-arrow}.tsx`;
+ *   - only **15** of those 22 came back here as a bare identifier over a hoisted Tailwind
+ *     string. The other **7** became literal strings the scanner reads in full: the block
+ *     grid, the card surface, the `<dl>`, the kunye rule, `sr-only`, the kunye list and the
+ *     arrow glyph;
+ *   - and **6** entries here are NEW carriers, not re-spellings. The three `<dt>`s and three
+ *     `<dd>`s of the value rows had NO `className` at all before — they were styled by the
+ *     module's `.provinceValue dt` / `.provinceValue dd` descendant selectors, and a
+ *     descendant selector has no element-level attribute for any scanner to see. Tailwind has
+ *     no descendant form, so the styling moved onto the elements themselves.
+ *
+ * So six elements newly entered the population this counter cannot read. That is the honest
+ * statement, and it is why this note is not "nothing became invisible": something did. What
+ * did NOT become invisible is the thing this file exists to count — see below.
+ *
+ * THE RULE THE REMAINING SEVEN CONVERSIONS FOLLOW. A CARD SURFACE IS WRITTEN INLINE. Any
+ * className carrying a {@link CARD_ROUNDING} token together with `bg-card` or `border-border`
+ * stays a literal string on its element: not hoisted into a module constant, and not moved to
+ * an off-language radius. Both of those keep {@link HAND_DRAWN_CARDS} still while the card
+ * exists, and both were available for marine's reference-point block — which had been a
+ * hand-drawn card since W2b (`background: #fff` plus a `--color-border` hairline) and was
+ * invisible here for four rounds only because a CSS-Module class lookup is opaque to this
+ * scanner. It is now inline at `rounded-2xl` and counted. Hoist the quiet vocabulary —
+ * `TERM`, `DESC`, `ROW` — freely; hoisting is what this counter is FOR noticing, and it
+ * notices it. Never hoist the surface.
+ *
+ * T-033 task 3: **44 → 76**, `member` 164 → 130. This one IS equal and opposite, and it was
+ * checked rather than assumed: 34 `className={styles.x}` elements left the `member` bucket
+ * across `components/air/{air-pollution-section,pm25-chart,pm25-table}.tsx` (17 + 9 + 8), and
+ * 32 came back here as bare identifiers (18 + 7 + 7). The two that did not are the notices
+ * wrapper and the attribution wrapper, which became literal strings this scanner reads in
+ * full. No element gained a `className` it did not have — the deleted stylesheet used no
+ * descendant selector, so marine's six new carriers have no counterpart here.
+ *
+ * The chart's `point.labelled ? GRID : GRID_YEAR` stays in the `ternary` bucket it was
+ * already in, which is why that figure does not move.
+ *
+ * NO NEW HAND-DRAWN CARD, and that is a measurement too. The chart frame is a card-shaped
+ * element (`rounded-lg`, a border, a fill) that this counter does NOT see, because `rounded-lg`
+ * is outside {@link CARD_ROUNDING} and the fill is `bg-white` rather than `bg-card`. Both are
+ * deliberate and neither is the hiding move the rule above forbids: the frame is a data
+ * surface whose radius is the module's own `--radius` and whose fill cannot follow the theme
+ * without taking `--chart-pm25-line` below WCAG 1.4.11 (`components/air/pm25-chart.tsx` carries
+ * the figures). It is not a card wearing a disguise; it is a plot.
+ *
+ * T-033 task 4: **76 → 119**, `member` 130 → 89. NOT equal and opposite, and it is marine's
+ * shape rather than air's — bigger, and for the same cause. Measured: 41 `className={styles.x}`
+ * elements left the `member` bucket across
+ * `components/climate/{climate-chart,climate-section,climate-table}.tsx` (24 + 10 + 7) and 43
+ * arrived here as bare identifiers (27 + 9 + 7). The arithmetic of the 24 → 27 in the chart is
+ * where the whole +2 lives:
+ *
+ *   - **14 left and did not come back** — the figure, the layout row, the `<svg>`, the seven
+ *     `.summaryItem` wrappers (which now carry no `className` at all, the grid does their work),
+ *     the seasons cell, the legend and its two items all became literal strings or nothing;
+ *   - **15 are NEW carriers**, exactly marine's case: the summary's eight `<dt>`s and seven
+ *     `<dd>`s had no `className`, because `.summaryItem dt` / `.summaryItem dd` /
+ *     `.summarySeasons dt` were DESCENDANT selectors and a descendant selector has no
+ *     element-level attribute for any scanner to see. Tailwind has no descendant form;
+ *   - **2 moved buckets rather than appearing** — the legend's two swatch `<span>`s were
+ *     `` `${styles.swatch} ${styles.swatchPrecip}` ``, template literals, and are now single
+ *     constants.
+ *
+ * So fifteen elements newly entered the population this counter cannot read, and that is the
+ * honest statement. The `ternary` figure does not move: the chart's
+ * `tick.value === 0 ? GRID_ZERO : GRID` was already `styles.gridZero : styles.grid`.
+ *
+ * NO NEW HAND-DRAWN CARD here either, and again it is measured rather than asserted. Two
+ * elements are card-shaped and neither is a card in disguise: the chart frame (`rounded-lg`,
+ * a `border-ink-dark/15` edge, a `bg-white` fill) is the same plot the air note describes, and
+ * the table's scroll container (`rounded-lg border border-border`) is hoisted only because
+ * `rounded-lg` is outside {@link CARD_ROUNDING} — it is the deleted stylesheet's own
+ * `var(--radius)`, not a `rounded-2xl` surface hidden behind a constant.
+ *
+ * T-033 task 5: **119 -> 139**, `member` 89 -> 66. The arithmetic is smaller than the last two
+ * and it closes exactly: `components/site-search/search-combobox.tsx` held 23
+ * `className={styles.x}` elements, 20 came back as bare identifiers, and the 3 that did not are
+ * the visually-hidden ones — the `<label>`, the close button's name and the live region — which
+ * are now the literal `"sr-only"` and therefore READABLE rather than unreadable. No element
+ * gained or lost a className; the file is the same tree it was.
+ *
+ * ONE element is card-shaped and it is not a card in disguise: the combobox panel, hoisted as
+ * `PANEL`. It is a popover — `rounded-[16px]` (the deleted stylesheet's `var(--radius-lg)`, which
+ * `rounded-2xl` at 18px and `rounded-lg` at 10px do not spell), `p-2.5`, and an edge of
+ * `border-input` rather than `border-border` because it must carry the same 3:1 control boundary
+ * as the trigger it hangs from. `Card`'s `panel` variant is `rounded-3xl border border-border
+ * bg-card p-6 sm:p-8`: a 22px radius, a 1.45:1 decorative edge and 24-32px of padding on a
+ * dropdown whose padding is 10px. Both the radius and the edge are outside {@link CARD_ROUNDING}
+ * and the surface predicate anyway, so the hoist hides nothing this counter would have seen.
+ *
+ * T-033 task 6: **139 -> 154**, `member` 66 -> 57. Nine `styles.x` lookups into
+ * `earthquake.module.css` left the tree — six in `earthquake-list.tsx`, three in
+ * `province-earthquake-section.tsx` — and fifteen bare identifiers arrived: twelve in the list
+ * (`SCROLL`, `TABLE`, `CAPTION`, `EMPTY_STATE`, `PLACE_NAME`, `BINDING_NOTE`, plus three
+ * `HEAD_CELL` header cells and three `CELL` data cells that the stylesheet had styled through
+ * `.table th, .table td` with no className at all) and three in the province section
+ * (`FLOOR_NOTE`, `FLOOR_LABEL`, `HUB_LINK`). The gap of six is those six previously bare cells:
+ * six elements genuinely entered this population, the other nine only changed shape.
+ *
+ * NO NEW HAND-DRAWN CARD, measured rather than asserted. Two constants are surface-ish and
+ * neither is card-shaped: the event table's scroll box is `rounded-lg border border-border` —
+ * the deleted stylesheet's own `var(--radius)`, and `rounded-lg` is outside
+ * {@link CARD_ROUNDING}, the same reading the climate note above already records for the same
+ * spelling — and the magnitude badge is `rounded-full`, a pill. The `ternary` figure does not
+ * move; this conversion introduced none.
+ *
+ * T-033 task 7: **154 -> 181**, `member` 57 -> 27, and the `call` bucket REOPENS at 1. The
+ * arithmetic, because three different things happened at once and the net (-2 unreadable) hides
+ * all three:
+ *
+ * · `book-video.module.css` had 30 `className={styles.x}` sites across its five consumers — the
+ *   most of any module in T-033 — and every one of them left the member bucket;
+ * · 5 of those 30 were the module's own `.srOnly` block, which is Tailwind's `sr-only` utility
+ *   now (two in `bench-stage.tsx`, two in `deneme-meta.tsx`, one in `deneme-video.tsx`'s live
+ *   region). A string literal is READABLE, so those five left this population altogether;
+ * · 24 became bare identifiers, and 3 MORE arrived from the other direction:
+ *   `deneme-video.tsx`'s cover/player boxes were `` `${styles.frame} ${styles.playerBox}` ``
+ *   and `` `${styles.frame} ${styles.thumbBox}` `` — template holes, which is why
+ *   `lib/test-support/composition-scan.test.ts`'s own `TEMPLATE_HOLE_DIVS` falls 21 -> 18 in
+ *   the same commit. They are `PLAYER_BOX` and `THUMB_BOX` now.
+ *
+ * THE `call` BUCKET IS NOT AN OVERSIGHT AND ITS RETURN IS THE POINT OF LISTING IT BY SHAPE.
+ * `video-progress-controls.tsx` writes `cn(WATCHED_TOGGLE, watched && WATCHED_TOGGLE_CHECKED)`
+ * on the watched toggle: the checked fill is ADDITIVE over a base the control keeps in both
+ * states (the 44px target), so a ternary would have had to restate that target in both branches
+ * and let the two drift. It is a `<Button>`, not a `<div>`, and neither constant carries a card
+ * rounding token — `WATCHED_TOGGLE` is `min-h-11` alone — so it hides nothing this counter
+ * exists to find.
+ *
+ * NO NEW HAND-DRAWN CARD here either, measured the same way. The one surface-ish constant is
+ * `bench-timeline.tsx`'s `TIMELINE`: `rounded-lg border border-border bg-card`, and `rounded-lg`
+ * is outside {@link CARD_ROUNDING} for the same reason the two notes above give for the same
+ * spelling — it is the deleted stylesheet's own `var(--radius)`, not a card radius.
+ * `deneme-video.tsx`'s `THUMB_BOX` is the same `rounded-lg`. The `ternary` figure does not move.
+ *
+ * T-033 task 8: **181 -> 193**, `member` 27 -> 14. The last module outside `components/`.
+ * `book-detail.module.css` had 13 `className={styles.x}` sites, all in one consumer
+ * (`app/[locale]/(site)/kitaplar/[slug]/page.tsx`), and every one left the member bucket. Twelve
+ * became bare identifiers; the thirteenth was the module's own `.srOnly` block, which is
+ * Tailwind's `sr-only` now — a string literal, so READABLE, so it left this population
+ * altogether. 13 - 1 = 12, which is the gap. The `indexClassName={INDEX}` site is a different
+ * prop and was never in this census in either spelling.
+ *
+ * NO NEW HAND-DRAWN CARD, measured the same way as the three notes above. Two constants are
+ * surface-ish and neither is card-shaped: `JUMP_ITEM` and `QUESTION_LINK` are both
+ * `rounded-lg border border-border bg-card`, and `rounded-lg` is outside {@link CARD_ROUNDING}
+ * for the reason those notes already give for the same spelling — it is the deleted stylesheet's
+ * own `var(--radius)` at 10px, not a card radius. A 44×44 fragment tile is a control, not a
+ * panel. The `ternary` and `call` figures do not move; this conversion introduced neither.
+ *
+ * T-033 task 9: **193 -> 198**, `member` 14 -> 9. The LAST CSS Module in the tree.
+ * `locator-map.module.css` had 7 `className={styles.x}` sites, all in its one consumer
+ * (`components/map/locator-map.tsx`), and every one left the member bucket. FIVE became bare
+ * identifiers (`BASE`, `OVERLAY`, `HIGHLIGHT`, `RING`, `CREDIT`); the other two — the figure and
+ * the frame — are `{ province, country }` records read as `FIGURE[kind]` and `FRAME[kind]`, which
+ * this scanner's own member regex still calls `member`. So the member bucket loses 7 and regains
+ * 2, and the identifier bucket gains 5. The two records are a computed lookup rather than a
+ * ternary because only ONE kind renders on any route and a ternary lets the unrendered branch
+ * drift silently; `components/map/locator-map-floors.test.ts` asserts the two rows differ in the
+ * aspect ratio and in nothing else.
+ *
+ * NO NEW HAND-DRAWN CARD, measured the same way as the four notes above. The one surface-ish
+ * constant is the frame, `rounded-[var(--radius-lg)] border border-border bg-[var(--map-sea)]`,
+ * and it is outside {@link CARD_ROUNDING} on both counts: the radius is the retired stylesheet's
+ * own `var(--radius-lg)` rather than a card radius, and the fill is the map's frozen sea rather
+ * than a themed surface. A map figure is an illustration, not a panel. The `ternary` and `call`
+ * figures do not move; this conversion introduced neither.
+ */
+export const COMPUTED_CARD_CLASSNAMES = 198;
 
-/** The whole unreadable-className population by expression shape — the 188 the counter above
- * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
- * one element, `components/patterns/callout.tsx`'s `cn(calloutVariants({…}))`, and T-042 deleted
- * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
- * shape rather than as a moved number. */
+/** The whole unreadable-className population by expression shape — the rest of what the counter
+ * above deliberately does not watch, kept visible rather than dropped.
+ *
+ * The `call` bucket used to hold exactly one element, `components/patterns/callout.tsx`'s
+ * `cn(calloutVariants({…}))`, and T-042 deleted that file; an empty bucket is not listed, so a
+ * `call` reappearing failed this pin as a NEW shape rather than as a moved number. It DID
+ * reappear, in T-033 task 7, and the pin worked exactly as designed: the element is
+ * `video-progress-controls.tsx`'s watched toggle, whose checked fill is additive over a base the
+ * control keeps in both states. See {@link COMPUTED_CARD_CLASSNAMES}'s note for why that is a
+ * composition rather than a ternary, and for the whole 154 -> 181 / 57 -> 27 arithmetic, and the
+ * 181 -> 193 / 27 -> 14 one that task 8 added on top of it, and the 193 -> 198 / 14 -> 9 one
+ * task 9 closed the programme with. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 23],
-  ["member", 186],
+  ["call", 1],
+  ["identifier", 198],
+  ["member", 9],
   ["ternary", 2],
 ];
 
@@ -979,8 +1180,10 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // surface at all once their metric strip is a `<StatGrid>` of `<StatTile>`s. 57 after T-042,
     // which is a DELETION rather than an adoption — `theme-pair.tsx` left the scanned surface for
     // `components/showcase/`, and `empty-state.tsx` and `map-legend.tsx` were deleted outright.
+    // 58 after T-033: `province-marine-section.tsx` joins the surface, holding a card that was
+    // always there and was only ever invisible because it was drawn from a CSS Module.
     // See {@link HAND_DRAWN_CARDS}.
-    expect(handDrawnTotals().files).toBe(57);
+    expect(handDrawnTotals().files).toBe(58);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
