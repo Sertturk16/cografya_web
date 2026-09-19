@@ -26,14 +26,37 @@ import {
  *
  * ## The last step, and what it bought
  *
- * 740 -> 568 is T-031c Task 5, the continent palette: `lib/map/continent-theme.ts` 112 ->  0,
+ * 740 -> 568 was T-031c Task 5, the continent palette: `lib/map/continent-theme.ts` 112 -> 0,
  * `components/v2/v2-world-continents.tsx` 55 -> 0, `dunya/kita/[slug]/page.tsx` 3 -> 0 and
  * `dunya/kita/page.tsx` 2 -> 0, all four bound to `--continent-*` through
- * `lib/theme/continent-identity.ts`. The arbitrary-colour arm below did NOT move: 75 before and
- * 75 after, which is the check that 172 classes were removed rather than re-spelled as literal
- * values. Both figures are read from these collectors, not arithmetic.
+ * `lib/theme/continent-identity.ts`.
+ *
+ * 568 -> 438 is T-031c Task 6, the marine cluster, and it clears FIVE files at once because a
+ * basin's colour was spelled in four of them and the fifth painted a sea it never named:
+ * `components/v2/v2-marine-map-explorer.tsx` 61 -> 0, `deniz/kiyi-tipleri/page.tsx` 24 -> 0,
+ * `components/v2/v2-marine-basin-cards.tsx` 21 -> 0, `lib/marine/sea-basins-detail.ts` 16 -> 0,
+ * and 8 of `turkiye/bolge/[slug]/page.tsx`'s (57 -> 49) — its four per-sea chips, which were
+ * one cyan for four different seas, plus the coastal-count badge above them, which named no sea
+ * at all. 80 of the 130 are the `--basin-*` rows the inventory derived; 12 are `--sst-band-*`;
+ * the rest are the decoration and warning rows on the same lines.
+ *
+ * The arbitrary-colour arm moved for the first time on this branch: 75 -> 72, and all three
+ * are the marine map's temperature LEGEND (`bg-[#ea580c]`, `bg-[#0d9488]`, `bg-[#2563eb]`),
+ * now `bg-[var(--sst-band-*)]`. That legend was the SST ramp's THIRD spelling in one file —
+ * after the SVG pins and the table chips — and the one a reader actually uses to decode the
+ * map, so it could have gone on describing a scale the pins no longer painted.
+ *
+ * A FALL here alongside a fall in the first arm is the good case; the failure this pairing
+ * exists to catch is a fall in one WITH A RISE in the other. Two things that could have
+ * produced such a rise did not: the three raw SVG pin hexes this task deleted were never
+ * counted here (a bare hex in a TS string is not a bracketed class), and the three
+ * `var(--sst-band-*, #hex)` fallbacks it added in their place are not either (a `var()`
+ * fallback is stripped before the arm counts). Those fallbacks are pinned instead by
+ * `components/ui/token-binding.test.ts`, in both directions.
+ *
+ * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 568;
+const RAW_PALETTE_BUDGET = 438;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
@@ -107,12 +130,12 @@ describe("the raw palette is being retired, and the number is held", () => {
  * `LAUNDERING_SPELLINGS`: moving an occurrence from `bg-orange-600` to any of them DECREASES
  * the first arm and INCREASES this one, so the second budget reds. What it does NOT do is
  * decide whether a bracketed value IS a palette colour — nothing here does, and the negative
- * result above says why. The two arms stay separate because most of these 75 are legitimate map
+ * result above says why. The two arms stay separate because most of these 72 are legitimate map
  * surfaces (sea, neighbour land, inland water) measured against fixed backdrops and owned by
  * T-031d's `--map-*` / `--province-*` work; one number mixing them would be a number nobody
  * could act on.
  */
-const ARBITRARY_COLOR_BUDGET = 75;
+const ARBITRARY_COLOR_BUDGET = 72;
 
 /**
  * Every spelling of one colour that must not slip past both arms, with orange-600 as the
@@ -189,16 +212,18 @@ const NOT_A_LAUNDERED_COLOUR: readonly string[] = [
  * Arbitrary hexes that ARE a Tailwind palette value, by hand and by name — a list, not a
  * heuristic, because no heuristic separates them (see above).
  *
- * All three are `v2-marine-map-explorer.tsx`'s sea-surface-temperature legend swatches, which
- * the inventory files as the `--sst-band-*` set: a set that does not exist yet and that belongs
- * to that file's own task, not to this one. They are named here so the laundering is recorded
- * rather than merely counted, and asserted STILL PRESENT so the entry cannot outlive the bug.
+ * EMPTY, AND THAT IS THE RESULT RATHER THAN THE ABSENCE OF ONE. It held three entries until
+ * T-031c Task 6: `v2-marine-map-explorer.tsx`'s sea-surface-temperature legend swatches
+ * (`bg-[#ea580c]`, `bg-[#0d9488]`, `bg-[#2563eb]` — orange-600, teal-600 and blue-600 spelled
+ * as literals). The `--sst-band-*` set they were waiting for now exists, the legend reads
+ * `bg-[var(--sst-band-*)]`, and the assertion below did exactly what its comment promised: it
+ * went RED naming all three, which is how the entries came to be deleted instead of going
+ * stale.
+ *
+ * The list stays, and stays asserted in both directions. A future laundering gets named here
+ * and has to be removed by the task that fixes it, rather than counted and forgotten.
  */
-const LAUNDERED: ReadonlyArray<{ file: string; cls: string; was: string }> = [
-  { file: "components/v2/v2-marine-map-explorer.tsx", cls: "bg-[#ea580c]", was: "orange-600" },
-  { file: "components/v2/v2-marine-map-explorer.tsx", cls: "bg-[#0d9488]", was: "teal-600" },
-  { file: "components/v2/v2-marine-map-explorer.tsx", cls: "bg-[#2563eb]", was: "blue-600" },
-];
+const LAUNDERED: ReadonlyArray<{ file: string; cls: string; was: string }> = [];
 
 describe("the palette cannot be laundered into brackets", () => {
   const found = collectArbitraryColorOccurrences();
@@ -237,8 +262,10 @@ describe("the palette cannot be laundered into brackets", () => {
   });
 
   it("still has a reason for every named laundered value", () => {
-    // When v2-marine-map-explorer's --sst-band-* rows land, these disappear and this fails,
-    // which is the reminder to delete the entry rather than let it go stale.
+    // Vacuous while LAUNDERED is empty, and deliberately kept: it is the half that fires when
+    // a named entry is FIXED, and it fired for all three of the marine legend swatches in
+    // T-031c Task 6. The other direction — a laundering that arrives unnamed — is the budget
+    // assertion above, which is not vacuous.
     for (const entry of LAUNDERED) {
       expect(
         found.some((o) => o.file === entry.file && o.cls === entry.cls),

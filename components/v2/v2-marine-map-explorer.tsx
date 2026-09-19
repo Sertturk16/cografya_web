@@ -32,6 +32,8 @@ import {
 import { foldForSearch } from "@/lib/search/normalize";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 import { marinePointAnchorId } from "@/lib/marine/anchors";
+import { basinIdentityOf } from "@/lib/theme/basin-identity";
+import { sstBandStyleOf, SST_BAND_MIN_C } from "@/lib/theme/sst-band";
 
 export interface MarinePointData {
   slugTr: string;
@@ -58,50 +60,59 @@ export interface MarinePointData {
   provinceSlug?: string;
 }
 
+/**
+ * The basin filter's own labels, and the badge each group header wears.
+ *
+ * `badgeClass` reads `lib/theme/basin-identity.ts` rather than spelling a hue, so this table
+ * cannot disagree with `v2-marine-basin-cards`, `deniz/kiyi-tipleri` or
+ * `lib/marine/sea-basins-detail` about what colour a basin is — which is what four independent
+ * tables meant before T-031c, even while they happened to agree.
+ *
+ * A `color` field holding a `fill-*` map class used to sit beside `badgeClass` on all five
+ * entries. It was DEAD: nothing read `meta.color`, and this map has never painted a basin as an
+ * area — it paints station pins, by temperature. Deleted rather than bound, so nobody binds a
+ * fill that nothing renders.
+ */
 const BASIN_FILTER_META: Record<
   string,
-  { name: string; icon: string; color: string; badgeClass: string; title: string }
+  { name: string; icon: string; badgeClass: string; title: string }
 > & {
-  black_sea: { name: string; icon: string; color: string; badgeClass: string; title: string };
-  marmara: { name: string; icon: string; color: string; badgeClass: string; title: string };
-  aegean: { name: string; icon: string; color: string; badgeClass: string; title: string };
-  mediterranean: { name: string; icon: string; color: string; badgeClass: string; title: string };
-  all: { name: string; icon: string; color: string; badgeClass: string; title: string };
+  black_sea: { name: string; icon: string; badgeClass: string; title: string };
+  marmara: { name: string; icon: string; badgeClass: string; title: string };
+  aegean: { name: string; icon: string; badgeClass: string; title: string };
+  mediterranean: { name: string; icon: string; badgeClass: string; title: string };
+  all: { name: string; icon: string; badgeClass: string; title: string };
 } = {
   all: {
     name: "Tüm Denizler",
     title: "Tüm Kıyı İstasyonları",
     icon: "Waves",
-    color: "fill-primary",
+    // "all" is not a basin, so it wears the brand accent rather than one basin's identity.
     badgeClass: "bg-primary/10 text-primary-strong border-primary/30",
   },
   black_sea: {
     name: "Karadeniz",
     title: "Karadeniz Havzası (15 İstasyon)",
     icon: "Waves",
-    color: "fill-cyan-600",
-    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
+    badgeClass: basinIdentityOf("black_sea").badge,
   },
   marmara: {
     name: "Marmara Denizi",
     title: "Marmara Denizi Havzası (6 İstasyon)",
     icon: "Anchor",
-    color: "fill-amber-600",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+    badgeClass: basinIdentityOf("marmara").badge,
   },
   aegean: {
     name: "Ege Denizi",
     title: "Ege Denizi Havzası (5 İstasyon)",
     icon: "Sailboat",
-    color: "fill-teal-600",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
+    badgeClass: basinIdentityOf("aegean").badge,
   },
   mediterranean: {
     name: "Akdeniz",
     title: "Akdeniz Havzası (4 İstasyon)",
     icon: "SunMedium",
-    color: "fill-rose-600",
-    badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
+    badgeClass: basinIdentityOf("mediterranean").badge,
   },
 };
 
@@ -334,7 +345,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
       >
         {/* Floating Top-Left Mode Indicator */}
         <div className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none">
-          <Waves className="size-3.5 text-cyan-600 animate-pulse" />
+          <Waves className="size-3.5 text-muted-foreground animate-pulse" />
           <span className="text-foreground font-semibold">
             {BASIN_FILTER_META[selectedBasin]?.name}
           </span>
@@ -427,21 +438,17 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               const isSelected = selectedSlug === point.slugTr;
               const matchesBasin = selectedBasin === "all" || point.seaBasin === selectedBasin;
 
+              /* THE PIN AND THE TABLE CHIP ARE ONE RAMP, so they come from one function.
+                 This block used to classify `sst` itself, into three raw hexes that were
+                 Tailwind v3 values, while the `Su Sıcaklığı` chip ~450 lines
+                 below classified the same reading into three v4 utility classes. Same
+                 thresholds, same three families, two different shades, nothing keeping them
+                 in step. Both now read `lib/theme/sst-band.ts`.
+                 The selected pin stays its own colour: selection is UI state, not a
+                 temperature, and it has to win over whatever band the station is in. */
               const sst = point.sst ?? 25;
-              let pinFill = "#0284c7";
-              let strokeCol = "#ffffff";
-              if (sst >= 28) {
-                pinFill = "#ea580c";
-              } else if (sst >= 25) {
-                pinFill = "#0d9488";
-              } else {
-                pinFill = "#2563eb";
-              }
-
-              if (isSelected) {
-                pinFill = "#f59e0b";
-                strokeCol = "#ffffff";
-              }
+              const strokeCol = "#ffffff";
+              const pinFill = isSelected ? "#f59e0b" : sstBandStyleOf(sst).fillValue;
 
               if (!matchesBasin) {
                 return null;
@@ -548,8 +555,8 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
             {/* Straits Low-Confidence Caution Badge */}
             {selectedPoint.isStraits && (
-              <div className="flex items-start gap-2 p-2.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 text-xs">
-                <ShieldAlert className="size-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2 p-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-warning-strong text-xs">
+                <ShieldAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
                 <p className="leading-tight text-[11px]">
                   <strong>Boğaz &amp; Dar Su Yolu:</strong> Açık deniz modellerinin kaba grid
                   çözünürlüğü ve iki tabakalı akıntı rejimi nedeniyle kıyı bandında yerel sapmalar
@@ -569,9 +576,9 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 space-y-1">
+              <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                 <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Waves className="size-3.5 text-cyan-600" /> Dalga Boyu
+                  <Waves className="size-3.5 text-muted-foreground" /> Dalga Boyu
                 </span>
                 <div className="font-mono font-bold text-base text-foreground flex items-center gap-1.5">
                   <span>
@@ -580,15 +587,15 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   {selectedPoint.waveDirection && (
                     <DirectionArrow
                       deg={selectedPoint.waveDirection}
-                      className="size-3.5 text-cyan-600"
+                      className="size-3.5 text-muted-foreground"
                     />
                   )}
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-teal-500/10 border border-teal-500/20 space-y-1">
+              <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                 <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Wind className="size-3.5 text-teal-600" /> 10m Rüzgâr
+                  <Wind className="size-3.5 text-muted-foreground" /> 10m Rüzgâr
                 </span>
                 <div className="font-mono font-bold text-xs text-foreground flex items-center gap-1">
                   <span>
@@ -599,7 +606,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   {selectedPoint.windDirection10m && (
                     <DirectionArrow
                       deg={selectedPoint.windDirection10m}
-                      className="size-3.5 text-teal-600"
+                      className="size-3.5 text-muted-foreground"
                     />
                   )}
                 </div>
@@ -697,14 +704,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               {hoveredPoint.waveHeight !== undefined && hoveredPoint.waveHeight !== null && (
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Waves className="size-3 text-cyan-600" /> Dalga Boyu:
+                    <Waves className="size-3 text-muted-foreground" /> Dalga Boyu:
                   </span>
                   <span className="font-mono font-medium text-foreground flex items-center gap-1">
                     {hoveredPoint.waveHeight.toFixed(2)} m
                     {hoveredPoint.waveDirection && (
                       <DirectionArrow
                         deg={hoveredPoint.waveDirection}
-                        className="size-3 text-cyan-600"
+                        className="size-3 text-muted-foreground"
                       />
                     )}
                   </span>
@@ -714,14 +721,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               {hoveredPoint.windSpeed10m !== undefined && hoveredPoint.windSpeed10m !== null && (
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Wind className="size-3 text-teal-600" /> 10m Rüzgâr:
+                    <Wind className="size-3 text-muted-foreground" /> 10m Rüzgâr:
                   </span>
                   <span className="font-mono font-medium text-foreground flex items-center gap-1">
                     {hoveredPoint.windSpeed10m.toFixed(1)} m/s
                     {hoveredPoint.windDirection10m && (
                       <DirectionArrow
                         deg={hoveredPoint.windDirection10m}
-                        className="size-3 text-teal-600"
+                        className="size-3 text-muted-foreground"
                       />
                     )}
                   </span>
@@ -744,17 +751,26 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
         )}
       </div>
 
-      {/* Map Legend Footer Strip */}
+      {/* Map Legend Footer Strip.
+          THE RAMP'S THIRD SPELLING, and the one that mattered most: this strip is what tells a
+          reader what the pin colours MEAN, and it hard-wired the same three Tailwind v3 hexes
+          the pins used, as bracketed arbitrary values, plus the two thresholds as prose. A
+          legend that carries its own copy of the scale is a legend that can describe a map the
+          product no longer paints. Both the swatches and the numbers now come from
+          `lib/theme/sst-band.ts`. */}
       <div className="p-3.5 rounded-2xl bg-card border border-border flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs">
         <span className="font-semibold text-foreground text-[11px]">Su Sıcaklığı Skalası:</span>
         <span className="flex items-center gap-1.5 text-[11px]">
-          <span className="size-2.5 rounded-full bg-[#ea580c]" /> 28°C+ (Sıcak Akdeniz)
+          <span className="size-2.5 rounded-full bg-[var(--sst-band-hot)]" /> {SST_BAND_MIN_C.hot}
+          °C+ (Sıcak Akdeniz)
         </span>
         <span className="flex items-center gap-1.5 text-[11px]">
-          <span className="size-2.5 rounded-full bg-[#0d9488]" /> 25°C – 28°C (Ilıman Ege / Marmara)
+          <span className="size-2.5 rounded-full bg-[var(--sst-band-warm)]" /> {SST_BAND_MIN_C.warm}
+          °C – {SST_BAND_MIN_C.hot}°C (Ilıman Ege / Marmara)
         </span>
         <span className="flex items-center gap-1.5 text-[11px]">
-          <span className="size-2.5 rounded-full bg-[#2563eb]" /> &lt;25°C (Serin Karadeniz)
+          <span className="size-2.5 rounded-full bg-[var(--sst-band-cool)]" /> &lt;
+          {SST_BAND_MIN_C.warm}°C (Serin Karadeniz)
         </span>
       </div>
 
@@ -887,15 +903,11 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 {group.items.map((point) => {
                   const sst = point.sst;
                   const isSelected = selectedSlug === point.slugTr;
-                  let tempBadgeClass =
-                    "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30";
-                  if (sst && sst >= 28) {
-                    tempBadgeClass =
-                      "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30";
-                  } else if (sst && sst >= 25) {
-                    tempBadgeClass =
-                      "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30";
-                  }
+                  /* The same ramp the map pins read. See the pin block above for why this is a
+                     function call and not a second copy of the thresholds. The chip's label is
+                     solved against a row that is SELECTED AND HOVERED, not a resting one —
+                     `app/globals.css` carries the four row states and their figures. */
+                  const tempBadgeClass = sstBandStyleOf(sst).chip;
 
                   return (
                     <TableRow
@@ -930,17 +942,18 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       <TableCell>
                         <div className="font-bold text-foreground text-sm flex items-center gap-1.5">
                           <span
+                            /* Selection is UI state, so it joins `aria-selected` and the row's
+                               own `bg-primary/10` rather than inventing a third colour. The
+                               RESTING dot is deliberately left unpainted: it never said
+                               anything the station's name beside it does not. The element
+                               stays, because the selected branch still paints it. */
                             className={`size-2 rounded-full ${
-                              isSelected ? "bg-amber-500 ring-2 ring-amber-400" : "bg-cyan-500"
+                              isSelected ? "bg-primary ring-2 ring-primary/50" : ""
                             }`}
                           />
                           <span>{point.nameTr}</span>
                           {point.isStraits && (
-                            <Badge
-                              variant="outline"
-                              size="sm"
-                              className="text-[9px] py-0 px-1 bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                            >
+                            <Badge variant="outline" size="sm" className="text-[9px] py-0 px-1">
                               Boğaz
                             </Badge>
                           )}
@@ -981,13 +994,13 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       <TableCell className="text-right font-mono text-xs text-foreground">
                         {point.waveHeight !== undefined && point.waveHeight !== null ? (
                           <div className="inline-flex items-center gap-1.5 justify-end">
-                            <Waves className="size-3.5 text-cyan-600" />
+                            <Waves className="size-3.5 text-muted-foreground" />
                             <span>{point.waveHeight.toFixed(2)} m</span>
                             {point.waveDirection !== undefined && point.waveDirection !== null && (
                               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                                 <DirectionArrow
                                   deg={point.waveDirection}
-                                  className="size-3 text-cyan-600"
+                                  className="size-3 text-muted-foreground"
                                 />
                                 <span>{Math.round(point.waveDirection)}°</span>
                               </span>
@@ -1000,14 +1013,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       <TableCell className="text-right font-mono text-xs text-foreground">
                         {point.windSpeed10m !== undefined && point.windSpeed10m !== null ? (
                           <div className="inline-flex items-center gap-1.5 justify-end">
-                            <Wind className="size-3.5 text-teal-600" />
+                            <Wind className="size-3.5 text-muted-foreground" />
                             <span>{point.windSpeed10m.toFixed(1)} m/s</span>
                             {point.windDirection10m !== undefined &&
                               point.windDirection10m !== null && (
                                 <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                                   <DirectionArrow
                                     deg={point.windDirection10m}
-                                    className="size-3 text-teal-600"
+                                    className="size-3 text-muted-foreground"
                                   />
                                   <span>{Math.round(point.windDirection10m)}°</span>
                                 </span>

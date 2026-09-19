@@ -109,7 +109,7 @@ export function V2SeaBasinDetailView({
         <BreadcrumbsNav items={breadcrumbItems} />
 
         <div
-          className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.gradientClass} p-6 sm:p-10 shadow-lg`}
+          className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.identity.heroGradient} p-6 sm:p-10 shadow-lg`}
         >
           <PageHero
             tier="hub"

@@ -15,6 +15,7 @@ import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { REGION_IDENTITY } from "@/lib/theme/region-identity";
+import { basinIdentityOfSeaName } from "@/lib/theme/basin-identity";
 import { FaqSection } from "@/components/patterns/faq-section";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
@@ -488,10 +489,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                     <Boxes className="size-3 mr-1" /> {region.subregionCount} Bölüm
                   </Badge>
                   {isCoastal ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                    >
+                    <Badge variant="outline" className="flex items-center gap-1">
                       <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
                     </Badge>
                   ) : (
@@ -754,16 +752,26 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                         Kıyısı Olan Denizler:
                       </span>
                       <div className="flex flex-wrap gap-2">
-                        {region.coastalSeas.map((sea) => (
-                          <Badge
-                            key={sea}
-                            variant="outline"
-                            className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/25 text-xs py-1.5 px-3 flex items-center gap-1.5"
-                          >
-                            <Waves className="size-3.5" />
-                            <span>{sea}</span>
-                          </Badge>
-                        ))}
+                        {/* ONE CHIP PER SEA, EACH IN ITS OWN SEA'S COLOUR. These were all one
+                            cyan while `v2-marine-basin-cards` painted Marmara amber and Ege
+                            teal one click away: four values, one colour. `coastalSeas` is free
+                            text from the contract, so the crossing goes through
+                            `basinIdentityOfSeaName`, which returns null rather than guessing —
+                            a sea this product has no identity for renders neutral, because a
+                            wrong colour on a data chip is worse than no colour. */}
+                        {region.coastalSeas.map((sea) => {
+                          const basin = basinIdentityOfSeaName(sea);
+                          return (
+                            <Badge
+                              key={sea}
+                              variant="outline"
+                              className={`${basin?.chipSoft ?? "bg-muted text-foreground border-border"} text-xs py-1.5 px-3 flex items-center gap-1.5`}
+                            >
+                              <Waves className="size-3.5" />
+                              <span>{sea}</span>
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (

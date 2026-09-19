@@ -4,13 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Waves, Thermometer, ArrowRight, Sparkles, Droplets } from "lucide-react";
+import { basinIdentityOf } from "@/lib/theme/basin-identity";
 
 export interface SeaBasinInfo {
   id: "black_sea" | "marmara" | "aegean" | "mediterranean";
   nameTr: string;
   nameEn: string;
-  badgeClass: string;
-  borderClass: string;
+  /**
+   * The basin's colour, read from `lib/theme/basin-identity.ts` by `id`.
+   *
+   * `badgeClass` and `borderClass` used to sit here as two literal hue strings. They are one
+   * field now, and it is derived from `id`, so a card cannot wear a colour its own basin does
+   * not name — which is what four independent tables allowed before T-031c.
+   */
+  identity: ReturnType<typeof basinIdentityOf>;
   icon: string;
   stationCount: number;
   coastalProvinceCount: number;
@@ -28,8 +35,7 @@ export const BASIN_DATA: SeaBasinInfo[] = [
     id: "black_sea",
     nameTr: "Karadeniz Havzası",
     nameEn: "Black Sea Basin",
-    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
-    borderClass: "hover:border-cyan-500/50",
+    identity: basinIdentityOf("black_sea"),
     icon: "Waves",
     stationCount: 15,
     coastalProvinceCount: 15,
@@ -50,8 +56,7 @@ export const BASIN_DATA: SeaBasinInfo[] = [
     id: "marmara",
     nameTr: "Marmara Denizi",
     nameEn: "Sea of Marmara",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    borderClass: "hover:border-amber-500/50",
+    identity: basinIdentityOf("marmara"),
     icon: "Anchor",
     stationCount: 6,
     coastalProvinceCount: 7,
@@ -72,8 +77,7 @@ export const BASIN_DATA: SeaBasinInfo[] = [
     id: "aegean",
     nameTr: "Ege Denizi",
     nameEn: "Aegean Sea",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    borderClass: "hover:border-teal-500/50",
+    identity: basinIdentityOf("aegean"),
     icon: "Sailboat",
     stationCount: 5,
     coastalProvinceCount: 5,
@@ -94,8 +98,7 @@ export const BASIN_DATA: SeaBasinInfo[] = [
     id: "mediterranean",
     nameTr: "Akdeniz Havzası",
     nameEn: "Mediterranean Sea",
-    badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
-    borderClass: "hover:border-rose-500/50",
+    identity: basinIdentityOf("mediterranean"),
     icon: "SunMedium",
     stationCount: 4,
     coastalProvinceCount: 4,
@@ -148,11 +151,11 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
         {BASIN_DATA.map((basin) => (
           <Card
             key={basin.id}
-            className={`border border-border bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-lg ${basin.borderClass} group flex flex-col justify-between`}
+            className={`border border-border bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-lg ${basin.identity.edgeHover} group flex flex-col justify-between`}
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <Badge variant="outline" className={basin.badgeClass}>
+                <Badge variant="outline" className={basin.identity.badge}>
                   {basin.stationCount} Canlı İstasyon • {basin.coastalProvinceCount} Kıyı İli
                 </Badge>
                 <span className="text-[11px] font-mono text-muted-foreground">{basin.areaKm2}</span>
@@ -166,7 +169,7 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
                   <Thermometer className="size-3 text-primary" /> Yaz: {basin.avgSummerTemp}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Droplets className="size-3 text-cyan-600" /> Tuzluluk: {basin.salinity}
+                  <Droplets className="size-3 text-muted-foreground" /> Tuzluluk: {basin.salinity}
                 </span>
               </CardDescription>
             </CardHeader>

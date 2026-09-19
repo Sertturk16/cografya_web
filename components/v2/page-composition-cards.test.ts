@@ -412,13 +412,39 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *   - a NOVEL SPELLING probe (a card class string occurring nowhere else) — RED on
  *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 232 to be 231` with `HAND_DRAWN_CARDS` RED
  *     at 189 alongside.
+ * T-031c TASK 6 — THE MARINE CLUSTER, +2 WELLS AND +1 SPELLING, AND THE CAUSE IS REAL.
+ *
+ * **166 → 168 wells, 231 → 232 spellings, 354 → 356 total**, cards unmoved at 188.
+ *
+ * `components/v2/v2-marine-map-explorer.tsx`'s telemetry grid drew three panels: the water
+ * temperature one on `bg-primary/10 border border-primary/20`, and one each for wave height and
+ * wind on the same shape in cyan and teal. The palette inventory rules those two `decoration`
+ * — the heading names the measure, and two panels differing only in hue is panel variety, not
+ * an encoding — so they de-tinted to `bg-muted/40 border border-border/60`.
+ *
+ * That is what moved this census: a panel drawn with a PALETTE border was never a hand-drawn
+ * well, and the same panel drawn with `border-border` is. So the two panels did not appear,
+ * they became VISIBLE to a predicate keyed on `border-border`. The count rising is the honest
+ * reading and re-recording it is the right response — the alternative was picking a border
+ * colour to keep a number still, which is the failure mode this file exists to catch.
+ *
+ * RE-CHECKED AT 188 / 168 / 232 / 356, Ruling AZ again — a control proved at 166 proves nothing
+ * at 168. Both probes on `app/[locale]/(site)/hakkimizda/page.tsx`, each reverted:
+ *
+ *   - the `bg-muted/30` well probe — RED on {@link HAND_DRAWN_WELLS} at `expected 169 to be
+ *     168` with {@link HAND_DRAWN_CARDS} unmoved at 188, so the split still splits.
+ *   - a two-element `rounded-2xl bg-card border border-border` card probe — RED on
+ *     {@link HAND_DRAWN_CARDS} at `expected 190 to be 188` and on
+ *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 233 to be 232` (the string occurs nowhere
+ *     else, so it is a novel spelling too), with {@link HAND_DRAWN_WELLS} unmoved at 168 —
+ *     the other half of the same property.
  */
 export const HAND_DRAWN_CARDS = 188;
 
-export const HAND_DRAWN_WELLS = 166;
+export const HAND_DRAWN_WELLS = 168;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 231;
+export const HAND_DRAWN_CARD_SPELLINGS = 232;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.

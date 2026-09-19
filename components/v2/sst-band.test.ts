@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 import { SST_BANDS } from "@/lib/theme/sst-band-palette.test";
 import {
   SST_BAND_STYLE,
@@ -85,5 +86,73 @@ describe("a reading falls in exactly one band", () => {
     expect(sstBandStyleOf(30)).toBe(SST_BAND_STYLE.hot);
     expect(sstBandStyleOf(26)).toBe(SST_BAND_STYLE.warm);
     expect(sstBandStyleOf(10)).toBe(SST_BAND_STYLE.cool);
+  });
+});
+
+/**
+ * The two call sites, pinned.
+ *
+ * This is the set whose whole defect was HAVING two call sites that classified independently.
+ * A pin that only checked "the module is imported" would be satisfied by an import beside a
+ * surviving hand-rolled ternary, so both assertions below are on the PRODUCER of the value,
+ * with comments stripped and exactly one producer required.
+ */
+describe("both SST surfaces read the one classifier", () => {
+  const source = stripComments(
+    readFileSync(
+      fileURLToPath(new URL("../../components/v2/v2-marine-map-explorer.tsx", import.meta.url)),
+      "utf8",
+    ),
+  );
+
+  it("the map station pin's fill comes from the module, exactly once", () => {
+    expect(source.split("sstBandStyleOf(sst).fillValue").length - 1).toBe(1);
+    // Anti-vacuity: the pin element really is still there to be coloured.
+    expect(source, "the station pins are gone").toContain("fill={pinFill}");
+    // Exactly one assignment to pinFill. The block this replaced made four, through a `let`
+    // and an if/else chain; a second assignment is how a band would grow a colour the ramp
+    // does not know about.
+    expect(source.match(/pinFill\s*=/g), "pinFill is assigned more than once").toHaveLength(1);
+  });
+
+  it("the temperature chip comes from the module, exactly once", () => {
+    expect(source.split("sstBandStyleOf(sst).chip").length - 1).toBe(1);
+    expect(source, "the temperature chip is gone").toContain("tempBadgeClass");
+    expect(
+      source.match(/tempBadgeClass\s*=/g),
+      "tempBadgeClass is assigned more than once",
+    ).toHaveLength(1);
+  });
+
+  it("the legend describes the ramp the map actually paints", () => {
+    // The legend is the reader's only key to the pin colours, so it reads the tokens and the
+    // thresholds rather than restating either. Both halves are asserted: a legend that kept
+    // its own numbers could label the right colours with the wrong bands.
+    for (const band of BANDS) {
+      expect(source, `the legend has no swatch for the ${band} band`).toContain(
+        `bg-[var(--sst-band-${band})]`,
+      );
+    }
+    expect(source, "the legend restates a threshold instead of reading it").toContain(
+      "SST_BAND_MIN_C.warm",
+    );
+    expect(source).toContain("SST_BAND_MIN_C.hot");
+  });
+
+  it("neither site classifies the reading for itself any more", () => {
+    // THE PROPERTY THIS SET EXISTS FOR. The thresholds lived twice in this file, ~450 lines
+    // apart, beside two disagreeing colour spellings. `bandOfSst` owns them now, so a literal
+    // 25 or 28 compared against an SST value here is a second classifier coming back —
+    // whatever colour it reaches for.
+    expect(source, "a threshold comparison is back in the component").not.toMatch(
+      /sst\s*(?:&&\s*sst\s*)?>=\s*(?:25|28)/,
+    );
+    // And the three superseded v3 hexes must not return as literals. They had THREE homes in
+    // this file, not two: the pins, and the legend strip that told the reader what the pins
+    // meant. `#0284c7` is deliberately not in this list — it is a `<stop>` in the decorative
+    // `marine-pulse` radial gradient, which encodes nothing and is not part of the ramp.
+    for (const stale of ["#2563eb", "#0d9488", "#ea580c"]) {
+      expect(source, `${stale} is back in the marine map`).not.toContain(stale);
+    }
   });
 });
