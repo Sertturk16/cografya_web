@@ -1,11 +1,16 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   collectArbitraryColorOccurrences,
+  collectInlineColorOccurrences,
   inlinesAColor,
   collectPaletteOccurrences,
   EXCLUDED,
   hexOf,
+  INLINE_EXEMPT,
+  isInlineExempt,
   RAW_PALETTE,
 } from "../../scripts/palette-inventory.mjs";
 
@@ -567,5 +572,140 @@ describe("the palette cannot be laundered into brackets", () => {
         `${entry.cls} (${entry.was}) is gone from ${entry.file} — delete this entry`,
       ).toBe(true);
     }
+  });
+});
+
+/**
+ * The THIRD arm, and the hole the first two leave.
+ *
+ * Arm one counts a class NOTATION. Arm two counts a literal inside a bracketed utility. A
+ * colour written where Tailwind never looks — an SVG presentation attribute, a `stopColor` or
+ * `floodColor` prop, a canvas `fillStyle`, a module constant, the arm of a ternary — is
+ * invisible to both, so a file can report 0 on both while still shipping a palette value.
+ *
+ * IT WAS NOT HYPOTHETICAL. The live population when this arm was written was **40**, and seven
+ * of them were Tailwind palette values: `v2-world-map-explorer`'s hover glow (amber-500),
+ * `v2-marine-map-explorer`'s two dead gradient stops (cyan-500, sky-600), its selected station
+ * pin (amber-500) and a label plate written as `rgba(15, 23, 42, 0.85)` (slate-900), and
+ * `v2-tool-workbench`'s drawn area polygon — `rgba(5, 150, 105, 0.25)` plus `#059669`,
+ * emerald-600 twice, **in a file the first arm had already reported as 0**. That is the branch
+ * shipping a zero that is not a zero, which is the exact defect it exists to remove, one
+ * notation further out.
+ *
+ * ## Why an exemption list and not a smaller scope
+ *
+ * 17 of the 40 are in contexts where a token CANNOT resolve, because no stylesheet is loaded:
+ * the root error boundary that replaces the document, the Satori-rendered OG card, the web app
+ * manifest, the `themeColor` meta pair, and the standalone favicon SVG builder. Each of those
+ * files says so in its own docblock; `INLINE_EXEMPT` transcribes the reason rather than
+ * deciding it, and carries the COUNT, so an exemption cannot quietly grow — the assertion below
+ * fires in both directions.
+ *
+ * Narrowing the collector's roots instead would have hidden them, and this branch's founding
+ * sentence is that a number living outside a guard is not a guard.
+ *
+ * ## The last step
+ *
+ * 23 -> 16 is T-031c Task 9 fix round 1: the seven launderings above, closed. Five of them move
+ * to a `var(--token, #hex)` fallback, which is a token reference rather than a value and joins
+ * the per-token census in `components/ui/token-binding.test.ts` — a census that is an exact map,
+ * so the move had to be re-recorded there rather than absorbed. Two of them are DELETED with the
+ * `marine-pulse` radial gradient that held them, which nothing in the tree references.
+ *
+ * A FALL here with a rise in either other arm would be the failure this trio exists to catch.
+ * Neither moved: the raw-palette budget is unchanged at 126 and the arbitrary budget at 72,
+ * because a `var()` fallback is stripped before both arms count and a deleted element is counted
+ * by none of them.
+ */
+const INLINE_COLOR_BUDGET = 23;
+
+describe("a colour cannot hide outside a class either", () => {
+  const found = collectInlineColorOccurrences();
+  const live = found.filter((o) => !isInlineExempt(o.file));
+
+  it("finds no more than the pinned number of inlined colour values", () => {
+    const byFile = new Map<string, number>();
+    for (const o of live) byFile.set(o.file, (byFile.get(o.file) ?? 0) + 1);
+    expect(
+      live.length,
+      `pinned ${INLINE_COLOR_BUDGET}, found ${live.length}. A colour written into an SVG ` +
+        `attribute, a prop, a canvas call or a module constant is still a colour, and neither ` +
+        `other arm can see it. By file: ${[...byFile.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .map(([f, n]) => `${f} (${n})`)
+          .join(", ")}`,
+    ).toBeLessThanOrEqual(INLINE_COLOR_BUDGET);
+  });
+
+  it("collects something at all, and the two halves add up — positive control", () => {
+    expect(collectInlineColorOccurrences(["components"]).length).toBeGreaterThan(0);
+    // Not a third number nobody reconciles: the exempt half plus the live half IS the whole.
+    expect(live.length + found.filter((o) => isInlineExempt(o.file)).length).toBe(found.length);
+  });
+
+  it("still has a reason for every exemption, and the reason is still the right size", () => {
+    // Both directions. A file that stops carrying its colours has a stale exemption; a file that
+    // grows new ones has an exemption covering something nobody read.
+    for (const entry of INLINE_EXEMPT) {
+      const n = found.filter((o) => o.file.endsWith(entry.file)).length;
+      expect(n, `${entry.file} is exempt for ${entry.count} (${entry.why}) but carries ${n}`).toBe(
+        entry.count,
+      );
+      expect(entry.why.length, `${entry.file} is exempt without a reason`).toBeGreaterThan(20);
+    }
+  });
+});
+
+/**
+ * What the third arm must and must not see. Every one of these is a shape the tree really
+ * contains, and two of them are bugs this arm had before it was pinned.
+ */
+describe("the third arm reads values, not prose and not token references", () => {
+  /** Run the arm over one synthetic file's worth of text, through the real collector path. */
+  const seenIn = (source: string) => {
+    const dir = mkdtempSync(join(tmpdir(), "t9-inline-"));
+    writeFileSync(join(dir, "probe.tsx"), source, "utf8");
+    try {
+      return collectInlineColorOccurrences([dir]).map((o) => o.cls);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("sees an SVG presentation attribute", () => {
+    expect(seenIn('const a = <circle fill="#059669" />;')).toEqual(["#059669"]);
+  });
+
+  it("sees a colour function, and a module constant", () => {
+    expect(seenIn('const a = "rgba(5, 150, 105, 0.25)";')).toEqual(["rgba("]);
+    expect(seenIn('const PIN = "#f59e0b";')).toEqual(["#f59e0b"]);
+  });
+
+  it("does NOT see a fragment id — the greedy-hex trap this arm was born with", () => {
+    // `#[0-9a-fA-F]{3,8}` matches `#afe` inside `#afet`. Inside brackets it never bit, because
+    // a bracketed value ends at `]`; outside them the tree is full of fragment links.
+    expect(seenIn('const a = <a href="#afet">x</a>;')).toEqual([]);
+  });
+
+  it("does NOT see prose — comments are stripped", () => {
+    expect(seenIn("/* the old value was #ea580c, orange-600 */\nconst a = 1;")).toEqual([]);
+    expect(seenIn("// a raw #059669 used to live here\nconst a = 1;")).toEqual([]);
+  });
+
+  it("does NOT see a var() fallback — that is a token reference, pinned elsewhere", () => {
+    expect(seenIn('const a = "var(--map-sea, #dbe7e8)";')).toEqual([]);
+  });
+
+  it("does NOT double-count what the arbitrary arm already counts", () => {
+    // The two arms partition the population; they do not overlap it.
+    expect(seenIn('const a = <div className="bg-[#ea580c]" />;')).toEqual([]);
+    expect(inlinesAColor("bg-[#ea580c]")).toBe(true);
+  });
+
+  it("still sees a colour sitting BESIDE a token reference on one line", () => {
+    // The shape that defeated the second arm's first two versions, one notation out.
+    expect(seenIn('const a = <rect fill="var(--map-sea)" stroke="#059669" />;')).toEqual([
+      "#059669",
+    ]);
   });
 });

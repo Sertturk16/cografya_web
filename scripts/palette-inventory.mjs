@@ -18,6 +18,7 @@
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { stripComments } from "../lib/test-support/strip-comments.ts";
 
 const FAMILIES =
   "slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose";
@@ -79,7 +80,18 @@ export const RAW_PALETTE = new RegExp(
  * backdrops and which belong to the `--map-*` / `--province-*` sets T-031d owns. A single number
  * mixing them with laundered palette values would be a number nobody could act on.
  */
-const COLOR_PAYLOAD = "#[0-9a-fA-F]{3,8}|\\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\\(";
+/**
+ * A colour written as a VALUE: a hex, or the opening of a colour function.
+ *
+ * THE HEX CARRIES A TRAILING GUARD, and it was the inline arm that needed it. `{3,8}` is
+ * greedy but it still matches a PREFIX of a longer word: `href="#afet"` yields `#afe`, a
+ * perfectly well-formed three-digit hex that is not a colour at all. Inside brackets that
+ * never bit, because a bracketed value ends at `]`; outside them the tree is full of fragment
+ * ids. `(?![0-9a-zA-Z_])` rejects it and touches nothing else — every real spelling ends at a
+ * quote, a bracket, a comma, a semicolon or a space.
+ */
+const COLOR_PAYLOAD =
+  "#[0-9a-fA-F]{3,8}(?![0-9a-zA-Z_])|\\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\\(";
 
 /** Any bracketed utility value, colour or not. The payload test happens after `stripVars`. */
 export const BRACKETED = /(?:\b[a-z][a-z0-9-]*-)?\[[^\]]*\]/g;
@@ -178,6 +190,115 @@ export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) 
  */
 export function collectArbitraryColorOccurrences(roots = ["components", "app", "lib"]) {
   return collect(BRACKETED, roots).filter((o) => inlinesAColor(o.cls));
+}
+
+/**
+ * THE THIRD ARM: a colour value inlined OUTSIDE any bracketed utility.
+ *
+ * ## The hole the first two arms leave, measured
+ *
+ * Arm one matches a class NOTATION (`bg-emerald-600`). Arm two matches a literal inside a
+ * bracketed utility (`bg-[#059669]`). Neither can see a colour written where Tailwind never
+ * looks — an SVG presentation attribute, a `stopColor`/`floodColor` prop, a canvas
+ * `fillStyle`, a module constant, the arm of a ternary. That is not hypothetical: when this
+ * arm was written the live population was **40**, and **seven** of those were Tailwind palette
+ * values spelled as literals —
+ *
+ *   - `v2-world-map-explorer` `floodColor` amber-500, the glow around the hovered country
+ *   - `v2-marine-map-explorer` two dead gradient stops (cyan-500, sky-600), the selected
+ *     station pin (amber-500), and a label plate as `rgba(15, 23, 42, 0.85)`, i.e. slate-900
+ *   - `v2-tool-workbench` the drawn area polygon, `rgba(5, 150, 105, 0.25)` + `#059669`,
+ *     i.e. emerald-600 twice — **in a file the raw-palette arm had already reported as 0**
+ *
+ * That last one is the whole argument for this arm existing: the branch was shipping a zero
+ * that was not a zero, in the same shape it had already closed twice for classes and once for
+ * brackets.
+ *
+ * ## What it does not count, and why each exclusion is principled
+ *
+ * COMMENTS ARE STRIPPED, through `lib/test-support/strip-comments.ts` — the one scanner this
+ * repo has for the job. A docblock quoting `#ea580c` while explaining why it was removed is
+ * prose, and pinning prose forces a historical note to be rewritten every time a value moves.
+ *
+ * WHAT ARM TWO ALREADY COUNTS IS MASKED OUT, so the two numbers partition the population
+ * rather than overlapping it. A bracketed utility that `inlinesAColor` calls a colour is
+ * blanked before this arm reads the line; one that it does not — `bg-[var(--map-sea,#dbe7e8)]`
+ * — is left in place, and then `stripVars` removes the token reference and its own fallback.
+ * Both arms therefore share `COLOR_PAYLOAD`, `BRACKETED`, `stripVars` and `sourceFiles`: one
+ * reader for the notation, one reader for the scope.
+ *
+ * `var(--token, #hex)` IS NOT COUNTED, for the reason arm two already gives: the hex is that
+ * token's own fallback, inside the `var()`, so the value is a token reference. Its exposure is
+ * DRIFT, and drift is pinned in `components/ui/token-binding.test.ts`, in both directions and
+ * per token — which is also why closing a laundering by moving it to a `var()` fallback is not
+ * laundering in the other direction: the fallback joins a census that has to be re-recorded.
+ *
+ * ## NO `line` FIELD, AND THAT IS DELIBERATE
+ *
+ * `stripComments` collapses each comment to a single space, so a block comment of ten lines
+ * becomes one. A line number taken after stripping names a line the file does not have, and a
+ * failure message pointing at the wrong line is worse than one pointing at none. Both budget
+ * assertions and every exemption in `INLINE_EXEMPT` are per FILE, which is the granularity
+ * this arm needs; `grep` finds the value inside the file it names.
+ *
+ * @returns {{ file: string, cls: string }[]}
+ */
+export function collectInlineColorOccurrences(roots = ["components", "app", "lib"]) {
+  const payload = new RegExp(COLOR_PAYLOAD, "g");
+  return sourceFiles(roots).flatMap((file) => {
+    const code = stripComments(readFileSync(file, "utf8"));
+    // LINE BY LINE, like the other two arms, and for a reason this arm found the hard way.
+    // `BRACKETED` and `stripVars` both allow their contents to run to a closing delimiter, and
+    // over a whole file that delimiter can be pages away: `app/[locale]/layout.tsx` writes its
+    // `themeColor` as a multi-line array, so a whole-file pass masked the array as one
+    // "bracketed colour utility" and lost both of its hexes. A real bracketed utility is a
+    // class string and never spans a line.
+    return code.split("\n").flatMap((text) => {
+      const outsideBrackets = text.replace(BRACKETED, (m) => (inlinesAColor(m) ? " " : m));
+      return [...stripVars(outsideBrackets).matchAll(payload)].map((m) => ({ file, cls: m[0] }));
+    });
+  });
+}
+
+/**
+ * Files whose colours CANNOT be a token, because nothing that resolves one is loaded.
+ *
+ * Every entry is a context with no stylesheet at all, and each file says so in its own
+ * docblock — this list transcribes that, it does not decide it. The count is part of the
+ * entry so an exemption cannot quietly grow: `raw-palette-count.test.ts` asserts each file
+ * still carries exactly this many, in both directions.
+ */
+export const INLINE_EXEMPT = [
+  {
+    file: "app/global-error.tsx",
+    count: 6,
+    why: "the root boundary replaces the whole document when the root layout itself throws; its own docblock records that neither globals.css nor the next-intl context is guaranteed to be present",
+  },
+  {
+    file: "app/[locale]/opengraph-image.tsx",
+    count: 5,
+    why: "Satori rasterises this to PNG outside a browser and resolves no custom properties",
+  },
+  {
+    file: "app/manifest.ts",
+    count: 2,
+    why: "the web app manifest is JSON read by the OS shell, not CSS",
+  },
+  {
+    file: "app/[locale]/layout.tsx",
+    count: 2,
+    why: "`themeColor` becomes a <meta> tag the browser chrome reads before any stylesheet applies; the file's own comment says the metadata layer cannot read CSS variables",
+  },
+  {
+    file: "lib/brand/glyph.ts",
+    count: 2,
+    why: "builds a standalone SVG string for the favicon and apple-icon, served without the stylesheet",
+  },
+];
+
+/** Is this file one of the no-stylesheet contexts? */
+export function isInlineExempt(file) {
+  return INLINE_EXEMPT.some((e) => file.endsWith(e.file));
 }
 
 /**
