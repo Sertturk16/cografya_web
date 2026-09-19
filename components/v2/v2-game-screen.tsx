@@ -1041,7 +1041,7 @@ export function V2GameScreen({
           {/* 3. SVG INTERACTIVE MAP VIEWPORT */}
           <div
             ref={mapViewportRef}
-            className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[#dbe8ee] dark:bg-[#15232d] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
+            className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
           >
             {/* Zoom / Pan Floating Toolbar */}
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-md">
@@ -1095,24 +1095,23 @@ export function V2GameScreen({
               onPointerCancel={handleTouchPointerUp}
               aria-label="Türkiye İnteraktif Oyun Haritası"
             >
-              {/* Background Neighbor Countries (Rendered when full country is shown) */}
+              {/* Background Neighbor Countries. `--map-context-land`, NOT `--map-land`: the
+                  country fill on this board is `fill-card`, and `--map-land` against `--card`
+                  measures 1.00:1 light / 1.01:1 dark -- Türkiye and its neighbours were ONE
+                  tone here while the other five Türkiye maps kept the warm/white split this
+                  token exists for. Bound to it, the step is 1.18:1 light / 1.17:1 dark, and
+                  the line moves with the fill: `--map-context-line` is the hairline measured
+                  against that neighbour land (3.28:1 light / 3.18:1 dark) and against the
+                  `--map-plate` it also borders (3.05:1 / 3.54:1), where `--province-stroke`
+                  is the token for Türkiye's OWN coast. */}
               {!region &&
                 CONTEXT_SHAPES.map((country) => (
                   <path
                     key={country.iso}
                     d={country.d}
-                    className="fill-[#e8edea] dark:fill-[#202b33] stroke-[#c0cec5] dark:stroke-[#2e3c46] stroke-[0.8]"
+                    className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
                   />
                 ))}
-
-              {/* Inland Lakes & Water Bodies */}
-              {INLAND_WATER_SHAPES.map((water) => (
-                <path
-                  key={water.id}
-                  d={water.d}
-                  className="fill-[#a9ccdf] dark:fill-[#122b3d] stroke-[#8bb7cf] dark:stroke-[#0e2230] stroke-[0.5]"
-                />
-              ))}
 
               {/* Turkey Context Casing Outline */}
               {!region && trCasing && (
@@ -1140,7 +1139,7 @@ export function V2GameScreen({
                   // them again. It used to keep its own table of raw Tailwind hues and paint
                   // Marmara amber against those pages' blue.
                   const regionFill = prov.target?.region
-                    ? regionIdentityOf(prov.target.region).fillSoft
+                    ? regionIdentityOf(prov.target.region).fill
                     : null;
                   if (isCorrectRegion) {
                     fillClass = CORRECT_FILL;
@@ -1187,6 +1186,28 @@ export function V2GameScreen({
                   </path>
                 );
               })}
+
+              {/* Inland Lakes & Water Bodies. Painted AFTER the province layer above (not
+                  before, as it was originally) because SVG paints in document order and the
+                  province layer's fill is opaque or near-opaque in every state (fill-card,
+                  the region fills, the correct/reveal/wrong fills): with the lakes underneath,
+                  that fill covered them almost entirely in both themes, independent of colour
+                  -- the same inversion `v2-earthquake-explorer.tsx` carried until Task 7.
+
+                  `pointer-events-none` IS LOAD-BEARING, not tidiness. SVG hit-testing takes the
+                  LAST-PAINTED element under the pointer, and the province layer above is the one
+                  that carries `onClick`/`onKeyDown` (per PATH, not on the <svg>). Without this
+                  attribute a tap on Van, Tuz, Beysehir or Egirdir landed on a lake path with no
+                  handler and the answer was silently lost, in both rounds and on both input
+                  types. `components/v2/inland-water-hit-testing.test.ts` holds the attribute on
+                  every render site in the tree. */}
+              {INLAND_WATER_SHAPES.map((water) => (
+                <path
+                  key={water.id}
+                  d={water.d}
+                  className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
+                />
+              ))}
             </svg>
             <MapAttribution inlandWater context />
 

@@ -341,7 +341,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           setHoveredSlug(null);
           setMousePos(null);
         }}
-        className="relative rounded-2xl bg-[var(--map-sea)] dark:bg-[#152228] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
+        className="relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
       >
         {/* Floating Top-Left Mode Indicator */}
         <div className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none">
@@ -363,7 +363,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           <defs></defs>
 
           {/* 1. Surrounding Foreign Countries */}
-          <g className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none">
+          <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
             {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
               <path key={country.iso} d={country.d} />
             ))}
@@ -371,41 +371,41 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
           {/* 2. Türkiye Casing Base Land */}
           {trCasing && (
-            <path d={trCasing.d} className="fill-card dark:fill-[#201c18] pointer-events-none" />
+            <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
           )}
 
           {/* 3. Türkiye 81 Provinces */}
-          <g className="stroke-border/70 stroke-[0.6] fill-card dark:fill-[#201c18] transition-colors pointer-events-none">
+          <g className="stroke-border/70 stroke-[0.6] fill-[var(--map-land)] transition-colors pointer-events-none">
             {PROVINCE_SHAPES.map((shape) => (
               <path key={shape.plateCode} d={shape.d} />
             ))}
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}
           </g>
 
-          {/* 5. Sea Water Typography */}
-          <g className="fill-accent dark:fill-[#6ec7d1] font-heading font-bold tracking-wider pointer-events-none select-none">
+          {/* 5. Sea Water Typography. FULL STRENGTH, no `opacity-*`: an opacity utility is
+              part of the rendered colour and has to be measured with `blendOver`. The
+              `opacity-80` these labels shipped with put `fill-accent` at 3.35:1 light /
+              3.85:1 dark on `--map-sea`, under TEXT_MIN, while the commit justified it with
+              the UNBLENDED 4.85/5.19. At full strength those 4.85/5.19 are what renders. */}
+          <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
             {SEA_LABELS.map((sea, i) => (
-              <text
-                key={i}
-                x={sea.x}
-                y={sea.y}
-                textAnchor="middle"
-                fontSize={sea.fontSize}
-                className="opacity-80"
-              >
+              <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
                 {sea.name}
               </text>
             ))}
           </g>
 
-          {/* 6. Neighbor Country Name Labels */}
-          <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[12px] pointer-events-none select-none">
+          {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea labels
+              above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1 dark on
+              `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the token records
+              in `app/globals.css`. */}
+          <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
             {CONTEXT_SHAPES.filter(
               (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
             ).map((country) => {
@@ -417,7 +417,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   y={country.labelPoint.y}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  className="tracking-tight opacity-80 select-none"
+                  className="tracking-tight select-none"
                 >
                   {name}
                 </text>

@@ -147,17 +147,16 @@ export function inlinesAColor(cls) {
  * graticule stroke in the same commit. The budget only ever tripped on growth, which is the
  * least likely way this number moves now that the application work is done.
  *
- * A named row with an exact count fails in both directions and names the file. T-031d ends
- * the arm by DELETING this entry rather than editing a digit, and the arm's end state is a
- * literal, checkable zero rather than a number somebody has to believe.
+ * A named row with an exact count fails in both directions and names the file, which is why
+ * this arm ended by DELETING its one entry rather than editing a digit. The arm is closed:
+ * the empty array below is the assertion, not a placeholder waiting for a row.
+ *
+ * Task 10 deleted the one row this table ever held: `components/v2/v2-world-map-explorer.tsx`
+ * bound its graticule, its neighbour-land tones and its hover/selected highlight to
+ * `--map-graticule`, `--map-unknown-land` and `--map-context-line`, so nothing in the tree
+ * carries a raw palette class any more. `RAW_EXEMPT` is `[]`.
  */
-export const RAW_EXEMPT = [
-  {
-    file: "components/v2/v2-world-map-explorer.tsx",
-    count: 15,
-    why: "the dark map surface T-031d owns: the graticule, the sphere shadow and the neighbour-land tones, all measured against the `--map-*` set that task introduces rather than against any page background",
-  },
-];
+export const RAW_EXEMPT = [];
 
 /** Is this file one of the named raw-palette deferrals? An exact compare, like `isInlineExempt`. */
 export function isRawExempt(file) {
@@ -174,57 +173,14 @@ export function isRawExempt(file) {
  * components and two locator mini-maps. Pinning them per file makes a new `bg-[#ea580c]` in
  * a component fail BY NAME instead of being absorbed by a 72-wide allowance.
  *
- * `v2-header.tsx` is in the table and is NOT a map surface, which is the point of naming
- * rather than counting: it is one literal, `dark:text-[#e2896a]`, on the wordmark, and it is
- * recorded as a finding rather than folded in with the maps.
+ * `v2-header.tsx` held the table's one non-map row: `dark:text-[#e2896a]` on the wordmark,
+ * recorded as a finding rather than folded in with the maps. T-031d Task 11 closed it —
+ * `--primary-strong` is already declared in `.dark` and measures 8.99:1 on `--background`
+ * against the literal's 7.12:1, so the wordmark now binds to a token instead of a hex, and the
+ * table's last row is deleted rather than edited. `ARBITRARY_PINNED` is `[]`: the arm is
+ * closed, and the empty array is the assertion, not a placeholder waiting for a row.
  */
-export const ARBITRARY_PINNED = [
-  {
-    file: "components/v2/v2-earthquake-explorer.tsx",
-    count: 12,
-    why: "the fault-map surfaces: sea plate, land and its hairline in both themes, neighbour land, and the two tectonic-context tones",
-  },
-  {
-    file: "components/v2/v2-marine-map-explorer.tsx",
-    count: 11,
-    why: "the basin-map surfaces: sea plate, land and hairline in both themes, two inland-water tones, the sea fill and the two neighbour-land tones",
-  },
-  {
-    file: "components/v2/v2-game-screen.tsx",
-    count: 10,
-    why: "the play-screen map surfaces: the board plate in both themes, land and hairline, and the sea pair",
-  },
-  {
-    file: "components/v2/v2-tool-workbench.tsx",
-    count: 10,
-    why: "the workbench canvas plate in both themes, plus the same land/hairline/sea set the play screen draws",
-  },
-  {
-    file: "components/v2/v2-turkey-map-explorer.tsx",
-    count: 10,
-    why: "the Türkiye map surfaces: plate, land and hairline, inland water, the highlighted province tone and the two neighbour-land tones",
-  },
-  {
-    file: "components/v2/v2-province-locator-map.tsx",
-    count: 8,
-    why: "the province locator mini-map: plate, land and hairline, two inland-water tones and the sea",
-  },
-  {
-    file: "components/v2/v2-region-locator-map.tsx",
-    count: 8,
-    why: "the region locator mini-map, the same surface set as the province one",
-  },
-  {
-    file: "components/v2/v2-world-map-explorer.tsx",
-    count: 2,
-    why: "the world map's two-stop dark ocean plate, deferred to T-031d with that file's raw-palette rows",
-  },
-  {
-    file: "components/v2/v2-header.tsx",
-    count: 1,
-    why: "NOT A MAP SURFACE and recorded as such: `dark:text-[#e2896a]` lightens the wordmark over the dark `--primary`, which resolves to oklch(0.65 0.13 40.65). Rebinding it changes a painted brand mark in one theme and needs its own measurement, so it is named here rather than absorbed",
-  },
-];
+export const ARBITRARY_PINNED = [];
 
 const isSource = (name) => name.endsWith(".tsx") || name.endsWith(".ts");
 const isTest = (name) => name.includes(".test.");
@@ -414,11 +370,6 @@ export const INLINE_PINNED = [
     file: "components/v2/v2-marine-map-explorer.tsx",
     count: 4,
     why: "the station pins drawn on the basin map: the white pin stroke, the white core, the white label mark and the 30% white halo around the selected one, all measured against the sea plate they sit on rather than against `--background`",
-  },
-  {
-    file: "components/v2/v2-world-map-explorer.tsx",
-    count: 3,
-    why: "the three stops of the dark ocean gradient, deferred to T-031d with that file's raw-palette and bracketed rows",
   },
   {
     file: "components/v2/v2-tool-workbench.tsx",

@@ -582,6 +582,6 @@ describe("the /turkiye map and the game map wear the same colour as the pages th
       game.includes("REGION_COLOR_CLASSES"),
       "the game screen has grown its own region colour table again",
     ).toBe(false);
-    expect(game).toContain("regionIdentityOf(prov.target.region).fillSoft");
+    expect(game).toContain("regionIdentityOf(prov.target.region).fill");
   });
 });

@@ -78,13 +78,25 @@ describe("V2 Map Pan & Hover Contracts", () => {
     });
 
     it("clears hoveredIso on the background ocean layer", () => {
-      expect(worldFile).toContain('fill="url(#ocean-gradient)"');
+      // T-031d Task 10 flattened the ocean: no gradient, no `fill` presentation attribute — a
+      // `className="fill-[var(--map-ocean)]"` instead, since a presentation attribute beats a
+      // class and would have silently kept painting the deleted gradient's reference.
+      expect(worldFile).not.toContain("ocean-gradient");
+      expect(worldFile).toContain('className="fill-[var(--map-ocean)]"');
       expect(worldFile).toContain("onMouseEnter={() => setHoveredIso(null)}");
     });
 
     it("renders unselected continent countries with visible muted land and subtle borders", () => {
-      expect(worldFile).toContain("fill-slate-600/65");
-      expect(worldFile).toContain("stroke-slate-400/45");
+      // T-031d Task 10 bound these to --map-unknown-land / --map-context-line: the raw
+      // slate-600/65 measured 1.67:1 on the flat ocean, invisible on exactly the shapes a
+      // reader is hunting for.
+      expect(worldFile).toContain("fill-[var(--map-unknown-land)]");
+      // `--map-ocean`, NOT `--map-context-line`, and the swap is the point of the pin rather
+      // than an incidental rename: `--map-context-line` is measured against
+      // `--map-context-land` and reads 1.23:1 light / 1.04:1 dark on the `--map-unknown-land`
+      // it was outlining here — worse than the slate-400/45 line it replaced. The ocean tone
+      // clears 3.66:1 / 4.07:1 on that fill; `lib/theme/map-surface.test.ts` holds the figure.
+      expect(worldFile).toContain("stroke-[var(--map-ocean)]");
       expect(worldFile).not.toContain("fill-slate-700/20 stroke-slate-600/10 opacity-30");
     });
   });

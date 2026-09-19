@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { resolveVars, tokensIn } from "@/lib/test-support/css-tokens";
-import { GRAPHICAL_MIN, ratio, relativeLuminance, TEXT_MIN } from "./contrast";
+import { blendOver, GRAPHICAL_MIN, ratio, relativeLuminance, TEXT_MIN } from "./contrast";
 import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
 
 /**
@@ -343,6 +343,83 @@ describe("the world map's flat ocean", () => {
       expect(ratio(table["--map-unknown-land"], table["--map-ocean"])).toBeGreaterThanOrEqual(
         GRAPHICAL_MIN,
       );
+    },
+  );
+
+  /**
+   * THE BORDER BETWEEN TWO ADJACENT UN-CONTINENT COUNTRIES, which the case above does not
+   * reach: it measures the unknown-land FILL against the ocean and says nothing about the
+   * hairline drawn ON that fill. `v2-world-map-explorer.tsx` first drew it in
+   * `--map-context-line` — a token measured only against `--map-context-land` — where it reads
+   * 1.23:1 light / 1.04:1 dark, worse than the `stroke-slate-400/45` it replaced (1.97 / 2.04)
+   * even as the fill improved from 1.67 to 3.66. The pairing is asserted here rather than left
+   * to a comment, because an unmeasured pairing is exactly how that one shipped.
+   *
+   * The SEAWARD edge is ocean line on ocean, 1:1 by construction and not a defect: that
+   * boundary is carried by the fill's own silhouette, which the case above already holds at
+   * 3:1.
+   */
+  it.each(THEMES)(
+    "outlines un-continent land at 3:1 against the fill it borders in %s",
+    (_t, _s, table) => {
+      expect(
+        ratio(table["--map-ocean"], table["--map-unknown-land"]),
+        "the internal border between two un-continent countries",
+      ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+    },
+  );
+
+  /**
+   * The hover/selected highlight. `--map-graticule` (above) clears `GRAPHICAL_MIN` too but sits
+   * INSIDE the continent fills' own contrast range against `--map-ocean`, near the BOTTOM of it
+   * (4.03/4.49 against a 3.35-13.15 / 3.74-14.65 range) — only Avrupa is dimmer — which is why a
+   * hovered country read as a de-emphasised member of the palette rather than one that outshouts
+   * it (T-031d Task 10 fix round 1). `--map-hover` moves that to near the TOP of the range, but
+   * not cleanly past every member of it, and this test says exactly where the honest line is
+   * rather than a blanket "outshouts everything":
+   *
+   *   - at FULL strength (the value itself), it clears every continent but Antarktika's
+   *     outlier: 8.38 light / 9.33 dark against a worst-ordinary-continent (Asya) of
+   *     7.72 / 8.60.
+   *   - at the `/90` alpha the fill actually renders at (`blendOver`, not a bare `ratio`), it
+   *     drops to 7.00 light / 7.71 dark — ABOVE four of the six ORDINARY continents (Avrupa,
+   *     Afrika, Güney Amerika, Okyanusya) but slightly BELOW Asya's and Kuzey Amerika's own
+   *     full-strength values (7.72/7.54 light, 8.60/8.39 dark). That gap is real and this
+   *     suite does not paper over it with a false
+   *     assertion; the picked-out read a hovered country gets is carried partly by this margin
+   *     and partly by hue (a warm salmon against every continent's Okabe-Ito hue), which no
+   *     luminance ratio measures. Confirmed on screen at all three latitudes, both themes, in
+   *     the Task 10 fix-round-2 report.
+   *
+   * ONE token, not a light/dark pair: /dunya is dark in both themes, so the highlight has only
+   * ever one ground, and a theme-aware "state" token (`--primary-strong`, tried in fix round 1)
+   * splits exactly because its light value is calibrated as text on a LIGHT surface, not for a
+   * permanently dark one.
+   */
+  it.each(THEMES)(
+    "the hover highlight clears 3:1, and full strength outshouts every ordinary continent, in %s",
+    (theme, _s, table) => {
+      const ocean = table["--map-ocean"];
+      const full = ratio(table["--map-hover"], ocean);
+      const rendered = ratio(blendOver(table["--map-hover"], 0.9, ocean), ocean);
+      expect(full, `${theme} full-strength`).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+      expect(rendered, `${theme} at the shipped /90`).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+
+      const ordinary = Object.entries(CONTINENTS).filter(([name]) => name !== "antarktika");
+      const worstOrdinary = Math.max(...ordinary.map(([, fill]) => ratio(fill, ocean)));
+      // TRUE at full strength...
+      expect(full, `${theme} full vs the brightest ordinary continent`).toBeGreaterThan(
+        worstOrdinary,
+      );
+      // ...but NOT at the rendered /90 — asserted explicitly rather than left unstated, so a
+      // future change that quietly makes this pass does not read as a coincidence nobody checked.
+      expect(rendered, `${theme} rendered /90 vs the brightest ordinary continent`).toBeLessThan(
+        worstOrdinary,
+      );
+      // Still clears every ORDINARY continent except the top two (Asya, Kuzey Amerika) at the
+      // rendered alpha — four of six, not zero of six.
+      const clearedAtRendered = ordinary.filter(([, fill]) => rendered > ratio(fill, ocean));
+      expect(clearedAtRendered.length, `${theme} continents cleared at /90`).toBe(4);
     },
   );
 });

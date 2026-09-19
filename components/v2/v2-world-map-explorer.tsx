@@ -525,7 +525,7 @@ export function V2WorldMapExplorer({
               setHoveredIso(null);
             }
           }}
-          className={`relative rounded-2xl bg-[#0d1b2a] dark:bg-[#070e17] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none ${
+          className={`relative rounded-2xl bg-[var(--map-ocean)] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none ${
             zoom > 1
               ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
               : "cursor-crosshair"
@@ -651,29 +651,32 @@ export function V2WorldMapExplorer({
                     floodOpacity="0.8"
                   />
                 </filter>
-                <linearGradient id="ocean-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#0b192c" />
-                  <stop offset="50%" stopColor="#1e3e62" />
-                  <stop offset="100%" stopColor="#000000" />
-                </linearGradient>
               </defs>
 
               {/* Background Ocean Layer */}
               <rect
                 width="1008"
                 height="520"
-                fill="url(#ocean-gradient)"
+                className="fill-[var(--map-ocean)]"
                 onMouseEnter={() => setHoveredIso(null)}
               />
 
-              {/* Graticules / Latitude-Longitude Grid */}
-              <g className="stroke-sky-500/15 stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
+              {/* Graticules / Latitude-Longitude Grid. FULL STRENGTH, no `/60`: an opacity
+                  utility is part of the rendered colour, so the `/60` this group carried put
+                  the two tropics at 2.26:1 light / 2.34:1 dark on `--map-ocean` -- under
+                  GRAPHICAL_MIN, and under the 4.03/4.49 that `app/globals.css` and
+                  `lib/theme/map-surface.test.ts` both record for `--map-graticule`, which
+                  only the equator and the prime meridian below actually reached. One value,
+                  one measurement, every line: 4.03 light / 4.49 dark. The major/minor
+                  hierarchy is carried by STROKE WIDTH (0.8 against 0.5), which costs no
+                  contrast. */}
+              <g className="stroke-[var(--map-graticule)] stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
                 <line
                   x1="0"
                   y1="260"
                   x2="1008"
                   y2="260"
-                  className="stroke-sky-400/40 stroke-[0.8]"
+                  className="stroke-[var(--map-graticule)] stroke-[0.8]"
                 />
                 <line x1="0" y1="195" x2="1008" y2="195" />
                 <line x1="0" y1="325" x2="1008" y2="325" />
@@ -682,12 +685,12 @@ export function V2WorldMapExplorer({
                   y1="0"
                   x2="504"
                   y2="520"
-                  className="stroke-sky-400/30 stroke-[0.8]"
+                  className="stroke-[var(--map-graticule)] stroke-[0.8]"
                 />
               </g>
 
               {/* Graticule Text Labels */}
-              <g className="fill-sky-400/50 text-[7.5px] font-mono select-none pointer-events-none">
+              <g className="fill-[var(--map-graticule)] text-[7.5px] font-mono select-none pointer-events-none">
                 <text x="8" y="257">
                   EKVATOR (0°)
                 </text>
@@ -712,22 +715,59 @@ export function V2WorldMapExplorer({
                   const isMatchingContinent =
                     selectedContinent === "ALL" || item?.continent === selectedContinent;
 
+                  // `--map-ocean`, NOT `--map-context-line`, and this is measured rather
+                  // than matched to the Türkiye maps by name. `--map-context-line` is tuned
+                  // against `--map-context-land` (3.18/3.54) and was never measured against
+                  // THIS fill: on `--map-unknown-land` it reads 1.23:1 light / 1.04:1 dark,
+                  // so the border between two adjacent un-continent countries was WORSE than
+                  // the slate-400/45 line it replaced (1.97 light / 2.04 dark) even as
+                  // the fill improved 1.67 -> 3.66. The ocean tone clears 3.66:1 light /
+                  // 4.07:1 dark on that fill and is the only existing token that clears the
+                  // floor without flipping polarity between themes -- /dunya is dark in BOTH,
+                  // so a stroke that is white in light and near-black in dark (`--map-land`,
+                  // `--card`, `--background`) is wrong here for the same reason `--map-hover`
+                  // is one literal in both blocks. The outer edge, ocean line on ocean, is
+                  // 1:1 by construction and costs nothing: the land/sea boundary is carried
+                  // by the FILL's own 3.66/4.07 silhouette, which is what WCAG 1.4.11 asks
+                  // of. `lib/theme/map-surface.test.ts` holds the pairing.
                   let fillClass =
-                    "fill-slate-600/65 dark:fill-slate-700/70 stroke-slate-400/45 dark:stroke-slate-500/40 stroke-[0.5]";
+                    "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5]";
 
                   if (item && continentMeta) {
                     if (selectedContinent === "ALL") {
-                      fillClass = `${continentMeta.identity.fillSoft} ${continentMeta.identity.stroke} stroke-[0.4]`;
+                      fillClass = `${continentMeta.identity.fill} ${continentMeta.identity.stroke} stroke-[0.4]`;
                     } else if (isMatchingContinent) {
-                      fillClass = `${continentMeta.identity.fillSoft} stroke-white/80 stroke-[0.8] shadow-lg`;
+                      fillClass = `${continentMeta.identity.fill} stroke-white/80 stroke-[0.8] shadow-lg`;
                     } else {
+                      // The `hover:fill-[var(--map-unknown-land)]/80` that used to sit here
+                      // is GONE, and it was dead before it was wrong: `isHovered` is React
+                      // state set by this path's own `onMouseEnter`, and the branch below
+                      // replaces `fillClass` outright with the `--map-hover` highlight, so
+                      // the CSS hover never rendered. Measured anyway, because a dead class
+                      // is still a recorded intent: /80 over `--map-ocean` is 2.80:1 light /
+                      // 3.02:1 dark, i.e. the hover would have DROPPED the country under the
+                      // 3:1 floor its resting fill clears at 3.66/4.07.
                       fillClass =
-                        "fill-slate-600/65 dark:fill-slate-700/70 hover:fill-slate-500/75 stroke-slate-400/45 dark:stroke-slate-500/40 stroke-[0.5] transition-colors";
+                        "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5] transition-colors";
                     }
                   }
 
                   if (isHovered || isSelected) {
-                    fillClass = "stroke-yellow-400 stroke-[1.8] fill-yellow-500/90 opacity-100";
+                    // ONE token, not a light/dark pair: /dunya is dark in both themes, so the
+                    // highlight has only ever one ground (--map-ocean) to be measured against.
+                    // Fix round 1 tried a theme-aware split (--map-graticule light /
+                    // --primary-strong dark) because --primary-strong's dark value cleared
+                    // 9.33:1 against the dark ocean; but its LIGHT value is #7e3a1e, ink
+                    // calibrated for a light surface, which measured only 2.08:1 against the
+                    // light ocean -- worse than --map-graticule's 4.03:1, not better. --map-hover
+                    // pins that same dark-mode value (#f49f80) as a literal in BOTH `:root` and
+                    // `.dark`, which is what makes it work in light too: 8.38:1 light / 9.33:1
+                    // dark full strength, 7.00:1 / 7.71:1 at the /90 this fill renders at --
+                    // above every continent's own contrast against --map-ocean except
+                    // Antarktika's outlier (see app/globals.css and map-surface.test.ts for the
+                    // full measurement, including where it does NOT clear the top two).
+                    fillClass =
+                      "stroke-[var(--map-hover)] stroke-[1.8] fill-[var(--map-hover)]/90 opacity-100";
                   }
 
                   const cItem = countryMap.get(shape.iso);

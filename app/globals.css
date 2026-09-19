@@ -355,7 +355,10 @@
      further above, beside --map-water) are the full set: eleven, not ten. --map-artifact-sea
      (declared above, beside --map-sea) is NOT one of them and must never be added: it is the
      frozen ground under an isolated SVG, has no dark half by design, and is excluded by name
-     from the surface table in lib/theme/map-surface.test.ts. */
+     from the surface table in lib/theme/map-surface.test.ts.
+     TWELVE, as of Task 10 fix round 2: --map-hover joins the set below, declared identically
+     in both themes for the same reason --map-graticule and --map-unknown-land are — the
+     surface it is measured against, --map-ocean, does not change between themes either. */
   /* The panel the map itself is drawn on. PLATE AND SEA ARE ONE TONE IN BOTH THEMES TODAY —
      an alias here, and in .dark a literal #152228 that is byte-identical to the dark --map-sea
      beside it. An earlier version of this comment said --map-plate "only earns a value of its
@@ -399,14 +402,45 @@
      strength, the worst case is Avrupa at 3.35:1 light and it is the same figure at every
      point on the map. */
   --map-ocean: #0d1b2a;
-  /* The world map's latitude/longitude grid. One tone at one opacity, replacing three
-     sky-400/sky-500 opacities that measured nothing in particular against the old gradient
-     ocean. Measured: 4.03:1 on --map-ocean. */
+  /* The world map's latitude/longitude grid. One tone at ONE opacity -- full strength --
+     replacing three sky-400/sky-500 opacities that measured nothing in particular against the
+     old gradient ocean. Measured: 4.03:1 light / 4.49:1 dark on --map-ocean.
+     THAT FIGURE IS THE RENDERED ONE AND HAS TO STAY THAT WAY. A round of this task shipped the
+     group as `stroke-[var(--map-graticule)]/60`, which only the equator and the prime meridian
+     overrode: the two tropics rendered at 2.26:1 / 2.34:1 -- under GRAPHICAL_MIN, and under the
+     number recorded right here, which no consumer then achieved. An opacity utility is part of
+     the rendered colour (blendOver), so a consumer that wants a quieter minor line takes it out
+     of STROKE WIDTH, which costs no contrast, not out of alpha. */
   --map-graticule: #4d7ea8;
   /* World-map land the continent table does not name (unclaimed territory, ice shelves).
      Replaces slate-600/65, which measured 1.67:1 on the ocean — invisible, on exactly the
-     shapes a reader is most likely to be hunting for. Measured: 3.66:1 on --map-ocean. */
+     shapes a reader is most likely to be hunting for. Measured: 3.66:1 light / 4.07:1 dark on
+     --map-ocean.
+     ITS OWN BORDER IS DRAWN IN --map-ocean, and that is measured too, because the first version
+     of this fill reached for --map-context-line — a token tuned against --map-context-land
+     (3.18/3.54) and never measured against THIS one, where it reads 1.23:1 light / 1.04:1 dark.
+     The border between two adjacent un-continent countries was then WORSE than the
+     slate-400/45 it replaced (1.97 / 2.04) while the fill got better. --map-ocean clears
+     3.66:1 / 4.07:1 against this fill and is the only shipped token that clears the floor
+     without flipping polarity between themes, which /dunya being dark in BOTH forbids (see
+     --map-hover for the same ruling). The seaward edge is ocean-on-ocean, 1:1 and deliberately
+     so: that boundary is carried by the fill's own 3.66/4.07 silhouette. */
   --map-unknown-land: #64748b;
+  /* The world map's hover/selected country highlight. ONE value, not a light/dark pair, for
+     the same reason --map-graticule and --map-unknown-land are not one either: /dunya is dark
+     in both themes, so the highlight has only ever one ground (--map-ocean) to be measured
+     against, never two. T-031d Task 10 fix round 1 tried a theme-aware token
+     (--primary-strong) here and it split exactly on that assumption: its light value is
+     #7e3a1e, calibrated as ink on a LIGHT surface, so it measured only 2.08:1 against the
+     light --map-ocean while its dark value (oklch(0.78 0.11 40.65), which this hex is) cleared
+     9.33:1 against the dark one. Pinning the dark value as a literal fixes both: 8.38:1 light
+     / 9.33:1 dark against --map-ocean, full strength; 7.00:1 / 7.71:1 at the /90 the fill
+     actually renders at. That is above every continent fill's own contrast against
+     --map-ocean except Antarktika's outlier 13.15/14.65 (the range is 3.35-13.15 light,
+     3.74-14.65 dark) — --map-graticule, the value this replaces, measured 4.03/4.49, INSIDE
+     that range near the bottom, which is why it read as a de-emphasised country rather than a
+     picked-out one. */
+  --map-hover: #f49f80;
   --province-hover: rgba(176, 82, 46, 0.16); /* terracotta wash of --color-primary */
   /* NAVIGATION-MAP hover/focus border weight (/turkiye + /dunya). One number, because it
      is the tunable the owner rules on from rendered samples; the colour is
@@ -1743,10 +1777,11 @@
      carries the full reasoning and `components/map/locator-map-floors.test.ts` asserts the
      absence, so adding a dark value here reds rather than silently re-breaking the frame.
 
-     `--map-water` and `--map-graticule` and `--map-unknown-land` are declared here at the
-     SAME value they'd inherit from `:root` — not left to inherit. `map-surface.test.ts`
-     reads this block directly, and a token missing from it is indistinguishable from a token
-     somebody forgot; repeating the value is the cheaper of the two mistakes.
+     `--map-water` and `--map-graticule` and `--map-unknown-land` and `--map-hover` are
+     declared here at the SAME value they'd inherit from `:root` — not left to inherit.
+     `map-surface.test.ts` reads this block directly, and a token missing from it is
+     indistinguishable from a token somebody forgot; repeating the value is the cheaper of the
+     two mistakes.
 
      MEASURED (lib/theme/contrast.ts), every figure below held by map-surface.test.ts:
        --province-stroke  vs --map-land 4.38 · vs --map-sea 4.21 · vs --map-context-land 3.78
@@ -1775,6 +1810,7 @@
   --map-ocean: #070e17;
   --map-graticule: #4d7ea8;
   --map-unknown-land: #64748b;
+  --map-hover: #f49f80;
 }
 
 /* T-018: `components/climate/climate.module.css` is a frozen V1 CSS Module — it reads the

@@ -137,8 +137,8 @@ export function V2Header() {
               />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-heading text-lg font-bold tracking-tight text-primary dark:text-[#e2896a] leading-none truncate">
-                Coğrafya <span className="text-primary">Gurmesi</span>
+              <span className="font-heading text-lg font-bold tracking-tight text-primary dark:text-primary-strong leading-none truncate">
+                Coğrafya Gurmesi
               </span>
               <span className="text-[10px] text-muted-foreground font-medium truncate">
                 Atlas &amp; Eğitim Portalı

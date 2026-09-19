@@ -441,7 +441,7 @@ export function V2EarthquakeExplorer({
 
       {/* 2. FULL-WIDTH INTERACTIVE SEISMIC ATLAS MAP WITH DIRECT CONTROLS */}
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-xl space-y-4 relative overflow-hidden">
-        {/* Map Header Toolbar with Integrated Legend & Fault Lines Toggle */}
+        {/* Map Header Toolbar with Integrated Legend & Magnitude Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
           <div className="flex items-center gap-2">
             <Badge variant="primary" size="sm" icon={<Activity className="size-3.5" />}>
@@ -478,7 +478,7 @@ export function V2EarthquakeExplorer({
             setHoveredEventId(null);
             setMousePos(null);
           }}
-          className="relative w-full aspect-[1270/580] bg-[var(--map-sea)] dark:bg-[#152228] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
+          className="relative w-full aspect-[1270/580] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
         >
           <svg
             viewBox={TR_CONTEXT_VIEWBOX}
@@ -486,14 +486,17 @@ export function V2EarthquakeExplorer({
             aria-label="Türkiye Canlı Deprem Haritası"
           >
             {/* Surrounding Context Countries */}
-            <g className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none">
+            <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
               {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
                 <path key={country.iso} d={country.d} />
               ))}
             </g>
 
-            {/* Neighbor Country Name Labels */}
-            <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[11px] pointer-events-none select-none">
+            {/* Neighbor Country Name Labels. FULL STRENGTH, the same fix this file's SEA
+                labels already took: `opacity-75` put `--map-label` at 3.36:1 light / 3.80:1
+                dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the token
+                records in `app/globals.css`. */}
+            <g className="fill-[var(--map-label)] font-sans font-bold text-[11px] pointer-events-none select-none">
               {CONTEXT_SHAPES.filter(
                 (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
               ).map((country) => {
@@ -505,7 +508,7 @@ export function V2EarthquakeExplorer({
                     y={country.labelPoint.y}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    className="tracking-tight opacity-75 select-none"
+                    className="tracking-tight select-none"
                   >
                     {name}
                   </text>
@@ -513,15 +516,8 @@ export function V2EarthquakeExplorer({
               })}
             </g>
 
-            {/* Inland Lakes & Waters */}
-            <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-[#8bb7cf] dark:stroke-[#0e2230] stroke-[0.5] pointer-events-none">
-              {INLAND_WATER_SHAPES.map((water) => (
-                <path key={water.id} d={water.d} />
-              ))}
-            </g>
-
             {/* Surrounding Sea Names */}
-            <g className="fill-[#537b93] dark:fill-[#5a86a0] font-sans font-bold tracking-widest pointer-events-none select-none opacity-60">
+            <g className="fill-accent font-sans font-bold tracking-widest pointer-events-none select-none">
               {SEA_LABELS.map((sea) => (
                 <text
                   key={sea.name}
@@ -554,6 +550,21 @@ export function V2EarthquakeExplorer({
                 >
                   <title>{prov.geoName}</title>
                 </path>
+              ))}
+            </g>
+
+            {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as it
+                was originally) because SVG paints in document order and the province layer's
+                fill-card/90 is ~90% opaque: with the lakes underneath, that fill covered them
+                almost entirely in both themes, independent of colour -- the water was invisible
+                since this file was written. The sibling `v2-turkey-map-explorer.tsx` already
+                orders its "3. Türkiye 81 Provinces Layer" before its "4. Inland Lakes" group for
+                the same reason. `pointer-events-none` keeps province hover/selection working
+                through this layer, and the epicentre markers below still paint after it, so a
+                lake never covers a quake marker. */}
+            <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
+              {INLAND_WATER_SHAPES.map((water) => (
+                <path key={water.id} d={water.d} />
               ))}
             </g>
 

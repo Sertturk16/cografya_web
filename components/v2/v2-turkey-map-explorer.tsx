@@ -545,7 +545,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               setMousePos(null);
             }
           }}
-          className={`relative rounded-2xl bg-[var(--map-sea)] dark:bg-[#1a2529] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none ${
+          className={`relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none ${
             zoomLevel > 1
               ? `touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`
               : "cursor-crosshair"
@@ -673,7 +673,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               {/* 1. Surrounding Foreign Countries */}
               <g
                 onMouseEnter={() => setHoveredPlate(null)}
-                className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none"
+                className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none"
               >
                 {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
                   <path key={country.iso} d={country.d} />
@@ -682,10 +682,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
               {/* 2. Türkiye Casing Base Land */}
               {trCasing && (
-                <path
-                  d={trCasing.d}
-                  className="fill-card dark:fill-[#201c18] pointer-events-none"
-                />
+                <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
               )}
 
               {/* 3. Türkiye 81 Provinces Layer */}
@@ -703,11 +700,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   let fillColor = "fill-card hover:fill-primary/60";
 
                   if (showRegionColors) {
-                    fillColor = `${regMeta.identity.fill} opacity-85 hover:opacity-100`;
+                    fillColor = regMeta.identity.fill;
                   } else if (selectedRegion !== "all" || onlyCoastal) {
-                    fillColor = isHighlighted
-                      ? `${regMeta.identity.fill} opacity-90 hover:opacity-100`
-                      : "fill-card/30 opacity-30";
+                    fillColor = isHighlighted ? regMeta.identity.fill : "fill-card/30 opacity-30";
                   }
 
                   if (isHovered || isSelected) {
@@ -742,30 +737,33 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               </g>
 
               {/* 4. Inland Lakes */}
-              <g className="fill-[var(--map-sea)] dark:fill-[#1a2529] stroke-accent/40 stroke-[0.5] pointer-events-none">
+              <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
                 {INLAND_WATER_SHAPES.map((lake) => (
                   <path key={lake.id} d={lake.d} />
                 ))}
               </g>
 
-              {/* 5. Surrounding Sea Water Labels */}
-              <g className="fill-accent dark:fill-[#6ec7d1] font-heading font-bold tracking-wider pointer-events-none select-none">
+              {/* 5. Surrounding Sea Water Labels. FULL STRENGTH, no `opacity-*`: an opacity
+                  utility is part of the rendered colour and has to be measured with
+                  `blendOver`, which the `opacity-80` these labels shipped with never was —
+                  it put `fill-accent` at 3.35:1 light / 3.85:1 dark on `--map-sea`, under
+                  TEXT_MIN, while the commit justified it with the UNBLENDED 4.85/5.19. At
+                  full strength those 4.85/5.19 are what renders. `/deprem`'s sea labels lost
+                  the same utility one round earlier; this is the other two. */}
+              <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
                 {SEA_LABELS.map((sea, i) => (
-                  <text
-                    key={i}
-                    x={sea.x}
-                    y={sea.y}
-                    textAnchor="middle"
-                    fontSize={sea.fontSize}
-                    className="opacity-80"
-                  >
+                  <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
                     {sea.name}
                   </text>
                 ))}
               </g>
 
-              {/* 6. Neighbor Country Name Labels */}
-              <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[12px] pointer-events-none select-none">
+              {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea
+                  labels above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1
+                  dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the
+                  token records in `app/globals.css` — which is the figure at full strength
+                  and the figure that renders now. */}
+              <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
                 {CONTEXT_SHAPES.filter(
                   (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
                 ).map((country) => {
@@ -777,7 +775,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                       y={country.labelPoint.y}
                       textAnchor="middle"
                       dominantBaseline="central"
-                      className="tracking-tight opacity-80 select-none"
+                      className="tracking-tight select-none"
                     >
                       {name}
                     </text>

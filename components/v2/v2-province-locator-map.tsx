@@ -42,13 +42,13 @@ export async function V2ProvinceLocatorMap({ plateCode, provinceName }: V2Provin
   return (
     <figure className="m-0 space-y-1.5">
       <div
-        className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-sea)] dark:bg-[#152228] border border-border overflow-hidden select-none shadow-sm"
+        className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden select-none shadow-sm"
         role="img"
         aria-label={tProvince("locationAlt", { name: provinceName })}
       >
         <svg viewBox={TR_CONTEXT_VIEWBOX} className="w-full h-full block" aria-hidden="true">
           {/* 1. Surrounding Foreign Countries */}
-          <g className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none">
+          <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
             {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
               <path key={country.iso} d={country.d} />
             ))}
@@ -56,18 +56,18 @@ export async function V2ProvinceLocatorMap({ plateCode, provinceName }: V2Provin
 
           {/* 2. Türkiye Casing Base Land */}
           {trCasing && (
-            <path d={trCasing.d} className="fill-card dark:fill-[#201c18] pointer-events-none" />
+            <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
           )}
 
           {/* 3. All 81 Provinces (Background) */}
-          <g className="stroke-border/70 stroke-[0.6] fill-card dark:fill-[#201c18]">
+          <g className="stroke-border/70 stroke-[0.6] fill-[var(--map-land)]">
             {PROVINCE_SHAPES.map((shape) => (
               <path key={shape.plateCode} d={shape.d} className="opacity-70" />
             ))}
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}

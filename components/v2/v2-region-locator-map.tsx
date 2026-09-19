@@ -63,7 +63,7 @@ export function V2RegionLocatorMap({
       </div>
 
       {/* SVG Map Container */}
-      <div className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-sea)] dark:bg-[#152228] border border-border overflow-hidden select-none shadow-xs">
+      <div className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden select-none shadow-xs">
         {/* Floating Tooltip Pill */}
         <div className="absolute top-3 left-3 z-10 pointer-events-none transition-all duration-200">
           {hoveredProvince ? (
@@ -92,7 +92,7 @@ export function V2RegionLocatorMap({
           aria-label={`${regionName} illerinin Türkiye haritasındaki konumu`}
         >
           {/* 1. Surrounding Foreign Countries */}
-          <g className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none">
+          <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
             {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
               <path key={country.iso} d={country.d} />
             ))}
@@ -100,11 +100,11 @@ export function V2RegionLocatorMap({
 
           {/* 2. Türkiye Casing Base Land */}
           {trCasing && (
-            <path d={trCasing.d} className="fill-card dark:fill-[#201c18] pointer-events-none" />
+            <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
           )}
 
           {/* 3. Non-Region Provinces (Dimmed background) */}
-          <g className="stroke-border/60 stroke-[0.5] fill-card dark:fill-[#201c18]">
+          <g className="stroke-border/60 stroke-[0.5] fill-[var(--map-land)]">
             {PROVINCE_SHAPES.filter((shape) => !regionPlateSet.has(shape.plateCode)).map(
               (shape) => (
                 <path
@@ -117,7 +117,7 @@ export function V2RegionLocatorMap({
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}

@@ -320,7 +320,7 @@ describe("a continent wears one colour, not two", () => {
 
   it("the world map paints countries from the module, not from a table of its own", () => {
     const explorer = read("./v2-world-map-explorer.tsx");
-    expect(explorer).toContain("continentMeta.identity.fillSoft");
+    expect(explorer).toContain("continentMeta.identity.fill");
     expect(explorer).toContain("continentMeta.identity.stroke");
     // The grouped-view banner used to be a two-stop gradient of an unrelated hue with white text
     // on it. Both halves have to go: the gradient AND the white.
