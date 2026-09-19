@@ -449,9 +449,26 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *
  * Neither element appeared. Both became VISIBLE to predicates keyed on `border-border` and
  * `bg-card`, which a palette border and a palette tint had hidden them from. One lands in each
- * bucket, which is the split doing its job, and both are tile-shaped — a small label over a
- * sized value — so the stat trio moves with them: 46 / 109 / 58 -> **47 / 111 / 59**, with
- * `STAT_GRID_FILES` unmoved at 25 because the file was already on the list.
+ * bucket, which is the split doing its job.
+ *
+ * THE STAT TRIO MOVES FOR A DIFFERENT REASON, AND ONLY ONE OF THE TWO MOVES IT. An earlier
+ * version of this block said both callouts are tile-shaped "so the stat trio moves with them".
+ * That is wrong about the cause, and the cause is what the next auditor reads against Ruling
+ * AZ. Isolated by reverting one change at a time, on the same tree:
+ *
+ *   - reverting BOTH SURFACES to their palette tints and keeping both eyebrow colours drops
+ *     the four surface pins to 188 / 168 / 232 / 356 and leaves the trio GREEN at
+ *     47 / 111 / 59. So the surfaces move this census and NOT the trio.
+ *   - reverting ONLY the GDP callout's eyebrow from `text-muted-foreground` back to an
+ *     inherited colour, with both surfaces left de-tinted, drops the WHOLE trio to
+ *     46 / 109 / 58 (grids `to have a length of 47 but got 46`,
+ *     {@link STAT_TILES_WITHOUT_STATTILE} `expected 109 to be 111`,
+ *     {@link STAT_GRIDS_TOTAL} `expected 58 to be 59`) while the surface pins hold.
+ *
+ * So the trio's 46 / 109 / 58 -> **47 / 111 / 59** is caused entirely by ONE label taking the
+ * muted text colour, which is what makes that element read as a TILE — a small label over a
+ * sized value — and its container read as a grid. The elevation banner contributes nothing to
+ * the trio at all. `STAT_GRID_FILES` is unmoved at 25 because the file was already on the list.
  *
  * The alternative was to drop the border, or to pick a surface that keeps the number still.
  * That is the failure mode this file exists to catch, so the number rises instead.
@@ -1422,11 +1439,12 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * together, the file count failed first and the tile number — the figure the adoption tasks
  * actually drive — never printed.
  *
- * **THE PINS BELOW READ 47 / 25 / 111 / 12.** T-031c Task 8 de-tinted two callouts on
- * `turkiye/bolge/[slug]/page.tsx` onto neutral surfaces, which made two tile-shaped elements
- * visible to a scanner keyed on `border-border` and `bg-card`. The run at these values is
- * recorded in {@link HAND_DRAWN_CARDS}'s block above, both halves of the split and the whole
- * trio, on `hakkimizda/page.tsx` and reverted.
+ * **THE PINS BELOW READ 47 / 25 / 111 / 12.** T-031c Task 8 de-tinted a GDP-contribution
+ * callout on `turkiye/bolge/[slug]/page.tsx`, and its eyebrow label taking the muted text
+ * colour is what makes that element read as a TILE here — a small label over a sized value.
+ * The de-tinted SURFACES move {@link HAND_DRAWN_CARDS} and {@link HAND_DRAWN_WELLS} and do not
+ * move these three; the isolation run that separates the two is in that block above, as is the
+ * Ruling AZ control at these values, on `hakkimizda/page.tsx` and reverted.
  */
 export const STAT_GRIDS_WITHOUT_STATTILE = 47;
 

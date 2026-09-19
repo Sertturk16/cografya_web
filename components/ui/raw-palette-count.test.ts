@@ -115,7 +115,7 @@ import {
  * wash that existed because the light tint underneath it was never theme-aware.
  *
  * The 36 are three topic-tint pillar badges with their heading icons, two elevation/economy
- * callouts whose surfaces were a mood rather than a scale, and six metric-tile icons. The two
+ * callouts whose surfaces were a mood rather than a scale, and five metric-tile icons. The two
  * callouts take the neutral surfaces this page already uses for the same job one section over,
  * rather than a second tint: a 30% muted panel for the banner that sits beside three of them,
  * and the card surface for the one nested inside a muted panel.
