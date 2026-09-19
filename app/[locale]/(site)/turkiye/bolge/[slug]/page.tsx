@@ -535,7 +535,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Yüzölçümü</span>
-                <Maximize2 className="size-4 text-teal-600" />
+                <Maximize2 className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {format.number(region.areaKm2)} km²
@@ -552,7 +552,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Nüfus Yoğunluğu</span>
-                <Mountain className="size-4 text-amber-600" />
+                <Mountain className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {region.populationDensity} kişi/km²
@@ -567,7 +567,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">GSYH Ağırlığı (2024)</span>
-                <TrendingUp className="size-4 text-rose-600" />
+                <TrendingUp className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {region.gdpShareApproxPercent !== null ? `~%${region.gdpShareApproxPercent}` : "—"}
@@ -878,13 +878,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
             {/* Highest Point Highlight Banner (if available) */}
             {region.highestPointName && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-4 flex-wrap">
+              <div className="p-4 sm:p-5 rounded-2xl bg-muted/30 border border-border/80 flex items-center justify-between gap-4 flex-wrap">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
                     Bölgenin En Yüksek Zirvesi
                   </span>
                   <div className="font-heading font-extrabold text-lg sm:text-xl text-foreground flex items-center gap-2">
-                    <Mountain className="size-5 text-amber-600 shrink-0" />
+                    <Mountain className="size-5 shrink-0" />
                     <span>{region.highestPointName}</span>
                     {region.highestPointProvince && (
                       <span className="text-xs font-normal text-muted-foreground">
@@ -895,7 +895,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 </div>
                 {region.highestPointElevationM && (
                   <div className="text-right">
-                    <span className="font-mono font-extrabold text-2xl text-amber-700 dark:text-amber-400">
+                    <span className="font-mono font-extrabold text-2xl text-foreground">
                       {format.number(region.highestPointElevationM)} m
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
@@ -912,15 +912,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Jeomorfoloji &amp; Dağlar
                     </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                      <Mountain className="size-5 text-amber-600 shrink-0" />
+                      <Mountain className="size-5 shrink-0" />
                       <span>Yeryüzü Şekilleri ve Ovalar</span>
                     </h3>
                   </div>
@@ -932,15 +928,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Klimatoloji &amp; Vejetasyon
                     </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                      <CloudSun className="size-5 text-teal-600 shrink-0" />
+                      <CloudSun className="size-5 shrink-0" />
                       <span>İklim Tipleri ve Bitki Örtüsü</span>
                     </h3>
                   </div>
@@ -952,15 +944,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Hidrografya &amp; Su Ağı
                     </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                      <Droplets className="size-5 text-cyan-600 shrink-0" />
+                      <Droplets className="size-5 shrink-0" />
                       <span>Akarsular, Göller ve Havzalar</span>
                     </h3>
                   </div>
@@ -1037,24 +1025,20 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-5 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Bölgesel İktisat &amp; Üretim
                     </Badge>
                     <h3 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
-                      <BarChart3 className="size-5 text-amber-600 shrink-0" />
+                      <BarChart3 className="size-5 shrink-0" />
                       <span>Ekonomik Güç, Sanayi ve Tarım</span>
                     </h3>
                   </div>
 
                   {/* GDP Contribution Callout */}
                   {region.gdpShareApproxPercent !== null && (
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between">
+                    <div className="p-4 rounded-2xl bg-card border border-border/80 flex items-center justify-between">
                       <div>
-                        <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 block">
+                        <span className="text-[11px] font-bold text-muted-foreground block">
                           Türkiye GSYH Tahmini Katkısı
                         </span>
                         <span className="font-heading font-extrabold text-2xl text-foreground">
@@ -1191,7 +1175,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 space-y-1">
                   <div className="flex items-center justify-between text-muted-foreground">
                     <span className="text-[11px] font-medium">En Geniş İl</span>
-                    <Maximize2 className="size-3.5 text-teal-600" />
+                    <Maximize2 className="size-3.5" />
                   </div>
                   <div className="font-heading font-bold text-base text-foreground">
                     {largestProvince.nameTr}
@@ -1205,7 +1189,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 space-y-1">
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="text-[11px] font-medium">Ortalama İl Nüfusu</span>
-                  <BarChart3 className="size-3.5 text-amber-600" />
+                  <BarChart3 className="size-3.5" />
                 </div>
                 <div className="font-heading font-bold text-base text-foreground">
                   {format.number(avgProvincePop)}
@@ -1301,20 +1285,20 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
         {/* SECTION 6: DOĞAL AFET VE DEPREM RİSKİ */}
         <section id="afet" className="scroll-mt-28" tabIndex={-1}>
-          <div className="rounded-3xl border border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/15 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
-            <div className="space-y-2 border-b border-rose-500/20 pb-5">
+            <div className="space-y-2 border-b border-destructive/20 pb-5">
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
                   size="sm"
-                  className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                  className="bg-destructive/15 text-destructive-strong border-destructive/30"
                 >
                   Doğal Afet &amp; Depremsellik
                 </Badge>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                <ShieldAlert className="size-6 text-rose-600 shrink-0" />
+                <ShieldAlert className="size-6 text-destructive-strong shrink-0" />
                 <span>Deprem Kuşakları ve Bölgesel Afet Profili</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
@@ -1333,10 +1317,10 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               {/* Right 5 Columns: Seismic & Hazard Profile Card */}
               <div className="lg:col-span-5 space-y-4">
                 {disasterProfile && (
-                  <div className="p-5 rounded-2xl bg-card border border-rose-500/20 shadow-xs space-y-4">
+                  <div className="p-5 rounded-2xl bg-card border border-destructive/20 shadow-xs space-y-4">
                     <div className="flex items-center">
                       <span className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
-                        <ShieldAlert className="size-4 text-rose-600" />
+                        <ShieldAlert className="size-4 text-destructive-strong" />
                         <span>Sismik &amp; Afet Özeti</span>
                       </span>
                     </div>
@@ -1370,7 +1354,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                             key={pr}
                             className="text-xs text-foreground/90 flex items-center gap-2 p-1.5 rounded-lg bg-muted/40"
                           >
-                            <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
+                            <span className="size-1.5 rounded-full bg-destructive shrink-0" />
                             <span>{pr}</span>
                           </div>
                         ))}
@@ -1385,7 +1369,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
                     {/* Emergency Notice */}
                     <div className="p-2.5 rounded-xl bg-muted/60 border border-border text-[10px] text-muted-foreground flex items-center justify-end">
-                      <span className="font-semibold text-rose-600">Acil: 112</span>
+                      <span className="font-semibold text-destructive-strong">Acil: 112</span>
                     </div>
                   </div>
                 )}

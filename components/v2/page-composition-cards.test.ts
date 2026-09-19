@@ -438,13 +438,44 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 233 to be 232` (the string occurs nowhere
  *     else, so it is a novel spelling too), with {@link HAND_DRAWN_WELLS} unmoved at 168 —
  *     the other half of the same property.
+ *
+ * MOVED AGAIN BY T-031c TASK 8, 188 / 168 / 232 / 356 -> **189 / 169 / 234 / 358**, and for the
+ * same reason Task 6's move had. `turkiye/bolge/[slug]/page.tsx` carried two callouts whose
+ * surface was a mood rather than a scale: an elevation banner and a GDP-contribution figure,
+ * both drawn on a palette tint with a palette border. The inventory rules both `decoration`, so
+ * they take the neutral surfaces the SAME PAGE already uses one section over — a 30% muted well
+ * for the banner that stands beside three of them, and the card surface for the one nested
+ * inside a muted panel.
+ *
+ * Neither element appeared. Both became VISIBLE to predicates keyed on `border-border` and
+ * `bg-card`, which a palette border and a palette tint had hidden them from. One lands in each
+ * bucket, which is the split doing its job, and both are tile-shaped — a small label over a
+ * sized value — so the stat trio moves with them: 46 / 109 / 58 -> **47 / 111 / 59**, with
+ * `STAT_GRID_FILES` unmoved at 25 because the file was already on the list.
+ *
+ * The alternative was to drop the border, or to pick a surface that keeps the number still.
+ * That is the failure mode this file exists to catch, so the number rises instead.
+ *
+ * RE-CHECKED AT 189 / 169 / 234 / 358 AND 47 / 25 / 111 / 59, Ruling AZ again. Both probes on
+ * `app/[locale]/(site)/hakkimizda/page.tsx`, which is in no task's edit set, each reverted:
+ *
+ *   - a two-element `rounded-2xl border border-border bg-card` grid — RED on
+ *     {@link HAND_DRAWN_CARDS} at `expected 191 to be 189`, on
+ *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 235 to be 234` and on the disjointness
+ *     total at `expected 360 to be 358`, with {@link HAND_DRAWN_WELLS} unmoved at 169.
+ *   - the same grid drawn as `bg-muted/30 border border-border/80` tiles — RED on
+ *     {@link HAND_DRAWN_WELLS} at `expected 171 to be 169` with {@link HAND_DRAWN_CARDS}
+ *     unmoved at 189, so the split still splits, AND red across the whole stat trio at the new
+ *     values: grids `to have a length of 47 but got 48`, {@link STAT_GRID_FILES}
+ *     `expected 26 to be 25`, {@link STAT_TILES_WITHOUT_STATTILE} `expected 113 to be 111`,
+ *     {@link STAT_GRIDS_TOTAL} `expected 60 to be 59`.
  */
-export const HAND_DRAWN_CARDS = 188;
+export const HAND_DRAWN_CARDS = 189;
 
-export const HAND_DRAWN_WELLS = 168;
+export const HAND_DRAWN_WELLS = 169;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 232;
+export const HAND_DRAWN_CARD_SPELLINGS = 234;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1390,12 +1421,18 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * The tile and file counts are separate `it`s for a reason the first run showed: asserted
  * together, the file count failed first and the tile number — the figure the adoption tasks
  * actually drive — never printed.
+ *
+ * **THE PINS BELOW READ 47 / 25 / 111 / 12.** T-031c Task 8 de-tinted two callouts on
+ * `turkiye/bolge/[slug]/page.tsx` onto neutral surfaces, which made two tile-shaped elements
+ * visible to a scanner keyed on `border-border` and `bg-card`. The run at these values is
+ * recorded in {@link HAND_DRAWN_CARDS}'s block above, both halves of the split and the whole
+ * trio, on `hakkimizda/page.tsx` and reverted.
  */
-export const STAT_GRIDS_WITHOUT_STATTILE = 46;
+export const STAT_GRIDS_WITHOUT_STATTILE = 47;
 
 export const STAT_GRID_FILES = 25;
 
-export const STAT_TILES_WITHOUT_STATTILE = 109;
+export const STAT_TILES_WITHOUT_STATTILE = 111;
 
 /**
  * The floor that is supposed to RISE. Zero for three tasks; 13 once the metric-strip family
@@ -1417,7 +1454,7 @@ export const SURFACE_FILES_RENDERING_STATTILE = 12;
  * `isGridShell` into it would push a scanner internal out of this 4800-test module, a worse trade.
  * If you are auditing this number, read both.
  */
-export const STAT_GRIDS_TOTAL = 58;
+export const STAT_GRIDS_TOTAL = 59;
 
 const TILE_VALUE_SIZE = /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)/;
 

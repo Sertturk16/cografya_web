@@ -103,9 +103,28 @@ import {
  * The arbitrary arm does not move: 72 before, 72 after. Nothing here was rewritten as a literal,
  * and nothing gained a var() fallback.
  *
+ * 301 -> 252 is T-031c Task 8's second half: `turkiye/bolge/[slug]/page.tsx` 49 -> 0, and with
+ * it the heaviest file in the inventory reaches zero. Its other 64 went earlier -- 56 to
+ * `--region-*` in Task 3 and 8 to `--basin-*` in Task 6 -- so what was left here is the part
+ * that never encoded anything: 36 decoration, 13 semantic, no data.
+ *
+ * The 13 are the disaster-risk section, which is the one place on this page where the hue is
+ * the message. It binds to the destructive bridge, NOT to a fault identity: the prose is
+ * regional hazard, it names no fault zone, and `--fault-*` is a categorical set for KAF / DAF /
+ * BAFS. Its hand-written dark pair goes with it, including a dark-only 950-weight background
+ * wash that existed because the light tint underneath it was never theme-aware.
+ *
+ * The 36 are three topic-tint pillar badges with their heading icons, two elevation/economy
+ * callouts whose surfaces were a mood rather than a scale, and six metric-tile icons. The two
+ * callouts take the neutral surfaces this page already uses for the same job one section over,
+ * rather than a second tint: a 30% muted panel for the banner that sits beside three of them,
+ * and the card surface for the one nested inside a muted panel.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 301;
+const RAW_PALETTE_BUDGET = 252;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
