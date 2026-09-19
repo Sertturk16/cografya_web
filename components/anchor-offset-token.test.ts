@@ -188,6 +188,10 @@ describe("sticky-header anchor offsets", () => {
     // set in silence, which is the failure mode of the version this replaced. `readdirSync`
     // throws on a root that has moved, so BOTH roots are still walked or this file does not
     // load at all — that half of the guard is structural and needs no assertion.
+    // The `app/` half has exactly ONE subject today, `app/globals.css`. The four route
+    // stylesheets this root was widened for (`turkiye`, `country-detail`, `province-detail`,
+    // `game`) are gone; the token layer is not, and it is where every offset token is declared,
+    // so this assertion still has something to find.
     expect(cssFiles.some(({ file }) => file.includes("/app/"))).toBe(true);
     // The `components` root was the CSS-Module half of this scan. T-033 task 9 retired the last
     // `*.module.css` and "at least one stylesheet here" became an assertion with no subject —

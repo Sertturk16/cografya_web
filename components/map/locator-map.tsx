@@ -137,6 +137,17 @@ const FIGURE = {
  * The two rows differ in the ratio and in nothing else; the pin asserts that as an equality,
  * because a hairline or a radius that drifted on one kind alone would be invisible on a route
  * that only ever renders the other.
+ *
+ * ONE THING WAS NOT A STRAIGHT TRANSLATION, and it is named here rather than left for someone to
+ * diff: the retired stylesheet gave the frame a
+ * `linear-gradient(180deg, var(--color-surface), var(--color-bg))` parchment wash and overrode it
+ * to the map's sea for `country` ONLY. Both rows now take the sea, so the PROVINCE figure lost
+ * that gradient. It is deliberate and it is what the frozen-ground ruling above is about: those
+ * two tokens are the theme-aware pair, and a theme-aware ground under this frozen ink is the
+ * 2.23 / 2.15 pair — while `app/globals.css` carries no frozen parchment token to keep it at,
+ * and the Türkiye artifact paints no sea of its own, so the frame IS that map's ground. Nothing
+ * renders the province kind today, so nothing regresses; T-054, which owns that branch, inherits
+ * one ground for both kinds rather than two that could drift.
  */
 const FRAME = {
   province:
