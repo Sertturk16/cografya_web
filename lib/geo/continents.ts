@@ -1133,9 +1133,16 @@ export function getContinentBySlug(slug: string): ContinentDetailData | null {
 }
 
 /**
- * Mapping between Continent enum key and URL slug
+ * Mapping between Continent enum key and URL slug.
+ *
+ * `as const satisfies` rather than a `Record<Continent, string>` annotation, the same shape
+ * `lib/game/region-slug.ts` uses and for the same reason: `lib/theme/continent-identity.ts`
+ * keys the seven continent colour identities on exactly these values, so a slug added or
+ * renamed here stops that module compiling instead of silently handing a component
+ * `undefined` for its continent's colour. `satisfies` still fails if the api contract gains
+ * or renames a continent.
  */
-export const CONTINENT_KEY_TO_SLUG: Record<Continent, string> = {
+export const CONTINENT_KEY_TO_SLUG = {
   AFRIKA: "afrika",
   ASYA: "asya",
   AVRUPA: "avrupa",
@@ -1143,7 +1150,10 @@ export const CONTINENT_KEY_TO_SLUG: Record<Continent, string> = {
   GUNEY_AMERIKA: "guney-amerika",
   OKYANUSYA: "okyanusya",
   ANTARKTIKA: "antarktika",
-};
+} as const satisfies Record<Continent, string>;
+
+/** The URL identifier of a continent, as a literal union rather than `string`. */
+export type ContinentSlugName = (typeof CONTINENT_KEY_TO_SLUG)[Continent];
 
 export const CONTINENT_SLUG_TO_KEY: Record<string, Continent> = {
   afrika: "AFRIKA",
