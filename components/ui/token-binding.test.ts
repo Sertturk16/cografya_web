@@ -504,11 +504,13 @@ describe("every var() fallback in the product tree still equals its token", () =
    * two. Keeping the literal in sync with `:root` (which the two `it`s above already enforce)
    * cannot fix it — it would still be silently wrong under `.dark`. So the only correct state
    * for a themed token's fallback is absent, and this checks for exactly that, generalised
-   * over every token rather than named at `--map-sea` alone. It already covers three tokens
-   * with no fallback today and no reason to ever grow one carelessly: `--map-land`,
-   * `--map-context-land` and `--map-tectonic` — all three real, `.dark`-declared T-031d
-   * tokens — so PR2's component work trips this the moment it reaches for one instead of
-   * discovering the same defect a second time by hand.
+   * over every token rather than named at `--map-sea` alone. It already covers two tokens
+   * with no fallback today and no reason to ever grow one carelessly: `--map-land` and
+   * `--map-context-land` — both real, `.dark`-declared T-031d tokens — so PR2's component
+   * work trips this the moment it reaches for one instead of discovering the same defect a
+   * second time by hand. (`--map-tectonic` briefly joined this list in review round 1 and
+   * left again in round 2 — see `lib/theme/map-surface.test.ts`'s own docblock for why — so
+   * it is not named here.)
    */
   describe("no fallback names a token .dark also declares", () => {
     const darkTokens = new Set(
@@ -522,17 +524,23 @@ describe("every var() fallback in the product tree still equals its token", () =
       ),
     );
 
-    it("positive control — .dark declares tokens, and the guard's own logic still fires", () => {
-      // The population side: .dark must actually declare something, or the check below is
-      // vacuous.
-      expect(darkTokens.size).toBeGreaterThan(20);
+    it("positive control — the live population is real, and a known .dark token isn't hiding in it", () => {
+      // Review round 1 found the first version of this control tautological: it filtered one
+      // hardcoded literal against a set already known to contain it, so it exercised `Set.has`
+      // rather than the fallback-parsing regex above and could not fail for the reason it
+      // claimed to test. This version reads the two REAL parsed populations instead.
+      //
+      // The population side: the regex walk over components/app/lib actually found fallbacks,
+      // or the negative assertion below is vacuous (true of an empty array for free).
+      expect(fallbacks.length).toBeGreaterThan(0);
+      // The negative-space side: --map-sea is a real, `.dark`-declared token (confirmed
+      // against the real CSS parse, not asserted), and T-031d Task 3's fix means none of the
+      // ten fallbacks that used to name it survive in the live tree. This is the fact the "no
+      // live fallback" test below depends on to have found anything to prove; asserting it
+      // here, from the same two real inputs, is what makes that test's own emptiness meaningful
+      // rather than accidental.
       expect(darkTokens.has("--map-sea")).toBe(true);
-      // The mechanism side, exercised directly rather than only through the live file walk:
-      // a synthetic fallback naming a real .dark token must be caught by the same `.has` test
-      // the assertion below runs, so a change to `darkTokens` itself cannot go unnoticed by
-      // silently changing what "planted" means.
-      const planted = { path: "synthetic.tsx", token: "--map-sea", hex: "#dbe7e8" };
-      expect([planted].filter((f) => darkTokens.has(f.token))).toHaveLength(1);
+      expect(fallbacks.some((f) => f.token === "--map-sea")).toBe(false);
     });
 
     it("no live fallback names a token .dark also declares", () => {

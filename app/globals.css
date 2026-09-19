@@ -306,7 +306,7 @@
   /* ---- MAP SURFACES, dark half added T-031d (see the .dark block for the dark table) ----
      Before this task nine components each spelled these tones inline, dark mode included
      nowhere: 72 bracketed colour values and 15 raw palette classes across them, four
-     different spellings of one sea. The seven tokens below plus the two re-recorded just
+     different spellings of one sea. The six tokens below plus the two re-recorded just
      above and the two that already shipped (--map-sea, --map-water) are the full set. */
   /* The panel the map itself is drawn on. An ALIAS of --map-sea in light, where the plate and
      the water are one tone; --map-plate only earns a value of its own in .dark, where the
@@ -316,17 +316,6 @@
      which measures 1.01:1 against --map-sea — a difference nobody can see, so no separate
      literal survives here. */
   --map-plate: var(--map-sea);
-  /* Tectonic-plate context fill on the world's sea basins (v2-earthquake-explorer.tsx:524,
-     `fill-[#537b93] dark:fill-[#5a86a0]` before this task) — a real third surface, neither
-     land nor water: it sits ON --map-sea, like a label would, but it is not a label
-     (--map-label's job is text on land/sea/neighbour-land, this is a fill under the sea's own
-     surface) and not neighbour land (--map-context-land is a warm tan family; this is the
-     cool plate-line blue the sea itself is drawn in, just deeper). Promoted to a token rather
-     than repainted: the component's shipped values already clear the 3:1 graphical floor
-     against their own sea unchanged.
-     Measured (lib/theme/contrast.ts): vs --map-sea 3.59:1 light. See .dark for the dark
-     figure. */
-  --map-tectonic: #537b93;
   /* Türkiye's own land — the country fill itself, distinct from --province-fill (the il-map
      base tone, still white but a separate token for a separate map) and from --land-inert
      (the world map's Greenland/Antarctica/unseeded backdrop, above). WARM against the cool
@@ -1698,7 +1687,6 @@
        --map-context-line vs --map-context-land 3.18 · vs --map-sea 3.54
        --map-water-line   vs --map-sea 4.71 · vs --map-land 4.91
        --map-label        vs --map-sea 6.17 · vs --map-land 6.42 · vs --map-context-land 5.54
-       --map-tectonic     vs --map-sea 4.14
        --map-plate        vs --background 1.15 · vs --card 1.05  (lighter than both, on purpose)
        --map-land vs --map-sea 1.04, and that is CORRECT: the distinction is warm against
          cool, exactly as in light, where the same pair measures 1.26:1. */
@@ -1715,7 +1703,6 @@
      this token alone carries (see :root) would have vanished entirely. */
   --map-water-line: #5d8fb8;
   --map-label: #a89e92;
-  --map-tectonic: #5a86a0;
   --map-ocean: #070e17;
   --map-graticule: #4d7ea8;
   --map-unknown-land: #64748b;

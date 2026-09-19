@@ -19,18 +19,7 @@ import { GRAPHICAL_MIN, ratio, TEXT_MIN } from "./contrast";
  * did not — the play board and the workbench canvas — were also the only two that missed a
  * floor in EITHER theme. They adopt these tokens; their private tones are deleted, not ported.
  *
- * ELEVEN tokens per theme, not ten: `--map-tectonic` is new. It covers the tectonic-plate
- * context fill `v2-earthquake-explorer.tsx:524` paints today for the surrounding-sea basin
- * labels (`fill-[#537b93] dark:fill-[#5a86a0]`) — a real third surface, neither land nor
- * water, that had never had a token or a floor of its own. It is not folded into
- * `--map-context-land` (a different hue family entirely — warm neighbour-land tan, not a
- * cool plate-line blue) or into `--map-label` (a different job: label ink sits on land/sea/
- * neighbour-land, this sits on the sea itself, on top of `--map-sea`). Measured with
- * `lib/theme/contrast.ts`'s `ratio` against `--map-sea`: 3.59:1 light, 4.14:1 dark. Both
- * already clear `GRAPHICAL_MIN` (3:1) with the component's shipped values unchanged, which is
- * why this is a promotion to a token, not a repaint.
- *
- * TWELVE, not eleven, as of review round 1: `--map-water` joins the table. It shipped before
+ * ELEVEN, not ten, as of review round 1: `--map-water` joins the table. It shipped before
  * this file did (`--map-water: var(--map-sea)`, inland water on the Türkiye map) and was
  * always a real surface — the original oversight was leaving it out of `MAP_SURFACES` while
  * the `matches app/globals.css` test filtered `shipped` down to `name in table`, so a real
@@ -38,6 +27,18 @@ import { GRAPHICAL_MIN, ratio, TEXT_MIN } from "./contrast";
  * See `NOT_A_SURFACE` and `mapSurfacesIn` below for the prefix-based filter that replaced it
  * and now needs `--map-water` accounted for on purpose. It resolves to the sea in both
  * themes, so its value here is the same as `--map-sea`'s, per theme.
+ *
+ * TWELVE, THEN BACK TO ELEVEN, as of review round 2: `--map-tectonic` lived here for one
+ * round and was removed again. It was meant to cover the earthquake explorer's
+ * `fill-[#537b93] dark:fill-[#5a86a0]` sea-basin fill as "a real third surface, neither land
+ * nor water", measured with `ratio` against `--map-sea` at 3.59:1 light / 4.14:1 dark — both
+ * clearing `GRAPHICAL_MIN`. The review that produced those figures never opened the
+ * component: the element is `<text>` (sea-name labels), so its floor is `TEXT_MIN` (4.5:1),
+ * not `GRAPHICAL_MIN`; and it carries `opacity-60`, so its RENDERED contrast — the fill
+ * blended over `--map-sea` at 60%, not the undiluted fill this table measured — is 2.03:1
+ * light / 2.35:1 dark, clearing neither floor. The token documented a surface the app does
+ * not have, so it came back out; the actual defect (a label at 60% opacity with no floor of
+ * its own) is fixed on the component, in Task 7, not carried by a token here.
  *
  * BINDING NOTE FOR TASK 3: `.dark` must declare `--map-water` explicitly (as
  * `var(--map-sea)`, the same alias `:root` already carries), not leave it to inherit from
@@ -59,7 +60,6 @@ export const MAP_SURFACES = {
     "--map-ocean": "#0d1b2a",
     "--map-graticule": "#4d7ea8",
     "--map-unknown-land": "#64748b",
-    "--map-tectonic": "#537b93",
   },
   dark: {
     "--map-plate": "#152228",
@@ -73,7 +73,6 @@ export const MAP_SURFACES = {
     "--map-ocean": "#070e17",
     "--map-graticule": "#4d7ea8",
     "--map-unknown-land": "#64748b",
-    "--map-tectonic": "#5a86a0",
   },
 } as const;
 
@@ -200,16 +199,6 @@ describe.each(THEMES)("the %s map surfaces", (theme, selector, table) => {
         `--map-label on ${surface} in ${theme}`,
       ).toBeGreaterThanOrEqual(TEXT_MIN);
     }
-  });
-
-  it("keeps --map-tectonic legible against the sea it is painted on", () => {
-    // Measured 2026-09-19: 3.59:1 light, 4.14:1 dark — see the `--map-tectonic` paragraph in
-    // the MAP_SURFACES docblock above for what surface this is and why it gets its own floor
-    // rather than reusing --map-context-land or --map-label.
-    expect(
-      ratio(table["--map-tectonic"], table["--map-sea"]),
-      `--map-tectonic on --map-sea in ${theme}`,
-    ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
   });
 });
 
