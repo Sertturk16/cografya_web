@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PM25_NOTICE_SLOTS } from "@/lib/air/notice-keys";
 import { gatesGoverning, ungatedRenderSite } from "@/lib/testing/jsx-gate";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { classConstant, renderSites } from "@/lib/test-support/converted-floor";
 
 /**
  * This repo's vitest environment is `node` and the section is an async server component, so
@@ -170,6 +171,19 @@ const table = read("./pm25-table.tsx");
 const page = read("../../app/[locale]/(site)/turkiye/[slug]/page.tsx");
 const sectionCode = code(section);
 const chartCode = code(chart);
+
+/**
+ * The chart's four hoisted class constants, QUOTED VERBATIM. Used by the guideline-scan controls
+ * below and by the width pin at the bottom of this file, and checked against the real source in
+ * "…and those fixtures are still what the chart really says" so a copy cannot outlive its
+ * original.
+ */
+const REAL_CLASS_CONSTANTS = [
+  'const AXIS = "font-sans fill-ink/80 text-[15px] max-[700px]:text-[19px]";',
+  'const FRAME = "max-w-[720px] aspect-[720/300] rounded-lg p-1 bg-white border border-ink/15";',
+  'const GRID_YEAR = "stroke-ink/8 [stroke-width:0.6]";',
+  "const AXIS_LABEL_LEFT = `${AXIS} [text-anchor:end]`;",
+] as const;
 const tableCode = code(table);
 const pageCode = code(page);
 
@@ -457,13 +471,19 @@ describe("the chart carries no reference line and no index colouring", () => {
     // being green: narrowing `isClassShaped` until it blanks nothing would satisfy every
     // control above, and the chart's own `15px`/`700px` would then red the assertion with no
     // explanation of why. This says which half broke, in one line, with the real constants.
-    for (const real of [
-      'const AXIS = "font-sans fill-ink/80 text-[15px] max-[700px]:text-[19px]";',
-      'const FRAME = "max-w-[720px] aspect-[720/300] rounded-lg p-1 bg-white border border-ink/15";',
-      'const GRID_YEAR = "stroke-ink/8 [stroke-width:0.6]";',
-      "const AXIS_LABEL_LEFT = `${AXIS} [text-anchor:end]`;",
-    ]) {
+    for (const real of REAL_CLASS_CONSTANTS) {
       expect(unexplainedNumbers(real), real).toEqual([]);
+    }
+  });
+
+  it("…and those fixtures are still what the chart really says", () => {
+    // The fixtures above are hand-copied declarations, which is the shape that rots into a
+    // green copy of itself: narrow `isClassShaped`, leave the copies untouched, and this
+    // control keeps passing on constants the file no longer contains. So each one is compared
+    // with the source it claims to quote.
+    for (const real of REAL_CLASS_CONSTANTS) {
+      const name = /const ([A-Z_]+) =/.exec(real)![1]!;
+      expect(classConstant(chartCode, name), `${name} has drifted from this fixture`).toBe(real);
     }
   });
 
@@ -668,5 +688,50 @@ describe("zero client JavaScript", () => {
     for (const source of [sectionCode, chartCode, tableCode]) {
       expect(source).not.toMatch(/["']use client["']/);
     }
+  });
+});
+
+/**
+ * THE CHART FRAME'S WIDTH CAP, RE-PINNED WHERE IT NOW LIVES.
+ *
+ * `air-pollution.module.css`'s `.chartFrame` had a `max-width: 720px` entry in
+ * `components/css-module-fixed-widths.test.ts`, the census of fixed-`px` inline-axis declarations
+ * that exists because one such declaration scrolled a province page sideways at 320. T-033 task 3
+ * deleted the stylesheet, the entry went with it, and the cap moved into `FRAME` — where the
+ * census cannot read it and `pnpm sweep:overflow`, which is NOT in `.github/workflows/ci.yml`,
+ * became its only cover. This is the same re-pin task 4 made for climate's own frame; see
+ * `lib/test-support/converted-floor.ts` for the rule and `components/climate/d2-variant.test.ts`
+ * for the sibling.
+ *
+ * The cap is measured, not incidental: the full 1080px content column was tried and rejected
+ * because the 720-unit viewBox then scales 1.5x and prints 15-unit axis text LARGER than the
+ * page's body copy, and because every other block in this section caps at 78ch. `pm25-chart.tsx`
+ * carries both reasons.
+ */
+describe("the chart frame keeps its measured width cap", () => {
+  const CAP = "max-w-[720px]";
+
+  it("FRAME still carries the cap", () => {
+    const frame = classConstant(chartCode, "FRAME");
+    expect(frame, "pm25-chart.tsx has no FRAME constant").not.toBeNull();
+    expect(frame, `FRAME lost ${CAP}`).toContain(CAP);
+    // A cap that stopped being a cap is the same loss as a deleted one.
+    expect(frame!.split(CAP).join(" ")).not.toMatch(/max-w-(none|full|screen)/);
+  });
+
+  it("…on the constant the plot actually renders", () => {
+    // Half of "bidirectional": a pin that only reads the declaration stays green on a constant
+    // nothing uses, so the cap could be deleted from the page while this file agreed.
+    expect(renderSites(chartCode, "FRAME")).toBe(1);
+  });
+
+  it("POSITIVE CONTROL — the same reading reds when the cap is widened", () => {
+    // Anti-vacuity, run against a MUTATION of the real declaration rather than an invented
+    // string: take what the file really says and widen it to the rejected 1080px column.
+    const real = classConstant(chartCode, "FRAME")!;
+    const poisoned = real.split(CAP).join("max-w-none");
+    expect(poisoned).not.toBe(real);
+    expect(poisoned).not.toContain(CAP);
+    expect(poisoned.split(CAP).join(" ")).toMatch(/max-w-(none|full|screen)/);
   });
 });

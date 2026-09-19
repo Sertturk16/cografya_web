@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { D2_VARIANT } from "./climate-section";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { classConstant, renderSites } from "@/lib/test-support/converted-floor";
 
 /**
  * D2's layout wiring, after the A/B round closed.
@@ -32,6 +33,7 @@ const section = stripComments(
   readFileSync(new URL("./climate-section.tsx", import.meta.url), "utf8"),
 );
 const table = stripComments(readFileSync(new URL("./climate-table.tsx", import.meta.url), "utf8"));
+const chart = stripComments(readFileSync(new URL("./climate-chart.tsx", import.meta.url), "utf8"));
 
 describe("D2 variant wiring", () => {
   it("declares the layout for the variant the component selects", () => {
@@ -84,7 +86,7 @@ describe("D2 variant wiring", () => {
     ];
     for (const [name, utility] of rails) {
       const source = name === "SCROLL" ? table : section;
-      const declaration = new RegExp(`const ${name} =[\\s\\S]*?;`).exec(source)?.[0];
+      const declaration = classConstant(source, name);
       expect(declaration, `${name} is not declared`).toBeDefined();
       expect(declaration, `${name} lost lg:${utility}`).toContain(`lg:${utility}`);
       // Whitespace-delimited so `flex` is not read out of `flex-wrap`, and the prefixed copies
@@ -95,5 +97,51 @@ describe("D2 variant wiring", () => {
         .split(/[\s"+]+/);
       expect(words, `${utility} applies below 1024px`).not.toContain(utility);
     }
+  });
+});
+
+/**
+ * T-046'S OVERFLOW FLOOR, RE-PINNED WHERE IT NOW LIVES.
+ *
+ * `.chartFrame`'s `min-width: min(300px, 100%)` had an entry of its own in
+ * `components/css-module-fixed-widths.test.ts`, which said "if this line ever reads
+ * `min-width: 300px` again, this suite is where it stops". T-033 task 4 deleted the stylesheet,
+ * that entry went with it, and the declaration moved into `climate-chart.tsx`'s `FRAME` — where
+ * the census cannot read it and `pnpm sweep:overflow`, which is NOT in `.github/workflows/ci.yml`,
+ * became its only cover. So the pin moves here, to the consumer's own test, which `pnpm test`
+ * runs on every task. See `lib/test-support/converted-floor.ts` for the rule.
+ *
+ * The bare `min-width: 300px` is what scrolled `/turkiye/istanbul` sideways at 320: the floor
+ * exists for the SHARED row, where the frame sits beside the summary and must not be squeezed
+ * below a readable plot, and at 320 the frame has wrapped to its own row where the floor is
+ * protecting nothing and is simply wider than the 288px column. `min()` keeps the floor wherever
+ * the column can hold it and yields where it cannot.
+ */
+describe("the chart frame keeps T-046's 320px overflow floor", () => {
+  const FLOOR = "min-w-[min(300px,100%)]";
+  const REJECTED = /min-w-\[300px\]/;
+
+  it("FRAME still carries the yielding floor, and not the bare one", () => {
+    const frame = classConstant(chart, "FRAME");
+    expect(frame, "climate-chart.tsx has no FRAME constant").not.toBeNull();
+    expect(frame, `FRAME lost ${FLOOR}`).toContain(FLOOR);
+    expect(frame!.split(FLOOR).join(" "), "FRAME carries a bare 300px floor").not.toMatch(REJECTED);
+  });
+
+  it("…on the constant the plot actually renders", () => {
+    // Half of "bidirectional": a pin that only reads the declaration stays green on a constant
+    // nothing uses, so the floor could be deleted from the page while this file agreed.
+    expect(renderSites(chart, "FRAME")).toBe(1);
+  });
+
+  it("POSITIVE CONTROL — the same reading reds on the defect it exists for", () => {
+    // Anti-vacuity, run against a MUTATION of the real declaration rather than an invented
+    // string, so the control cannot rot into a green copy of itself: take what the file really
+    // says and put the T-046 defect back into it.
+    const real = classConstant(chart, "FRAME")!;
+    const poisoned = real.split(FLOOR).join("min-w-[300px]");
+    expect(poisoned).not.toBe(real);
+    expect(poisoned).not.toContain(FLOOR);
+    expect(poisoned.split(FLOOR).join(" ")).toMatch(REJECTED);
   });
 });

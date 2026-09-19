@@ -40,15 +40,37 @@ import { AXIS_UNIT_DY, buildClimateChartGeometry } from "@/lib/climate/scale";
  *
  * `--color-ink-dark` #211c19 is the neutral that is frozen AND unshadowed — the scope shadows
  * exactly four properties (`--color-ink`, `--color-slate`, `--color-surface`, `--color-border`)
- * and this is not one of them. It is the same token `app/globals.css` already documents as the
- * one neutral that reads over every fixed map surface. The alphas reproduce the deleted rules
- * and match the PM2.5 chart's own scaffolding to within 0.11:
+ * and this is not one of them. `app/globals.css` defines it as the palette's darkest line ink,
+ * "the ONE neutral value measured to clear WCAG 1.4.11's 3:1 graphical-object floor against EVERY
+ * surface this design system can draw a meaningful line over" — ink for a surface the theme does
+ * not reach, which is what a frozen plot is. Escaping the shadow follows from that meaning rather
+ * than being the reason for it. NOTE for whoever retunes that token: its own docblock warns that
+ * "every reader depends on the 3:1 floor, not on the shade", and this chart is the exception —
+ * `/77` is tuned to a text-grade 7.97:1 grey, so it depends on the shade.
  *
- *   | element        | deleted rule           | on white | now              | on white |
- *   | -------------- | ---------------------- | -------- | ---------------- | -------- |
- *   | axis numbers   | `--color-slate`        | 7.92:1   | `ink-dark/77`    | 7.97:1   |
- *   | 0 °C gridline  | `--color-slate`        | 7.92:1   | `ink-dark/77`    | 7.97:1   |
- *   | gridlines      | `--color-border`       | 1.45:1   | `ink-dark/15`    | 1.36:1   |
+ * ## What the deleted rules actually rendered, in BOTH themes
+ *
+ * The replacements are theme-invariant, because the plot is. The rules they replace were NOT:
+ * two of the four tokens the scope shadows were exactly the two this chart's scaffolding used, so
+ * inside `.dark` they resolved elsewhere. Both columns matter, and they point opposite ways —
+ * measured against the plot's own white ground in both cases:
+ *
+ *   | element                 | deleted rule     | light  | dark (inside the scope)   | now           | both   |
+ *   | ----------------------- | ---------------- | ------ | ------------------------- | ------------- | ------ |
+ *   | axis numbers, months    | `--color-slate`  | 7.92:1 | `--muted-foreground` 2.19:1 | `ink-dark/77` | 7.97:1 |
+ *   | 0 °C gridline           | `--color-slate`  | 7.92:1 | `--muted-foreground` 2.19:1 | `ink-dark/77` | 7.97:1 |
+ *   | gridlines, frame edge   | `--color-border` | 1.45:1 | `--border` 11.09:1          | `ink-dark/15` | 1.36:1 |
+ *
+ * So the axis numbers, the month labels and the freezing reference were a LIVE sub-floor reading
+ * in dark — 2.19:1 against a 4.5:1 text floor — and this change fixes them. In the other
+ * direction the gridlines were 11.09:1 in dark, a near-black grid on a white plot, and they are
+ * now the same hairline weight as light. That is deliberate and is the point of a frozen plot: a
+ * figure that does not follow the theme must not have scaffolding that does, or its grid changes
+ * weight under a mode switch its data never sees. "Reproduces the deleted rule" is true of the
+ * LIGHT column only; the dark column is a fix in one row and an intended change in the other.
+ *
+ * The new values also match the PM2.5 chart's own scaffolding to within 0.11, so the two plots on
+ * this page print the same greys.
  *
  * Scaffolding is not an encoding: ink on a plot says nothing about a value, so rule 1 is not in
  * play. Only the columns, the polyline, the markers and the two unit captions carry a data token.

@@ -305,8 +305,29 @@ pins both directions.
 `--color-ink`. `components/climate` may not: the province page renders its chart inside
 `.climate-dark-scope`, the T-018 subtree where `app/globals.css` shadows `--color-ink` to
 `--color-bg`, so `fill-ink/80` measures **1.05:1** on the chart's own white plot. It uses
-`--color-ink-dark` instead — frozen, and not one of the four properties that wrapper shadows.
-A new chart inside a token-shadowing subtree owes the same check.
+`--color-ink-dark` instead, which `app/globals.css` defines as the palette's darkest line ink and
+the one neutral measured to clear 3:1 over every surface the theme does not reach — a frozen plot
+being exactly that — and which is not one of the four properties that wrapper shadows. A new chart
+inside a token-shadowing subtree owes the same check. One caveat for that token's owner: its
+docblock says every reader depends on the 3:1 floor rather than on the shade, and the climate
+chart is the exception, since its `/77` alpha is tuned to a text-grade 7.97:1.
+
+**A frozen plot's scaffolding is theme-invariant, and the rules it replaces were not.** Read both
+columns before calling a conversion here "reproduces the deleted rule" — it is true in light only.
+The climate chart's scaffolding used two of the four tokens `.climate-dark-scope` shadows, so in
+dark they resolved elsewhere, and the two rows point opposite ways. All figures on the white plot:
+
+| element               | deleted rule     | light  | dark, inside the scope          | now           | both themes |
+| --------------------- | ---------------- | ------ | ------------------------------- | ------------- | ----------- |
+| axis numbers, months  | `--color-slate`  | 7.92:1 | `--muted-foreground` **2.19:1** | `ink-dark/77` | 7.97:1      |
+| 0 °C gridline         | `--color-slate`  | 7.92:1 | `--muted-foreground` **2.19:1** | `ink-dark/77` | 7.97:1      |
+| gridlines, frame edge | `--color-border` | 1.45:1 | `--border` 11.09:1              | `ink-dark/15` | 1.36:1      |
+
+So T-033 task 4 fixed a live sub-floor reading — the axis numbers, month labels and freezing
+reference were 2.19:1 against a 4.5:1 text floor in dark — and, in the other row, made the
+gridlines the same hairline weight in both themes instead of a near-black grid in dark. The second
+is intended: a figure that does not follow the theme must not carry scaffolding that does, or its
+grid changes weight under a mode switch its data never sees.
 
 **A legend swatch is the same residue pointing outward.** `climate-chart.tsx`'s two swatches
 carry the data tokens on `--card`, where they measure 2.47:1 and 3.29:1 in dark, because a

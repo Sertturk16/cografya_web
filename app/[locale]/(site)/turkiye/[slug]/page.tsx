@@ -80,7 +80,9 @@ interface PageProps {
  *
  * The hues are frozen light (no `--region-*` has a dark half), so they are used ONLY as a 10-15%
  * tint under `text-foreground`, never as text or as the sole carrier of anything — the badge
- * spells the region's name out. Measured with `lib/theme/contrast.ts`, `text-foreground` on the
+ * spells the region's name out. The three alphas are the ones the raw classes carried (`/15` fill,
+ * `/30` edge, `/10` gradient), unchanged: a hue at 30% is a hue at 30%, so this is a like-for-like
+ * translation and nothing here is retuned by eye. Measured with `lib/theme/contrast.ts`, `text-foreground` on the
  * badge tint over the hero band (region/15 over region/10 over `--background`): light 10.18-13.32,
  * dark 8.66-12.92, worst case İç Anadolu in dark at 8.66:1. T-031c adds `--region-*-tint` and
  * `--region-*-text` members to `app/globals.css`, which this branch may not touch; when they land
@@ -101,47 +103,47 @@ const REGION_THEMES: Record<
   MARMARA: {
     nameTr: "Marmara Bölgesi",
     slug: "marmara",
-    badgeClass: "bg-[var(--region-marmara)]/15 text-foreground border-[var(--region-marmara)]/40",
+    badgeClass: "bg-[var(--region-marmara)]/15 text-foreground border-[var(--region-marmara)]/30",
     gradient: "from-[var(--region-marmara)]/10 via-background to-background",
   },
   EGE: {
     nameTr: "Ege Bölgesi",
     slug: "ege",
-    badgeClass: "bg-[var(--region-ege)]/15 text-foreground border-[var(--region-ege)]/40",
+    badgeClass: "bg-[var(--region-ege)]/15 text-foreground border-[var(--region-ege)]/30",
     gradient: "from-[var(--region-ege)]/10 via-background to-background",
   },
   AKDENIZ: {
     nameTr: "Akdeniz Bölgesi",
     slug: "akdeniz",
-    badgeClass: "bg-[var(--region-akdeniz)]/15 text-foreground border-[var(--region-akdeniz)]/40",
+    badgeClass: "bg-[var(--region-akdeniz)]/15 text-foreground border-[var(--region-akdeniz)]/30",
     gradient: "from-[var(--region-akdeniz)]/10 via-background to-background",
   },
   IC_ANADOLU: {
     nameTr: "İç Anadolu Bölgesi",
     slug: "ic-anadolu",
     badgeClass:
-      "bg-[var(--region-ic-anadolu)]/15 text-foreground border-[var(--region-ic-anadolu)]/40",
+      "bg-[var(--region-ic-anadolu)]/15 text-foreground border-[var(--region-ic-anadolu)]/30",
     gradient: "from-[var(--region-ic-anadolu)]/10 via-background to-background",
   },
   KARADENIZ: {
     nameTr: "Karadeniz Bölgesi",
     slug: "karadeniz",
     badgeClass:
-      "bg-[var(--region-karadeniz)]/15 text-foreground border-[var(--region-karadeniz)]/40",
+      "bg-[var(--region-karadeniz)]/15 text-foreground border-[var(--region-karadeniz)]/30",
     gradient: "from-[var(--region-karadeniz)]/10 via-background to-background",
   },
   DOGU_ANADOLU: {
     nameTr: "Doğu Anadolu Bölgesi",
     slug: "dogu-anadolu",
     badgeClass:
-      "bg-[var(--region-dogu-anadolu)]/15 text-foreground border-[var(--region-dogu-anadolu)]/40",
+      "bg-[var(--region-dogu-anadolu)]/15 text-foreground border-[var(--region-dogu-anadolu)]/30",
     gradient: "from-[var(--region-dogu-anadolu)]/10 via-background to-background",
   },
   GUNEYDOGU_ANADOLU: {
     nameTr: "Güneydoğu Anadolu Bölgesi",
     slug: "guneydogu-anadolu",
     badgeClass:
-      "bg-[var(--region-guneydogu-anadolu)]/15 text-foreground border-[var(--region-guneydogu-anadolu)]/40",
+      "bg-[var(--region-guneydogu-anadolu)]/15 text-foreground border-[var(--region-guneydogu-anadolu)]/30",
     gradient: "from-[var(--region-guneydogu-anadolu)]/10 via-background to-background",
   },
 };
