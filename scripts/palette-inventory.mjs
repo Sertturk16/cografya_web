@@ -180,16 +180,6 @@ export function isRawExempt(file) {
  */
 export const ARBITRARY_PINNED = [
   {
-    file: "components/v2/v2-earthquake-explorer.tsx",
-    count: 12,
-    why: "the fault-map surfaces: sea plate, land and its hairline in both themes, neighbour land, and the two tectonic-context tones",
-  },
-  {
-    file: "components/v2/v2-marine-map-explorer.tsx",
-    count: 11,
-    why: "the basin-map surfaces: sea plate, land and hairline in both themes, two inland-water tones, the sea fill and the two neighbour-land tones",
-  },
-  {
     file: "components/v2/v2-game-screen.tsx",
     count: 10,
     why: "the play-screen map surfaces: the board plate in both themes, land and hairline, and the sea pair",

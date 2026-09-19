@@ -478,7 +478,7 @@ export function V2EarthquakeExplorer({
             setHoveredEventId(null);
             setMousePos(null);
           }}
-          className="relative w-full aspect-[1270/580] bg-[var(--map-sea)] dark:bg-[#152228] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
+          className="relative w-full aspect-[1270/580] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
         >
           <svg
             viewBox={TR_CONTEXT_VIEWBOX}
@@ -486,14 +486,14 @@ export function V2EarthquakeExplorer({
             aria-label="Türkiye Canlı Deprem Haritası"
           >
             {/* Surrounding Context Countries */}
-            <g className="fill-[#f1ece3] dark:fill-[#2d2822] stroke-[#b8aea0] dark:stroke-[#50473e] stroke-[1] stroke-linejoin-round pointer-events-none">
+            <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
               {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
                 <path key={country.iso} d={country.d} />
               ))}
             </g>
 
             {/* Neighbor Country Name Labels */}
-            <g className="fill-[#635a4e] dark:fill-[#a89e92] font-sans font-bold text-[11px] pointer-events-none select-none">
+            <g className="fill-[var(--map-label)] font-sans font-bold text-[11px] pointer-events-none select-none">
               {CONTEXT_SHAPES.filter(
                 (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
               ).map((country) => {
@@ -514,14 +514,14 @@ export function V2EarthquakeExplorer({
             </g>
 
             {/* Inland Lakes & Waters */}
-            <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-[#8bb7cf] dark:stroke-[#0e2230] stroke-[0.5] pointer-events-none">
+            <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
               {INLAND_WATER_SHAPES.map((water) => (
                 <path key={water.id} d={water.d} />
               ))}
             </g>
 
             {/* Surrounding Sea Names */}
-            <g className="fill-[#537b93] dark:fill-[#5a86a0] font-sans font-bold tracking-widest pointer-events-none select-none opacity-60">
+            <g className="fill-accent font-sans font-bold tracking-widest pointer-events-none select-none">
               {SEA_LABELS.map((sea) => (
                 <text
                   key={sea.name}
