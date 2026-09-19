@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { tokensIn } from "@/lib/test-support/css-tokens";
 import { stripComments } from "@/lib/test-support/strip-comments";
 import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
-import { GRAPHICAL_MIN, ratio, relativeLuminance, TEXT_MIN } from "./contrast";
+import { blendOver, GRAPHICAL_MIN, ratio, relativeLuminance, TEXT_MIN } from "./contrast";
 import { MAGNITUDE_LABEL, MAGNITUDE_RING } from "./magnitude-identity";
 
 /**
@@ -20,9 +20,9 @@ import { MAGNITUDE_LABEL, MAGNITUDE_RING } from "./magnitude-identity";
  * 3.63 / 2.65 / 1.89 / 1.29 / 1.01, four of five under 3:1, worst at the step that matters
  * most. Prominence on a dark ground is lightness, so lightness rises with magnitude.
  *
- * The dark window is not free: every step must clear 3:1 on --card, --map-plate, --map-sea and
- * --map-land, and carry a single label at 4.5:1. Below oklch L 0.65 the label fails on step 1;
- * the five sit at L 0.65 -> 0.91.
+ * The dark window is not free: every step must clear 3:1 on --card, --map-plate, --map-sea,
+ * --map-land and --map-context-land, and carry a single label at 4.5:1. Below oklch L 0.65 the
+ * label fails on step 1; the five sit at L 0.65 -> 0.91.
  */
 const RAMP = {
   light: { 1: "#aa4cbd", 2: "#9236a1", 3: "#772281", 4: "#521457", 5: "#2e0e2f", fg: "#ffffff" },
@@ -31,6 +31,12 @@ const RAMP = {
 
 const CSS = readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8");
 const ROOT_TOKENS = tokensIn(CSS, ":root");
+// `.dark {`, not `.dark`: the same decoy `map-surface.test.ts` and this file's own `THEMES`
+// below already guard against (`@custom-variant dark (&:is(.dark *));` contains the shorter
+// substring first). Parsed here, not hardcoded, for the same reason `--color-ink-dark`'s
+// resolution above is: a value transcribed once and never re-checked is how a retuned token
+// goes unnoticed by the test that is supposed to be reading the CURRENT stylesheet.
+const DARK_TOKENS = tokensIn(CSS, ".dark {");
 const THEMES = [
   ["light", ":root", "#ffffff"],
   // Not plain ".dark": `@custom-variant dark (&:is(.dark *));` near the top of the file
@@ -72,6 +78,15 @@ describe.each(THEMES)("the %s magnitude ramp", (theme, selector, card) => {
         ["--map-plate", MAP_SURFACES[theme]["--map-plate"]],
         ["--map-sea", MAP_SURFACES[theme]["--map-sea"]],
         ["--map-land", MAP_SURFACES[theme]["--map-land"]],
+        // T-031d Task 13 fix round 2: `v2-earthquake-explorer.tsx`'s page describes itself as
+        // covering "Türkiye ve yakın çevresi" (Turkey AND its near vicinity) and paints the
+        // surrounding countries as their own opaque layer BEFORE the province layer — a real
+        // epicentre near a border (Ege/Akdeniz islands, the Iran/Ermenistan/Gürcistan edge) can
+        // project onto that layer rather than onto any Turkish province or --map-plate. Found
+        // by enumerating the component's own fill layers rather than reasoning from memory
+        // (see the ring `describe` below); it is a flat opaque token like the three above it,
+        // not a composite.
+        ["--map-context-land", MAP_SURFACES[theme]["--map-context-land"]],
       ] as const) {
         expect(
           ratio(table[n], ground),
@@ -185,6 +200,40 @@ describe("the ramp's three label consumers read --eq-mag-fg, not a bare white", 
  * once the fill already carries the plate boundary, is separating two OVERLAPPING discs — a
  * ring-against-fill question, not a ring-against-plate one.
  *
+ * "THE PLATE" IS NOT THE ONLY GROUND, AND FIX ROUND 2 IS WHERE THAT GOT CHECKED RATHER THAN
+ * ASSUMED. The first pass named "province fill, hover fill, the inland lake, or another disc"
+ * as what a disc can sit on, and then only asserted the flat `--map-plate` token — the same
+ * unchecked-premise shape this branch has now hit five times (`opacity-60` sea labels,
+ * `opacity-85` region fills, a sub-pixel stroke alpha, `fillSoft`'s `/85`, and this). Enumerated
+ * `v2-earthquake-explorer.tsx`'s own fill layers, in paint order, rather than trusting that
+ * list from memory:
+ *
+ *   1. `fill-[var(--map-context-land)]` (surrounding countries) — flat, opaque. A real ground:
+ *      the section is captioned "Türkiye ve yakın çevresi" and AFAD events do land just over a
+ *      border. Not a composite, so it joins the flat-surface list in the "clears 3:1" test
+ *      above rather than living here.
+ *   2. `fill-card/90` (the 81 provinces) — a COMPOSITE, `--card` at 90% over whatever is
+ *      beneath, which for Turkish territory is `--map-plate` (nothing else paints there first).
+ *   3. `hover:fill-muted/70` (the hovered province) — a COMPOSITE, `--muted` at 70% over
+ *      `--map-plate`, replacing rather than layering on top of #2 (an element's own fill wins
+ *      over an inherited one regardless of selector specificity).
+ *   4. `fill-[var(--map-sea)]` (inland lakes, painted after the provinces) — flat and opaque,
+ *      and `--map-sea` is byte-identical to `--map-plate` in both themes (`app/globals.css`:
+ *      `--map-plate: var(--map-sea);` in light, the same hex repeated in `.dark`), so this adds
+ *      no new ground beyond the `--map-plate`/`--map-sea` rows the "clears 3:1" test already
+ *      carries.
+ *   5. No region-tint layer exists in this file (`grep -n "REGION\|Okabe\|density\|heatmap\|
+ *      choropleth"` returns nothing) — unlike the game screens Ruling 16 was about, this
+ *      explorer paints one flat province fill, not a per-province Bölge tint.
+ *
+ * Composited against `--map-plate` with `blendOver`, worst case across the five steps: province
+ * 4.59 light / 4.85 dark, hover 3.83 light / 4.33 dark. **Hover in light, 3.83, is the binding
+ * case** — the smallest margin above `GRAPHICAL_MIN` of any ground this ramp is measured
+ * against, flat or composite. Nothing is changed by this finding: every composite still clears
+ * `GRAPHICAL_MIN` in both themes, so the plate-boundary conclusion holds — it now holds by
+ * assertion against the grounds a disc actually renders on, not by assumption from a flat token
+ * that was never the whole picture.
+ *
  * `--eq-mag-fg` is measured against every one of the five fills in both themes already (the
  * "carries ONE label" test above: 4.69 worst in light, 4.81 worst in dark, both comfortably
  * past `GRAPHICAL_MIN` and even `TEXT_MIN`). A disc's fill is always one of those five, in
@@ -227,6 +276,45 @@ describe("the disc's ring: the plate boundary is the fill's job, not the ring's"
     for (const n of STEPS) {
       expect(ratio(RAMP.light[n], PLATE_LIGHT)).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
       expect(ratio(RAMP.dark[n], PLATE_DARK)).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+    }
+  });
+
+  it("the fill clears the ACTUAL composited grounds a disc sits on, not just the flat plate", () => {
+    // `--card`/`--muted` are Terra tokens, not `--map-*` surfaces, so they are read from the
+    // stylesheet here rather than added to `MAP_SURFACES` (`test/fixtures/theme/
+    // map-surfaces.ts`'s own docblock scopes that fixture to `--map-*`).
+    const grounds = {
+      light: {
+        // `fill-card/90` (the 81-province base layer) over `--map-plate` — nothing else paints
+        // under Turkish territory first.
+        province: blendOver(ROOT_TOKENS["--card"]!, 0.9, PLATE_LIGHT),
+        // `hover:fill-muted/70`, which REPLACES the province's inherited fill on hover rather
+        // than layering over it, so this composites over `--map-plate` too, not over `province`.
+        hover: blendOver(ROOT_TOKENS["--muted"]!, 0.7, PLATE_LIGHT),
+      },
+      dark: {
+        province: blendOver(DARK_TOKENS["--card"]!, 0.9, PLATE_DARK),
+        hover: blendOver(DARK_TOKENS["--muted"]!, 0.7, PLATE_DARK),
+      },
+    } as const;
+
+    for (const n of STEPS) {
+      expect(
+        ratio(RAMP.light[n], grounds.light.province),
+        `--eq-mag-${n} on the light province fill (card/90 over --map-plate)`,
+      ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+      expect(
+        ratio(RAMP.light[n], grounds.light.hover),
+        `--eq-mag-${n} on the light hover fill (muted/70 over --map-plate) — the binding case, worst 3.83`,
+      ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+      expect(
+        ratio(RAMP.dark[n], grounds.dark.province),
+        `--eq-mag-${n} on the dark province fill (card/90 over --map-plate)`,
+      ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+      expect(
+        ratio(RAMP.dark[n], grounds.dark.hover),
+        `--eq-mag-${n} on the dark hover fill (muted/70 over --map-plate)`,
+      ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
     }
   });
 
