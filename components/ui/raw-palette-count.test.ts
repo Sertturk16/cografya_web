@@ -88,9 +88,24 @@ import {
  * A FALL here alongside a fall in the first arm is the good case; the failure this pairing
  * exists to catch is a fall in one WITH A RISE in the other.
  *
+ * 352 -> 301 is T-031c Task 8's first half: `dunya/[slug]/page.tsx` 51 -> 0, and it is the first
+ * file on this branch with NO data row in it at all — 22 semantic, 29 decoration, zero identity.
+ * The whole file is chrome. The 22 are one flag with three spellings (a hero chip, a card at
+ * section scale, and the same chip again on two neighbour branches) plus its affirmative twin,
+ * all four now on the warning/success bridge pair; the 29 are topic tints and metric-tile icons
+ * that name nothing, removed rather than re-tokenised.
+ *
+ * The neighbour chips are where the measurement mattered. They sit on a link whose REST surface
+ * is the card and whose HOVER surface is a 60% muted wash over the page background, and only the
+ * hovered state is close: 5.19 light and 7.06 dark against 5.87 / 7.36 at rest. Measuring the
+ * rest state alone would have reported a figure the reader never sees while pointing at the row.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. Nothing here was rewritten as a literal,
+ * and nothing gained a var() fallback.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 352;
+const RAW_PALETTE_BUDGET = 301;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
