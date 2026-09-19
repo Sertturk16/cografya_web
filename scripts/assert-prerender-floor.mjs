@@ -86,7 +86,15 @@ function main() {
     process.exit(1);
   }
 
-  const rows = readPrerenderFloors(manifest);
+  let rows;
+  try {
+    rows = readPrerenderFloors(manifest);
+  } catch (cause) {
+    console.error(`prerender floor: ${path} parsed but is not shaped like a prerender manifest.`);
+    console.error(String(cause));
+    process.exit(1);
+  }
+
   const failed = rows.filter((r) =>
     r.kind === "exact" ? r.actual !== r.expected : r.actual < r.expected,
   );

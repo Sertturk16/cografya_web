@@ -1,5 +1,12 @@
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readPrerenderFloors } from "./assert-prerender-floor.mjs";
+
+const scriptPath = fileURLToPath(new URL("./assert-prerender-floor.mjs", import.meta.url));
 
 /** A manifest shaped like the real one, with the route counts a healthy build produces. */
 function healthyManifest(): { routes: Record<string, unknown> } {
@@ -48,5 +55,30 @@ describe("readPrerenderFloors", () => {
 
   it("rejects a manifest that is not shaped like one at all", () => {
     expect(() => readPrerenderFloors({ nope: true })).toThrow(/routes/);
+  });
+});
+
+describe("the CLI entrypoint (main)", () => {
+  // readPrerenderFloors() throwing on a bad shape is covered above; what that leaves
+  // uncovered is main()'s own handling of that throw — it reads a hardcoded file path and
+  // calls process.exit(), so the only clean way to exercise it is to actually run the
+  // script as a subprocess, same as Step 5/6 of the build-integrity task did by hand. This
+  // spawns the guard script itself against a crafted manifest, not a `next build`.
+  it("prints a clean diagnostic, not a raw stack trace, when the manifest parses but has no `routes`", () => {
+    const dir = mkdtempSync(join(tmpdir(), "prerender-floor-"));
+    try {
+      mkdirSync(join(dir, ".next"));
+      writeFileSync(join(dir, ".next", "prerender-manifest.json"), JSON.stringify({ nope: true }));
+
+      const result = spawnSync(process.execPath, [scriptPath], { cwd: dir, encoding: "utf8" });
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toMatch(/not shaped like a prerender manifest/);
+      // A raw Node stack trace has "at <fn> (<file>:<line>:<col>)" frames; String(Error)
+      // never does, so this line is the guard against regressing back to dumping one.
+      expect(result.stderr).not.toMatch(/\s+at .+:\d+:\d+/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
