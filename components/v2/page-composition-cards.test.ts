@@ -533,12 +533,25 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *   - the disjointness total is DERIVED at the assertion (`HAND_DRAWN_CARDS + HAND_DRAWN_WELLS`),
  *     never pinned, so 190 + 169 = **359** follows rather than being chosen.
  */
+/**
+ * T-031d Task 15: **169 → 166 wells, 235 → 233 spellings**, cards unmoved at 190.
+ *
+ * Three hand-rolled tab-switcher containers — `v2-auth-dialog.tsx`'s Giriş/Üye Ol pair and the
+ * two map explorers' view-mode toggles — each spelled the same well INLINE at their call site:
+ * `rounded-xl border border-border bg-muted` (or `bg-muted/70`), no `bg-card`. Converting them
+ * to `components/ui/tabs.tsx`'s `TabsList` moved that spelling INTO the primitive's `pills`
+ * variant (`listVariants.pills` in `components/ui/tabs.tsx`), so the three call sites now write
+ * only their own layout classes (`h-auto p-1`, …) and the scanner — which reads source text, not
+ * `cn()`'s merged output — no longer sees a hand-drawn well there. Three elements gone; only two
+ * distinct spellings drop because the auth dialog's switcher shared its exact spelling with one
+ * of the two map explorers'.
+ */
 export const HAND_DRAWN_CARDS = 190;
 
-export const HAND_DRAWN_WELLS = 169;
+export const HAND_DRAWN_WELLS = 166;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 235;
+export const HAND_DRAWN_CARD_SPELLINGS = 233;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.

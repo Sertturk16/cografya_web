@@ -43,12 +43,38 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
   });
 
   describe("V2MemberHub Accessibility & Panels", () => {
-    it("contains accessible tabs with proper ARIA roles and keyboard controls", () => {
-      expect(hubSource).toContain('role="tablist"');
-      expect(hubSource).toContain('role="tab"');
-      expect(hubSource).toContain('role="tabpanel"');
-      expect(hubSource).toContain("aria-selected=");
-      expect(hubSource).toContain("aria-controls=");
+    // T-031d Task 15: the hub no longer writes role="tablist" / role="tab" / role="tabpanel"
+    // itself — components/v2/tablist-adoption.test.ts forbids that under components/v2, because
+    // the hand-rolled version here carried the roles and the aria-* correctly but no onKeyDown,
+    // so ARIA APG's Left/Right requirement went unmet. The five panels now go through
+    // components/ui/tabs.tsx (Base UI Tabs), which supplies every role, aria-* and the roving
+    // tabindex/arrow-key behaviour at runtime; this test checks the hub still routes through it
+    // rather than re-inlining the tablist, and that none of the five panels was dropped.
+    const PANELS = ["favorites", "videos", "games", "measurements", "profile"] as const;
+
+    it("routes its five member panels through the shared Tabs primitive", () => {
+      expect(hubSource).toContain('from "@/components/ui/tabs"');
+      expect(hubSource).toContain("<TabsList");
+      expect(hubSource).toContain("onValueChange=");
+    });
+
+    // A bare `toContain('value="favorites"')` is satisfied by the TRIGGER alone, and a bare
+    // `toContain("<TabsContent")` by any one panel, so four of the five could be deleted and
+    // this block would stay green. Each half of each pair is therefore matched on its own tag.
+    it.each(PANELS)("keeps both the trigger and the panel for %s", (panel) => {
+      expect(hubSource, `the ${panel} trigger is gone`).toMatch(
+        new RegExp(`<TabsTrigger\\s+value="${panel}"`),
+      );
+      expect(hubSource, `the ${panel} panel is gone`).toMatch(
+        new RegExp(`<TabsContent\\s+value="${panel}"`),
+      );
+    });
+
+    it("keeps the games panel mounted while it is deselected", () => {
+      // Base UI's Tabs.Panel unmounts a deselected panel by default. V2GameHistoryStats fetches
+      // /game-rounds from a mount effect into its own state, so without this the panel refetches
+      // on every selection — once per keypress while an arrow key repeats across the tablist.
+      expect(hubSource).toMatch(/<TabsContent\s+value="games"[^>]*\skeepMounted/);
     });
 
     it("contains an aria-live polite status announcement region", () => {

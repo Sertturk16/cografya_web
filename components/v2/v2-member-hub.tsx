@@ -39,6 +39,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   User,
   GraduationCap,
@@ -471,349 +472,282 @@ export function V2MemberHub({
         </div>
       </div>
 
-      {/* Accessible Navigation Tabs */}
-      <div
-        role="tablist"
-        aria-label="Üyelik Panelleri"
-        className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none border-b border-border"
+      {/*
+        Page-level section switcher, so `line`: an underline reads as navigation within a
+        page, where `pills` would read as a control (T-034 rationale, components/ui/tabs.tsx).
+      */}
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as TabKey)}
+        variant="line"
       >
-        <button
-          role="tab"
-          type="button"
-          id="tab-favorites"
-          aria-selected={activeTab === "favorites"}
-          aria-controls="panel-favorites"
-          onClick={() => setActiveTab("favorites")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
-            activeTab === "favorites"
-              ? "bg-primary text-white shadow-sm"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
+        {/*
+          Five Turkish labels do not fit at 390px, so this list scrolls. That is why the height
+          is released back to `auto` instead of the `line` variant's fixed 44px and why the
+          bottom padding is back: on a platform with persistent scrollbars the bar renders
+          inside the box, and in a fixed 44px box with no bottom padding it sits on top of the
+          labels. `scrollbar-none` stays here rather than on the `line` variant — the variant
+          sets no overflow of its own, so a non-scrolling `line` list has no scrollbar to hide,
+          and hiding one costs a scroll affordance that each scrolling consumer should give up
+          deliberately.
+        */}
+        <TabsList
+          aria-label="Üyelik Panelleri"
+          className="flex h-auto w-full overflow-x-auto pb-2 scrollbar-none"
         >
-          <Heart className="size-3.5" />
-          <span>Favorilerim</span>
-          <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-              activeTab === "favorites"
-                ? "bg-white/20 text-white"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {favorites ? favorites.length : 0}
-          </span>
-        </button>
+          <TabsTrigger value="favorites" className="gap-2">
+            <Heart className="size-3.5" />
+            <span>Favorilerim</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground">
+              {favorites ? favorites.length : 0}
+            </span>
+          </TabsTrigger>
 
-        <button
-          role="tab"
-          type="button"
-          id="tab-videos"
-          aria-selected={activeTab === "videos"}
-          aria-controls="panel-videos"
-          onClick={() => setActiveTab("videos")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
-            activeTab === "videos"
-              ? "bg-primary text-white shadow-sm"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-        >
-          <PlayCircle className="size-3.5" />
-          <span>Video İlerlemem</span>
-        </button>
+          <TabsTrigger value="videos" className="gap-2">
+            <PlayCircle className="size-3.5" />
+            <span>Video İlerlemem</span>
+          </TabsTrigger>
 
-        <button
-          role="tab"
-          type="button"
-          id="tab-games"
-          aria-selected={activeTab === "games"}
-          aria-controls="panel-games"
-          onClick={() => setActiveTab("games")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
-            activeTab === "games"
-              ? "bg-primary text-white shadow-sm"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-        >
-          <Trophy className="size-3.5" />
-          <span>Sınav &amp; Skor Geçmişim</span>
-        </button>
+          <TabsTrigger value="games" className="gap-2">
+            <Trophy className="size-3.5" />
+            <span>Sınav &amp; Skor Geçmişim</span>
+          </TabsTrigger>
 
-        <button
-          role="tab"
-          type="button"
-          id="tab-measurements"
-          aria-selected={activeTab === "measurements"}
-          aria-controls="panel-measurements"
-          onClick={() => setActiveTab("measurements")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
-            activeTab === "measurements"
-              ? "bg-primary text-white shadow-sm"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-        >
-          <Ruler className="size-3.5" />
-          <span>Kayıtlı Ölçümlerim</span>
-          <span
-            className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-              activeTab === "measurements"
-                ? "bg-white/20 text-white"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {measurements ? measurements.length : 0}
-          </span>
-        </button>
+          <TabsTrigger value="measurements" className="gap-2">
+            <Ruler className="size-3.5" />
+            <span>Kayıtlı Ölçümlerim</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground">
+              {measurements ? measurements.length : 0}
+            </span>
+          </TabsTrigger>
 
-        <button
-          role="tab"
-          type="button"
-          id="tab-profile"
-          aria-selected={activeTab === "profile"}
-          aria-controls="panel-profile"
-          onClick={() => setActiveTab("profile")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary cursor-pointer ${
-            activeTab === "profile"
-              ? "bg-primary text-white shadow-sm"
-              : "bg-card border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
-          }`}
-        >
-          <User className="size-3.5" />
-          <span>Hesap &amp; Profil</span>
-        </button>
-      </div>
+          <TabsTrigger value="profile" className="gap-2">
+            <User className="size-3.5" />
+            <span>Hesap &amp; Profil</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Tab 1: Favorilerim Panel */}
-      <div
-        role="tabpanel"
-        id="panel-favorites"
-        aria-labelledby="tab-favorites"
-        hidden={activeTab !== "favorites"}
-        className="space-y-6"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        {/* Tab 1: Favorilerim Panel */}
+        <TabsContent value="favorites" className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
+                Kayıtlı Coğrafi Favorilerim
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                İl, ülke, bölge ve kıtaları favorilerine ekleyerek hızlı erişim listeni oluştur.
+              </p>
+            </div>
+
+            {/* Sub-filters for 4 types */}
+            <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-xl border border-border">
+              <button
+                type="button"
+                onClick={() => setFavoriteFilter("all")}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  favoriteFilter === "all"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Tümü ({favorites?.length ?? 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setFavoriteFilter("province")}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  favoriteFilter === "province"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                İller
+              </button>
+              <button
+                type="button"
+                onClick={() => setFavoriteFilter("country")}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  favoriteFilter === "country"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Ülkeler
+              </button>
+              <button
+                type="button"
+                onClick={() => setFavoriteFilter("region")}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  favoriteFilter === "region"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Bölgeler
+              </button>
+              <button
+                type="button"
+                onClick={() => setFavoriteFilter("continent")}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  favoriteFilter === "continent"
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Kıtalar
+              </button>
+            </div>
+          </div>
+
+          {favoritesStatus === "loading" ? (
+            <div
+              role="status"
+              className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
+            >
+              <Spinner size="lg" decorative className="text-primary" />
+              <span>Favorileriniz yükleniyor...</span>
+            </div>
+          ) : filteredFavorites.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredFavorites.map((item) => {
+                const meta = resolveFavoriteMeta(item);
+                return (
+                  <div
+                    key={`${item.entityType}-${item.entityId}`}
+                    className="rounded-2xl border border-border bg-card p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-muted/60 border border-border">
+                          {meta.icon}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-heading font-bold text-sm sm:text-base text-foreground group-hover:text-primary transition-colors">
+                              {meta.title}
+                            </span>
+                            <Badge variant="outline" size="sm" className="text-[10px]">
+                              {meta.badge}
+                            </Badge>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground block mt-0.5">
+                            {meta.subtitle}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFavorite(item)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        aria-label={`${meta.title} favorilerden kaldır`}
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+
+                    <div className="pt-2 border-t border-border flex items-center justify-between">
+                      <Link
+                        href={meta.href as unknown as AppNavigationHref}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        Sayfayı Ziyaret Et
+                        <ArrowRight className="size-3" />
+                      </Link>
+                      <span className="text-[10px] text-muted-foreground">Sabitlendi</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-border p-10 text-center space-y-4 max-w-xl mx-auto bg-muted/20">
+              <div className="size-12 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto text-muted-foreground">
+                <Heart className="size-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Henüz kayıtlı favorin bulunmuyor
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Türkiye ve Dünya atlas sayfalarındaki &quot;Favoriye Ekle&quot; butonuna basarak
+                  dilediğin il, ülke, bölge veya kıtayı bu alana sabitleyebilirsin.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <Link
+                  href="/turkiye"
+                  className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
+                >
+                  Türkiye Haritası
+                </Link>
+                <Link
+                  href="/dunya"
+                  className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs"
+                >
+                  Dünya Atlası
+                </Link>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tab 2: Video İlerlemem Panel */}
+        <TabsContent value="videos" className="space-y-6">
           <div>
             <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-              Kayıtlı Coğrafi Favorilerim
+              Kitap Video Çözüm İlerleme Durumu
             </h2>
             <p className="text-xs text-muted-foreground">
-              İl, ülke, bölge ve kıtaları favorilerine ekleyerek hızlı erişim listeni oluştur.
+              İzlediğin coğrafya soru çözüm videoları, izleme süren ve kaldığın yer otomatik olarak
+              hesabına kaydedilir.
             </p>
           </div>
 
-          {/* Sub-filters for 4 types */}
-          <div className="flex items-center gap-1.5 bg-muted/40 p-1 rounded-xl border border-border">
-            <button
-              type="button"
-              onClick={() => setFavoriteFilter("all")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                favoriteFilter === "all"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
+          {videosStatus === "loading" ? (
+            <div
+              role="status"
+              className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
             >
-              Tümü ({favorites?.length ?? 0})
-            </button>
-            <button
-              type="button"
-              onClick={() => setFavoriteFilter("province")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                favoriteFilter === "province"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              İller
-            </button>
-            <button
-              type="button"
-              onClick={() => setFavoriteFilter("country")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                favoriteFilter === "country"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Ülkeler
-            </button>
-            <button
-              type="button"
-              onClick={() => setFavoriteFilter("region")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                favoriteFilter === "region"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Bölgeler
-            </button>
-            <button
-              type="button"
-              onClick={() => setFavoriteFilter("continent")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                favoriteFilter === "continent"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Kıtalar
-            </button>
-          </div>
-        </div>
-
-        {favoritesStatus === "loading" ? (
-          <div
-            role="status"
-            className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
-          >
-            <Spinner size="lg" decorative className="text-primary" />
-            <span>Favorileriniz yükleniyor...</span>
-          </div>
-        ) : filteredFavorites.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredFavorites.map((item) => {
-              const meta = resolveFavoriteMeta(item);
-              return (
-                <div
-                  key={`${item.entityType}-${item.entityId}`}
-                  className="rounded-2xl border border-border bg-card p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-muted/60 border border-border">
-                        {meta.icon}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-heading font-bold text-sm sm:text-base text-foreground group-hover:text-primary transition-colors">
-                            {meta.title}
-                          </span>
-                          <Badge variant="outline" size="sm" className="text-[10px]">
-                            {meta.badge}
-                          </Badge>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground block mt-0.5">
-                          {meta.subtitle}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFavorite(item)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                      aria-label={`${meta.title} favorilerden kaldır`}
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-
-                  <div className="pt-2 border-t border-border flex items-center justify-between">
-                    <Link
-                      href={meta.href as unknown as AppNavigationHref}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                    >
-                      Sayfayı Ziyaret Et
-                      <ArrowRight className="size-3" />
-                    </Link>
-                    <span className="text-[10px] text-muted-foreground">Sabitlendi</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-3xl border border-dashed border-border p-10 text-center space-y-4 max-w-xl mx-auto bg-muted/20">
-            <div className="size-12 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto text-muted-foreground">
-              <Heart className="size-6" />
+              <Spinner size="lg" decorative className="text-primary" />
+              <span>Video ilerlemeniz kontrol ediliyor...</span>
             </div>
-            <div className="space-y-1">
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Henüz kayıtlı favorin bulunmuyor
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Türkiye ve Dünya atlas sayfalarındaki &quot;Favoriye Ekle&quot; butonuna basarak
-                dilediğin il, ülke, bölge veya kıtayı bu alana sabitleyebilirsin.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-              <Link
-                href="/turkiye"
-                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
-              >
-                Türkiye Haritası
-              </Link>
-              <Link
-                href="/dunya"
-                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs"
-              >
-                Dünya Atlası
-              </Link>
-            </div>
-          </div>
-        )}
-      </div>
+          ) : books.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {books.map((book) => {
+                const progress = bookProgressMap[book.slugTr];
+                const total = progress?.videoCount ?? 0;
+                const watched = progress?.watchedCount ?? 0;
+                const started = progress?.startedCount ?? 0;
+                const percentage = total > 0 ? Math.round((watched / total) * 100) : 0;
+                const resume = progress?.resume;
 
-      {/* Tab 2: Video İlerlemem Panel */}
-      <div
-        role="tabpanel"
-        id="panel-videos"
-        aria-labelledby="tab-videos"
-        hidden={activeTab !== "videos"}
-        className="space-y-6"
-      >
-        <div>
-          <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-            Kitap Video Çözüm İlerleme Durumu
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            İzlediğin coğrafya soru çözüm videoları, izleme süren ve kaldığın yer otomatik olarak
-            hesabına kaydedilir.
-          </p>
-        </div>
-
-        {videosStatus === "loading" ? (
-          <div
-            role="status"
-            className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
-          >
-            <Spinner size="lg" decorative className="text-primary" />
-            <span>Video ilerlemeniz kontrol ediliyor...</span>
-          </div>
-        ) : books.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {books.map((book) => {
-              const progress = bookProgressMap[book.slugTr];
-              const total = progress?.videoCount ?? 0;
-              const watched = progress?.watchedCount ?? 0;
-              const started = progress?.startedCount ?? 0;
-              const percentage = total > 0 ? Math.round((watched / total) * 100) : 0;
-              const resume = progress?.resume;
-
-              return (
-                <div
-                  key={book.slugTr}
-                  className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-5 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
-                          <BookOpen className="size-5" />
+                return (
+                  <div
+                    key={book.slugTr}
+                    className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-5 flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+                            <BookOpen className="size-5" />
+                          </div>
+                          <div>
+                            <h3 className="font-heading font-bold text-base text-foreground">
+                              {book.titleTr}
+                            </h3>
+                            <span className="text-[11px] text-muted-foreground block">
+                              Müfredat Uyumlu Video Soru Bankası
+                            </span>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-heading font-bold text-base text-foreground">
-                            {book.titleTr}
-                          </h3>
-                          <span className="text-[11px] text-muted-foreground block">
-                            Müfredat Uyumlu Video Soru Bankası
-                          </span>
-                        </div>
+                        <Badge variant="secondary" size="sm">
+                          %{percentage}
+                        </Badge>
                       </div>
-                      <Badge variant="secondary" size="sm">
-                        %{percentage}
-                      </Badge>
-                    </div>
 
-                    {/* Progress Bar.
+                      {/* Progress Bar.
                         `Progress` rather than two nested divs (T-036): the hand-drawn bar
                         carried no `role="progressbar"` and no `aria-valuenow`, so the
                         percentage next to it was the only place the number existed and a
@@ -821,380 +755,372 @@ export function V2MemberHub({
                         empty bar at 2% is gone with it — `aria-valuenow` has to be the real
                         value, and a bar that says 2% when nothing is watched is the same
                         lie in pixels. */}
-                    <div className="space-y-1.5">
-                      <Progress value={percentage} aria-label={`${book.titleTr} ilerlemesi`} />
-                      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>
-                          {watched} / {total > 0 ? total : "—"} Video Çözümü Tamamlandı
-                        </span>
-                        {started > watched && <span>{started - watched} videoda devam ediyor</span>}
+                      <div className="space-y-1.5">
+                        <Progress value={percentage} aria-label={`${book.titleTr} ilerlemesi`} />
+                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                          <span>
+                            {watched} / {total > 0 ? total : "—"} Video Çözümü Tamamlandı
+                          </span>
+                          {started > watched && (
+                            <span>{started - watched} videoda devam ediyor</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Resume Box or Empty Prompt */}
-                  <div className="pt-4 border-t border-border">
-                    {resume ? (
-                      <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-semibold text-foreground flex items-center gap-1.5">
-                            <Sparkles className="size-3.5 text-primary" />
-                            Kaldığın Yer: Soru #{resume.orderNo}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {Math.floor(resume.lastPositionSeconds / 60)}:
-                            {(resume.lastPositionSeconds % 60).toString().padStart(2, "0")}
-                          </span>
+                    {/* Resume Box or Empty Prompt */}
+                    <div className="pt-4 border-t border-border">
+                      {resume ? (
+                        <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-semibold text-foreground flex items-center gap-1.5">
+                              <Sparkles className="size-3.5 text-primary" />
+                              Kaldığın Yer: Soru #{resume.orderNo}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              {Math.floor(resume.lastPositionSeconds / 60)}:
+                              {(resume.lastPositionSeconds % 60).toString().padStart(2, "0")}
+                            </span>
+                          </div>
+                          <Link
+                            href={
+                              `/kitaplar/${book.slugTr}?v=${resume.bookVideoId}` as unknown as AppNavigationHref
+                            }
+                            className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
+                          >
+                            <PlayCircle className="size-3.5" />
+                            Kaldığın Yerden Devam Et
+                          </Link>
                         </div>
-                        <Link
-                          href={
-                            `/kitaplar/${book.slugTr}?v=${resume.bookVideoId}` as unknown as AppNavigationHref
-                          }
-                          className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
-                        >
-                          <PlayCircle className="size-3.5" />
-                          Kaldığın Yerden Devam Et
-                        </Link>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground">
-                          Henüz bu kitaptan bir soru izlemedin.
-                        </span>
-                        <Link
-                          href={`/kitaplar/${book.slugTr}` as unknown as AppNavigationHref}
-                          className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-8 px-3 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs gap-1 cursor-pointer"
-                        >
-                          Kitabı Aç
-                          <ExternalLink className="size-3" />
-                        </Link>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            Henüz bu kitaptan bir soru izlemedin.
+                          </span>
+                          <Link
+                            href={`/kitaplar/${book.slugTr}` as unknown as AppNavigationHref}
+                            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-8 px-3 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs gap-1 cursor-pointer"
+                          >
+                            Kitabı Aç
+                            <ExternalLink className="size-3" />
+                          </Link>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-3xl border border-dashed border-border p-10 text-center space-y-4 max-w-xl mx-auto bg-muted/20">
-            <div className="size-12 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto text-muted-foreground">
-              <PlayCircle className="size-6" />
+                );
+              })}
             </div>
-            <div className="space-y-1">
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Kayıtlı video ilerlemeniz bulunmuyor
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Coğrafya kitaplarımızın soru çözüm videolarını izlemeye başladığında kaldığın saniye
-                ve tamamlanma oranı burada listelenir.
+          ) : (
+            <div className="rounded-3xl border border-dashed border-border p-10 text-center space-y-4 max-w-xl mx-auto bg-muted/20">
+              <div className="size-12 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto text-muted-foreground">
+                <PlayCircle className="size-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Kayıtlı video ilerlemeniz bulunmuyor
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Coğrafya kitaplarımızın soru çözüm videolarını izlemeye başladığında kaldığın
+                  saniye ve tamamlanma oranı burada listelenir.
+                </p>
+              </div>
+              <Link
+                href="/kitaplar"
+                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
+              >
+                Kitap Video Çözümlerini İncele
+              </Link>
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Tab 3: Sınav & Skor Geçmişim Panel */}
+        {/*
+          `keepMounted`, against Base UI's default: the child below fetches /game-rounds from a
+          mount effect into its OWN state, so an unmount throws that state away and the next
+          selection refetches. Combined with `activateOnFocus`, holding ArrowRight across the
+          tablist would fire one request per keypress. The other four panels read hub-level
+          state that lives above this Tabs root and hold no unsaved input, so they can unmount.
+        */}
+        <TabsContent value="games" className="space-y-6" keepMounted>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
+                Harita Oyunları &amp; Başarı İstatistikleri
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Türkiye 81 il, 7 bölge ve dünya harita sınavlarında tamamladığın tüm turlar ve
+                unvanlar.
               </p>
             </div>
+
             <Link
-              href="/kitaplar"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
+              href="/oyun"
+              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
             >
-              Kitap Video Çözümlerini İncele
+              <Trophy className="size-3.5" />
+              Yeni Harita Sınavı Başlat
             </Link>
           </div>
-        )}
-      </div>
 
-      {/* Tab 3: Sınav & Skor Geçmişim Panel */}
-      <div
-        role="tabpanel"
-        id="panel-games"
-        aria-labelledby="tab-games"
-        hidden={activeTab !== "games"}
-        className="space-y-6"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-              Harita Oyunları &amp; Başarı İstatistikleri
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Türkiye 81 il, 7 bölge ve dünya harita sınavlarında tamamladığın tüm turlar ve
-              unvanlar.
-            </p>
-          </div>
+          {/* Reuses rich stats component with badge unlocking and history table */}
+          <V2GameHistoryStats />
+        </TabsContent>
 
-          <Link
-            href="/oyun"
-            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
-          >
-            <Trophy className="size-3.5" />
-            Yeni Harita Sınavı Başlat
-          </Link>
-        </div>
-
-        {/* Reuses rich stats component with badge unlocking and history table */}
-        <V2GameHistoryStats />
-      </div>
-
-      {/* Tab 4: Kayıtlı Ölçümlerim Panel */}
-      <div
-        role="tabpanel"
-        id="panel-measurements"
-        aria-labelledby="tab-measurements"
-        hidden={activeTab !== "measurements"}
-        className="space-y-6"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-              Harita Araçları Bulut Arşivi
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Harita araçları laboratuvarında çizdiğin mesafe, alan ve koordinat ölçümleri.
-            </p>
-          </div>
-
-          <Link
-            href="/araclar"
-            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
-          >
-            <Ruler className="size-3.5" />
-            Harita Araçlarını Aç
-          </Link>
-        </div>
-
-        {measurementsStatus === "loading" ? (
-          <div
-            role="status"
-            className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
-          >
-            <Spinner size="lg" decorative className="text-primary" />
-            <span>Kayıtlı ölçümleriniz yükleniyor...</span>
-          </div>
-        ) : measurements && measurements.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {measurements.map((meas) => {
-              const typeLabel =
-                meas.type === "distance"
-                  ? "Mesafe Ölçümü"
-                  : meas.type === "area"
-                    ? "Alan Ölçümü"
-                    : "Koordinat Noktası";
-
-              const typeIcon =
-                meas.type === "distance" ? (
-                  <Ruler className="size-4 text-primary" />
-                ) : meas.type === "area" ? (
-                  <Layers className="size-4 text-primary" />
-                ) : (
-                  <MapPin className="size-4 text-primary" />
-                );
-
-              return (
-                <div
-                  key={meas.id}
-                  className="rounded-2xl border border-border bg-card p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-xl bg-muted/60 border border-border">
-                        {typeIcon}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-heading font-bold text-sm text-foreground">
-                            {meas.title || "İsimsiz Ölçüm"}
-                          </span>
-                          <Badge variant="outline" size="sm" className="text-[10px]">
-                            {typeLabel}
-                          </Badge>
-                        </div>
-                        <span className="text-[11px] text-muted-foreground block mt-0.5">
-                          {meas.points.length} Coğrafi Nokta
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMeasurement(meas.id)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                      aria-label="Ölçümü sil"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-
-                  <div className="pt-2 border-t border-border flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                      <Calendar className="size-3" />
-                      {new Date(meas.createdAt).toLocaleDateString("tr-TR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
-                    <Link
-                      href="/araclar"
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                    >
-                      Haritada Aç
-                      <ChevronRight className="size-3" />
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="rounded-3xl border border-dashed border-border p-10 text-center space-y-4 max-w-xl mx-auto bg-muted/20">
-            <div className="size-12 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto text-muted-foreground">
-              <Ruler className="size-6" />
-            </div>
-            <div className="space-y-1">
-              <h3 className="font-heading font-bold text-base text-foreground">
-                Kayıtlı ölçümünüz bulunmuyor
-              </h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Harita araçlarında iki nokta arası mesafe hesaplayabilir, göl veya bölge alanı
-                ölçebilir ve &quot;Bulut Arşivine Kaydet&quot; seçeneğiyle profilinize
-                sabitleyebilirsiniz.
+        {/* Tab 4: Kayıtlı Ölçümlerim Panel */}
+        <TabsContent value="measurements" className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
+                Harita Araçları Bulut Arşivi
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Harita araçları laboratuvarında çizdiğin mesafe, alan ve koordinat ölçümleri.
               </p>
             </div>
+
             <Link
               href="/araclar"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
+              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
             >
-              Harita Araçlarını Başlat
+              <Ruler className="size-3.5" />
+              Harita Araçlarını Aç
             </Link>
           </div>
-        )}
-      </div>
 
-      {/* Tab 5: Profil & Hesap Özeti Panel */}
-      <div
-        role="tabpanel"
-        id="panel-profile"
-        aria-labelledby="tab-profile"
-        hidden={activeTab !== "profile"}
-        className="space-y-6"
-      >
-        <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6 max-w-2xl">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
-                <User className="size-5" />
+          {measurementsStatus === "loading" ? (
+            <div
+              role="status"
+              className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
+            >
+              <Spinner size="lg" decorative className="text-primary" />
+              <span>Kayıtlı ölçümleriniz yükleniyor...</span>
+            </div>
+          ) : measurements && measurements.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {measurements.map((meas) => {
+                const typeLabel =
+                  meas.type === "distance"
+                    ? "Mesafe Ölçümü"
+                    : meas.type === "area"
+                      ? "Alan Ölçümü"
+                      : "Koordinat Noktası";
+
+                const typeIcon =
+                  meas.type === "distance" ? (
+                    <Ruler className="size-4 text-primary" />
+                  ) : meas.type === "area" ? (
+                    <Layers className="size-4 text-primary" />
+                  ) : (
+                    <MapPin className="size-4 text-primary" />
+                  );
+
+                return (
+                  <div
+                    key={meas.id}
+                    className="rounded-2xl border border-border bg-card p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between gap-4 group"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-2 rounded-xl bg-muted/60 border border-border">
+                          {typeIcon}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-heading font-bold text-sm text-foreground">
+                              {meas.title || "İsimsiz Ölçüm"}
+                            </span>
+                            <Badge variant="outline" size="sm" className="text-[10px]">
+                              {typeLabel}
+                            </Badge>
+                          </div>
+                          <span className="text-[11px] text-muted-foreground block mt-0.5">
+                            {meas.points.length} Coğrafi Nokta
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMeasurement(meas.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                        aria-label="Ölçümü sil"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    </div>
+
+                    <div className="pt-2 border-t border-border flex items-center justify-between">
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <Calendar className="size-3" />
+                        {new Date(meas.createdAt).toLocaleDateString("tr-TR", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </span>
+                      <Link
+                        href="/araclar"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                      >
+                        Haritada Aç
+                        <ChevronRight className="size-3" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="rounded-3xl border border-dashed border-border p-10 text-center space-y-4 max-w-xl mx-auto bg-muted/20">
+              <div className="size-12 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto text-muted-foreground">
+                <Ruler className="size-6" />
               </div>
-              <div>
-                <h3 className="font-heading font-bold text-lg text-foreground">
-                  Hesap ve Eğitim Bilgileri
+              <div className="space-y-1">
+                <h3 className="font-heading font-bold text-base text-foreground">
+                  Kayıtlı ölçümünüz bulunmuyor
                 </h3>
-                <span className="text-xs text-muted-foreground">
-                  Kişisel üyelik detayların ve profil durumun
-                </span>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Harita araçlarında iki nokta arası mesafe hesaplayabilir, göl veya bölge alanı
+                  ölçebilir ve &quot;Bulut Arşivine Kaydet&quot; seçeneğiyle profilinize
+                  sabitleyebilirsiniz.
+                </p>
               </div>
+              <Link
+                href="/araclar"
+                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
+              >
+                Harita Araçlarını Başlat
+              </Link>
             </div>
+          )}
+        </TabsContent>
 
-            {session.accountRole === "TEACHER" ? (
-              <Badge variant="success" size="default">
-                Öğretmen Hesabı
-              </Badge>
-            ) : profile?.isComplete ? (
-              <Badge variant="success" size="default" dot>
-                Profil Tamam
-              </Badge>
-            ) : (
-              <Badge variant="warning" size="default">
-                Eksik Alanlar Var
-              </Badge>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-              <span className="text-muted-foreground font-medium block">Ad</span>
-              <span className="font-semibold text-foreground text-sm block">
-                {session.firstName}
-              </span>
-            </div>
-
-            <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-              <span className="text-muted-foreground font-medium block">Hesap Rolü</span>
-              <span className="font-semibold text-foreground text-sm block">
-                {session.accountRole === "TEACHER"
-                  ? "Öğretmen"
-                  : session.accountRole === "PARENT"
-                    ? "Veli"
-                    : "Öğrenci"}
-              </span>
-            </div>
-
-            {session.accountRole === "STUDENT" && (
-              <>
-                <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                  <span className="text-muted-foreground font-medium block">Eğitim Seviyesi</span>
-                  <span className="font-semibold text-foreground text-sm block">
-                    {profile?.educationLevel
-                      ? EDUCATION_LEVEL_LABELS[profile.educationLevel]?.tr
-                      : "Belirtilmedi"}
+        {/* Tab 5: Profil & Hesap Özeti Panel */}
+        <TabsContent value="profile" className="space-y-6">
+          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6 max-w-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+                  <User className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-foreground">
+                    Hesap ve Eğitim Bilgileri
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    Kişisel üyelik detayların ve profil durumun
                   </span>
                 </div>
+              </div>
 
-                {profile?.educationLevel === "SECONDARY" && (
-                  <>
-                    <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                      <span className="text-muted-foreground font-medium block">Sınıf</span>
-                      <span className="font-semibold text-foreground text-sm block">
-                        {profile?.gradeLevel
-                          ? GRADE_LEVEL_LABELS[profile.gradeLevel]?.tr
-                          : "Belirtilmedi"}
-                      </span>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                      <span className="text-muted-foreground font-medium block">Alan</span>
-                      <span className="font-semibold text-foreground text-sm block">
-                        {profile?.studyStream
-                          ? STUDY_STREAM_LABELS[profile.studyStream]?.tr
-                          : "Belirtilmedi"}
-                      </span>
-                    </div>
-                  </>
-                )}
+              {session.accountRole === "TEACHER" ? (
+                <Badge variant="success" size="default">
+                  Öğretmen Hesabı
+                </Badge>
+              ) : profile?.isComplete ? (
+                <Badge variant="success" size="default" dot>
+                  Profil Tamam
+                </Badge>
+              ) : (
+                <Badge variant="warning" size="default">
+                  Eksik Alanlar Var
+                </Badge>
+              )}
+            </div>
 
-                {(profile?.educationLevel === "UNDERGRADUATE" ||
-                  profile?.educationLevel === "GRADUATE") && (
-                  <>
-                    <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                      <span className="text-muted-foreground font-medium block">Üniversite</span>
-                      <span className="font-semibold text-foreground text-sm block">
-                        {profile?.universityName || "Belirtilmedi"}
-                      </span>
-                    </div>
-                    <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                      <span className="text-muted-foreground font-medium block">Bölüm</span>
-                      <span className="font-semibold text-foreground text-sm block">
-                        {profile?.departmentName || "Belirtilmedi"}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </>
-            )}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
+                <span className="text-muted-foreground font-medium block">Ad</span>
+                <span className="font-semibold text-foreground text-sm block">
+                  {session.firstName}
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
+                <span className="text-muted-foreground font-medium block">Hesap Rolü</span>
+                <span className="font-semibold text-foreground text-sm block">
+                  {session.accountRole === "TEACHER"
+                    ? "Öğretmen"
+                    : session.accountRole === "PARENT"
+                      ? "Veli"
+                      : "Öğrenci"}
+                </span>
+              </div>
+
+              {session.accountRole === "STUDENT" && (
+                <>
+                  <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
+                    <span className="text-muted-foreground font-medium block">Eğitim Seviyesi</span>
+                    <span className="font-semibold text-foreground text-sm block">
+                      {profile?.educationLevel
+                        ? EDUCATION_LEVEL_LABELS[profile.educationLevel]?.tr
+                        : "Belirtilmedi"}
+                    </span>
+                  </div>
+
+                  {profile?.educationLevel === "SECONDARY" && (
+                    <>
+                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
+                        <span className="text-muted-foreground font-medium block">Sınıf</span>
+                        <span className="font-semibold text-foreground text-sm block">
+                          {profile?.gradeLevel
+                            ? GRADE_LEVEL_LABELS[profile.gradeLevel]?.tr
+                            : "Belirtilmedi"}
+                        </span>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
+                        <span className="text-muted-foreground font-medium block">Alan</span>
+                        <span className="font-semibold text-foreground text-sm block">
+                          {profile?.studyStream
+                            ? STUDY_STREAM_LABELS[profile.studyStream]?.tr
+                            : "Belirtilmedi"}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {(profile?.educationLevel === "UNDERGRADUATE" ||
+                    profile?.educationLevel === "GRADUATE") && (
+                    <>
+                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
+                        <span className="text-muted-foreground font-medium block">Üniversite</span>
+                        <span className="font-semibold text-foreground text-sm block">
+                          {profile?.universityName || "Belirtilmedi"}
+                        </span>
+                      </div>
+                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
+                        <span className="text-muted-foreground font-medium block">Bölüm</span>
+                        <span className="font-semibold text-foreground text-sm block">
+                          {profile?.departmentName || "Belirtilmedi"}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border">
+              <Link
+                href="/profil"
+                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className="size-3.5" />
+                Profil Formuna Git
+              </Link>
+
+              <Link
+                href="/sifre-sifirlama"
+                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground shadow-xs cursor-pointer"
+              >
+                Şifre Değiştir
+              </Link>
+            </div>
           </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border">
-            <Link
-              href="/profil"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
-            >
-              <CheckCircle2 className="size-3.5" />
-              Profil Formuna Git
-            </Link>
-
-            <Link
-              href="/sifre-sifirlama"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground shadow-xs cursor-pointer"
-            >
-              Şifre Değiştir
-            </Link>
-          </div>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
