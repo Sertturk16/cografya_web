@@ -33,6 +33,7 @@ import { foldForSearch } from "@/lib/search/normalize";
 import { cn } from "@/lib/utils";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
+import type { ContinentIdentity } from "@/lib/theme/continent-identity";
 
 export interface WorldCountryItem {
   isoCode: string;
@@ -387,9 +388,7 @@ export function V2WorldMapExplorer({
     const groups: {
       id: string;
       name: string;
-      headerClass: string;
-      borderClass: string;
-      textClass: string;
+      identity: ContinentIdentity;
       items: WorldCountryItem[];
       totalPopulation: number;
       totalArea: number;
@@ -406,9 +405,7 @@ export function V2WorldMapExplorer({
         groups.push({
           id: key,
           name: isEn ? meta.nameEn : meta.name,
-          headerClass: meta.headerClass,
-          borderClass: meta.borderClass,
-          textClass: meta.textClass,
+          identity: meta.identity,
           items,
           totalPopulation,
           totalArea,
@@ -505,7 +502,7 @@ export function V2WorldMapExplorer({
                   }}
                   className={`px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
                     isSelected
-                      ? `bg-card ${meta.textClass} font-bold shadow-xs border ${meta.borderClass}`
+                      ? `bg-card ${meta.identity.label} font-bold shadow-xs border ${meta.identity.edge}`
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -720,9 +717,9 @@ export function V2WorldMapExplorer({
 
                   if (item && continentMeta) {
                     if (selectedContinent === "ALL") {
-                      fillClass = `${continentMeta.color} ${continentMeta.hoverColor} ${continentMeta.strokeColor} stroke-[0.4]`;
+                      fillClass = `${continentMeta.identity.fillSoft} ${continentMeta.identity.stroke} stroke-[0.4]`;
                     } else if (isMatchingContinent) {
-                      fillClass = `${continentMeta.color} ${continentMeta.hoverColor} stroke-white/80 stroke-[0.8] shadow-lg`;
+                      fillClass = `${continentMeta.identity.fillSoft} stroke-white/80 stroke-[0.8] shadow-lg`;
                     } else {
                       fillClass =
                         "fill-slate-600/65 dark:fill-slate-700/70 hover:fill-slate-500/75 stroke-slate-400/45 dark:stroke-slate-500/40 stroke-[0.5] transition-colors";
@@ -1068,21 +1065,27 @@ export function V2WorldMapExplorer({
             {continentGroups.map((group) => (
               <div
                 key={group.id}
-                className={`rounded-3xl border ${group.borderClass} bg-card overflow-hidden shadow-sm transition-all`}
+                className={`rounded-3xl border ${group.identity.edge} bg-card overflow-hidden shadow-sm transition-all`}
               >
-                {/* Continent Section Header Banner */}
+                {/* Continent Section Header Banner — the continent's own identity, not a
+                    two-stop gradient of an unrelated hue with white text on it. `[&_h4]:text-inherit`
+                    is load-bearing: `app/globals.css`'s base rule `h1,h2,h3,h4 { color: var(--foreground) }`
+                    beats a merely inherited colour, so without the escape the heading ignores the
+                    banner's label member and renders plain foreground. The same fix
+                    `v2-turkey-map-explorer.tsx` carries on its region banner.
+                    BACKDROP: one `--continent-*-tint` over `--card` — the `CARD` column of the
+                    table in `app/globals.css`, because this panel is opaque and nothing else
+                    paints over it. */}
                 <div
-                  className={`p-4 sm:p-5 bg-gradient-to-r ${group.headerClass} text-white flex flex-wrap items-center justify-between gap-3`}
+                  className={`p-4 sm:p-5 ${group.identity.banner} [&_h4]:text-inherit flex flex-wrap items-center justify-between gap-3`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-xs font-bold text-sm">
+                    <div className="size-9 rounded-xl bg-background text-foreground flex items-center justify-center font-bold text-sm">
                       {group.items.length}
                     </div>
                     <div>
-                      <h4 className="font-heading font-bold text-lg text-white leading-tight">
-                        {group.name}
-                      </h4>
-                      <span className="text-[11px] text-white/80 font-mono">
+                      <h4 className="font-heading font-bold text-lg leading-tight">{group.name}</h4>
+                      <span className="text-[11px] text-muted-foreground font-mono">
                         {group.items.length} {isEn ? "Countries" : "Ülke"} ·{" "}
                         {group.totalPopulation > 0
                           ? `${group.totalPopulation.toLocaleString(isEn ? "en-US" : "tr-TR")} ${isEn ? "Population" : "Nüfus"}`
@@ -1095,7 +1098,7 @@ export function V2WorldMapExplorer({
                     </div>
                   </div>
 
-                  <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-xs">
+                  <Badge variant="outline" className="text-xs">
                     {isEn ? "Continent" : "Kıta Havzası"}
                   </Badge>
                 </div>
@@ -1215,7 +1218,16 @@ export function V2WorldMapExplorer({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" size="sm" className={continentMeta?.badgeClass}>
+                        {/* `label` + `edge` on the variant's opaque `bg-card`, NOT the tinted
+                            `badge` member: this row carries `hover:bg-muted/50`, and a 15% tint
+                            over that over `--card` takes Avrupa's dark label to 4.41:1. An
+                            opaque chip is immune to the row state. See the `ROW` note beside
+                            `--continent-*-text` in `app/globals.css`. */}
+                        <Badge
+                          variant="outline"
+                          size="sm"
+                          className={continentMeta?.identity.badgeOpaque}
+                        >
                           {continentMeta
                             ? isEn
                               ? continentMeta.nameEn

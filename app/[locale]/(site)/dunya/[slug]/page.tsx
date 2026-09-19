@@ -295,11 +295,22 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section
-        className={`relative isolate border-b border-border bg-gradient-to-b ${continentTheme.gradient} pt-8 pb-12 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${continentTheme.identity.heroGradient} pt-8 pb-12 overflow-hidden`}
       >
-        {/* Glow backdrop with continent accent */}
+        {/* Glow backdrop with continent accent — DECORATION, bounded away from narrow
+            viewports. `size-96` is 384px and `blur-3xl` spreads it further, so below `md` it is
+            wider than the viewport and lands squarely on the continent badge row below.
+            Unbounded it took the seven `--continent-*-text` members under the 4.5:1 floor the
+            `HERO` column of `app/globals.css` records, which is the same bug
+            `turkiye/bolge/[slug]`'s hero shipped. `hidden md:block` bounds the decoration
+            instead of darkening seven data colours to survive it;
+            `components/v2/continent-identity.test.ts` holds the bound.
+            PAINTED PIXELS at 320px, badge label against its own backdrop, both themes:
+            light 4.80 (Okyanusya) to 4.94 (Avrupa), dark 4.82 (Avrupa) to
+            5.50 (Antarktika). At 768, where the glow IS painted, 4.75-4.91 light and 4.82-5.49
+            dark, so the bound is what the narrow widths needed and nothing more. */}
         <div
-          className={`absolute -z-10 top-0 right-1/4 size-96 ${continentTheme.glowColor} rounded-full blur-3xl pointer-events-none`}
+          className={`hidden md:block absolute -z-10 top-0 right-1/4 size-96 ${continentTheme.identity.glow} rounded-full blur-3xl pointer-events-none`}
         />
 
         <PageContainer space="band">
@@ -352,9 +363,12 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     }}
                     className="hover:opacity-80 transition-opacity"
                   >
+                    {/* BACKDROP: the badge's own 15% tint over the hero gradient's TINT END
+                        over `--background` — the `HERO` column of the table in
+                        `app/globals.css`. */}
                     <Badge
                       variant="outline"
-                      className={`${continentTheme.badgeClass} cursor-pointer`}
+                      className={`${continentTheme.identity.badge} cursor-pointer`}
                     >
                       {continent}
                     </Badge>

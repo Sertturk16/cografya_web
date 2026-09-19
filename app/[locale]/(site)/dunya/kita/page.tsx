@@ -140,7 +140,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
 
             <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs">
               <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-                <Mountain className="size-3.5 text-amber-600" />
+                <Mountain className="size-3.5" />
                 <span>En Yüksek Zirve</span>
               </div>
               <div className="font-heading font-black text-lg sm:text-xl text-foreground">
@@ -153,7 +153,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
 
             <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs">
               <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1">
-                <Waves className="size-3.5 text-sky-600" />
+                <Waves className="size-3.5" />
                 <span>En Uzun Akarsu</span>
               </div>
               <div className="font-heading font-black text-lg sm:text-xl text-foreground">
@@ -202,13 +202,16 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                   key={continent.id}
                   className="group relative rounded-3xl border border-border/80 bg-card hover:border-primary/50 transition-all duration-200 hover:shadow-lg flex flex-col justify-between overflow-hidden"
                 >
-                  {/* Header gradient bar */}
-                  <div className={`h-2.5 w-full bg-gradient-to-r ${theme.headerClass}`} />
+                  {/* Header gradient bar — the continent's own fill fading to half strength.
+                      Purely graphical, no text sits on it. */}
+                  <div className={`h-2.5 w-full bg-gradient-to-r ${theme.identity.headerBar}`} />
 
                   <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-2">
-                        <Badge variant="outline" className={theme.badgeClass}>
+                        {/* BACKDROP: one `--continent-*-tint` over an opaque `bg-card` — the
+                            `CARD` column of the table in `app/globals.css`. */}
+                        <Badge variant="outline" className={theme.identity.badge}>
                           {continent.nameTr}
                         </Badge>
                         <span className="text-xs font-mono text-muted-foreground">

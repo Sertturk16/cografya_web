@@ -23,8 +23,17 @@ import {
  * `turkiye/[slug]/page.tsx` belongs to T-033, which rewrites its climate markup wholesale.
  * Listing it here rather than silently skipping it is deliberate: when T-033 merges, this
  * test fails on the exclusion being stale, which is the reminder to delete it.
+ *
+ * ## The last step, and what it bought
+ *
+ * 740 -> 568 is T-031c Task 5, the continent palette: `lib/map/continent-theme.ts` 112 ->  0,
+ * `components/v2/v2-world-continents.tsx` 55 -> 0, `dunya/kita/[slug]/page.tsx` 3 -> 0 and
+ * `dunya/kita/page.tsx` 2 -> 0, all four bound to `--continent-*` through
+ * `lib/theme/continent-identity.ts`. The arbitrary-colour arm below did NOT move: 75 before and
+ * 75 after, which is the check that 172 classes were removed rather than re-spelled as literal
+ * values. Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 740;
+const RAW_PALETTE_BUDGET = 568;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

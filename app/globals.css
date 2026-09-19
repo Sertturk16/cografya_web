@@ -519,6 +519,14 @@
              --background (#fefefd light, #111c1f dark), then the 15% tint over that. It is its
              own column because it is its own surface; `backdrop-blur-sm` changes nothing here
              because what it blurs is a flat --background.
+     AND ONE SURFACE THAT IS DELIBERATELY NOT IN THE TABLE, because the fix was to stop painting
+     onto it:
+       ROW   `/dunya`'s country table gives every row `hover:bg-muted/50`. The tinted badge over
+             THAT over --card measures 4.80-5.50 light but 4.41-5.73 dark, and Avrupa's 4.41 is
+             under the floor — a data label failing only while the pointer is over its own row.
+             The badge there wears `identity.badgeOpaque` instead: `bg-card` + the label + the
+             edge, no tint of its own, so its backdrop is --card whatever the row is doing. A
+             moving backdrop is not a column to measure, it is a surface not to composite onto.
      EVERY FIGURE BELOW IS ROUNDED DOWN, not to nearest, so no number here can overstate what
      was measured.
                           light                    dark
@@ -540,7 +548,19 @@
      falsified the region table. Both overlays are now `hidden md:block`
      (`dunya/kita/[slug]/page.tsx`, `dunya/[slug]/page.tsx`), bounded rather than paid for by
      darkening seven data colours. Painted-pixel minimums at 320px with the bound in place are
-     recorded beside each overlay. The hero band also carries ordinary body text, which is not a
+     recorded beside each overlay.
+     CONFIRMED FROM PAINTED PIXELS, 56 cases — both heroes, all seven continents, both themes, at
+     320 (glow suppressed) and 768 (glow painted). The badge's own backdrop was read out of the
+     screenshot and its label colour resolved through a canvas, because Chrome reports an
+     oklch-authored colour as `lab(...)`. Every case clears the floor and every case measures
+     ABOVE the HERO column, which is the direction that makes this table safe to quote: the
+     column assumes the gradient's tint END, and the badge row sits below it, where
+     `via-background` has already lightened the band.
+       HERO painted   4.75-5.00 light, 4.82-5.50 dark   (recorded 4.60-4.76 / 4.59-4.75)
+       CARD painted   5.18-5.97 light, 4.83-6.34 dark   (recorded 5.18-5.97 / 4.77-6.26)
+       DECK painted   5.15-5.93 light, 4.96-6.55 dark   (recorded 5.13-5.91 / 4.89-6.43)
+     768 is where the glow IS painted, and it does not bind: the light minimum there is 4.75
+     against 4.80 at 320. The hero band also carries ordinary body text, which is not a
      second case to watch: --foreground on the gradient's tint end measures 11.47-13.59 light
      and 11.33-14.21 dark. */
   --continent-avrupa-tint: color-mix(in srgb, var(--continent-avrupa) 15%, transparent);

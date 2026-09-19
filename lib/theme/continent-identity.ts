@@ -76,6 +76,15 @@ export interface ContinentIdentity {
   readonly edgeHover: string;
   /** `surface` + `label` + `edge`: the continent badge, on any card or hero band. */
   readonly badge: string;
+  /**
+   * The OPAQUE badge: `bg-card` + `label` + `edge`, with no tint of its own.
+   *
+   * For a badge whose backdrop MOVES — `/dunya`'s country table gives each row
+   * `hover:bg-muted/50`, and a 15% tint over that over `--card` takes Avrupa's dark label to
+   * 4.41:1, under the floor. An opaque chip is measured against `--card` and nothing else,
+   * whatever the row underneath is doing.
+   */
+  readonly badgeOpaque: string;
   /** `surface` + `label` + a full-strength bottom rule: the continent section header banner. */
   readonly banner: string;
   /**
@@ -110,6 +119,7 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
     edgeHover: "hover:border-[var(--continent-avrupa)]/50",
     badge:
       "bg-[var(--continent-avrupa-tint)] text-[var(--continent-avrupa-text)] border-[var(--continent-avrupa)]/30",
+    badgeOpaque: "bg-card text-[var(--continent-avrupa-text)] border-[var(--continent-avrupa)]/30",
     banner:
       "bg-[var(--continent-avrupa-tint)] text-[var(--continent-avrupa-text)] border-b-2 border-[var(--continent-avrupa)]",
     headerBar: "from-[var(--continent-avrupa)] to-[var(--continent-avrupa)]/50",
@@ -127,6 +137,7 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
     edgeHover: "hover:border-[var(--continent-asya)]/50",
     badge:
       "bg-[var(--continent-asya-tint)] text-[var(--continent-asya-text)] border-[var(--continent-asya)]/30",
+    badgeOpaque: "bg-card text-[var(--continent-asya-text)] border-[var(--continent-asya)]/30",
     banner:
       "bg-[var(--continent-asya-tint)] text-[var(--continent-asya-text)] border-b-2 border-[var(--continent-asya)]",
     headerBar: "from-[var(--continent-asya)] to-[var(--continent-asya)]/50",
@@ -144,6 +155,7 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
     edgeHover: "hover:border-[var(--continent-afrika)]/50",
     badge:
       "bg-[var(--continent-afrika-tint)] text-[var(--continent-afrika-text)] border-[var(--continent-afrika)]/30",
+    badgeOpaque: "bg-card text-[var(--continent-afrika-text)] border-[var(--continent-afrika)]/30",
     banner:
       "bg-[var(--continent-afrika-tint)] text-[var(--continent-afrika-text)] border-b-2 border-[var(--continent-afrika)]",
     headerBar: "from-[var(--continent-afrika)] to-[var(--continent-afrika)]/50",
@@ -162,6 +174,8 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
     edgeHover: "hover:border-[var(--continent-kuzey-amerika)]/50",
     badge:
       "bg-[var(--continent-kuzey-amerika-tint)] text-[var(--continent-kuzey-amerika-text)] border-[var(--continent-kuzey-amerika)]/30",
+    badgeOpaque:
+      "bg-card text-[var(--continent-kuzey-amerika-text)] border-[var(--continent-kuzey-amerika)]/30",
     banner:
       "bg-[var(--continent-kuzey-amerika-tint)] text-[var(--continent-kuzey-amerika-text)] border-b-2 border-[var(--continent-kuzey-amerika)]",
     headerBar: "from-[var(--continent-kuzey-amerika)] to-[var(--continent-kuzey-amerika)]/50",
@@ -180,6 +194,8 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
     edgeHover: "hover:border-[var(--continent-guney-amerika)]/50",
     badge:
       "bg-[var(--continent-guney-amerika-tint)] text-[var(--continent-guney-amerika-text)] border-[var(--continent-guney-amerika)]/30",
+    badgeOpaque:
+      "bg-card text-[var(--continent-guney-amerika-text)] border-[var(--continent-guney-amerika)]/30",
     banner:
       "bg-[var(--continent-guney-amerika-tint)] text-[var(--continent-guney-amerika-text)] border-b-2 border-[var(--continent-guney-amerika)]",
     headerBar: "from-[var(--continent-guney-amerika)] to-[var(--continent-guney-amerika)]/50",
@@ -197,6 +213,8 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
     edgeHover: "hover:border-[var(--continent-okyanusya)]/50",
     badge:
       "bg-[var(--continent-okyanusya-tint)] text-[var(--continent-okyanusya-text)] border-[var(--continent-okyanusya)]/30",
+    badgeOpaque:
+      "bg-card text-[var(--continent-okyanusya-text)] border-[var(--continent-okyanusya)]/30",
     banner:
       "bg-[var(--continent-okyanusya-tint)] text-[var(--continent-okyanusya-text)] border-b-2 border-[var(--continent-okyanusya)]",
     headerBar: "from-[var(--continent-okyanusya)] to-[var(--continent-okyanusya)]/50",
@@ -214,6 +232,8 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
     edgeHover: "hover:border-[var(--continent-antarktika)]/50",
     badge:
       "bg-[var(--continent-antarktika-tint)] text-[var(--continent-antarktika-text)] border-[var(--continent-antarktika)]/30",
+    badgeOpaque:
+      "bg-card text-[var(--continent-antarktika-text)] border-[var(--continent-antarktika)]/30",
     banner:
       "bg-[var(--continent-antarktika-tint)] text-[var(--continent-antarktika-text)] border-b-2 border-[var(--continent-antarktika)]",
     headerBar: "from-[var(--continent-antarktika)] to-[var(--continent-antarktika)]/50",
