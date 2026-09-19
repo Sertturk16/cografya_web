@@ -17,10 +17,17 @@ interface MagnitudeBadgeProps {
  * surface after `pm25-chart.tsx` and `climate-chart.tsx`, for the same class of reason: the
  * label is measured against the FILL under it, which is a data colour that does not follow the
  * theme, not against the page. Measured (`lib/theme/contrast.ts`) — #fff on `--eq-mag-1`…`-5`:
- * **4.69 / 6.43 / 9.01 / 13.15 / 17.21:1**. A bridge token here would track a surface the label
- * never sits on and would go UNREADABLE on the dark end of the ramp: `--foreground` in dark
- * (#e8f0f1) is the same reading, but in LIGHT it is #2b2622, which measures 1.12:1 on
- * `--eq-mag-5`. The label is white in both themes because the ground under it is.
+ * **4.69 / 6.43 / 9.01 / 13.15 / 17.21:1** — clearing 4.5:1 on every step, worst at the light
+ * end of the ramp.
+ *
+ * A bridge token would track a surface the label never sits on, and it FAILS IN BOTH THEMES.
+ * `--foreground`'s light value #2b2622 measures **3.19 / 2.33 / 1.66 / 1.14 / 1.15:1** across the
+ * five — its worst is `--eq-mag-4` at 1.14:1, not `--eq-mag-5`, because the ramp's darkest step is
+ * a shade off pure black and the ink is not — and four of the five are under 3:1, let alone 4.5:1.
+ * Its dark value #e8f0f1 is not "the same reading" as white either: **4.06 / 5.56 / 7.80 / 11.38 /
+ * 14.89:1**, uniformly below white's figures and BELOW 4.5:1 on `--eq-mag-1`. So a themed label
+ * would be illegible in light mode and would fail WCAG 1.4.3 on the commonest bucket in dark. The
+ * label is white in both themes because the ground under it is.
  *
  * `rounded-full` where the stylesheet wrote `border-radius: 999px`. The computed value changes
  * (999px to Tailwind v4's `calc(infinity * 1px)`) and the rendering does not: both fully round

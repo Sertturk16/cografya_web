@@ -210,9 +210,13 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * `components/earthquake` carries the THIRD deliberate bare `white`, and it is the opaque form
    * again rather than a scrim: `magnitude-badge.tsx` prints its label `text-white` because the
    * label sits on the `--eq-mag-1`…`-5` fill, a data ramp encoding a public-safety scale that no
-   * theme redefines. Measured — #fff on the five fills: **4.69 / 6.43 / 9.01 / 13.15 / 17.21:1**.
-   * A bridge token would track the page instead of the ground the label is actually on and would
-   * put `--foreground`'s light value at 1.12:1 on `--eq-mag-5`.
+   * theme redefines. Measured — #fff on the five fills: **4.69 / 6.43 / 9.01 / 13.15 / 17.21:1**,
+   * clearing 4.5:1 on every step. A bridge token would track the page instead of the ground the
+   * label is actually on, and it fails in BOTH themes: `--foreground`'s light value #2b2622
+   * measures 3.19 / 2.33 / 1.66 / **1.14** / 1.15:1 — worst at `--eq-mag-4`, not `--eq-mag-5`,
+   * because the ramp's darkest step is a shade off pure black and the ink is not — and its dark
+   * value #e8f0f1 measures 4.06 / 5.56 / 7.80 / 11.38 / 14.89:1, below white's throughout and
+   * under 4.5:1 on `--eq-mag-1`.
    *
    * The ramp ITSELF fails on the dark half and is recorded rather than quietly tolerated:
    * **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** against dark `--card` (#121e21), the panel these
