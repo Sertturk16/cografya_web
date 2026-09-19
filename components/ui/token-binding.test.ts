@@ -314,6 +314,12 @@ describe("every var() fallback in the product tree still equals its token", () =
       "--region-ic-anadolu": 1,
       "--region-karadeniz": 1,
       "--region-marmara": 1,
+      // The SST ramp's three. `lib/theme/sst-band.ts` paints the map's station pins through an
+      // SVG `fill` ATTRIBUTE, which Tailwind never sees, so the band value has to be a raw CSS
+      // value and carries a literal fallback — the same shape `--region-*`'s `fillValue` has.
+      "--sst-band-cool": 1,
+      "--sst-band-hot": 1,
+      "--sst-band-warm": 1,
     });
   });
 });
