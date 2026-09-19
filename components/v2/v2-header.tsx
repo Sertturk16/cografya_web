@@ -31,7 +31,7 @@ import type { Locale } from "@/i18n/routing";
 import { SearchCombobox } from "@/components/site-search/search-combobox";
 import { ThemeToggle } from "./theme-toggle";
 import { useAuthSession } from "@/lib/auth/use-session.client";
-import { requestAuth, setAuthModalMode } from "@/lib/auth/auth-modal.client";
+import { requestAuth } from "@/lib/auth/auth-modal.client";
 import { submitAuth } from "@/lib/auth/submit.client";
 
 export function V2Header() {
@@ -444,10 +444,7 @@ export function V2Header() {
                 size="sm"
                 className="text-xs h-8 px-2.5 text-muted-foreground hover:text-foreground font-semibold"
                 leftIcon={<LogIn className="size-3.5" />}
-                onClick={() => {
-                  requestAuth("generic");
-                  setAuthModalMode("login");
-                }}
+                onClick={() => requestAuth("generic", "login")}
               >
                 Giriş Yap
               </Button>
@@ -456,10 +453,7 @@ export function V2Header() {
                 size="sm"
                 className="text-xs h-8 px-3 font-semibold shadow-xs"
                 leftIcon={<UserPlus className="size-3.5" />}
-                onClick={() => {
-                  requestAuth("generic");
-                  setAuthModalMode("register");
-                }}
+                onClick={() => requestAuth("generic", "register")}
               >
                 Üye Ol
               </Button>
@@ -681,8 +675,7 @@ export function V2Header() {
                         className="w-full"
                         onClick={() => {
                           setMobileOpen(false);
-                          setAuthModalMode("login");
-                          requestAuth("generic");
+                          requestAuth("generic", "login");
                         }}
                       >
                         Giriş Yap
@@ -692,8 +685,7 @@ export function V2Header() {
                         className="w-full"
                         onClick={() => {
                           setMobileOpen(false);
-                          setAuthModalMode("register");
-                          requestAuth("generic");
+                          requestAuth("generic", "register");
                         }}
                       >
                         Üye Ol

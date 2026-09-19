@@ -34,10 +34,17 @@ export interface AuthModalStore {
   subscribe(listener: () => void): () => void;
   getSnapshot(): AuthModalState;
   getServerSnapshot(): AuthModalState;
-  /** Opens the dialog for `intent`, in the default `"register"` mode (§5.5 — AK-48's own
+  /** Opens the dialog for `intent`, defaulting to `"register"` mode (§5.5 — AK-48's own
    *  "become a member" framing: a first-time organic reader has no account yet), and returns a
-   *  fresh request id the caller must hold onto to recognise its own resolution later. */
-  requestAuth(intent: AuthIntent): string;
+   *  fresh request id the caller must hold onto to recognise its own resolution later.
+   *
+   *  `mode` is an ARGUMENT and not a follow-up `setMode` call because this method commits the
+   *  mode: a `setMode` written before it was silently erased, and two of the header's four call
+   *  sites were written that way (T-059). Both orderings read correctly, so the API had to stop
+   *  having one. `lib/auth/auth-modal-mode-ownership.test.ts` keeps the pair from coming back. */
+  requestAuth(intent: AuthIntent, mode?: AuthMode): string;
+  /** Changes the mode of an ALREADY OPEN dialog — the tab strip and the two switch links inside
+   *  it. To OPEN in a given mode, pass it to {@link AuthModalStore.requestAuth} instead. */
   setMode(mode: AuthMode): void;
   /** Auth succeeded: closes the dialog and records the just-served request as resolved. */
   resolveAuth(): void;
@@ -78,11 +85,11 @@ export function createAuthModalStore(): AuthModalStore {
     getServerSnapshot() {
       return EMPTY;
     },
-    requestAuth(intent) {
+    requestAuth(intent, mode = "register") {
       const requestId = crypto.randomUUID();
       // A fresh request supersedes any earlier, unconsumed resolution — starting a new flow
       // makes the old one moot even though the ids can never actually collide.
-      commit({ open: true, intent, mode: "register", requestId, resolvedRequestId: null });
+      commit({ open: true, intent, mode, requestId, resolvedRequestId: null });
       return requestId;
     },
     setMode(mode) {
