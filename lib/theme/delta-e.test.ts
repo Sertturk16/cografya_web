@@ -10,7 +10,7 @@ describe("deltaE00", () => {
     expect(deltaE00("#0072b2", "#e69f00")).toBe(deltaE00("#e69f00", "#0072b2"));
   });
 
-  it("separates black and white by the largest difference in the space", () => {
+  it("gives exactly 100 for black against white — the pure-lightness anchor", () => {
     expect(deltaE00("#000000", "#ffffff")).toBe(100);
   });
 
@@ -25,7 +25,7 @@ describe("deltaE00", () => {
   });
 
   it("correctly handles hue difference wrap-around past -180°", () => {
-    // marmara (#0072b2) and karadeniz (#e69f00) have a hue difference that wraps past -180°.
+    // marmara (#0072b2) and ege (#e69f00) have a hue difference that wraps past -180°.
     // This tests the bug fix for truncated vs floored modulo in JavaScript.
     expect(deltaE00("#0072b2", "#e69f00")).toBe(55.3);
     expect(deltaE00("#0072b2", "#e69f00")).toBe(deltaE00("#e69f00", "#0072b2"));

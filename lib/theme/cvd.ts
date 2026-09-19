@@ -6,17 +6,12 @@
  * not on gamma-encoded bytes; applying them to the encoded values is the classic way to get a
  * simulation that looks plausible and measures wrong.
  */
-import { parseColor } from "./contrast";
+import { parseColor, toByte, toLinear } from "./contrast";
 
 export type Vision = "normal" | "protanopia" | "deuteranopia" | "tritanopia";
 
-/** Every vision a categorical palette is checked against, in the order results are reported. */
-export const VISIONS: readonly Vision[] = [
-  "normal",
-  "protanopia",
-  "deuteranopia",
-  "tritanopia",
-] as const;
+/** Every vision a categorical palette is checked against, in the order this repo reports them. */
+export const VISIONS: readonly Vision[] = ["normal", "protanopia", "deuteranopia", "tritanopia"];
 
 type Matrix = readonly [
   readonly [number, number, number],
@@ -42,17 +37,6 @@ const MATRICES: Readonly<Record<Exclude<Vision, "normal">, Matrix>> = {
   ],
 };
 
-const toLinear = (channel: number): number => {
-  const c = channel / 255;
-  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-};
-
-const toByte = (linear: number): number => {
-  const c = Math.min(1, Math.max(0, linear));
-  const encoded = c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
-  return Math.round(encoded * 255);
-};
-
 const hex = (rgb: readonly [number, number, number]): string =>
   `#${rgb.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 
@@ -62,8 +46,9 @@ export function simulate(css: string, vision: Vision): string {
   if (vision === "normal") return hex([r8, g8, b8]);
 
   const linear = [toLinear(r8), toLinear(g8), toLinear(b8)] as const;
-  const m = MATRICES[vision];
-  const out = m.map((row) => toByte(row[0] * linear[0] + row[1] * linear[1] + row[2] * linear[2]));
+  const [row0, row1, row2] = MATRICES[vision];
+  const apply = (row: Matrix[number]): number =>
+    toByte(row[0] * linear[0] + row[1] * linear[1] + row[2] * linear[2]);
 
-  return hex([out[0]!, out[1]!, out[2]!]);
+  return hex([apply(row0), apply(row1), apply(row2)]);
 }

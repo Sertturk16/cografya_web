@@ -14,8 +14,11 @@ describe("relativeLuminance", () => {
     expect(relativeLuminance("#ffffff")).toBeCloseTo(1, 10);
   });
 
-  it("uses the linear ramp below the 0.03928 breakpoint", () => {
-    // #0a0a0a is 10/255 = 0.0392, just under the knee, so it takes the /12.92 branch.
+  it("agrees with the published curve at a low value", () => {
+    // #0a0a0a is 10/255 ≈ 0.0392, below both candidate sRGB knees (0.03928 and 0.04045), so
+    // this does not by itself discriminate which branch ran: the curve is continuous at the
+    // knee, and at this sample size the two branches agree to 7.5e-7 against this 5e-5
+    // tolerance, so an implementation that deleted the conditional would also pass.
     expect(relativeLuminance("#0a0a0a")).toBeCloseTo(0.0392 / 12.92, 4);
   });
 });

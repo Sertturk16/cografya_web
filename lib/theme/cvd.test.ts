@@ -19,9 +19,11 @@ describe("simulate", () => {
     }
   });
 
-  it("actually collapses red against green for the red-green deficiencies", () => {
+  it("narrows red against green for the red-green deficiencies", () => {
     // The positive control. A simulate() that returned its input would pass every assertion
-    // in Task 4 while proving nothing, so one test has to show the transform doing work.
+    // in Task 4 while proving nothing, so one test has to show the transform doing work. This
+    // proves strict reduction, not collapse — a simulate() that only desaturated by 1% would
+    // also pass this; the magnitude is constrained elsewhere (the categorical-floor tests).
     const apart = deltaE00("#d55e00", "#009e73");
     expect(
       deltaE00(simulate("#d55e00", "protanopia"), simulate("#009e73", "protanopia")),

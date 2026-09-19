@@ -19,23 +19,21 @@
  * `((h2p - h1p + 180) % 360) - 180` fails when the subtraction is < -180. The correct form
  * checks the sign explicitly.
  */
-import { parseColor } from "./contrast";
+import { parseColor, toLinear } from "./contrast";
 
 /**
  * The floor a categorical set has to clear, pairwise, under normal vision and all three CVD
  * simulations.
  *
- * Chosen from measurement, not convention: the shipped Okabe-Ito set's worst pair is 10.9
+ * Chosen from measurement, not convention: the shipped Okabe-Ito set's worst pair is 11.1
  * under tritanopia, so 10 is the value the current palette actually holds. A dark-adapted set
  * (T-031d) that scores below it is worse than what it replaces, and this constant is what
  * says so.
+ *
+ * Comparisons are made against `deltaE00`'s output, which is rounded to 1dp, so the effective
+ * floor is 9.95, not 10.
  */
 export const CATEGORICAL_MIN = 10;
-
-function toLinear(channel: number): number {
-  const c = channel / 255;
-  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-}
 
 /** CIE Lab under a D65 white point, which is what sRGB is defined against. */
 function toLab(css: string): readonly [number, number, number] {
