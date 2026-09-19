@@ -289,6 +289,26 @@ Shipped data token sets (all in `:root`, separate from chrome):
 A new chart adds only the tokens it needs, next to these, and records why the choice
 satisfies the five rules. A general scales module is deliberately unbuilt.
 
+**Both chart plots are frozen light in dark mode, and that is load-bearing, not leftover.**
+No `--chart-*` token has a dark half, so a plot that followed the theme would take its own
+series with it: `--chart-pm25-line` measures 9.86:1 on the white plot and **1.73:1 on
+`--card`**, below rule 5's and WCAG 1.4.11's 3:1 floor. Conversely a bridge token inside a
+frozen plot fails the other way — `--muted-foreground` is 2.19:1 there and `--foreground`
+1.16:1 — so a plot's scaffolding (gridlines, axis numbers) stays on the same frozen ground as
+its surface, as alphas of `--color-ink`. T-033 converted `components/air` this way and
+`components/climate` follows it. The tripwire is the "keeps the plot LIGHT" assertion in
+`components/air/air-pollution.structure.test.ts`, which pins both directions.
+
+The real fix is a dark half for `--chart-pm25-line`, `--chart-temp-line` and
+`--chart-precip-bar`, and it belongs to whoever owns `app/globals.css` — not to a T-033 task.
+**Two rules in this document collide on the route there, and both are right within their
+scope.** The raw-vs-converted rule above sanctions leaving a data colour raw and giving it its
+missing `dark:` half; T-033's own constraints forbid a hand-written `dark:` outright, and the
+table above keeps data tokens in `:root` with no themed variant. So the `dark:stroke-[…]`
+spelling that rule would reach for is unavailable inside T-033, and the token-level fix is
+unavailable to a branch that may not touch `globals.css`. Neither rule is wrong; the work
+simply sits in a third place, and until it lands the frozen plot is the correct residue.
+
 ## Review ritual for visible changes
 
 Before calling a UI task done: light and dark screenshots at 390 px and desktop, no

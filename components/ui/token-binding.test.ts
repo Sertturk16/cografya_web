@@ -173,13 +173,21 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * no bare `white`/`black` utility and no brand hex either. When T-031c lands, the stricter
    * rules arrive for this directory with everything else.
    *
-   * `components/air` is the first directory added here that carries a DELIBERATE bare `white`
-   * utility, and it is not an oversight: `pm25-chart.tsx` paints the plot `bg-white` because
-   * `--chart-pm25-line`, the section's one data token, measures 9.86:1 on that plot and
-   * 1.73:1 on `--card`, and no dark-adapted PM2.5 token exists. That file's own docblock and
-   * `air-pollution.structure.test.ts` carry the measurement and assert the shape; it is a data
-   * surface, not chrome, so it is outside what this `describe` is about. It still carries no
-   * `dark:`, no raw palette class and no brand hex.
+   * `components/air` carries one DELIBERATE bare `white` utility, and it is not an oversight:
+   * `pm25-chart.tsx` paints the plot `bg-white` because `--chart-pm25-line`, the section's one
+   * data token, measures 9.86:1 on that plot and 1.73:1 on `--card`, and no dark-adapted PM2.5
+   * token exists. That file's own docblock and `air-pollution.structure.test.ts` carry the
+   * measurement and assert the shape; it is a data surface, not chrome, so it is outside what
+   * this `describe` is about. It carries no `dark:`, no raw palette class and no brand hex.
+   *
+   * It is NOT the first bare `white` on the walked surface — an earlier draft of this note said
+   * so and that was wrong. `components/v2` has been in this list from the start and carries 88
+   * such utilities across 12 files, almost all of them `text-white` on a gradient plate or a
+   * translucent `bg-white/NN` scrim. What IS singular, and the reason the claim was tempting, is
+   * the OPAQUE form: `grep -rnP "\bbg-white\b(?!/)"` over every directory this list walks
+   * returns exactly one hit, the chart frame above. A translucent white over a themed gradient
+   * still follows the theme underneath it; an opaque white surface does not, which is why this
+   * one owes a measurement and the other 88 belong to T-031c with the rest of the palette.
    *
    * The tempting move is to widen this to every feature directory at once. Do NOT. The six
    * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a

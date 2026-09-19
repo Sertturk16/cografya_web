@@ -29,6 +29,76 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
  */
 const code = stripComments;
 
+/**
+ * THE HOISTED TAILWIND CLASS CONSTANTS, WITH THEIR CLASS STRINGS BLANKED.
+ *
+ * Used by the guideline scan below, which reads bare numbers as candidate concentrations.
+ * Until T-033 every presentation constant lived in `air-pollution.module.css`, so the only
+ * numbers in `pm25-chart.tsx` were geometry and that scan could read the file whole. The
+ * conversion moved stroke widths, ink alphas and font sizes into class strings, and counting
+ * those would have forced the allow-list open to `15`, `1` and `0.6` — `15` being a plausible
+ * PM2.5 interim target, i.e. exactly the value the scan exists to stop.
+ *
+ * THE FIRST ATTEMPT AT THIS STRIPPED EVERY STRING LITERAL IN THE FILE, AND THAT WAS A NET
+ * LOSS. A number in a CLASS string cannot place a line; a number in an ATTRIBUTE string can,
+ * and blanking those hid `<path d="M 60 15 L 700 15" />` — a WHO guideline at 5 µg/m³ drawn on
+ * the truncated axis, the precise thing the scan exists to stop — with the suite fully green.
+ * `<polyline points="60,15 …">`, `<line y1="15">` and `transform="translate(0 15)"` went the
+ * same way, and the `<line\b` count pin catches only the third of those spellings.
+ *
+ * So the strip is surgical: it touches ONLY `const NAME = …;` declarations at the top level,
+ * and inside them only the quoted strings. A hoisted `const THRESHOLD = 15;` keeps its number,
+ * because the number is not in a string — which is the second hole the broad version opened.
+ * Every control below runs through THIS function rather than re-spelling it, so editing the
+ * strip cannot leave the controls passing on a scan that no longer exists.
+ */
+function stripHoistedClassStrings(source: string): string {
+  return source.replace(/^const [A-Z][A-Z0-9_]* =[\s\S]*?;$/gm, (declaration) =>
+    declaration.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '""'),
+  );
+}
+
+/** The numbers a source carries outside the allow-list — the guideline scan, as a function. */
+function unexplainedNumbers(source: string): string[] {
+  const scanned = stripHoistedClassStrings(source);
+  return (scanned.match(/(?<![\w.-])\d+(?:\.\d+)?(?![\w.])/g) ?? []).filter(
+    (n) => !["2.8", "4", "6", "20", "0"].includes(n),
+  );
+}
+
+/** Whether a source reaches a CSS Module at all — shared with its own controls, same reason. */
+function looksUpAModuleClass(source: string): boolean {
+  return /\.module\.css/.test(source) || /styles\./.test(source);
+}
+
+/**
+ * The JSX each `className="climate-dark-scope"` wrapper in `page.tsx` encloses, found by
+ * counting `<div` against `</div>` from the wrapper's own close bracket.
+ */
+function climateDarkScopeSubtrees(page: string): string[] {
+  const subtrees: string[] = [];
+  const marker = /className="climate-dark-scope"/g;
+  for (let hit = marker.exec(page); hit !== null; hit = marker.exec(page)) {
+    const start = page.indexOf(">", hit.index) + 1;
+    let cursor = start;
+    let depth = 1;
+    while (depth > 0) {
+      const open = page.indexOf("<div", cursor);
+      const close = page.indexOf("</div>", cursor);
+      if (close === -1) break;
+      if (open !== -1 && open < close) {
+        depth += 1;
+        cursor = open + "<div".length;
+      } else {
+        depth -= 1;
+        cursor = close + "</div>".length;
+      }
+    }
+    subtrees.push(page.slice(start, cursor));
+  }
+  return subtrees;
+}
+
 const section = read("./air-pollution-section.tsx");
 const chart = read("./pm25-chart.tsx");
 const table = read("./pm25-table.tsx");
@@ -242,26 +312,38 @@ describe("the chart carries no reference line and no index colouring", () => {
     // numeric threshold to place it at. Both are checked structurally.
     const lineElements = chartCode.match(/<line\b/g) ?? [];
     expect(lineElements).toHaveLength(2);
-    // No constant concentration anywhere in the chart's GEOMETRY — the AQG level or any of
-    // the four interim targets would appear as one. Coordinates come from the scale module
-    // and the marker radius is the only literal the chart owns.
-    //
-    // Scanned with string literals removed, and that is a SHARPENING rather than a let-off.
-    // Until T-033 every presentation constant lived in `air-pollution.module.css`, so the
-    // only numbers in this file were geometry and the scan could read the file whole. The
-    // conversion moved stroke widths, alphas and font sizes into Tailwind class strings, and
-    // counting those would have forced the allow-list open to `15`, `1` and `0.6` — `15`
-    // being a plausible PM2.5 interim target, i.e. exactly the value this test exists to
-    // stop. A number inside a class string cannot place a line; `y={15}` can, and still trips.
-    const geometry = chartCode.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '""');
-    const numericLiterals = (geometry.match(/(?<![\w.-])\d+(?:\.\d+)?(?![\w.])/g) ?? []).filter(
-      (n) => !["2.8", "4", "6", "20", "0"].includes(n),
-    );
-    expect(numericLiterals).toEqual([]);
-    // POSITIVE CONTROL — a threshold written as a coordinate is still visible after the strip.
-    const poisoned = 'const GUIDE = "stroke-ink/15";\n<line y1={15} y2={15} />';
-    expect(poisoned.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '""')).toMatch(/\{15\}/);
+    // No constant concentration anywhere in the chart — the AQG level or any of the four
+    // interim targets would appear as one. Coordinates come from the scale module and the
+    // marker radius is the only literal the chart owns. Everything but the hoisted class
+    // constants is scanned, `stripHoistedClassStrings` says why, and the four controls below
+    // are what stop that narrowing from becoming a hole.
+    expect(unexplainedNumbers(chartCode)).toEqual([]);
     expect(chartCode).not.toMatch(/whoGuideline/);
+  });
+
+  /**
+   * FOUR CONTROLS ON THE SCAN ABOVE, EACH A GUIDELINE SPELLED A DIFFERENT WAY.
+   *
+   * Every one runs through `unexplainedNumbers`, not through a re-spelled copy of its regex,
+   * so an edit to the scan reds these instead of leaving them green on maths that no longer
+   * runs. Cases 2-4 are the ones an earlier, broader strip let through with the suite green.
+   */
+  it.each([
+    [
+      "a coordinate in a JSX expression",
+      'const GUIDE = "stroke-ink/15";\n<line y1={15} y2={15} />',
+    ],
+    [
+      "a path `d` attribute",
+      'const GRID = "stroke-ink/15";\n<path className={GRID} d="M 60 15 L 700 15" />',
+    ],
+    ["a polyline `points` attribute", '<polyline points="60,15 700,15" />'],
+    [
+      "a hoisted numeric threshold",
+      "const THRESHOLD = 15;\n<line y1={THRESHOLD} y2={THRESHOLD} />",
+    ],
+  ])("POSITIVE CONTROL — the scan rejects a guideline written as %s", (_label, poisoned) => {
+    expect(unexplainedNumbers(poisoned)).toContain("15");
   });
 
   it("keeps the guideline sentence in the SECTION, under the chart", () => {
@@ -381,11 +463,82 @@ describe("accessibility contract", () => {
     // Restated as the property that replaced it: these three files import no stylesheet and
     // perform no `styles.` lookup, so there is nothing left that CAN resolve to `undefined`.
     for (const source of [sectionCode, chartCode, tableCode]) {
-      expect(source).not.toMatch(/\.module\.css/);
-      expect(source).not.toMatch(/styles\./);
+      expect(looksUpAModuleClass(source)).toBe(false);
     }
-    // POSITIVE CONTROL — the same scan reports a lookup that is written down.
-    expect("const x = styles.heading;").toMatch(/styles\./);
+    // POSITIVE CONTROLS — through the SAME predicate, so editing it reds these too. Both
+    // halves are exercised: the lookup and the import that would make one resolve.
+    expect(looksUpAModuleClass("const x = styles.heading;")).toBe(true);
+    expect(looksUpAModuleClass('import styles from "./air-pollution.module.css";')).toBe(true);
+    expect(looksUpAModuleClass("<p className={NOTICE}>text</p>")).toBe(false);
+  });
+});
+
+/**
+ * THE ONE TOKEN IN THIS SECTION THAT DARK MODE *DOES* SHADOW, AND THE SUBTREE WHERE IT BITES.
+ *
+ * `pm25-chart.tsx` draws the plot's scaffolding with `fill-ink/80`, `stroke-ink/15` and
+ * `border-ink/15` — Tailwind utilities over the frozen `--color-ink`, chosen because the plot
+ * is a frozen white data ground and a bridge token there measures 2.19:1 (`--muted-foreground`)
+ * or 1.16:1 (`--foreground`). See the component's docblock for why the plot cannot follow the
+ * theme: `--chart-pm25-line` is 9.86:1 on white and 1.73:1 on `--card`.
+ *
+ * `--color-ink` is frozen GLOBALLY but not UNCONDITIONALLY. `app/globals.css` carries
+ * `.dark .climate-dark-scope { --color-ink: var(--color-bg); … }`, a subtree shadow T-018 added
+ * so the frozen climate stylesheet survives dark mode. Inside that subtree the chart's axis
+ * numbers would resolve to `--color-bg` #fbf8f3 — **1.06:1 on its own white plot**, i.e.
+ * invisible, which is the defect this whole task removed from everywhere else in the section.
+ *
+ * Today the two never meet: the province page renders `<AirPollutionSection>` inside its own
+ * sibling `<Card>`, several hundred lines from the climate wrapper. That is PAGE STRUCTURE, not
+ * a rule — one refactor that tucks the air section under the climate block reintroduces the
+ * defect with every other guard green. T-033 task 4 owns `climate-dark-scope`, so this is
+ * asserted here rather than left as a note for it to find.
+ */
+describe("the chart's frozen ink is never rendered inside climate-dark-scope", () => {
+  const subtrees = climateDarkScopeSubtrees(pageCode);
+
+  it("finds the scope wrapper it claims to check, holding the block it exists for", () => {
+    // Anti-vacuity, both ways: an extractor that found nothing, or that grabbed the wrong
+    // subtree, would satisfy the absence check below perfectly.
+    expect(subtrees).toHaveLength(1);
+    expect(subtrees[0]).toContain("<ClimateSection");
+  });
+
+  it("renders no AirPollutionSection inside it", () => {
+    for (const subtree of subtrees) {
+      expect(
+        subtree,
+        "the PM2.5 chart's axis ink resolves to 1.06:1 in this subtree",
+      ).not.toContain("<AirPollutionSection");
+    }
+    // …and the section really is on the page, so the check has a subject.
+    expect(pageCode).toContain("<AirPollutionSection");
+  });
+
+  it("POSITIVE CONTROL — the same extractor reports a section moved inside the scope", () => {
+    const poisoned = [
+      '<div className="climate-dark-scope">',
+      "  <ClimateSection />",
+      "  <div>",
+      "    <AirPollutionSection />",
+      "  </div>",
+      "</div>",
+    ].join("\n");
+    const found = climateDarkScopeSubtrees(poisoned);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toContain("<AirPollutionSection");
+  });
+
+  it("POSITIVE CONTROL — and does NOT report a sibling that merely follows the scope", () => {
+    // The nesting count is what this rests on, so the negative half is pinned too: a section
+    // AFTER the wrapper closes is exactly today's arrangement and must read as outside.
+    const sibling = [
+      '<div className="climate-dark-scope">',
+      "  <ClimateSection />",
+      "</div>",
+      "<AirPollutionSection />",
+    ].join("\n");
+    expect(climateDarkScopeSubtrees(sibling)[0]).not.toContain("<AirPollutionSection");
   });
 });
 
