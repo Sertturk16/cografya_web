@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripCssComments } from "@/lib/test-support/strip-comments";
+import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * DANGLING-TOKEN TRIPWIRE for sticky-header anchor offsets.
@@ -74,8 +74,37 @@ const cssFiles = ROOTS.flatMap(({ label: rootLabel, url: root }) =>
     })),
 ).sort((a, b) => a.file.localeCompare(b.file));
 
+/**
+ * EVERY COMPONENT SOURCE IN BOTH ROOTS, and the reason this guard had to learn to read them.
+ *
+ * T-033 retired the CSS Modules. The two anchor offsets this test was written for —
+ * `#video-12` and `#video-12-etiket-3` on the book page — were declarations in
+ * `book-detail.module.css` until task 8 moved them into Tailwind arbitrary values on the page's
+ * own hoisted class constants. Nothing about the failure mode changed: `var()` against an
+ * undefined property still invalidates the whole `calc()`, the declaration is still dropped and
+ * the offset still becomes ZERO in silence. What changed is WHERE the reader lives, and a
+ * stylesheet-only scan reported **zero readers** for `--header-height` the moment the last
+ * module went — i.e. the widening below is what keeps this tripwire from going green by having
+ * nothing left to look at.
+ *
+ * `stripComments`, not `stripCssComments`: the docblocks that explain these offsets quote the
+ * class they explain, and a scanner that could not tell prose from code would count a comment as
+ * a reader — the same trap `components/ui/token-binding.test.ts` records.
+ */
+const tsxFiles = ROOTS.flatMap(({ label: rootLabel, url: root }) =>
+  readdirSync(root, { recursive: true, encoding: "utf8" })
+    .filter(
+      (name) => name.endsWith(".tsx") && !name.includes(".test.") && !name.includes("node_modules"),
+    )
+    .map((name) => ({
+      file: fileURLToPath(new URL(name, root)),
+      label: `${rootLabel}/${name}`,
+      css: stripComments(readFileSync(new URL(name, root), "utf8")),
+    })),
+).sort((a, b) => a.file.localeCompare(b.file));
+
 /** Every custom-property read inside a `calc()` in either stylesheet root. */
-const calculatedReferences = cssFiles.flatMap(({ css, label }) =>
+const cssCalculatedReferences = cssFiles.flatMap(({ css, label }) =>
   [...stripCssComments(css).matchAll(/calc\(([^;{}]+)\)/g)].flatMap((calculation) =>
     [...(calculation[1] ?? "").matchAll(/var\(\s*(--[a-z0-9-]+)(?:\s*,[^)]*)?\)/gi)].map(
       (reference) => ({
@@ -86,6 +115,23 @@ const calculatedReferences = cssFiles.flatMap(({ css, label }) =>
     ),
   ),
 );
+
+/**
+ * The same read, spelled as a Tailwind arbitrary value: `scroll-mt-[calc(var(--x)+1rem)]`.
+ *
+ * Anchored on `-[calc(` and closed on `)]` rather than reusing the stylesheet pattern above,
+ * which excludes `;{}` — characters a `.tsx` file is full of, so that pattern would run past the
+ * end of the class string and report tokens from whatever followed.
+ */
+const classCalculatedReferences = tsxFiles.flatMap(({ css, label }) =>
+  [...css.matchAll(/-\[calc\(([^\]]+)\)\]/g)].flatMap((calculation) =>
+    [...(calculation[1] ?? "").matchAll(/var\(\s*(--[a-z0-9-]+)(?:\s*,[^)]*)?\)/gi)].map(
+      (reference) => ({ css, label, token: reference[1] ?? "" }),
+    ),
+  ),
+);
+
+const calculatedReferences = [...cssCalculatedReferences, ...classCalculatedReferences];
 
 /**
  * The tokens an anchor offset may read, which MUST therefore be declared unconditionally.
@@ -137,11 +183,41 @@ describe("sticky-header anchor offsets", () => {
     }
   });
 
-  it("scans both stylesheet roots", () => {
+  it("scans both stylesheet roots, and one of them has nothing left to scan", () => {
     // Guards the widening itself: a move of either root would otherwise shrink the scanned
-    // set in silence, which is the failure mode of the version this replaced.
+    // set in silence, which is the failure mode of the version this replaced. `readdirSync`
+    // throws on a root that has moved, so BOTH roots are still walked or this file does not
+    // load at all — that half of the guard is structural and needs no assertion.
+    // The `app/` half has exactly ONE subject today, `app/globals.css`. The four route
+    // stylesheets this root was widened for (`turkiye`, `country-detail`, `province-detail`,
+    // `game`) are gone; the token layer is not, and it is where every offset token is declared,
+    // so this assertion still has something to find.
     expect(cssFiles.some(({ file }) => file.includes("/app/"))).toBe(true);
-    expect(cssFiles.some(({ file }) => file.includes("/components/"))).toBe(true);
+    // The `components` root was the CSS-Module half of this scan. T-033 task 9 retired the last
+    // `*.module.css` and "at least one stylesheet here" became an assertion with no subject —
+    // which is the one shape that cannot fail. RE-AIMED AT ABSENCE rather than dropped: a `.css`
+    // arriving under `components/` reds here, where someone still has to say whether it declares
+    // an offset token, instead of joining the scan unnoticed.
+    expect(
+      cssFiles.filter(({ file }) => file.includes("/components/")).map(({ file }) => file),
+      "stylesheets under components/, where the CSS-Module era ended",
+    ).toEqual([]);
+  });
+
+  it("scans component sources in both roots too, with comments stripped", () => {
+    // The second half of the same guard, and it is not decorative: with the CSS Modules retired,
+    // every remaining reader of `--header-height` inside a `calc()` is a Tailwind arbitrary value
+    // in a `.tsx` file. A scan that lost this root would report zero readers and take the
+    // "guards at least one reader of each offset token" case down with it — which is the honest
+    // failure, but only because the case exists.
+    expect(tsxFiles.some(({ file }) => file.includes("/app/"))).toBe(true);
+    expect(tsxFiles.some(({ file }) => file.includes("/components/"))).toBe(true);
+    expect(classCalculatedReferences.length).toBeGreaterThan(0);
+    // The comment-stripping half, proved on a real subject: the book page's own docblocks quote
+    // `scroll-mt-[calc(var(--header-height)+1rem)]` in prose while explaining it.
+    const page = tsxFiles.find(({ file }) => file.endsWith("kitaplar/[slug]/page.tsx"));
+    expect(page, "the book page is no longer scanned").toBeDefined();
+    expect(page?.css).not.toContain("HOIST FIRST");
   });
 
   it("finds the unconditional :root block in globals.css", () => {
@@ -177,6 +253,12 @@ describe("sticky-header anchor offsets", () => {
     // or the next reader finds a token with no owner and assumes it means something.
     for (const { css } of cssFiles) {
       expect(stripCssComments(css)).not.toContain(token);
+    }
+    // …and the component sources, for the same reason they are scanned above: after T-033 a
+    // reintroduced reference is far likelier to arrive as a Tailwind arbitrary value than as a
+    // stylesheet declaration.
+    for (const { css } of tsxFiles) {
+      expect(css).not.toContain(token);
     }
   });
 });

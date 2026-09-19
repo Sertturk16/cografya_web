@@ -5,7 +5,6 @@ import { PM25_DECIMALS, pm25DisplayUnit, roundPm25 } from "@/lib/air/pm25-displa
 import type { Pm25Annual } from "@/lib/api/types";
 import { Pm25Chart } from "./pm25-chart";
 import { Pm25Table } from "./pm25-table";
-import styles from "./air-pollution.module.css";
 
 interface AirPollutionSectionProps {
   pm25: Pm25Annual;
@@ -17,6 +16,59 @@ interface AirPollutionSectionProps {
   plateCode: string;
   locale: Locale;
 }
+
+/**
+ * THE SECTION'S SURFACE, AS BRIDGE TOKENS (T-033).
+ *
+ * `air-pollution.module.css` wrote every colour in this section as a raw Terra token, and the
+ * `.dark` block redefines not one of them. The section renders inside a `<Card
+ * variant="panel">`, so in dark mode every line below was frozen ink on a dark panel. The
+ * worst reading measured anywhere in this programme was here: the **annual-mean value, the
+ * headline number of the section, at 1.14:1** (`--color-ink` #2b2622 on `--card` #121e21) —
+ * present in the DOM, legible to a crawler, and invisible to a reader. Its label, unit and
+ * every notice around it sat at 2.15:1 (`--color-slate` #57504a).
+ *
+ * Bound to `text-foreground` / `text-muted-foreground` / `border-border` the same elements
+ * measure 14.73:1 and 7.79:1 in dark and 14.97:1 / 7.92:1 in light — the module's own light
+ * figures to the hundredth, so nothing regressed on the theme that already worked. Figures
+ * from `lib/theme/contrast.ts`, recorded in
+ * `.superpowers/sdd/2026-09-19-t033-css-modules/task-3-report.md`.
+ *
+ * The CHART is the one thing here that is deliberately NOT theme-bound: it is a data surface
+ * and `components/air/pm25-chart.tsx`'s own docblock carries the measurement that says why.
+ *
+ * Sizes are the module's own, to the pixel, so the conversion moves colour and not layout.
+ */
+/** The permanent deep-link target clears the opaque sticky header on arrival. */
+const HEADING = "scroll-mt-[calc(var(--header-height)+1rem)]";
+/** The headline figure's line: label, number and unit on one baseline. */
+const VALUE_LINE = "mt-0 mb-2.5 flex flex-wrap items-baseline gap-x-3.5 gap-y-1";
+const VALUE_LABEL = "text-xs font-semibold text-muted-foreground";
+/** The 1.14:1 element. The one thing in the section that is not quiet. */
+const VALUE = "font-heading text-[1.9rem] font-bold leading-[1.15] tabular-nums text-foreground";
+const VALUE_UNIT = "text-[1.1rem] font-semibold text-muted-foreground";
+/** The editorial notices — one voice, wherever they are placed. */
+const NOTICE = "mt-0 mb-1 last:mb-0 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground";
+/** A reference point rather than a property of this province's series: hence the left rule. */
+const GUIDELINE =
+  "mt-3.5 mb-0 border-l-2 border-border py-0.5 pl-3.5 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground";
+/**
+ * The attribution paragraphs. `overflow-wrap` is load-bearing: the reference citation is one
+ * long unbroken string with a DOI in it, which without this can push a narrow viewport into
+ * horizontal scroll (WCAG 1.4.10 reflow).
+ */
+const SOURCE_LINE =
+  "mt-0 mb-1.5 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground [overflow-wrap:anywhere]";
+/**
+ * Links inside the attribution carry no colour of their own: an `<a>` reads `--link` from the
+ * base layer, which is dark-adapted, where the deleted rule pinned the frozen
+ * `--color-primary-dark` (#7e3a1e, 2.04:1 on `--card`).
+ */
+const SOURCE_LINK = "underline";
+/** The provider's mandatory method caveat, quieter and indented so the licensed text is
+ *  visibly where the platform's own prose stops. Sized to match the climate licence notice. */
+const LICENCE_NOTICE =
+  "my-2 border-l-2 border-border py-0.5 pl-3.5 max-w-[78ch] text-[0.85rem] leading-[1.5] text-muted-foreground";
 
 /**
  * THERE IS NO `hideAttribution` PROP, AND THERE MUST NOT BE ONE.
@@ -123,20 +175,18 @@ export async function AirPollutionSection({
     <section className="mt-10" aria-labelledby={headingId}>
       {/* `tabIndex={-1}` makes this permanent deep-link target programmatically focusable,
           so Safari/VoiceOver actually move AT focus to the heading when the fragment is
-          followed (the skip-link `<main>` fix, `ENGINEERING.md` §5). `.heading`'s
+          followed (the skip-link `<main>` fix, `ENGINEERING.md` §5). `HEADING`'s
           scroll-margin-top clears the sticky header so it is not obscured on arrival. */}
-      <h2 id={headingId} tabIndex={-1} className={styles.heading}>
+      <h2 id={headingId} tabIndex={-1} className={HEADING}>
         {tp("airPollutionHeading", { name: headingName })}
       </h2>
 
       {/* The headline figure. The YEAR comes from the payload, never hardcoded: `latestYear`
           is derived from the series' last entry and the contract does not promise 2024. */}
-      <p className={styles.valueLine}>
-        <span className={styles.valueLabel}>
-          {t("valueLabel", { year: String(pm25.latestYear) })}
-        </span>
-        <span className={styles.value}>
-          {latestValue} <span className={styles.valueUnit}>{displayUnit}</span>
+      <p className={VALUE_LINE}>
+        <span className={VALUE_LABEL}>{t("valueLabel", { year: String(pm25.latestYear) })}</span>
+        <span className={VALUE}>
+          {latestValue} <span className={VALUE_UNIT}>{displayUnit}</span>
         </span>
       </p>
 
@@ -144,10 +194,10 @@ export async function AirPollutionSection({
           they would concatenate without a space ("…göstermez.Değer, il ortalaması…") for
           `Ctrl+F` and for a screen reader reading the paragraph as one string. */}
       {(notices.annualMean || notices.provinceCentrePoint) && (
-        <div className={styles.notices}>
-          {notices.annualMean && <p className={styles.notice}>{t("notice.annualMean")}</p>}
+        <div className="mt-0 mb-[18px] max-w-[68ch]">
+          {notices.annualMean && <p className={NOTICE}>{t("notice.annualMean")}</p>}
           {notices.provinceCentrePoint && (
-            <p className={styles.notice}>{t("notice.provinceCentrePoint")}</p>
+            <p className={NOTICE}>{t("notice.provinceCentrePoint")}</p>
           )}
         </div>
       )}
@@ -170,17 +220,15 @@ export async function AirPollutionSection({
           It carries no second caveat about the method mismatch between a ground-station
           guideline and a satellite-derived series: `notice.satelliteDerived` and
           `notice.gridResolution` already say exactly that, and one fact gets one home. */}
-      <p className={styles.guideline}>{t("whoGuideline")}</p>
+      <p className={GUIDELINE}>{t("whoGuideline")}</p>
 
       <Pm25Table pm25={pm25} provinceName={provinceName} displayUnit={displayUnit} />
 
       {/* ALWAYS RENDERED — see the "no `hideAttribution` prop" note above. */}
-      <div className={styles.attribution}>
-        {notices.satelliteDerived && (
-          <p className={styles.notice}>{t("notice.satelliteDerived")}</p>
-        )}
+      <div className="mt-5">
+        {notices.satelliteDerived && <p className={NOTICE}>{t("notice.satelliteDerived")}</p>}
 
-        <p className={styles.sourceLine}>
+        <p className={SOURCE_LINE}>
           {t.rich("sourceLine", {
             provider: pm25.attribution.providerName,
             workTitle: pm25.attribution.workTitle,
@@ -188,45 +236,60 @@ export async function AirPollutionSection({
             // section rests on. `nofollow` is for untrusted / paid / UGC links and using it
             // here would understate a real attribution (the climate source line's reasoning).
             source: (chunks) => (
-              <a href={pm25.attribution.datasetUrl} target="_blank" rel="noopener noreferrer">
+              <a
+                className={SOURCE_LINK}
+                href={pm25.attribution.datasetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {chunks}
               </a>
             ),
           })}
         </p>
 
-        <p className={styles.sourceLine}>
+        <p className={SOURCE_LINE}>
           {t.rich("licenceLine", {
             licenceName: pm25.attribution.licenceName,
             licence: (chunks) => (
-              <a href={pm25.attribution.licenceUrl} target="_blank" rel="noopener noreferrer">
+              <a
+                className={SOURCE_LINK}
+                href={pm25.attribution.licenceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {chunks}
               </a>
             ),
           })}
         </p>
 
-        <p className={styles.sourceLine}>
+        <p className={SOURCE_LINE}>
           {t.rich("referenceLine", {
             citation: pm25.attribution.referenceCitation,
             ref: (chunks) => (
-              <a href={pm25.attribution.referenceUrl} target="_blank" rel="noopener noreferrer">
+              <a
+                className={SOURCE_LINK}
+                href={pm25.attribution.referenceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {chunks}
               </a>
             ),
           })}
         </p>
 
-        <p className={styles.sourceLine}>{t("noticeIntro")}</p>
+        <p className={SOURCE_LINE}>{t("noticeIntro")}</p>
         {/* The provider's own caveat, VERBATIM and untranslated. `lang="en"` so a screen
               reader on the Turkish page does not read it with Turkish phonemes (WCAG 3.1.2).
               The text lives ONLY in the payload — this repo keeps no second copy of it. */}
-        <p className={styles.licenceNotice} lang="en">
+        <p className={LICENCE_NOTICE} lang="en">
           {pm25.attribution.methodNoticeText}
         </p>
         {/* The Turkish explanation stands BESIDE the English caveat, never instead of it
               (`data-provenance.md` write rule, ACAG row). */}
-        {notices.gridResolution && <p className={styles.notice}>{t("notice.gridResolution")}</p>}
+        {notices.gridResolution && <p className={NOTICE}>{t("notice.gridResolution")}</p>}
       </div>
     </section>
   );

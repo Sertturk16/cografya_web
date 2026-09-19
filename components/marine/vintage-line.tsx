@@ -2,7 +2,6 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import type { MarineValue } from "@/lib/api/types";
 import { MODEL_INSTANT_FORMAT } from "@/lib/marine/model-run";
 import { buildMarineVintage, type MarineVintageGroup } from "@/lib/marine/vintage";
-import styles from "./marine.module.css";
 
 interface VintageLineProps {
   /** Every value the surrounding block displays; grouping is derived from it. */
@@ -61,7 +60,10 @@ export async function VintageLine({ values }: VintageLineProps) {
   };
 
   return (
-    <ul role="list" className={styles.vintageList}>
+    <ul
+      role="list"
+      className="m-0 flex list-none flex-col gap-[5px] p-0 text-[0.85rem] leading-[1.5] text-muted-foreground"
+    >
       {groups.map((group) => {
         // Widened deliberately: `tsc` covers today's two providers, this local covers a
         // third one arriving before the web regenerates its types. A provider we cannot

@@ -17,18 +17,24 @@
  * All three were found the same way: `document.documentElement.scrollWidth` compared with
  * `clientWidth` in a real browser. `scripts/sweep-overflow.mjs` is that comparison; this
  * module is the part of it that can be unit-tested without a browser, so a routing rename
- * or a new CSS Module turns the vitest suite red instead of quietly shrinking the sweep.
+ * turns the vitest suite red instead of quietly shrinking the sweep.
  *
- * ROUTE SELECTION — two rules, both checked by `routes.test.ts`:
+ * ROUTE SELECTION — one rule, checked by `routes.test.ts`:
  *
  * 1. Every `pathname` here must be a live key of `routing.pathnames`. The list is derived
  *    from the routing table rather than hand-written as URLs, so renaming a segment (the
  *    `/turkey` → `/turkiye` correction in T-032 is the precedent) cannot leave the sweep
  *    silently pointing at 404s that measure as "no overflow".
- * 2. Every surviving `*.module.css` must be named by at least one route's `modules`. Two of
- *    the three recorded defects were CSS-Module declarations, so the modules are the part of
- *    the tree the sweep must not lose coverage of. A new module with no route here fails
- *    `routes.test.ts`, which is the moment someone still remembers which page renders it.
+ *
+ * THERE USED TO BE A SECOND RULE — every surviving `*.module.css` had to be named by at least
+ * one route's `modules`, because two of the three recorded defects were CSS-Module
+ * declarations. T-033 retired the last stylesheet, so that rule had no subject left and the
+ * field it read is gone: a `modules` list over an empty population can only ever make a claim
+ * nothing checks. What replaces it is one assertion in
+ * `components/css-module-dark-safety.test.ts` that no `*.module.css` exists anywhere under
+ * `app/` or `components/` — a guard against the subject RETURNING, which is the only form that
+ * can still fail. The geometry those modules carried did not leave the sweep: it moved into
+ * hoisted class constants in the components, pinned by their own tests.
  *
  * It is deliberately a set of SHAPES, not of instances: 992 routes exist, and the 81
  * province pages are one page with 81 datasets. What differs between them is content
@@ -47,8 +53,6 @@ export type SweepShape = {
   readonly params?: Readonly<Record<string, string>>;
   /** Locales to visit. TR-only unless the EN page composes DIFFERENT blocks. */
   readonly locales: readonly SweepLocale[];
-  /** `*.module.css` basenames this route renders. Drives the coverage test. */
-  readonly modules: readonly string[];
   /** Why this shape is in the list. Asserted non-empty. */
   readonly why: string;
 };
@@ -58,7 +62,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "home",
     pathname: "/",
     locales: ["tr", "en"],
-    modules: ["site-search.module.css", "marine.module.css"],
     why:
       "The homepage: the densest single composition on the site (hero, live ticker, card " +
       "grids). It claimed `home.module.css` too, and that claim was the clearest thing this " +
@@ -66,16 +69,19 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "a component the homepage stopped rendering when it took the card grids inline, so the " +
       "route reached the file through nothing. T-042 deleted both. Both locales — every string " +
       "on it is translated, and TR and EN copy differ in length on the same fixed-width cards. " +
-      "`marine.module.css` is listed here because `VintageLine` renders it on this page; the " +
-      "`/deniz` routes used to claim it and never imported it. Flag-gated (`MARINE_ENABLED`), " +
-      "so the measurement is real only on a render where the marine block appears — which is " +
-      "still strictly more coverage than the route that never loaded the file.",
+      "It also claimed `marine.module.css`, through `VintageLine`; T-033 converted that " +
+      "component to Tailwind and deleted the stylesheet, so the claim went with the file " +
+      "rather than being left to pass vacuously. The marine block on this page is still " +
+      "flag-gated (`MARINE_ENABLED`) and is still swept as markup, just no longer as a module. " +
+      "It claimed `site-search.module.css` too, through the header combobox that every page " +
+      "carries; T-033 task 5 converted that component and deleted the stylesheet, so this shape " +
+      "now renders none of the surviving four. The header is still swept here at every width, " +
+      "and it is the only route that sweeps the combobox panel at all.",
   },
   {
     id: "about",
     pathname: "/hakkimizda",
     locales: ["tr"],
-    modules: [],
     why:
       "The plain-prose shape: long paragraphs, no data widget, no map. It is the control " +
       "case — if this one overflows, the fault is in the shared `(site)` container rather " +
@@ -85,7 +91,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "turkiye-hub",
     pathname: "/turkiye",
     locales: ["tr"],
-    modules: [],
     why:
       "A hub whose main element is a fixed-`viewBox` SVG map inside a responsive frame. " +
       "SVG-in-a-box is its own overflow shape: the frame scales, the legend and the province " +
@@ -96,25 +101,24 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     pathname: "/turkiye/[slug]",
     params: { slug: "istanbul" },
     locales: ["tr", "en"],
-    modules: [
-      "climate.module.css",
-      "air-pollution.module.css",
-      "locator-map.module.css",
-      "marine.module.css",
-    ],
     why:
       "The detail page with the climate table, and the recorded scene of two of the three " +
       "defects this sweep exists for (T-038's licence notice, T-046's `.chartFrame` " +
-      "`min-width`). It renders FOUR of the eight CSS Modules — `marine.module.css` among them, " +
-      "through `ProvinceMarineSection`, which is where that stylesheet actually reaches a " +
-      "swept route rather than on `/deniz`. Both locales: the EN column headers of the " +
-      "climate table are materially longer than the TR ones.",
+      "`min-width`). It rendered three CSS Modules — `marine.module.css` through " +
+      "`ProvinceMarineSection` (the only place that stylesheet ever reached a swept route), " +
+      "`air-pollution.module.css` through `AirPollutionSection`, and `climate.module.css` " +
+      "through `ClimateSection` — until T-033 converted all three sections to Tailwind and " +
+      "deleted them. Every one of those sections is still swept here, and THIS ROUTE IS NOW " +
+      "THE ONLY COVER T-046's fix has: `.chartFrame`'s `min-width: min(300px, 100%)` is " +
+      "`min-w-[min(300px,100%)]` in `climate-chart.tsx`, where no source-text census reads " +
+      "it any more. Same for the marine `11ch 1fr` value grid and the PM2.5 chart frame. " +
+      "Both locales: the EN column headers of the climate table are materially longer than " +
+      "the TR ones.",
   },
   {
     id: "region-index",
     pathname: "/turkiye/bolge",
     locales: ["tr"],
-    modules: [],
     why: "The index-of-cards shape: a grid that has to collapse to one column by 320px.",
   },
   {
@@ -122,7 +126,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     pathname: "/turkiye/bolge/[slug]",
     params: { slug: "marmara" },
     locales: ["tr"],
-    modules: [],
     why:
       "The region detail. `v2-sources-section.tsx`'s `shrink-0` badge row overflowed on all " +
       "seven of these routes inside T-046 — a flex child's shrink behaviour, invisible to " +
@@ -132,7 +135,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "dunya-hub",
     pathname: "/dunya",
     locales: ["tr"],
-    modules: [],
     why:
       "The world hub: a second, differently-built map surface (zoom/pan, its own projection " +
       "and its own controls). `/turkiye` does not cover it — they share no component.",
@@ -142,17 +144,18 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     pathname: "/dunya/[slug]",
     params: { slug: "almanya" },
     locales: ["tr"],
-    modules: ["locator-map.module.css"],
     why:
       "The country detail: metric strips, a flag and comparison tables — the numeric-table " +
-      "shape, which is the one most likely to refuse to wrap.",
+      "shape, which is the one most likely to refuse to wrap. It is also the ONE route that " +
+      "mounts `LocatorMap`, whose stylesheet was the last of the eight T-033 retired; its " +
+      "two figure width caps are now class constants pinned by " +
+      "`components/map/locator-map-floors.test.ts`.",
   },
   {
     id: "continent",
     pathname: "/dunya/kita/[slug]",
     params: { slug: "avrupa" },
     locales: ["tr"],
-    modules: [],
     why:
       "The continent detail: a long country grid whose tiles carry country names of wildly " +
       "different lengths at a fixed tile width.",
@@ -161,31 +164,30 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "sea",
     pathname: "/deniz/karadeniz",
     locales: ["tr", "en"],
-    modules: [],
     why:
       "The mandated ECMWF/Copernicus licence notice — the T-038 defect verbatim: a legally " +
       "required, unshortenable string that must fit at 320px. Both locales: the EN page drops " +
       "the TR-only explainer blocks, so it is a different composition rather than a " +
       "translation of this one. " +
       "NO `marine.module.css`: this entry claimed it and never rendered it. Its only importers " +
-      "are `components/marine/{vintage-line,value-cell,direction-arrow,province-marine-" +
-      "section}.tsx`, and the import chain reaches exactly two routes — `/` (VintageLine) and " +
-      "`/turkiye/[slug]` (ProvinceMarineSection). The claim moved to those two entries, where " +
-      "the stylesheet is actually on the page.",
+      "were `components/marine/{vintage-line,value-cell,direction-arrow,province-marine-" +
+      "section}.tsx`, and the import chain reached exactly two routes — `/` (VintageLine) and " +
+      "`/turkiye/[slug]` (ProvinceMarineSection). The claim moved to those two entries, and " +
+      "T-033 then converted all four components and deleted the stylesheet outright.",
   },
   {
     id: "sea-hub",
     pathname: "/deniz",
     locales: ["tr"],
-    modules: [],
     why:
       "The FAQ ACCORDION, which `/deniz/karadeniz` does not have. T-035 PR5 moved this block " +
       'onto `FaqSection`\'s `mechanism="accordion"`, and an accordion trigger is the one FAQ ' +
       "shape with a horizontal budget: an unbroken Turkish question and a chevron on one row, " +
       "inside a button that must still fit at 320. The `sea` route ABOVE measures the licence " +
-      "notice, which does not reach this page's accordion. Neither route measures " +
-      "`marine.module.css`: no `deniz` route imports it — the claim moved to `home` and " +
-      "`province`, which do. `tr` only — the block is gated to Turkish because " +
+      "notice, which does not reach this page's accordion. Neither route ever measured " +
+      "`marine.module.css`: no `deniz` route imported it — the claim moved to `home` and " +
+      "`province`, and T-033 has since deleted the stylesheet. `tr` only — the block is " +
+      "gated to Turkish because " +
       "`messages/en.json` has no `Deniz.q*`, so an EN visit would measure a page with no FAQ " +
       "on it at all.",
   },
@@ -193,28 +195,37 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "earthquake",
     pathname: "/deprem",
     locales: ["tr"],
-    modules: ["earthquake.module.css"],
     why:
-      "`earthquake.module.css`: a live AFAD list whose rows carry magnitude, depth, time and " +
-      "a place name of unbounded length. The only route where the content width is decided " +
-      "by upstream data rather than by the repo.",
+      "A live AFAD list whose rows carry magnitude, depth, time and a place name of unbounded " +
+      "length. The only route where the content width is decided by upstream data rather than " +
+      "by the repo, which is why it is swept whatever paints it. The module claim is gone: " +
+      "T-033 task 6 converted `earthquake.module.css` and deleted it, and the claim was " +
+      "mis-addressed even before that — `/deprem` renders `V2EarthquakeExplorer`, and the " +
+      "stylesheet's event table only ever reached `/turkiye/[slug]`, which the `province` " +
+      "shape covers.",
   },
   {
     id: "book",
     pathname: "/kitaplar/[slug]",
     params: { slug: "ayt-cografya-konu-ozetli-brans-denemeleri" },
     locales: ["tr", "en"],
-    modules: ["book-detail.module.css", "book-video.module.css"],
     why:
-      "The book detail: two CSS Modules, including the embedded-video aspect box — a " +
-      "fixed-ratio iframe is the classic 320px overflow. Both locales: the EN twin is a " +
-      "permanent `noindex` page with its own reduced composition.",
+      "The book detail, and the embedded-video aspect box is why: a fixed-ratio iframe is the " +
+      "classic 320px overflow, and the stage's cover box combines `aspect-video` with a " +
+      "200px min-height, which gives it an intrinsic minimum WIDTH of ~356px inside a 280px " +
+      "column. T-033 tasks 7 and 8 converted `book-video.module.css` and " +
+      "`book-detail.module.css` and deleted both, so this shape now claims no module at all — " +
+      "but the geometry that made it worth sweeping did not leave the page. It moved into " +
+      "`FRAME`/`STAGE` in `components/book/` and into `QUESTION_GRID`/`JUMP_LIST`/`WORKBENCH` " +
+      "in the route's own page, where `components/book/book-detail-floors.test.ts` pins the " +
+      "floors and this sweep still measures the result. Both locales: the EN twin is a " +
+      "permanent `noindex` page with its own reduced composition, and it is the locale that " +
+      "BINDS the question cell's 88px floor (`Question 1` is 71.0px against `Soru 1`'s 41.0px).",
   },
   {
     id: "tool",
     pathname: "/araclar/mesafe-olcme",
     locales: ["tr", "en"],
-    modules: [],
     why:
       "An interactive map tool that wants all the width it can get, inside site chrome that " +
       "will not give it any. It claimed `tools.module.css` until T-042 deleted that file with " +
@@ -226,7 +237,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "game",
     pathname: "/oyun/81-il",
     locales: ["tr"],
-    modules: [],
     why:
       "The `(play)` group — the only pages on the site that opt out of the `(site)` layout " +
       "and its single padded `<main>`. Whatever the shared container guarantees, it does not " +
@@ -236,7 +246,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "auth",
     pathname: "/giris",
     locales: ["tr"],
-    modules: [],
     why:
       "The auth shape: a narrow centred card with form controls. Inputs and buttons carry " +
       "intrinsic minimum widths that no amount of container padding can shrink.",
@@ -245,7 +254,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "design-system",
     pathname: "/design-system",
     locales: ["tr"],
-    modules: [],
     why:
       "The gallery index, which lives outside both `(site)` and `(play)` and therefore under " +
       "no shared container at all.",
@@ -255,7 +263,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     pathname: "/design-system/[category]",
     params: { category: "duzen" },
     locales: ["tr"],
-    modules: [],
     why:
       "Where the primitives actually render, several to a row, at every size they ship in. " +
       "`/design-system` alone is a list of links and proves nothing about the components. " +

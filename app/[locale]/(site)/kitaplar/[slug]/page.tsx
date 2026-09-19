@@ -23,14 +23,199 @@ import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { BookOpen, Video, Home, ExternalLink, ShoppingBag, PlayCircle } from "lucide-react";
-// Co-located. This used to reach three levels up into the V1 route's directory, which T-032
-// PR3 deleted — and nothing caught it: TypeScript types `*.module.css` as `any` without
-// resolving the path, so `pnpm typecheck` stayed green over a broken import that only the
-// bundler would have found. The file is live CSS (fourteen classes on this page), so PR3 moved
-// it here rather than deleting it with the route it no longer belongs to.
-import styles from "./book-detail.module.css";
-
 export const revalidate = 86400;
+
+/**
+ * `book-detail.module.css`'s fourteen live classes, in bridge tokens (T-033 task 8).
+ *
+ * ## Why they are hoisted rather than written inline
+ *
+ * This page lives under `app/`, and `vitest.config.ts` includes only `lib/`, `components/` and
+ * `tools/`. Nothing under this directory is ever executed by a test, so the floors below have no
+ * unit cover of their own and the census that used to hold two of them
+ * (`components/css-module-fixed-widths.test.ts`) can only read CSS Modules. What replaces both is
+ * `components/book/book-detail-floors.test.ts`, which reads THIS FILE's source — and
+ * `lib/test-support/converted-floor.ts`'s extractor finds a value only in a top-level
+ * `const NAME = "…";`. A floor left inline on a JSX `className` hands it back `null` and every
+ * assertion built on it asserts nothing, silently. Hoisting is therefore the precondition for the
+ * pin, not a style preference.
+ *
+ * ## The colour mapping, and the two places it is not the plan's first column
+ *
+ * `--color-border` → `border-border`, `--color-slate` → `text-muted-foreground`,
+ * `--color-primary` → `border-primary`, `#fff` → `bg-card`: all four are the same paint in light
+ * mode as the rule they replace. Two are the refinements tasks 3, 4, 6 and 7 already measured
+ * and landed:
+ *
+ * · `--color-primary-dark` → `text-primary-strong`, not `text-primary`. `--primary-strong` IS
+ *   `var(--color-primary-dark)` in the light block (`app/globals.css`), so #7e3a1e does not move;
+ *   `text-primary` would have re-coloured every heading and tile label to #b0522e for no reason.
+ * · `--color-surface` → `bg-muted`, not the table's `bg-card`. `--muted` is #f1e9de in light —
+ *   the same paint `--color-surface` is — and `bg-card` is what the tile is ALREADY filled with,
+ *   so mapping the hover to it would have deleted the hover rather than translated it.
+ *
+ * `--color-taupe` → `text-muted-foreground` is the one deliberate colour change: the fact strip's
+ * separator dot goes #8a8078 → #57504a in light. It is `aria-hidden` decoration, taupe measured
+ * 3.64:1 on `--color-bg` (sub-AA, which is what the token's own rule says it is for), and the
+ * SECOND dot on that same line — `DenemeMeta`'s, converted in task 7 — is already
+ * `text-muted-foreground`. The two dots agree now; before this they did not.
+ *
+ * ## Sizes are arbitrary, and that is deliberate
+ *
+ * `text-[0.95rem]`, `text-[1.05rem]` and `text-[0.85rem]` rather than `text-sm`/`text-base`: a
+ * named Tailwind size carries a line-height the stylesheet never set. Measured on this page — the
+ * fact strip inherits 1.6 from `body` and renders 13.6px/21.76px, where `text-sm` would make it
+ * 14px/20px and reflow all thirty rows; the two headings take 1.15 from `@layer base`'s heading
+ * rule and render 15.2px/17.48px and 16.8px/19.32px.
+ */
+
+/** The jump strip's own block. `<nav>` has no UA margin, so `mb-6` is the whole rule. */
+const JUMP = "mb-6";
+
+/**
+ * `mb-2.5` and NOT `m-0 mb-2.5`: `@layer base` already gives every heading `margin: 0 0 0.5em`,
+ * so top/right/left are 0 before this class is applied and only the bottom (7.6px → 10px) moves.
+ * `.denemeHeading` below is the opposite case and does need its `m-0`.
+ */
+const JUMP_HEADING = "font-heading text-[0.95rem] text-primary-strong mb-2.5";
+
+/**
+ * INTRINSIC, NOT A BREAKPOINT — the rule the stylesheet's own comment made and this keeps.
+ * `docs/design.md` pins ONE breakpoint (64rem) and forbids a second without a measurement in both
+ * locales; `auto-fill` + `minmax` sets the column count from the available width instead.
+ *
+ * `min(2.75rem,100%)` and not a bare 2.75rem: a floor wider than the container keeps its width
+ * and pushes the row past the viewport, which is the horizontal overflow the 320px sweep exists
+ * to catch. Pinned in `components/book/book-detail-floors.test.ts`.
+ */
+const JUMP_LIST =
+  "m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(2.75rem,100%),1fr))] gap-1.5 p-0";
+
+/**
+ * 44×44, WCAG 2.2 §2.5.5 (AAA) rather than the 24×24 §2.5.8 floor — `docs/design.md`'s "controls
+ * with room to be generous" class, the same call the question cells below make. `tabular-nums` so
+ * two-digit numbers sit on one optical grid rather than jittering.
+ *
+ * `hover:bg-muted`, not `hover:bg-card`: see the mapping note above. `rounded-lg` is
+ * `var(--radius-lg)`, which is `var(--radius)`, which is the 10px the stylesheet asked for.
+ */
+const JUMP_ITEM =
+  "flex min-h-11 items-center justify-center rounded-lg border border-border bg-card p-1 " +
+  "text-[0.95rem] font-semibold tabular-nums text-primary-strong no-underline " +
+  "hover:border-primary hover:bg-muted";
+
+/**
+ * TWO COLUMNS FROM 64rem, ONE BELOW IT, and `lg:` IS that 64rem — Tailwind's default `lg`
+ * breakpoint, unchanged in this repo's `@theme`. No second breakpoint is introduced.
+ *
+ * THE 40% IS DERIVED, NOT PICKED, and the derivation is unchanged from the rule this replaces:
+ * the stage must stay at least 200×200 (the provider's Required Minimum Functionality floor) and
+ * the index's six question cells must sit on one row, which at the 88px cell floor plus the 6px
+ * gap needs 6×88 + 5×6 = 558px of index column. At the narrowest two-column viewport (1024px →
+ * 984px of content, minus the 24px gap) a 40% stage leaves the index 566px.
+ *
+ * NO `overflow` ANYWHERE ON THIS CHAIN, and that is load-bearing rather than tidy: `position:
+ * sticky` resolves against the nearest scrollport, so an ancestor with `overflow: hidden` would
+ * silently kill the sticky stage with nothing erroring.
+ *
+ * `items-start` computes to `flex-start` where the stylesheet wrote `start`. The two are the same
+ * alignment in grid layout, and it is measured rather than assumed: every box on this page is
+ * identical before and after at all four widths, both themes and both session states.
+ */
+const WORKBENCH = "grid items-start gap-6 lg:grid-cols-[minmax(0,40%)_minmax(0,1fr)]";
+
+/** `min-w-0` so a long row inside the grid item cannot push the column past its track — a grid
+ *  item's default `min-width: auto` is what lets that happen silently. */
+const INDEX = "min-w-0";
+
+/**
+ * Hairlines between rows rather than a box around the list, and NO horizontal padding: at 320px
+ * the four pixels a side the accordion used to carry decided whether three question cells fit on
+ * a line or two (three cells at the 88px floor need 276px; the inset left 272px).
+ */
+const DENEME = "block border-t border-border pt-2.5 pb-3 last-of-type:border-b";
+
+/** THE ROW HEAD — heading and fact strip on one wrapping line. `gap-x-3`/`gap-y-0.5` are the
+ *  stylesheet's 12px column gap and 2px row gap. */
+const DENEME_HEAD = "flex flex-wrap items-baseline gap-x-3 gap-y-0.5";
+
+/**
+ * `m-0` IS LOAD-BEARING HERE, unlike on `JUMP_HEADING`: `@layer base` gives every heading
+ * `margin: 0 0 0.5em`, so without it this `<h3>` takes an 8.4px bottom margin the stylesheet's
+ * `margin: 0` was cancelling, and every one of the thirty rows grows by it.
+ *
+ * `scroll-mt-[…]` has ONE addend. `#video-12` is an IA fragment, so the target has to land below
+ * the sticky header at every viewport; the accordion's open row was `position: sticky` and needed
+ * a second addend, and that row is gone. `components/anchor-offset-token.test.ts` is the tripwire
+ * for the failure mode that makes this silent — `var()` on an undefined property invalidates the
+ * whole `calc()`, the declaration is dropped, and the offset becomes zero with nothing erroring.
+ *
+ * `min-w-[6.5rem]` = 104px, A FIXED FLOOR SO EVERY ROW WRAPS THE SAME WAY, and the number is
+ * measured rather than picked: Fraunces' digits are proportional and span 86.6px ("Deneme 1") to
+ * 102.4px ("Deneme 40"), which put 25 rows on two lines and 5 on one in no order a reader could
+ * infer. `font-variant-numeric: tabular-nums` was tried first and rejected — the computed style
+ * applies but the widths do not move, because the self-hosted Fraunces subset carries no `tnum`
+ * feature. Pinned in `components/book/book-detail-floors.test.ts`.
+ */
+const DENEME_HEADING =
+  "m-0 min-w-[6.5rem] scroll-mt-[calc(var(--header-height)+1rem)] font-heading " +
+  "text-[1.05rem] text-primary-strong";
+
+/**
+ * THE FACT STRIP, and the wrapping here is its OWN rather than the row's. The heading-and-strip
+ * pair wraps on `DENEME_HEAD`'s line; `flex-wrap` on this element is what lets the three facts
+ * break INSIDE the strip when the strip alone overruns the line — the English page at 320px,
+ * where the row is three lines tall rather than two.
+ *
+ * `text-muted-foreground` is `--color-slate`'s bridge: measured **7.48:1 light / 8.53:1 dark** on
+ * the page's `--background`, which is what this strip actually sits on — neither the row nor the
+ * index around it paints a fill. The retired raw token measured 2.36:1 in dark.
+ */
+const DENEME_FACTS = "flex flex-wrap items-baseline gap-1.5 text-[0.85rem] text-muted-foreground";
+
+/** The decorative dot. THE SAME SPELLING `components/book/deneme-meta.tsx`'s `META_SEPARATOR`
+ *  carries, and the two sit on ONE line inside one fact strip, so a separator that drifted in one
+ *  file would split that line into two colours — which is exactly what the retired
+ *  `--color-taupe` was doing. Both are `aria-hidden` decorative marks. */
+const FACT_SEPARATOR = "text-muted-foreground";
+
+/**
+ * THE CELL FLOOR IS MEASURED IN BOTH LOCALES, and the two do not agree — which is why it is a
+ * floor rather than a fixed width. At the used face and size (600 13.6px Nunito Sans) the label
+ * measures 41.0px in Turkish (`Soru 1`) and 71.0px in English (`Question 1`), so with 6px×2
+ * padding and 1px×2 border a cell needs 59px in TR and **85px in EN**. English is the binding
+ * case. `auto-fit` and not `auto-fill`: `auto-fill` keeps an empty track and leaves a seventh
+ * cell's worth of hole on the right, where `auto-fit` collapses it and the six stretch to fill.
+ *
+ * `mx-0 mb-0` beside `mt-2` rather than `mt-2` alone: the stylesheet wrote `margin: 8px 0 0` on a
+ * `<ul>`, whose UA margin is block-axis `1em`. Spelling out the three zeros is what keeps this a
+ * translation rather than a bet on preflight.
+ *
+ * This is the one declaration `components/css-module-fixed-widths.test.ts` was still pinning when
+ * the file went; it is pinned in `components/book/book-detail-floors.test.ts` now, bidirectionally.
+ */
+const QUESTION_GRID =
+  "mt-2 mx-0 mb-0 grid list-none grid-cols-[repeat(auto-fit,minmax(min(88px,100%),1fr))] " +
+  "gap-1.5 p-0";
+
+/**
+ * 44px KEPT, and kept deliberately against the mockup that proposed 36px. WCAG 2.2 §2.5.8 (AA)
+ * would allow 24×24 and 36 would have passed it, but `docs/design.md` puts this class in the
+ * "controls with room to be generous" bucket that takes §2.5.5 (AAA) 44×44, and a page that is
+ * mostly these controls is the last place to spend that. The page-length saving is taken from the
+ * WIDTH instead (see the floor above), which costs a reader nothing.
+ *
+ * `p-1.5` is 6px, not 8: the two pixels are what put the English label's requirement at 85px
+ * instead of 89px, and 89 was a third of a pixel too wide for the 1024px index column.
+ *
+ * `scroll-mt-[…]` for the same reason `DENEME_HEADING` carries it — `#video-12-etiket-3` is an IA
+ * fragment and this element carries the id, so this is the element that has to end up visible
+ * below the site header.
+ */
+const QUESTION_LINK =
+  "flex min-h-11 items-center justify-center scroll-mt-[calc(var(--header-height)+1rem)] " +
+  "rounded-lg border border-border bg-card p-1.5 text-[0.85rem] font-semibold " +
+  "text-primary-strong no-underline hover:border-primary hover:bg-muted";
 
 interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
@@ -312,15 +497,15 @@ export default async function V2BookDetailPage({ params }: PageProps) {
           </div>
 
           {/* Jump Strip Navigation */}
-          <nav id="denemeye-atla" className={styles.jump} aria-labelledby="denemeye-atla-heading">
-            <h3 id="denemeye-atla-heading" className={styles.jumpHeading}>
+          <nav id="denemeye-atla" className={JUMP} aria-labelledby="denemeye-atla-heading">
+            <h3 id="denemeye-atla-heading" className={JUMP_HEADING}>
               {t("jumpHeading")}
             </h3>
-            <ul role="list" className={styles.jumpList}>
+            <ul role="list" className={JUMP_LIST}>
               {jumpNumbers.map((no) => (
                 <li key={no}>
-                  <a className={styles.jumpItem} href={`#${videoFragment(no)}`}>
-                    <span className={styles.srOnly}>{t("videoFallbackHeading", { no })}</span>
+                  <a className={JUMP_ITEM} href={`#${videoFragment(no)}`}>
+                    <span className="sr-only">{t("videoFallbackHeading", { no })}</span>
                     <span aria-hidden="true">{no}</span>
                   </a>
                 </li>
@@ -331,8 +516,8 @@ export default async function V2BookDetailPage({ params }: PageProps) {
           {/* Video Bench Player and Question Matrix (With Auth Gating) */}
           {defaultOrderNo !== null && (
             <VideoBench
-              className={styles.workbench}
-              indexClassName={styles.index}
+              className={WORKBENCH}
+              indexClassName={INDEX}
               videos={benchVideos}
               defaultOrderNo={defaultOrderNo}
               bookSlug={book.slugTr}
@@ -342,19 +527,19 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                 return (
                   <article
                     key={video.orderNo}
-                    className={styles.deneme}
+                    className={DENEME}
                     aria-labelledby={videoFragment(video.orderNo)}
                     data-deneme={video.orderNo}
                   >
-                    <div className={styles.denemeHead}>
-                      <h3 id={videoFragment(video.orderNo)} className={styles.denemeHeading}>
+                    <div className={DENEME_HEAD}>
+                      <h3 id={videoFragment(video.orderNo)} className={DENEME_HEADING}>
                         {videoTitle(t, locale, video)}
                       </h3>
-                      <span className={styles.denemeFacts}>
+                      <span className={DENEME_FACTS}>
                         <span>{t("videoTagCount", { count: video.tags.length })}</span>
                         {state.kind === "rich" && (
                           <>
-                            <span className={styles.factSeparator} aria-hidden="true">
+                            <span className={FACT_SEPARATOR} aria-hidden="true">
                               ·
                             </span>
                             <DenemeMeta state={state} />
@@ -363,7 +548,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                       </span>
                     </div>
 
-                    <ul role="list" className={styles.questionGrid}>
+                    <ul role="list" className={QUESTION_GRID}>
                       {video.tags.map((tag) => {
                         const fragment = tagFragment(video.orderNo, tag, video.tags);
                         return (
@@ -371,7 +556,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                             <a
                               id={fragment}
                               href={`#${fragment}`}
-                              className={styles.questionLink}
+                              className={QUESTION_LINK}
                               data-second={tag.startSecond}
                               aria-label={
                                 playable

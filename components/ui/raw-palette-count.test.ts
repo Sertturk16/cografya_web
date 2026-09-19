@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -8,7 +8,6 @@ import {
   collectInlineColorOccurrences,
   inlinesAColor,
   collectPaletteOccurrences,
-  EXCLUDED,
   hexOf,
   INLINE_EXEMPT,
   INLINE_PINNED,
@@ -16,7 +15,6 @@ import {
   isInlinePinned,
   isRawExempt,
   RAW_EXEMPT,
-  RAW_PALETTE,
 } from "../../scripts/palette-inventory.mjs";
 
 /**
@@ -721,11 +719,19 @@ import {
  * for every other file in the tree. T-031d ends this arm by deleting the entry rather than by
  * editing a digit, and what is left behind is a literal zero.
  *
- * Four ways it fails, and all four are things that should fail:
+ * Three ways it fails, and all three are things that should fail:
  *   - a raw palette class appears in any file that is not named        -> the zero assertion
  *   - the named file's count moves in EITHER direction                 -> the `toBe` assertion
  *   - the named file stops existing (renamed, split, deleted)          -> the staleness assertion
- *   - `EXCLUDED`'s T-033 file stops carrying raw palette classes       -> the exclusion assertion
+ *
+ * There was a FOURTH, and it has done its job and gone. `EXCLUDED` held the one file this branch
+ * did not own — `turkiye/[slug]/page.tsx`, whose 65 occurrences T-033 was rewriting — and an
+ * assertion demanded that it still carry raw palette classes, so that T-033 landing would turn
+ * this suite red and say so. On the merge it did exactly that (`expected 0 to be greater than
+ * 0`, with its own instruction in the message). The exclusion, its filter and that assertion are
+ * all deleted now; the scope is the whole tree and the file is inside it, counted like any
+ * other. An assertion that looped over an empty list would have been the alternative, and a
+ * guard that cannot fail is not a guard.
  */
 describe("the raw palette is retired everywhere but one named file", () => {
   const found = collectPaletteOccurrences();
@@ -836,18 +842,6 @@ describe("the raw palette is retired everywhere but one named file", () => {
     // finished the job. The arbitrary arm shares `sourceFiles` with this one, so a scope that
     // stopped walking would empty both, and 72 bracketed map surfaces are not going anywhere.
     expect(collectArbitraryColorOccurrences(["components"]).length).toBeGreaterThan(0);
-  });
-
-  it("still has a reason for every exclusion", () => {
-    // When T-033 merges and this file no longer carries any raw palette class, this fails,
-    // which is the reminder to delete the exclusion.
-    for (const path of EXCLUDED) {
-      const hits = readFileSync(path, "utf8").match(RAW_PALETTE) ?? [];
-      expect(
-        hits.length,
-        `${path} is excluded but carries no raw palette class any more — T-033 has landed, delete the exclusion`,
-      ).toBeGreaterThan(0);
-    }
   });
 });
 

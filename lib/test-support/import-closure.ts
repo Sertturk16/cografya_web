@@ -24,8 +24,9 @@ export const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
 
 /**
  * THE SURFACE A READER CAN ACTUALLY REACH — the roots every reachability question in this repo
- * is asked from, so `components/orphan.test.ts` and `components/orphan-stylesheets.test.ts`
- * cannot answer the same question from two different surfaces.
+ * is asked from, so no two of them can answer the same question from two different surfaces.
+ * There were two askers; `components/orphan-stylesheets.test.ts` went with the last CSS Module in
+ * T-033, so `components/orphan.test.ts` is the one that remains.
  *
  * Three entries, all of them things Next.js itself renders: the locale layout (the chrome every
  * product page gets by its directory — it sits ABOVE the two route groups and is where `Toaster`

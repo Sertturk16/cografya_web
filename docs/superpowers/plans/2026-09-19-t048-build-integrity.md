@@ -239,8 +239,11 @@ API_BASE_URL=http://127.0.0.1:9 NODE_ENV=production pnpm exec next build
 node scripts/assert-prerender-floor.mjs
 ```
 
-Expected: `next build` exits 0 (that is the defect), then the guard prints `FAIL` for
-`provinces`, `regions`, `countries`, `continents`, `books` and `total`, and exits 1.
+Measured: `next build` exits 0 (that is the defect), then the guard prints `FAIL` for five
+families — `total`, `provinces`, `regions`, `countries`, `books` — and exits 1. `continents`
+and `design-system` stay `ok`: their `generateStaticParams` are non-async over local
+constants (`app/[locale]/(site)/dunya/kita/[slug]/page.tsx:43` and
+`app/[locale]/design-system/[category]/page.tsx:13`), so they never touch the API.
 
 Record the exact printed block in the PR body. A guard that has never been seen red is a
 guard nobody has checked.
@@ -376,8 +379,9 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 # The build PRERENDERS ~980 data routes, so it needs the API. Supplied by
-# docker-compose.prod.yml's web.build.args; the default keeps a bare `docker build` working
-# against a locally running API.
+# docker-compose.prod.yml's web.build.args; the default serves `docker build --network host`
+# against a locally running API. (As-landed note: a BARE `docker build` cannot use it — the
+# default RUN network gives the build step its own loopback. See the Dockerfile as shipped.)
 ARG API_BASE_URL=http://127.0.0.1:3001
 ENV API_BASE_URL=${API_BASE_URL}
 # INTERNAL_REQUEST_TOKEN is deliberately NOT an ARG: build args land in image history. It is

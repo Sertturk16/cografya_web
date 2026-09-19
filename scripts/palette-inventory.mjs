@@ -226,12 +226,6 @@ export const ARBITRARY_PINNED = [
   },
 ];
 
-/** Files this branch does not own, and files that are not product code. */
-export const EXCLUDED = [
-  // T-033 rewrites this file's climate markup wholesale and clears its 65 occurrences.
-  "app/[locale]/(site)/turkiye/[slug]/page.tsx",
-];
-
 const isSource = (name) => name.endsWith(".tsx") || name.endsWith(".ts");
 const isTest = (name) => name.includes(".test.");
 
@@ -247,9 +241,15 @@ function walk(dir) {
  * Every source file both arms read. ONE reader for the scope, so the two counts can never be
  * taken over different trees — which is the mistake that produced 787 and 939 for the same
  * question.
+ *
+ * NOTHING IS EXCLUDED ANY MORE. This used to filter out `turkiye/[slug]/page.tsx`, the one file
+ * T-033 owned and this branch did not, and a staleness test in `raw-palette-count.test.ts` red
+ * on the merge to say so. T-033 has landed, the file carries no raw palette class, and the scope
+ * is now simply every source file under the roots — so the exclusion, its filter and its
+ * staleness test are gone rather than kept as an empty list nothing can trip over.
  */
 function sourceFiles(roots) {
-  return roots.flatMap(walk).filter((file) => !EXCLUDED.some((e) => file.endsWith(e)));
+  return roots.flatMap(walk);
 }
 
 /** @returns {{ file: string, line: number, cls: string, context: string }[]} */
@@ -445,7 +445,8 @@ export function isInlinePinned(file) {
 /**
  * Is this file one of the no-stylesheet contexts?
  *
- * AN EXACT COMPARE, NOT `endsWith`, and that is a deliberate difference from `EXCLUDED` above.
+ * AN EXACT COMPARE, NOT `endsWith`, and that was a deliberate difference from the `EXCLUDED` list
+ * this file used to carry.
  * `endsWith` reads as harmless on a path list and is not: a file at `lib/app/manifest.ts` ends
  * with `app/manifest.ts`, so it would have been exempted by an entry written for a different
  * file. The count assertion in `raw-palette-count.test.ts` catches that at the test level --
@@ -453,8 +454,9 @@ export function isInlinePinned(file) {
  * a second guard is one edit away from being neither. `collect` builds every path by joining
  * the root it was given, so for the default roots these strings are exactly what it produces.
  *
- * `EXCLUDED` keeps `endsWith` because its own staleness test re-reads the named file from disk
- * by that same relative path, so a near-miss there fails loudly rather than widening silently.
+ * The contrast this paragraph drew was with `EXCLUDED`, which kept `endsWith` because its own
+ * staleness test re-read the named file from disk by that same relative path. That list is gone
+ * (see {@link sourceFiles}); the rule for THIS list is unchanged and is the stricter of the two.
  */
 export function isInlineExempt(file) {
   return INLINE_EXEMPT.some((e) => file === e.file);

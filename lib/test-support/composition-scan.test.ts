@@ -282,8 +282,23 @@ describe("the literal extractor's hole semantics", () => {
  * learning-paths header was the only row missing from them; every other row is character for
  * character what it was. Reverse: putting a hole back into THAT `<div>` and nothing else
  * restores the count to 25 against the unchanged constant. One file, one element, one step.
+ *
+ * T-033 MOVED THE SAME COUNTER, ON ITS OWN TREE, DOWNWARDS BY FOUR. 22 -> 21 at its Task 4:
+ * `climate-section.tsx`'s detail row was `` `${styles.detailRow} ${styles.d2Rails}` `` — two
+ * CSS-Module lookups joined by a hole — and the conversion made it one constant. 21 -> 18 at its
+ * Task 7, the same shape three at a time: `deneme-video.tsx` built the stage's cover and player
+ * boxes as two module lookups joined by a hole (the cover's spelling renders twice, in the
+ * external and the rich branch), so three `<div>`s carried one. They are the hoisted `PLAYER_BOX`
+ * and `THUMB_BOX` now.
+ *
+ * MERGED: **20**, which is NEITHER branch's figure. From the shared base of 22, T-031c added
+ * three and removed one; T-033 removed one and then three. 22 + 3 − 1 − 1 − 3 = 20, and the
+ * census printed exactly that against T-031c's constant (`expected 20 to be 24`). The number
+ * below is what the re-run on the merged tree reports, not a side taken from the conflict: each
+ * branch's figure is correct for its own tree and wrong for this one, so picking either would
+ * have been a pin stepped to make a suite green.
  */
-const TEMPLATE_HOLE_DIVS = 24;
+const TEMPLATE_HOLE_DIVS = 20;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {

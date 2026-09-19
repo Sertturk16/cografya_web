@@ -43,8 +43,9 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   string you are searching for. A docblock explaining why a credit is required satisfies a naive
   search for that credit, so the test passes on the explanation after someone deletes the markup,
   and the "fix" for a false positive is to delete the explanation. This has now been arrived at
-  independently four times (`locator-attribution.test.ts`, `orphan-stylesheets.test.ts`,
-  `lib/map/tr-inland-water-jrc.test.ts`, `components/v2/footer-source-badges.test.ts`), the last
+  independently four times (`locator-attribution.test.ts`, `orphan-stylesheets.test.ts` — retired
+  with the last CSS Module in T-033, `lib/map/tr-inland-water-jrc.test.ts`,
+  `components/v2/footer-source-badges.test.ts`), the last
   of which shipped green against a comment in `i18n/routing.ts` — a module reachable from every
   page through `Link` and rendering nothing. Strip with `lib/test-support/strip-comments.ts`, not
   a pair of `String.replace` calls: a `/*` inside a line comment (`messages/*.json`) makes the
@@ -98,17 +99,23 @@ comparison run by hand.
 - **Done means, for any task with a visible UI change:** `pnpm sweep:overflow` green, or the
   filtered run covering the routes you touched (`-- --filter=turkiye`). Never widen the
   tolerance to get there — a tolerance that hides a real overflow is worse than no sweep.
-- The route list is `lib/overflow-sweep/routes.ts`, and `routes.test.ts` holds it to two rules
+- The route list is `lib/overflow-sweep/routes.ts`, and `routes.test.ts` holds it to one rule
   in plain vitest: every entry is a live key of `routing.pathnames` (a renamed route must not
-  leave the sweep measuring 404s), and every surviving `*.module.css` is named by at least one
-  route (a new module must not arrive uncovered). Those keep the list from going BROKEN, not
-  from going INCOMPLETE: **a new route lands in the "not swept" footer and nothing fails.** If
-  you add a route, decide out loud whether it is a variant of a listed shape or a new one.
-- `components/css-module-fixed-widths.test.ts` is the half of this that needs no browser: it
-  pins the 37 fixed-`px` inline-axis declarations across the eight CSS Modules by file and by
-  text, so changing `min-width: min(300px, 100%)` back to `min-width: 300px` reds `pnpm test`.
-  It covers one of the three recorded defects, not all three — the other two are a text node
-  with no wrapping opportunity and a Tailwind class in JSX.
+  leave the sweep measuring 404s). It had a second — every surviving `*.module.css` is named by
+  at least one route — which T-033 deleted along with `SweepShape.modules` when the last
+  stylesheet went, because a coverage claim over an empty population cannot fail. That keeps the
+  list from going BROKEN, not from going INCOMPLETE: **a new route lands in the "not swept"
+  footer and nothing fails.** If you add a route, decide out loud whether it is a variant of a
+  listed shape or a new one.
+- The browser-free half of this used to be `components/css-module-fixed-widths.test.ts`, a census
+  of every fixed-`px` inline-axis declaration in the CSS Modules, so changing
+  `min-width: min(300px, 100%)` back to `min-width: 300px` would red `pnpm test`. T-033 retired the
+  last module and deleted the census with it. The rule it stood for did not go: when a conversion
+  deletes a pinned CSS value, the pin moves to the consumer's own test rather than evaporating
+  into the sweep. `lib/test-support/converted-floor.ts` carries it, and `book-detail-floors`,
+  `bench.structure`, `earthquake.structure` and `locator-map-floors` are the tests that hold the
+  values. It covered one of the three recorded defects, not all three — the other two are a text
+  node with no wrapping opportunity and a Tailwind class in JSX.
 - 768 is in the list because without it `md:min-w-[900px] lg:min-w-0` passes every check —
   inactive below 768, harmless at 1440. It closes the widest part of that band (any `sm:`- or
   `md:`-scoped width above 768 now overflows a swept viewport); 390–768 and 768–1440 stay
@@ -117,20 +124,29 @@ comparison run by hand.
   2 themes = 220 checks in **85s** against a production build, four browser contexts in
   parallel. `-- --concurrency=1` gives a stable order at roughly 3.5× the wall clock (measured
   at four viewports: 198s against 57s).
-- **It is not a CI job, and the reason is the API, not the 85s.** CI has no API on :3001. The
-  degradation is not in `lib/env.server.ts` (that file throws; it only carries a comment
-  pointing here) — it is the 16 `*Resilient`/`*Safe` wrappers in `lib/api/*.ts`, each gated on
-  `isProductionBuild()` (`NEXT_PHASE === PHASE_PRODUCTION_BUILD`): swallow to `[]` during
-  `next build`, re-throw at runtime. That asymmetry is what produces the 500s. Measured:
+- **It is not a CI job today, but the reason it wasn't one is gone.** The blocker was never
+  the 85s — it was that CI had no API on :3001, so the build CI swept would not have been the
+  build production ships. The degradation is not in `lib/env.server.ts` (that file throws; it
+  only carries a comment pointing here) — it is the 16 `*Resilient`/`*Safe` wrappers in
+  `lib/api/*.ts`, each gated on `isProductionBuild()`
+  (`NEXT_PHASE === PHASE_PRODUCTION_BUILD`): swallow to `[]` during `next build`, re-throw at
+  runtime. That asymmetry is what produced the 500s. Measured on an API-less build:
   `API_BASE_URL` pointed at a dead port builds **136 pages instead of 992**, exit 0, in 19s
   instead of 110 — and several of the 136 bake an empty state rather than being absent, which
   `docs/architecture.md` calls the worse failure. A server from that build answers **HTTP 500
   on 8 of the 22 URLs**: `/turkiye`, `/turkiye/istanbul` (both locales), `/turkiye/bolge/
-marmara`, `/dunya`, `/dunya/almanya` and both book routes. Note what is NOT in that set —
-  `/deniz/karadeniz` and `/en/sea/black-sea` answer 200 and still carry the ECMWF notice, so
-  the T-038 surface would still be measured. A fourth CI job would be permanently red, or
-  green over fourteen pages of which only five render what production renders. Wire it up the
-  day CI's build step gets an API service.
+marmara`, `/dunya`, `/dunya/almanya` and both book routes. A sweep over that build would have
+  been permanently red, or green over fourteen pages of which only five render what production
+  renders.
+- **What T-048 changed.** `ci.yml`'s `Build` job now stands a real API up from the committed
+  seeds before `pnpm build`, and `scripts/assert-prerender-floor.mjs` asserts the build
+  actually prerendered its ~980 routes. So a CI build is now the production build, and the
+  sweep could run in that same job against `next start` over its output while the API is still
+  listening. **It is deliberately not wired up as part of T-048** — that branch's scope is
+  build integrity, and adding a browser matrix to a job whose wall clock is already the thing
+  being watched is a separate decision. What is left to weigh is now only cost and tolerance:
+  a Playwright browser download on the runner, the 85s of sweep, and the bullets above about
+  the sweep going INCOMPLETE rather than BROKEN. The API argument no longer applies.
 
 ## Generated artifacts
 

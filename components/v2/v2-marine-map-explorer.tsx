@@ -512,7 +512,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         width={32}
                         height={13}
                         rx={4}
-                        className="fill-[var(--color-ink-dark)]/85"
+                        className="fill-ink-dark/85"
                         stroke="rgba(255, 255, 255, 0.3)"
                         strokeWidth={0.5}
                       />

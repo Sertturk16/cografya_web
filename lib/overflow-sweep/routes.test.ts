@@ -1,6 +1,3 @@
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { routing } from "@/i18n/routing";
 import {
@@ -24,39 +21,30 @@ import {
  *     green while measuring nothing. So the list names routing KEYS and this suite proves
  *     every one of them still resolves.
  *
- *  2. A NEW CSS MODULE ARRIVES WITH NO ROUTE. Two of the three defects the sweep exists for
- *     were CSS-Module declarations (`climate.module.css`'s `min-width: 300px`,
- *     `marine-attribution`'s licence notice). The eight surviving modules are therefore the
- *     part of the tree that must stay covered, and coverage is only meaningful if adding a
- *     ninth forces someone to say which page renders it. Eight, not ten, since T-042 deleted
- *     `tools.module.css` (514 lines, three importers, none reachable) and `home.module.css`
- *     (one importer, itself unreachable). The second was CLAIMED by the `home` shape below, so
- *     this map asserted coverage of a file that route never loaded — which is why the claim
- *     went with the file rather than being quietly left to pass.
+ *  2. A NEW CSS MODULE ARRIVED WITH NO ROUTE. That was the second failure mode, and T-033
+ *     removed its subject rather than its symptom: `SweepShape.modules` and the case that
+ *     read it are GONE, because at zero surviving stylesheets "every module is covered by a
+ *     route" is a claim over an empty set that cannot fail, and a `modules` list nothing
+ *     compares is exactly the shape the rest of this file's docblock is about. What replaces
+ *     it is one assertion in `components/css-module-dark-safety.test.ts` that no
+ *     `*.module.css` exists anywhere under `app/` or `components/` — a guard against the
+ *     subject returning, which can still fail.
  *
- *     WHAT `modules` ACTUALLY CLAIMS is that the route's import graph reaches the stylesheet —
- *     never that a sweep run renders it. `marine.module.css` is the live example: it is claimed
- *     by `home` and `province`, which genuinely import it, but both marine blocks are gated on
- *     `MARINE_ENABLED`, false in production today, so no current run measures those rules. The
- *     map is honest about reachability and silent about rendering; a flag-gated module is
- *     covered on paper and unmeasured in fact.
+ *     The claim was never as strong as it read, which is the other half of why it is not being
+ *     kept as an `every(…) === 0` formality. `modules` asserted that the route's import graph
+ *     REACHED the stylesheet, never that a sweep run rendered it: `marine.module.css` was
+ *     claimed by `home` and `province`, which genuinely imported it, while both marine blocks
+ *     are gated on `MARINE_ENABLED` — false in production today — so no run ever measured those
+ *     rules.
  *
- * Neither assertion needs a browser, which is the point: the sweep's aim is checkable even on
- * a run where nobody starts a server.
+ *     None of that geometry evaporated. Each conversion moved it into hoisted class constants
+ *     read by the component's own test (`book-detail-floors.test.ts`, `bench.structure.test.ts`,
+ *     `earthquake.structure.test.ts`, `locator-map-floors.test.ts`), and every one of those
+ *     routes is still swept.
+ *
+ * The surviving assertion needs no browser, which is the point: the sweep's aim is checkable
+ * even on a run where nobody starts a server.
  */
-
-const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-
-const walk = (dir: string, match: (name: string) => boolean): string[] =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) return entry.name === "node_modules" ? [] : walk(full, match);
-    return match(entry.name) ? [full] : [];
-  });
-
-const stylesheetNames = ["app", "components"]
-  .flatMap((root) => walk(join(repoRoot, root), (name) => name.endsWith(".module.css")))
-  .map((path) => path.split("/").at(-1) as string);
 
 describe("sweep shapes", () => {
   it("names only live routing keys", () => {
@@ -72,20 +60,6 @@ describe("sweep shapes", () => {
       expect(shape.why.length, `${shape.id} has no stated reason`).toBeGreaterThan(40);
       expect(shape.locales.length, `${shape.id} visits no locale`).toBeGreaterThan(0);
     }
-  });
-
-  it("covers every surviving CSS Module with at least one route", () => {
-    const covered = new Set(SWEEP_SHAPES.flatMap((shape) => shape.modules));
-    const uncoveredModules = stylesheetNames.filter((name) => !covered.has(name));
-    expect(uncoveredModules).toEqual([]);
-  });
-
-  it("names no CSS Module that no longer exists", () => {
-    const existing = new Set(stylesheetNames);
-    const stale = SWEEP_SHAPES.flatMap((shape) => shape.modules).filter(
-      (name) => !existing.has(name),
-    );
-    expect(stale).toEqual([]);
   });
 });
 
@@ -120,7 +94,6 @@ describe("buildSweepUrls", () => {
       pathname: "/turkey/[slug]",
       params: { slug: "istanbul" },
       locales: ["tr"],
-      modules: [],
       why: "a renamed route, of the kind T-032 corrected",
     } as const;
     expect(() => buildSweepUrls(routing.pathnames, [shape])).toThrow(/not a key of routing/);
@@ -131,7 +104,6 @@ describe("buildSweepUrls", () => {
       id: "holed",
       pathname: "/turkiye/[slug]",
       locales: ["tr"],
-      modules: [],
       why: "a dynamic route whose params were forgotten",
     } as const;
     expect(() => buildSweepUrls(routing.pathnames, [shape])).toThrow(

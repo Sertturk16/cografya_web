@@ -9,7 +9,109 @@ import { playerEmbedSrc } from "@/lib/youtube/embed";
 import { failLoad, resolveVideoId, type ActiveVideo } from "./active-video";
 import type { BenchVideo } from "./bench-stage";
 import { Button } from "@/components/ui/button";
-import styles from "./book-video.module.css";
+
+/**
+ * THE ONE BOX RULE, in bridge tokens (T-033 task 7) — `book-video.module.css`'s `.frame`.
+ *
+ * One box for the cover and for the player, which is what makes the click-time swap
+ * pixel-stable (CLS). All three cover states share it: a stage whose height changed with the
+ * selected video's state would move the entire index every time the reader pressed a question,
+ * on a page whose whole premise is that pressing a question moves nothing but the stage.
+ *
+ * `min-h-[200px]` IS A REQUIREMENT, not a taste: the provenance ledger's Required Minimum
+ * Functionality rules put the player viewport at "at least 200x200 px". At a 320px viewport
+ * this column is ~280px wide, so a pure 16:9 box would be 280x157 — under the floor. The
+ * min-height wins there and YouTube letterboxes inside it.
+ *
+ * `max-w-[560px]` with `mx-auto` is one of FOUR copies of the stage's single cap
+ * (`STAGE_CAPTION`, `TIMELINE`, `PROGRESS_CONTROLS` and this box);
+ * `bench.structure.test.ts` asserts the four as an EQUALITY, and pins this floor —
+ * `max-w-[560px]`, `aspect-video` and `min-h-[200px]` together — because all three were
+ * `components/css-module-fixed-widths.test.ts` census entries or the geometry behind one, and
+ * that census cannot read a Tailwind class in JSX. Hoisted for the reason
+ * `lib/test-support/converted-floor.ts` states: the extractor reads a top-level
+ * `const NAME = "…";` and returns `null` for a value left inline, silently.
+ *
+ * `bg-muted` is `--color-surface`'s bridge — the same substitution `earthquake-list.tsx` and
+ * `pm25-table.tsx` make. It is the letterbox ground the player and the 4:3 thumbnail sit on,
+ * and it is a FILL rather than a boundary: 1.14:1 light / 1.27:1 dark against the page's
+ * `--background`, with `THUMB_BOX`'s `border-border` hairline drawing the edge. The frozen
+ * token read 15.50:1 in dark — a parchment box on a night page, which is the defect, not a
+ * design.
+ */
+const FRAME = "relative mx-auto aspect-video min-h-[200px] w-full max-w-[560px] bg-muted";
+
+/**
+ * NO rounded corners and NO overflow clipping, deliberately. The ledger bars any "overlay,
+ * frame or visual element in front of any part of the player", and clipping the corners is also
+ * hiding part of it. The facade below is OUR element and may be rounded; the player may not.
+ * Nothing else is allowed inside this box either — no badge, no gradient, no tooltip, no play
+ * button of our own.
+ */
+const PLAYER_BOX = `${FRAME} overflow-visible rounded-none`;
+
+/** The facade's box: our element, so it may carry the card's radius and clip the thumbnail.
+ *  `rounded-lg` is `--radius-lg`, which `app/globals.css` defines as `var(--radius)` — the
+ *  exact value the stylesheet wrote. `border-border` measures 1.37:1 light / 1.68:1 dark
+ *  against `--background`; the frozen `--color-border` read 12.85:1 in dark, a parchment
+ *  hairline on a night page. */
+const THUMB_BOX = `${FRAME} overflow-hidden rounded-lg border border-border`;
+
+/**
+ * THE THIRD SCROLL PATH IN THIS COMPONENT TREE. The offset sits HERE, on the iframe, and the
+ * island scrolls this element explicitly — `scroll-margin` is not inherited, so declaring it on
+ * the wrapping box (which nothing scrolls and nothing targets) was inert, and `focus()` on a
+ * CROSS-ORIGIN iframe scrolls nothing at all.
+ *
+ * ONE ADDEND, and it is the same expression `STAGE`'s sticky `top` uses in `bench-stage.tsx`.
+ * The two must stay equal: a stuck stage then measures exactly on its mark and nothing moves.
+ * `bench.structure.test.ts` asserts they are one string. `--header-height` is a layout token,
+ * not a colour one, so it stays a `var()` read.
+ */
+const PLAYER =
+  "absolute inset-0 block size-full border-0 scroll-mt-[calc(var(--header-height)+1rem)]";
+
+/**
+ * Fills the reserved box. `object-cover` rather than `contain` because the provider's 4:3
+ * thumbnail carries its own letterbox bars, and cropping them at display time restores the 16:9
+ * frame the video actually has. Display fit, not a byte transformation.
+ */
+const THUMB = "absolute inset-0 block size-full object-cover";
+
+/** Centred over the thumbnail — over OUR cover, never over a player: at this point no player
+ *  exists on the page at all. */
+const WATCH_OVERLAY = "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2";
+
+/**
+ * WCAG 2.2 §2.5.5 (AAA) 44px, the same generosity the question cells take.
+ *
+ * NO COLOUR HERE, and that is the point: the control is a `Button`, so its fill and its label
+ * come from `buttonVariants`' bridge tokens. Measured against the chrome it actually composites
+ * over rather than against the video: the label reads **5.13:1 light / 4.94:1 dark** on the
+ * button's OWN `bg-primary` fill, and that fill separates from `FRAME`'s letterbox ground at
+ * **4.26:1 light / 4.29:1 dark**. Over a thumbnail photo the backdrop is arbitrary and not
+ * measurable, which is exactly why the fill is solid rather than translucent.
+ */
+const WATCH_BUTTON = "min-h-11";
+
+/**
+ * `absolute` IS THE WHOLE OF THE CLS GUARANTEE: taken out of flow, this element's presence,
+ * absence or content never changes `FRAME`'s box height in ANY of the three `authState` values
+ * — the `<p>` always renders, swapping only its text content.
+ *
+ * `m-0` IS LOAD-BEARING: this is a `<p>`, and `app/globals.css`'s base rule gives every `<p>`
+ * `margin: 0 0 1rem`, which the stylesheet's `margin: 0` cancelled. `empty:bg-transparent` is
+ * the `:empty` rule — an authenticated reader's `<p>` renders no text node, so the box stays in
+ * the DOM at its fixed size but paints nothing rather than showing an empty band across the
+ * bottom of the cover.
+ *
+ * `text-primary-strong` on `bg-muted` measures **6.95:1 light / 7.06:1 dark**, opaque over
+ * whatever the cover shows underneath.
+ */
+const SIGN_IN_CTA =
+  "absolute right-0 bottom-0 left-0 m-0 flex min-h-[1.8rem] items-center justify-center " +
+  "bg-muted px-2.5 py-1 text-center text-[0.85rem] font-semibold text-primary-strong " +
+  "empty:bg-transparent";
 
 /**
  * Periodic-save cadence while a video is playing (UYELIK-06 plan §5.5) — well inside the api's
@@ -450,7 +552,7 @@ export function DenemeVideo({
       // — no badge, no gradient, no play button of our own — which is the Required Minimum
       // Functionality rule the facade architecture rests on. A class name would not do: classes
       // are hashed by CSS Modules and the check would break on a rename it should not care about.
-      <div className={`${styles.frame} ${styles.playerBox}`} data-player-box="">
+      <div className={PLAYER_BOX} data-player-box="">
         <iframe
           /* ONE ELEMENT PER LOAD, and the bench is what made this necessary. Before, thirty
              separate instances of this component meant switching videos unmounted one iframe and
@@ -465,7 +567,7 @@ export function DenemeVideo({
              design, which is the same field the `src` reads. */
           key={active.loadToken}
           ref={iframeRef}
-          className={styles.player}
+          className={PLAYER}
           src={playerEmbedSrc({
             videoId: active.videoId,
             origin: window.location.origin,
@@ -507,8 +609,8 @@ export function DenemeVideo({
      (`watchOnYoutubeLoading`) is `VideoBench`'s own local state, threaded down as a prop. */
   if (!video.playable) {
     return (
-      <div className={`${styles.frame} ${styles.thumbBox}`}>
-        <span className={styles.watchOverlay}>
+      <div className={THUMB_BOX}>
+        <span className={WATCH_OVERLAY}>
           {/* BOTH CONTROLS' ACCESSIBLE NAMES BEGIN WITH THEIR VISIBLE TEXT (WCAG 2.5.3 Label in
               Name — → PR #63 review `A11Y63-I1`). A name that REPLACES the visible word breaks
               speech input: a Voice Control user says "İzle" and nothing matches. So the
@@ -516,7 +618,7 @@ export function DenemeVideo({
           <Button
             type="button"
             variant="outline"
-            className={styles.watchButton}
+            className={WATCH_BUTTON}
             data-player-open=""
             aria-busy={watchOnYoutubeLoading}
             aria-disabled={watchOnYoutubeLoading}
@@ -531,7 +633,7 @@ export function DenemeVideo({
 
   const rich = video.rich;
   return (
-    <div className={`${styles.frame} ${styles.thumbBox}`}>
+    <div className={THUMB_BOX}>
       {rich !== null && (
         /* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9's SECOND
            exception (→ DEC 2026-08-15c): a remote image whose provider bars byte copies. The
@@ -550,7 +652,7 @@ export function DenemeVideo({
            `fetchPriority="high"` and no `lazy` on the assumption that it would be; the assumption
            was wrong in all ten measurements and is recorded here so it is not re-made. */
         <img
-          className={styles.thumb}
+          className={THUMB}
           src={rich.thumbnailUrl}
           alt=""
           width={rich.thumbnailWidth}
@@ -560,7 +662,7 @@ export function DenemeVideo({
           referrerPolicy="no-referrer"
         />
       )}
-      <span className={styles.watchOverlay}>
+      <span className={WATCH_OVERLAY}>
         {/* `resolving` (P2 plan §5.3) is the window between İzle being pressed and this
             component's own identity-fetch effect (above) answering — the server-side gate
             itself, made visible. `aria-disabled`, NOT `disabled` (mirrors
@@ -572,7 +674,7 @@ export function DenemeVideo({
         <Button
           type="button"
           variant="primary"
-          className={styles.watchButton}
+          className={WATCH_BUTTON}
           data-player-open=""
           aria-busy={resolving}
           aria-disabled={resolving}
@@ -594,7 +696,7 @@ export function DenemeVideo({
           node in the same slot. `external` videos (the branch above, `!video.playable`) redirect
           to YouTube regardless of auth state and are out of this gate's scope — this line exists
           only in the `rich`/`typographic` branch, which is this one. */}
-      <p className={styles.signInCta}>{authState === "authenticated" ? null : signInCtaText}</p>
+      <p className={SIGN_IN_CTA}>{authState === "authenticated" ? null : signInCtaText}</p>
       {/* THE ANNOUNCEMENT (WCAG 4.1.3, PR #90 review `A11Y90-I2`) — visually hidden, so it adds
           no visible band and does not touch the CLS guarantee the box above already holds; carries
           text ONLY on the one transition that changes what a reader was just told (`checking`/
@@ -603,7 +705,7 @@ export function DenemeVideo({
           `useAuthSession()` mount ("checking" both on the server and on first client paint, per
           its own docblock) never fires the live region on first paint — only a REAL later
           resolution does. */}
-      <p aria-live="polite" className={styles.srOnly}>
+      <p aria-live="polite" className="sr-only">
         {authState === "authenticated" ? sessionReadyAnnounceText : ""}
       </p>
     </div>

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PM25_NOTICE_SLOTS } from "@/lib/air/notice-keys";
 import { gatesGoverning, ungatedRenderSite } from "@/lib/testing/jsx-gate";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { classConstant, renderSites } from "@/lib/test-support/converted-floor";
 
 /**
  * This repo's vitest environment is `node` and the section is an async server component, so
@@ -29,15 +30,161 @@ const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf
  */
 const code = stripComments;
 
+/**
+ * THE HOISTED TAILWIND CLASS CONSTANTS, WITH THEIR CLASS STRINGS BLANKED.
+ *
+ * Used by the guideline scan below, which reads bare numbers as candidate concentrations.
+ * Until T-033 every presentation constant lived in `air-pollution.module.css`, so the only
+ * numbers in `pm25-chart.tsx` were geometry and that scan could read the file whole. The
+ * conversion moved stroke widths, ink alphas and font sizes into class strings, and counting
+ * those would have forced the allow-list open to `15`, `1` and `0.6` — `15` being a plausible
+ * PM2.5 interim target, i.e. exactly the value the scan exists to stop.
+ *
+ * THE FIRST ATTEMPT AT THIS STRIPPED EVERY STRING LITERAL IN THE FILE, AND THAT WAS A NET
+ * LOSS. A number in a CLASS string cannot place a line; a number in an ATTRIBUTE string can,
+ * and blanking those hid `<path d="M 60 15 L 700 15" />` — a WHO guideline at 5 µg/m³ drawn on
+ * the truncated axis, the precise thing the scan exists to stop — with the suite fully green.
+ * `<polyline points="60,15 …">`, `<line y1="15">` and `transform="translate(0 15)"` went the
+ * same way, and the `<line\b` count pin catches only the third of those spellings.
+ *
+ * So the strip is surgical on THREE axes, each closing a hole the previous version left open:
+ *
+ *  1. ONLY `const NAME = …;` declarations at the top level. Everything else in the file — every
+ *     attribute, every JSX expression — is scanned whole.
+ *  2. Inside them, only the quoted strings. A hoisted `const THRESHOLD = 15;` keeps its number,
+ *     because the number is not in a string.
+ *  3. And only strings that are CLASS-SHAPED. Hoisting a constant in SCREAMING_CASE is this
+ *     file's own convention, so `const GUIDE_PATH = "M 60 15 L 700 15";` with
+ *     `<path d={GUIDE_PATH} />` is the spelling an author adding a guideline would actually
+ *     reach for — and rules 1 and 2 alone blanked it. `const GUIDE_POINTS = "60,15 700,15";`
+ *     went the same way. Both are controls below.
+ *
+ * CLASS-SHAPED means every whitespace-separated token carries a letter and is longer than one
+ * character. That admits all six of the chart's real class strings, including `p-1`,
+ * `[stroke-width:0.6]` and the `${AXIS}` template halves, and rejects `"M 60 15 L 700 15"` (the
+ * lone `M`), `"60,15 700,15"` (no letters) and `"translate(0 15)"` (the trailing `15)`).
+ *
+ * THE PREDICATE IS A HEURISTIC AND IT FAILS CLOSED, DELIBERATELY. It is not a Tailwind parser
+ * and cannot be one; it is a cheap question — "could this string be a coordinate?" — answered
+ * conservatively. A legitimate class string that is one short token, or that carries a bare
+ * number as a token, will NOT be blanked, its numbers will reach the scan, and this test will
+ * red naming them. That is the intended direction: a false red costs one reader one minute and
+ * is resolved by re-spelling the class or justifying the number in the allow-list, whereas a
+ * false green ships a WHO reference line onto 81 province pages against a ruling that was made
+ * twice. If you are here because of such a red, this paragraph is the answer: it is working.
+ *
+ * Every control below runs through THIS function rather than re-spelling it, so editing the
+ * strip cannot leave the controls passing on a scan that no longer exists.
+ */
+function stripHoistedClassStrings(source: string): string {
+  /** Could this string be a coordinate list rather than a class list? See the docblock. */
+  const isClassShaped = (literal: string): boolean => {
+    const body = literal.slice(1, -1).trim();
+    if (body === "") return false;
+    return body.split(/\s+/).every((token) => /[A-Za-z]/.test(token) && token.length > 1);
+  };
+  return source.replace(/^const [A-Z][A-Z0-9_]* =[\s\S]*?;$/gm, (declaration) =>
+    declaration.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, (literal) =>
+      isClassShaped(literal) ? '""' : literal,
+    ),
+  );
+}
+
+/** The numbers a source carries outside the allow-list — the guideline scan, as a function. */
+function unexplainedNumbers(source: string): string[] {
+  const scanned = stripHoistedClassStrings(source);
+  return (scanned.match(/(?<![\w.-])\d+(?:\.\d+)?(?![\w.])/g) ?? []).filter(
+    (n) => !["2.8", "4", "6", "20", "0"].includes(n),
+  );
+}
+
+/**
+ * SVG tags this chart has no business drawing.
+ *
+ * The number scan above asks "is there a bare number?". The question it is standing in for is
+ * "is there a horizontal line?", and those two come apart. Three ways past the number scan were
+ * found that never write a bare numeric literal at all:
+ *
+ *   - `const GUIDE = "fill-ink/80 [x:60px] [y:15px] [width:640px] [height:1px]"` on a `<rect/>`;
+ *   - `const GUIDE = "stroke-ink/80 [d:path('M_60_15_L_700_15')]"` on a `<path/>`;
+ *   - `<rect y={20 - 20 / 4} height={4} />` — arithmetic over allow-listed numbers, since
+ *     20 − 20/4 is 15.
+ *
+ * The first two are class-shaped by construction, so `stripHoistedClassStrings` blanks them and
+ * is RIGHT to: they are perfectly ordinary Tailwind. They render, too — SVG2 makes `x`, `y`,
+ * `width`, `height` and `d` real CSS properties, and headless Chromium gives that rect a
+ * bounding box of 640×1 at y=15, i.e. the WHO AQG level on the truncated axis.
+ *
+ * **The third one does not involve the strip at all.** Its mechanism is the ALLOW-LIST, which
+ * predates T-033 and which this branch never widened: `20` and `4` were already explained
+ * numbers, and no scan that filters by value can see that subtracting one from the other lands
+ * on a threshold. So this assertion closes a pre-existing gap rather than one the conversion
+ * opened — worth saying, so a later reader does not go looking for the regression that let it in.
+ *
+ * Hence a SHAPE question beside the number question, in the same idiom as the `<line\b` count
+ * pin: the chart legitimately draws `<line>`, `<polyline>`, `<circle>` and `<text>` and nothing
+ * else, every one of the three attacks needs a tag outside that set, and a tag cannot be
+ * arithmetic'd into existence. A chart that genuinely needs one of these is a chart whose
+ * "no reference line" ruling should be re-read first (DEC 2026-08-20d md.1/md.2), which is the
+ * conversation this red is meant to start.
+ */
+function unexpectedShapeTags(source: string): string[] {
+  return source.match(/<(?:rect|path|polygon|image)\b/g) ?? [];
+}
+
+/** Whether a source reaches a CSS Module at all — shared with its own controls, same reason. */
+function looksUpAModuleClass(source: string): boolean {
+  return /\.module\.css/.test(source) || /styles\./.test(source);
+}
+
+/**
+ * The JSX each `className="climate-dark-scope"` wrapper in `page.tsx` encloses, found by
+ * counting `<div` against `</div>` from the wrapper's own close bracket.
+ */
+function climateDarkScopeSubtrees(page: string): string[] {
+  const subtrees: string[] = [];
+  const marker = /className="climate-dark-scope"/g;
+  for (let hit = marker.exec(page); hit !== null; hit = marker.exec(page)) {
+    const start = page.indexOf(">", hit.index) + 1;
+    let cursor = start;
+    let depth = 1;
+    while (depth > 0) {
+      const open = page.indexOf("<div", cursor);
+      const close = page.indexOf("</div>", cursor);
+      if (close === -1) break;
+      if (open !== -1 && open < close) {
+        depth += 1;
+        cursor = open + "<div".length;
+      } else {
+        depth -= 1;
+        cursor = close + "</div>".length;
+      }
+    }
+    subtrees.push(page.slice(start, cursor));
+  }
+  return subtrees;
+}
+
 const section = read("./air-pollution-section.tsx");
 const chart = read("./pm25-chart.tsx");
 const table = read("./pm25-table.tsx");
-const css = read("./air-pollution.module.css");
 const page = read("../../app/[locale]/(site)/turkiye/[slug]/page.tsx");
 const sectionCode = code(section);
 const chartCode = code(chart);
+
+/**
+ * The chart's four hoisted class constants, QUOTED VERBATIM. Used by the guideline-scan controls
+ * below and by the width pin at the bottom of this file, and checked against the real source in
+ * "…and those fixtures are still what the chart really says" so a copy cannot outlive its
+ * original.
+ */
+const REAL_CLASS_CONSTANTS = [
+  'const AXIS = "font-sans fill-ink/80 text-[15px] max-[700px]:text-[19px]";',
+  'const FRAME = "max-w-[720px] aspect-[720/300] rounded-lg p-1 bg-white border border-ink/15";',
+  'const GRID_YEAR = "stroke-ink/8 [stroke-width:0.6]";',
+  "const AXIS_LABEL_LEFT = `${AXIS} [text-anchor:end]`;",
+] as const;
 const tableCode = code(table);
-const cssCode = code(css);
 const pageCode = code(page);
 
 describe("the licence block travels with the values", () => {
@@ -244,14 +391,100 @@ describe("the chart carries no reference line and no index colouring", () => {
     // numeric threshold to place it at. Both are checked structurally.
     const lineElements = chartCode.match(/<line\b/g) ?? [];
     expect(lineElements).toHaveLength(2);
-    // No constant concentration anywhere in the chart's code — the AQG level or any of the
-    // four interim targets would appear as one. Coordinates come from the scale module and
-    // the marker radius is the only literal the chart owns.
-    const numericLiterals = (chartCode.match(/(?<![\w.-])\d+(?:\.\d+)?(?![\w.])/g) ?? []).filter(
-      (n) => !["2.8", "4", "6", "20", "0"].includes(n),
-    );
-    expect(numericLiterals).toEqual([]);
+    // …and no tag outside the four this chart draws. `unexpectedShapeTags` carries the three
+    // attacks this closes and why the number scan below cannot see any of them.
+    expect(unexpectedShapeTags(chartCode)).toEqual([]);
+    // No constant concentration anywhere in the chart — the AQG level or any of the four
+    // interim targets would appear as one. Coordinates come from the scale module and the
+    // marker radius is the only literal the chart owns. Everything but the hoisted class
+    // constants is scanned, `stripHoistedClassStrings` says why, and the four controls below
+    // are what stop that narrowing from becoming a hole.
+    expect(unexplainedNumbers(chartCode)).toEqual([]);
     expect(chartCode).not.toMatch(/whoGuideline/);
+  });
+
+  /**
+   * FOUR CONTROLS ON THE SCAN ABOVE, EACH A GUIDELINE SPELLED A DIFFERENT WAY.
+   *
+   * Every one runs through `unexplainedNumbers`, not through a re-spelled copy of its regex,
+   * so an edit to the scan reds these instead of leaving them green on maths that no longer
+   * runs. Cases 2-4 are the ones an earlier, broader strip let through with the suite green.
+   */
+  it.each([
+    [
+      "a coordinate in a JSX expression",
+      'const GUIDE = "stroke-ink/15";\n<line y1={15} y2={15} />',
+    ],
+    [
+      "a path `d` attribute",
+      'const GRID = "stroke-ink/15";\n<path className={GRID} d="M 60 15 L 700 15" />',
+    ],
+    ["a polyline `points` attribute", '<polyline points="60,15 700,15" />'],
+    [
+      "a hoisted numeric threshold",
+      "const THRESHOLD = 15;\n<line y1={THRESHOLD} y2={THRESHOLD} />",
+    ],
+    [
+      "a hoisted path `d`, this file's own SCREAMING_CASE convention",
+      'const GUIDE_PATH = "M 60 15 L 700 15";\n<path className={GRID} d={GUIDE_PATH} />',
+    ],
+    [
+      "a hoisted `points` list, the same convention",
+      'const GUIDE_POINTS = "60,15 700,15";\n<polyline className={GRID} points={GUIDE_POINTS} />',
+    ],
+  ])("POSITIVE CONTROL — the scan rejects a guideline written as %s", (_label, poisoned) => {
+    expect(unexplainedNumbers(poisoned)).toContain("15");
+  });
+
+  it.each([
+    [
+      "an SVG2 geometry rect, entirely in class-shaped Tailwind",
+      'const GUIDE = "fill-ink/80 [x:60px] [y:15px] [width:640px] [height:1px]";\n<rect className={GUIDE} />',
+    ],
+    [
+      "an SVG2 `d:path()` on a <path>, same trick",
+      "const GUIDE = \"stroke-ink/80 [d:path('M_60_15_L_700_15')]\";\n<path className={GUIDE} />",
+    ],
+    [
+      "arithmetic over allow-listed numbers and no string at all",
+      "<rect y={20 - 20 / 4} height={4} />",
+    ],
+  ])("POSITIVE CONTROL — the shape scan rejects a guideline drawn as %s", (_label, poisoned) => {
+    // Deliberately asserted on the SHAPE scan, not the number scan: all three of these are
+    // invisible to `unexplainedNumbers` by construction, which is the whole reason the tag
+    // assertion exists. A control that passed through the number scan would be claiming a
+    // coverage this file does not have.
+    expect(unexplainedNumbers(poisoned)).not.toContain("15");
+    expect(unexpectedShapeTags(poisoned)).not.toEqual([]);
+  });
+
+  it("NEGATIVE CONTROL — the shape scan clears the four tags the chart really draws", () => {
+    // Anti-vacuity for the assertion above: a regex that matched nothing would agree with the
+    // real chart just as happily. These are the tags that must NEVER start reading as attacks.
+    expect(unexpectedShapeTags("<line /><polyline /><circle /><text /><svg><title><desc>")).toEqual(
+      [],
+    );
+  });
+
+  it("NEGATIVE CONTROL — and still blanks a real hoisted class string", () => {
+    // The other half of the strip, pinned directly rather than inferred from the main scan
+    // being green: narrowing `isClassShaped` until it blanks nothing would satisfy every
+    // control above, and the chart's own `15px`/`700px` would then red the assertion with no
+    // explanation of why. This says which half broke, in one line, with the real constants.
+    for (const real of REAL_CLASS_CONSTANTS) {
+      expect(unexplainedNumbers(real), real).toEqual([]);
+    }
+  });
+
+  it("…and those fixtures are still what the chart really says", () => {
+    // The fixtures above are hand-copied declarations, which is the shape that rots into a
+    // green copy of itself: narrow `isClassShaped`, leave the copies untouched, and this
+    // control keeps passing on constants the file no longer contains. So each one is compared
+    // with the source it claims to quote.
+    for (const real of REAL_CLASS_CONSTANTS) {
+      const name = /const ([A-Z_]+) =/.exec(real)![1]!;
+      expect(classConstant(chartCode, name), `${name} has drifted from this fixture`).toBe(real);
+    }
   });
 
   it("keeps the guideline sentence in the SECTION, under the chart", () => {
@@ -260,19 +493,40 @@ describe("the chart carries no reference line and no index colouring", () => {
     expect(section.indexOf("<Pm25Chart")).toBeLessThan(section.indexOf('t("whoGuideline")'));
   });
 
-  it("uses the dedicated data token, with no raw colour but the shared white plot", () => {
-    expect(cssCode).toContain("var(--chart-pm25-line)");
+  it("uses the dedicated data token, with NO colour literal at all", () => {
+    // T-033 deleted `air-pollution.module.css`, so this moved from the stylesheet to the
+    // chart component. It got STRICTER on the way: the stylesheet was allowed exactly one
+    // literal (`#fff`, the plot background), and the component is allowed none — the plot is
+    // `bg-white`, a theme key, so a hex anywhere in this file is now a defect.
+    expect(chartCode).toContain("var(--chart-pm25-line)");
     // An annual mean has no index membership, so a green→maroon AQI band would claim a
     // standing the number does not have (DESIGN §6.2, violated from the other direction).
-    // The ONE permitted literal is the plot background the climate chart already uses; every
-    // other colour must come from the token layer.
-    const hexes = cssCode.match(/#[0-9a-f]{3,8}/gi) ?? [];
-    expect(hexes).toEqual(["#fff"]);
+    expect(chartCode.match(/#[0-9a-f]{3,8}/gi) ?? []).toEqual([]);
   });
 
   it("keeps Terra chrome tokens out of the data marks (DESIGN §6.1 rule 1)", () => {
-    const dataRules = cssCode.slice(cssCode.indexOf(".line {"), cssCode.indexOf(".axisLabelLeft,"));
-    expect(dataRules).not.toMatch(/--color-primary|--color-secondary|--color-accent/);
+    // The marks are the polyline and the markers — the two things that carry the series.
+    // Scoped to the constants that draw them, so the scaffolding around them (gridlines and
+    // axis numbers, which encode nothing) is not what this measures.
+    const marks = chartCode.slice(
+      chartCode.indexOf("const LINE ="),
+      chartCode.indexOf("const AXIS ="),
+    );
+    expect(marks).toContain("--chart-pm25-line");
+    expect(marks).not.toMatch(/--color-primary|--color-secondary|--color-accent|primary|accent/);
+  });
+
+  it("keeps the plot LIGHT, because the series token has no dark value", () => {
+    // The one rule in this section that is deliberately NOT bound to the theme, and the
+    // reason is measured: `--chart-pm25-line` is 9.86:1 on the white plot and 1.73:1 on
+    // `--card`, so painting the frame with a bridge token would take the only mark the
+    // figure exists to show below WCAG 1.4.11's 3:1 floor. If a dark-adapted PM2.5 token is
+    // ever added, this assertion is the one to come back to.
+    expect(chartCode).toMatch(/bg-white/);
+    expect(chartCode).not.toMatch(/bg-card|bg-background|bg-muted/);
+    // …and the scaffolding inside it stays on the same frozen ground, never on a bridge
+    // token that moves out from under it (`--foreground` is 1.10:1 on this plot in dark).
+    expect(chartCode).not.toMatch(/fill-foreground|fill-muted-foreground|stroke-border/);
   });
 });
 
@@ -306,11 +560,14 @@ describe("accessibility contract", () => {
 
   it("makes the fragment target programmatically focusable and clear of the sticky header", () => {
     expect(section).toMatch(/<h2 id=\{headingId\} tabIndex=\{-1\}/);
-    expect(css).toMatch(/\.heading\s*\{[^}]*scroll-margin-top/);
+    // `scroll-margin-top` moved from `.heading` into the component when T-033 deleted the
+    // stylesheet. Without it a followed fragment scrolls the h2 flush to the top and under
+    // the opaque sticky header, which is the whole reason the rule exists.
+    expect(sectionCode).toMatch(/scroll-mt-\[calc\(var\(--header-height\)\+1rem\)\]/);
   });
 
   it("gives the collapsed table a real label and real table semantics", () => {
-    expect(table).toMatch(/<summary className=\{styles\.summary\}>\{t\("tableSummary"/);
+    expect(table).toMatch(/<summary className=\{SUMMARY\}>\{t\("tableSummary"/);
     expect(table).toMatch(/<caption/);
     expect(table).toMatch(/<th scope="col"/);
     expect(table).toMatch(/<th scope="row"/);
@@ -325,19 +582,104 @@ describe("accessibility contract", () => {
     }
   });
 
-  it("uses --color-slate and never --color-taupe for text (the PR#2 trap)", () => {
-    expect(cssCode).toContain("var(--color-slate)");
-    expect(cssCode).not.toContain("--color-taupe");
+  it("reads no frozen Terra token for text, in any of the three files (T-033)", () => {
+    // This used to say "uses --color-slate and never --color-taupe" — the PR#2 trap, which
+    // was about picking the RIGHT frozen neutral. T-033 made the whole question obsolete in
+    // this section: `.dark` redefines neither, so on a `--card` panel `--color-slate` was
+    // 2.15:1 and `--color-ink` 1.14:1. The quiet voice is `text-muted-foreground` (7.79:1 in
+    // dark, 7.92:1 in light — slate's own light figure) and the loud one `text-foreground`.
+    for (const source of [sectionCode, tableCode]) {
+      expect(source).not.toMatch(/var\(--color-[a-z-]+\)/);
+      expect(source).toContain("text-muted-foreground");
+    }
+    expect(sectionCode).toContain("text-foreground");
+    // The chart is the documented exception and reads exactly one token family: its own.
+    expect(chartCode.match(/var\(--color-[a-z-]+\)/g) ?? []).toEqual([]);
   });
 
-  it("declares every class the components look up, so no lookup renders `undefined`", () => {
-    const used = new Set(
-      [...`${sectionCode}${chartCode}${tableCode}`.matchAll(/styles\.([A-Za-z0-9_]+)/g)].map(
-        (m) => m[1],
-      ),
-    );
-    const declared = new Set([...cssCode.matchAll(/^\.([A-Za-z0-9_]+)/gm)].map((m) => m[1]));
-    expect([...used].filter((name) => name !== undefined && !declared.has(name))).toEqual([]);
+  it("looks up no CSS Module class at all, so no lookup can render `undefined`", () => {
+    // The original form of this compared `styles.x` lookups against the classes
+    // `air-pollution.module.css` declared. With the stylesheet gone that comparison is two
+    // empty sets and passes for free — the vacuous green this repo keeps getting bitten by.
+    // Restated as the property that replaced it: these three files import no stylesheet and
+    // perform no `styles.` lookup, so there is nothing left that CAN resolve to `undefined`.
+    for (const source of [sectionCode, chartCode, tableCode]) {
+      expect(looksUpAModuleClass(source)).toBe(false);
+    }
+    // POSITIVE CONTROLS — through the SAME predicate, so editing it reds these too. Both
+    // halves are exercised: the lookup and the import that would make one resolve.
+    expect(looksUpAModuleClass("const x = styles.heading;")).toBe(true);
+    expect(looksUpAModuleClass('import styles from "./air-pollution.module.css";')).toBe(true);
+    expect(looksUpAModuleClass("<p className={NOTICE}>text</p>")).toBe(false);
+  });
+});
+
+/**
+ * THE ONE TOKEN IN THIS SECTION THAT DARK MODE *DOES* SHADOW, AND THE SUBTREE WHERE IT BITES.
+ *
+ * `pm25-chart.tsx` draws the plot's scaffolding with `fill-ink/80`, `stroke-ink/15` and
+ * `border-ink/15` — Tailwind utilities over the frozen `--color-ink`, chosen because the plot
+ * is a frozen white data ground and a bridge token there measures 2.19:1 (`--muted-foreground`)
+ * or 1.16:1 (`--foreground`). See the component's docblock for why the plot cannot follow the
+ * theme: `--chart-pm25-line` is 9.86:1 on white and 1.73:1 on `--card`.
+ *
+ * `--color-ink` is frozen GLOBALLY but not UNCONDITIONALLY. `app/globals.css` carries
+ * `.dark .climate-dark-scope { --color-ink: var(--color-bg); … }`, a subtree shadow T-018 added
+ * so the frozen climate stylesheet survives dark mode. Inside that subtree the chart's axis
+ * numbers would resolve to `--color-bg` #fbf8f3 — **1.06:1 on its own white plot**, i.e.
+ * invisible, which is the defect this whole task removed from everywhere else in the section.
+ *
+ * Today the two never meet: the province page renders `<AirPollutionSection>` inside its own
+ * sibling `<Card>`, several hundred lines from the climate wrapper. That is PAGE STRUCTURE, not
+ * a rule — one refactor that tucks the air section under the climate block reintroduces the
+ * defect with every other guard green. T-033 task 4 owns `climate-dark-scope`, so this is
+ * asserted here rather than left as a note for it to find.
+ */
+describe("the chart's frozen ink is never rendered inside climate-dark-scope", () => {
+  const subtrees = climateDarkScopeSubtrees(pageCode);
+
+  it("finds the scope wrapper it claims to check, holding the block it exists for", () => {
+    // Anti-vacuity, both ways: an extractor that found nothing, or that grabbed the wrong
+    // subtree, would satisfy the absence check below perfectly.
+    expect(subtrees).toHaveLength(1);
+    expect(subtrees[0]).toContain("<ClimateSection");
+  });
+
+  it("renders no AirPollutionSection inside it", () => {
+    for (const subtree of subtrees) {
+      expect(
+        subtree,
+        "the PM2.5 chart's axis ink resolves to 1.06:1 in this subtree",
+      ).not.toContain("<AirPollutionSection");
+    }
+    // …and the section really is on the page, so the check has a subject.
+    expect(pageCode).toContain("<AirPollutionSection");
+  });
+
+  it("POSITIVE CONTROL — the same extractor reports a section moved inside the scope", () => {
+    const poisoned = [
+      '<div className="climate-dark-scope">',
+      "  <ClimateSection />",
+      "  <div>",
+      "    <AirPollutionSection />",
+      "  </div>",
+      "</div>",
+    ].join("\n");
+    const found = climateDarkScopeSubtrees(poisoned);
+    expect(found).toHaveLength(1);
+    expect(found[0]).toContain("<AirPollutionSection");
+  });
+
+  it("POSITIVE CONTROL — and does NOT report a sibling that merely follows the scope", () => {
+    // The nesting count is what this rests on, so the negative half is pinned too: a section
+    // AFTER the wrapper closes is exactly today's arrangement and must read as outside.
+    const sibling = [
+      '<div className="climate-dark-scope">',
+      "  <ClimateSection />",
+      "</div>",
+      "<AirPollutionSection />",
+    ].join("\n");
+    expect(climateDarkScopeSubtrees(sibling)[0]).not.toContain("<AirPollutionSection");
   });
 });
 
@@ -346,5 +688,50 @@ describe("zero client JavaScript", () => {
     for (const source of [sectionCode, chartCode, tableCode]) {
       expect(source).not.toMatch(/["']use client["']/);
     }
+  });
+});
+
+/**
+ * THE CHART FRAME'S WIDTH CAP, RE-PINNED WHERE IT NOW LIVES.
+ *
+ * `air-pollution.module.css`'s `.chartFrame` had a `max-width: 720px` entry in
+ * `components/css-module-fixed-widths.test.ts`, the census of fixed-`px` inline-axis declarations
+ * that exists because one such declaration scrolled a province page sideways at 320. T-033 task 3
+ * deleted the stylesheet, the entry went with it, and the cap moved into `FRAME` — where the
+ * census cannot read it and `pnpm sweep:overflow`, which is NOT in `.github/workflows/ci.yml`,
+ * became its only cover. This is the same re-pin task 4 made for climate's own frame; see
+ * `lib/test-support/converted-floor.ts` for the rule and `components/climate/d2-variant.test.ts`
+ * for the sibling.
+ *
+ * The cap is measured, not incidental: the full 1080px content column was tried and rejected
+ * because the 720-unit viewBox then scales 1.5x and prints 15-unit axis text LARGER than the
+ * page's body copy, and because every other block in this section caps at 78ch. `pm25-chart.tsx`
+ * carries both reasons.
+ */
+describe("the chart frame keeps its measured width cap", () => {
+  const CAP = "max-w-[720px]";
+
+  it("FRAME still carries the cap", () => {
+    const frame = classConstant(chartCode, "FRAME");
+    expect(frame, "pm25-chart.tsx has no FRAME constant").not.toBeNull();
+    expect(frame, `FRAME lost ${CAP}`).toContain(CAP);
+    // A cap that stopped being a cap is the same loss as a deleted one.
+    expect(frame!.split(CAP).join(" ")).not.toMatch(/max-w-(none|full|screen)/);
+  });
+
+  it("…on the constant the plot actually renders", () => {
+    // Half of "bidirectional": a pin that only reads the declaration stays green on a constant
+    // nothing uses, so the cap could be deleted from the page while this file agreed.
+    expect(renderSites(chartCode, "FRAME")).toBe(1);
+  });
+
+  it("POSITIVE CONTROL — the same reading reds when the cap is widened", () => {
+    // Anti-vacuity, run against a MUTATION of the real declaration rather than an invented
+    // string: take what the file really says and widen it to the rejected 1080px column.
+    const real = classConstant(chartCode, "FRAME")!;
+    const poisoned = real.split(CAP).join("max-w-none");
+    expect(poisoned).not.toBe(real);
+    expect(poisoned).not.toContain(CAP);
+    expect(poisoned.split(CAP).join(" ")).toMatch(/max-w-(none|full|screen)/);
   });
 });

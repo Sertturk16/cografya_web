@@ -7,7 +7,7 @@ import postcss from "postcss";
 import type { AcceptedPlugin } from "postcss";
 import tailwindcss from "@tailwindcss/postcss";
 import { beforeAll, describe, expect, it } from "vitest";
-import { EXCLUDED, RAW_EXEMPT, RAW_PALETTE } from "../../scripts/palette-inventory.mjs";
+import { RAW_EXEMPT, RAW_PALETTE } from "../../scripts/palette-inventory.mjs";
 
 /**
  * THE FOURTH ARM: the stylesheet that actually ships.
@@ -46,16 +46,20 @@ import { EXCLUDED, RAW_EXEMPT, RAW_PALETTE } from "../../scripts/palette-invento
  * ## What it asserts about the palette, and why it is an exact set
  *
  * Not "fewer than N". The compiled sheet's palette rules must be EXACTLY the distinct classes
- * spelled in the two files this branch deferred by name — `EXCLUDED`'s T-033 page and
- * `RAW_EXEMPT`'s T-031d world map. Both directions fail:
+ * spelled in the ONE file this branch still defers by name — `RAW_EXEMPT`'s T-031d world map.
+ * Both directions fail:
  *
- *   - a class in the SHEET but in neither deferred file -> something else in the repo is
- *     feeding Tailwind: a doc, a test, a comment, a new component, or a dropped `@source not`.
- *   - a class in a deferred FILE but not in the sheet -> the record has drifted from what
+ *   - a class in the SHEET but not in that file -> something else in the repo is feeding
+ *     Tailwind: a doc, a test, a comment, a new component, or a dropped `@source not`.
+ *   - a class in the deferred FILE but not in the sheet -> the record has drifted from what
  *     compiles, so the deferral no longer describes the thing being deferred.
  *
- * When T-031d and T-033 land, both sides go to zero together and the assertion becomes
- * `new Set()` equals `new Set()` — a literal, checkable palette-free stylesheet.
+ * IT WAS TWO FILES UNTIL T-033 LANDED. The second was `EXCLUDED`'s `turkiye/[slug]/page.tsx`,
+ * and it left this list the way the design intended: T-033 cleared the page, `EXCLUDED` and its
+ * staleness assertion were deleted on the merge, and the deferred set shrank by one file
+ * contributing zero classes — so the asserted set did not move. When T-031d lands, the last
+ * entry goes the same way and the assertion becomes `new Set()` equals `new Set()` — a literal,
+ * checkable palette-free stylesheet.
  */
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
@@ -141,8 +145,8 @@ describe("the stylesheet that ships is the one being asserted", () => {
     ).toEqual([]);
   });
 
-  it("ships palette rules for exactly the two files this branch deferred by name", () => {
-    const deferred = [...EXCLUDED, ...RAW_EXEMPT.map((entry) => entry.file)];
+  it("ships palette rules for exactly the one file this branch still defers by name", () => {
+    const deferred = RAW_EXEMPT.map((entry) => entry.file);
     const expected = new Set<string>();
     for (const file of deferred) {
       for (const match of readFileSync(join(ROOT, file), "utf8").matchAll(RAW_PALETTE)) {

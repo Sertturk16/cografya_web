@@ -1,6 +1,54 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import type { Climate, ClimateMonthlyNormal } from "@/lib/api/types";
-import styles from "./climate.module.css";
+
+/**
+ * The scroll container. Every colour here is a bridge token: this table sits on `--card`, not on
+ * the chart's frozen plot, so it themes. Measured in dark with `lib/theme/contrast.ts`:
+ * `text-foreground` 14.73:1 on `--card`, 12.67:1 on the `--muted` header row, and
+ * `text-muted-foreground` 7.79:1 on `--card` for the caption.
+ *
+ * `max-w-[560px]` matters now that the table carries three columns instead of nine. Left to
+ * stretch the full content width, a 3-column table sprays "Ay | Ortalama sıcaklık | Toplam yağış"
+ * across the whole column (`--container-max: 1120px` minus the 20px inline padding ≈ 1080px),
+ * pushing each number so far from its month label that the row stops reading as a row. 560px is
+ * about the natural width of the widest header plus the month column.
+ *
+ * The `lg:` trio is the D2 "rails" variant's override, which lived in a `@media (min-width: 1024px)`
+ * block and lands on the same breakpoint here: inside the ~640px rail the 560px cap's reason still
+ * holds, so the cap moves to the RAIL rather than to 1080.
+ */
+const SCROLL =
+  "mt-[22px] max-w-[560px] overflow-x-auto rounded-lg border border-border " +
+  "focus-visible:outline-[3px] focus-visible:outline-accent focus-visible:outline-offset-[-3px] " +
+  "lg:flex-[1_1_420px] lg:min-w-[300px] lg:max-w-none";
+
+/**
+ * `min-w-[320px]` was 640px when the table carried nine columns and horizontal scroll was the
+ * point. It now carries three (month + the ERA5-Land core pair), and 640px would have forced a
+ * scrollbar on a phone for a table that fits. 320px keeps the columns from crushing while letting
+ * the table fit a 390px viewport — and it is also what still makes the container genuinely
+ * scrollable at the 320px reflow width, which is why the scroll region stays focusable.
+ */
+const TABLE = "w-full border-collapse text-[0.85rem] min-w-[320px]";
+const CAPTION =
+  "caption-top text-left px-3.5 pt-3 pb-2.5 text-[0.85rem] leading-[1.45] text-muted-foreground";
+/** Shared cell geometry. A number must never break across lines, so data cells stay `nowrap`. */
+const CELL = "px-3 py-[7px] border-b border-border whitespace-nowrap";
+/**
+ * NOTE: no `sticky` here. The scroll container scrolls HORIZONTALLY only, so `top: 0` on a column
+ * header could never engage — it was dead code in the stylesheet this replaced. Making the ROW
+ * header sticky under horizontal scroll is the change that would actually help, and it alters the
+ * rendered surface, so it stays a follow-up.
+ */
+const TH_MONTH = `${CELL} bg-muted font-semibold text-foreground text-left`;
+/**
+ * Let the two metric HEADERS wrap on a phone. "Ortalama sıcaklık (°C)" held on one line is what
+ * pushed the 3-column table past a 390px viewport, hiding the precipitation column behind a
+ * scroll for no reason.
+ */
+const TH_METRIC = `${CELL} bg-muted font-semibold text-foreground text-right max-[700px]:whitespace-normal`;
+const TH_ROW = `${CELL} text-left font-semibold text-foreground`;
+const TD = `${CELL} text-right text-foreground tabular-nums`;
 
 interface ClimateTableProps {
   climate: Climate;
@@ -44,9 +92,9 @@ const COLUMNS: ColumnDef[] = [
  *
  * ## Why the scroll container is still here with only three columns
  *
- * At normal widths this table no longer scrolls — three columns fit inside `.tableScroll`'s
- * 560px cap, and below 700px the metric headers wrap so it fits a 390px phone exactly. But
- * `.table` keeps a 320px `min-width`, so at the WCAG 1.4.10 reflow width (a 320px viewport,
+ * At normal widths this table no longer scrolls — three columns fit inside the `SCROLL`
+ * container's 560px cap, and below 700px the metric headers wrap so it fits a 390px phone
+ * exactly. But `TABLE` keeps a 320px `min-width`, so at the WCAG 1.4.10 reflow width (a 320px viewport,
  * or equivalently 400% zoom) the content box IS narrower than the table and the container
  * genuinely scrolls. A scrollable container that keyboard users cannot reach fails WCAG
  * 2.1.1, so `tabIndex={0}` stays.
@@ -66,13 +114,13 @@ export async function ClimateTable({ climate, provinceName }: ClimateTableProps)
 
   return (
     <div
-      className={styles.tableScroll}
+      className={SCROLL}
       role="region"
       aria-label={t("scrollRegionLabel", { name: provinceName })}
       tabIndex={0}
     >
-      <table className={styles.table}>
-        <caption className={styles.tableCaption}>
+      <table className={TABLE}>
+        <caption className={CAPTION}>
           {/* Years passed as strings so ICU never group-separates them (1991, not 1.991). */}
           {t("tableCaption", {
             name: provinceName,
@@ -82,11 +130,11 @@ export async function ClimateTable({ climate, provinceName }: ClimateTableProps)
         </caption>
         <thead>
           <tr>
-            <th scope="col" className={styles.thMonth}>
+            <th scope="col" className={TH_MONTH}>
               {t("colMonth")}
             </th>
             {COLUMNS.map((c) => (
-              <th key={c.id} scope="col" className={styles.thMetric}>
+              <th key={c.id} scope="col" className={TH_METRIC}>
                 {t(c.headerKey)}
               </th>
             ))}
@@ -95,11 +143,11 @@ export async function ClimateTable({ climate, provinceName }: ClimateTableProps)
         <tbody>
           {climate.months.map((m) => (
             <tr key={m.month}>
-              <th scope="row" className={styles.thRow}>
+              <th scope="row" className={TH_ROW}>
                 {monthLong(m.month)}
               </th>
               {COLUMNS.map((c) => (
-                <td key={c.id} className={styles.td}>
+                <td key={c.id} className={TD}>
                   {num(c.get(m), c.digits)}
                 </td>
               ))}
