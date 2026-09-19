@@ -513,13 +513,6 @@ export function V2EarthquakeExplorer({
               })}
             </g>
 
-            {/* Inland Lakes & Waters */}
-            <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
-              {INLAND_WATER_SHAPES.map((water) => (
-                <path key={water.id} d={water.d} />
-              ))}
-            </g>
-
             {/* Surrounding Sea Names */}
             <g className="fill-accent font-sans font-bold tracking-widest pointer-events-none select-none">
               {SEA_LABELS.map((sea) => (
@@ -554,6 +547,21 @@ export function V2EarthquakeExplorer({
                 >
                   <title>{prov.geoName}</title>
                 </path>
+              ))}
+            </g>
+
+            {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as it
+                was originally) because SVG paints in document order and the province layer's
+                fill-card/90 is ~90% opaque: with the lakes underneath, that fill covered them
+                almost entirely in both themes, independent of colour -- the water was invisible
+                since this file was written. The sibling `v2-turkey-map-explorer.tsx` already
+                orders its "3. Türkiye 81 Provinces Layer" before its "4. Inland Lakes" group for
+                the same reason. `pointer-events-none` keeps province hover/selection working
+                through this layer, and the epicentre markers below still paint after it, so a
+                lake never covers a quake marker. */}
+            <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
+              {INLAND_WATER_SHAPES.map((water) => (
+                <path key={water.id} d={water.d} />
               ))}
             </g>
 
