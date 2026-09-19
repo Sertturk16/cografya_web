@@ -442,12 +442,23 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             DECORATIVE `bg-primary/10` was the thing deciding whether the region label cleared
             4.5:1. Bounding the decoration is the fix; darkening all seven `--region-*-text`
             members to survive a blur would spend contrast at every width to pay for an effect
-            that only exists below `md`. Bounded here, the same widths measure 4.72-4.90 light
-            and 4.82-5.43 dark. Painted interior minimum of the badge across the full sweep,
-            both themes: 320 4.73/4.82 · 360 4.75/4.82 · 390 4.72/4.82 · 414 4.72/4.82 ·
-            768 4.75/4.82 · 1024 4.79/4.84 · 1280 4.79/4.86 (light/dark) — every one at or
-            above the figure `app/globals.css` records for it. Re-measure this row, not just
-            the token, if this glow ever moves or grows. */}
+            that only exists below `md`. Bounded here, zero failures across the sweep: 4.71-5.00
+            light and 4.81-5.67 dark.
+            Painted interior minimum of the badge per width, both themes, ROUNDED DOWN — the
+            same rule `app/globals.css` states for its own table, and it applies here for the
+            same reason: 320 4.73/4.81 · 360 4.74/4.81 · 390 4.71/4.81 · 414 4.71/4.82 ·
+            768 4.75/4.81 · 1024 4.78/4.83 · 1280 4.78/4.85 (light/dark) — every one at or
+            above the figure `app/globals.css` records for it.
+            HOW THESE WERE SAMPLED, because the first attempt got it wrong: a column strictly
+            inside the badge's own padding (from `borderLeftWidth + 1` to `paddingLeft - 1`,
+            inset vertically by `borderTopLeftRadius + 1`) and the WORST pixel in it, not the
+            modal one. Guessing a fixed inset instead crosses into the first glyph at `px-2.5`
+            and measures text on text. The sentinel that catches that is the sample's luminance
+            SPREAD; a threshold of ~10 is right. Clean samples here measure 0.2-2.0, clean
+            samples over a wider rectangle reach ~5.5 because the hero gradient varies across
+            the sample height, and a sample that touches a glyph measures 60-200. Do not set it
+            near 3: that fires on clean data at mobile widths.
+            Re-measure this row, not just the token, if this glow ever moves or grows. */}
         <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none hidden md:block" />
 
         <PageContainer space="band">

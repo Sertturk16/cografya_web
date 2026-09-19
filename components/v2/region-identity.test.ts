@@ -190,6 +190,57 @@ describe("a region wears one colour, not two", () => {
   });
 });
 
+/**
+ * The badge's backdrop is the one `app/globals.css` names, with nothing unnamed on top of it.
+ *
+ * `--region-*-text` is measured against a backdrop the stylesheet spells out: the badge's tint
+ * over the hero gradient's tint end over `--background`. That table was once true of the model
+ * and false of the paint, because the hero also carried an unbounded decorative overlay —
+ * `absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl`. `size-96` is
+ * 384px and `blur-3xl` spreads it further, so below `md` it was wider than the viewport and
+ * washed over the badge row, taking all seven regions to 4.22-4.49 at 320px while the recorded
+ * figures said 4.59-4.77. A decoration was deciding whether a data label cleared 4.5:1.
+ *
+ * ## What this test can and cannot do
+ *
+ * It CANNOT check the ratio. A Gaussian blur is not a blend any analytic model expresses —
+ * `app/globals.css` says so where it explains what `HERO` excludes — so the numbers come from
+ * painted pixels at every supported width and live in comments beside the code that produced
+ * them. That is measurement, and measurement does not run in CI.
+ *
+ * It CAN check the SHAPE, which is what actually regressed: a fixed-size blurred overlay
+ * positioned over hero content with no width bound on it. That is a static property of the
+ * markup, so it belongs in a test rather than in a comment asking the next person to remember.
+ */
+describe("no unbounded blurred overlay sits over the region badge", () => {
+  /** Every `className` literal in the page that paints a positioned, blurred overlay. */
+  const overlays = [...page.matchAll(/className="([^"]*)"/g)]
+    .map((m) => m[1]!)
+    .filter((cls) => /\babsolute\b/.test(cls) && /\bblur-(?:xs|sm|md|lg|xl|2xl|3xl)\b/.test(cls));
+
+  it("finds the overlay at all — positive control", () => {
+    // Without this, a renamed class or a deleted div would empty the list and make the
+    // assertion below vacuously green — the same hollow-pass shape this file was written to
+    // kill. If the hero legitimately stops carrying a blurred overlay, delete this describe
+    // block rather than letting it pass on nothing.
+    expect(
+      overlays,
+      "no blurred overlay found in the hero — if it is genuinely gone, retire this guard",
+    ).not.toHaveLength(0);
+  });
+
+  it.each(overlays)("%s is bounded away from the narrow widths it would wash over", (cls) => {
+    // `hidden md:block` is what the hero uses. Any equivalent that removes it below `md` is
+    // fine; what is not fine is no bound at all, which is the state that shipped.
+    expect(
+      /\bhidden\b/.test(cls) && /\bmd:(?:block|flex|grid|inline-block)\b/.test(cls),
+      `this overlay paints at every width. size-96 + blur-3xl is wider than a 320px viewport, ` +
+        `so it lands on the region badge and falsifies the --region-*-text figures recorded in ` +
+        `app/globals.css. Bound it (hidden md:block) or re-measure every width and re-record.`,
+    ).toBe(true);
+  });
+});
+
 describe("the region card deck wears the same colour", () => {
   const deck = readFileSync(
     fileURLToPath(new URL("./v2-turkey-regions.tsx", import.meta.url)),
