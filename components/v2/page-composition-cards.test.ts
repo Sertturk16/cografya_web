@@ -665,17 +665,46 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * surface whose radius is the module's own `--radius` and whose fill cannot follow the theme
  * without taking `--chart-pm25-line` below WCAG 1.4.11 (`components/air/pm25-chart.tsx` carries
  * the figures). It is not a card wearing a disguise; it is a plot.
+ *
+ * T-033 task 4: **76 → 119**, `member` 130 → 89. NOT equal and opposite, and it is marine's
+ * shape rather than air's — bigger, and for the same cause. Measured: 41 `className={styles.x}`
+ * elements left the `member` bucket across
+ * `components/climate/{climate-chart,climate-section,climate-table}.tsx` (24 + 10 + 7) and 43
+ * arrived here as bare identifiers (27 + 9 + 7). The arithmetic of the 24 → 27 in the chart is
+ * where the whole +2 lives:
+ *
+ *   - **14 left and did not come back** — the figure, the layout row, the `<svg>`, the seven
+ *     `.summaryItem` wrappers (which now carry no `className` at all, the grid does their work),
+ *     the seasons cell, the legend and its two items all became literal strings or nothing;
+ *   - **15 are NEW carriers**, exactly marine's case: the summary's eight `<dt>`s and seven
+ *     `<dd>`s had no `className`, because `.summaryItem dt` / `.summaryItem dd` /
+ *     `.summarySeasons dt` were DESCENDANT selectors and a descendant selector has no
+ *     element-level attribute for any scanner to see. Tailwind has no descendant form;
+ *   - **2 moved buckets rather than appearing** — the legend's two swatch `<span>`s were
+ *     `` `${styles.swatch} ${styles.swatchPrecip}` ``, template literals, and are now single
+ *     constants.
+ *
+ * So fifteen elements newly entered the population this counter cannot read, and that is the
+ * honest statement. The `ternary` figure does not move: the chart's
+ * `tick.value === 0 ? GRID_ZERO : GRID` was already `styles.gridZero : styles.grid`.
+ *
+ * NO NEW HAND-DRAWN CARD here either, and again it is measured rather than asserted. Two
+ * elements are card-shaped and neither is a card in disguise: the chart frame (`rounded-lg`,
+ * a `border-ink-dark/15` edge, a `bg-white` fill) is the same plot the air note describes, and
+ * the table's scroll container (`rounded-lg border border-border`) is hoisted only because
+ * `rounded-lg` is outside {@link CARD_ROUNDING} — it is the deleted stylesheet's own
+ * `var(--radius)`, not a `rounded-2xl` surface hidden behind a constant.
  */
-export const COMPUTED_CARD_CLASSNAMES = 76;
+export const COMPUTED_CARD_CLASSNAMES = 119;
 
-/** The whole unreadable-className population by expression shape — the 188 the counter above
+/** The whole unreadable-className population by expression shape — the 210 the counter above
  * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
  * one element, `components/patterns/callout.tsx`'s `cn(calloutVariants({…}))`, and T-042 deleted
  * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
  * shape rather than as a moved number. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 76],
-  ["member", 130],
+  ["identifier", 119],
+  ["member", 89],
   ["ternary", 2],
 ];
 

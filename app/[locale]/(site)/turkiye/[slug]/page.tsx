@@ -64,6 +64,31 @@ interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
+/**
+ * THE SEVEN REGION TREATMENTS, ON THE TOKEN SET THAT ALREADY MEANS "REGION".
+ *
+ * These were seven raw Tailwind hues (amber, teal, emerald, yellow, cyan, stone, orange) with a
+ * hand-written `dark:` half each — 28 of this file's 65 raw palette classes. They are gone, and
+ * NOT onto a bridge token: colouring by coğrafi bölge is an unordered CATEGORICAL encoding, and
+ * `docs/design.md` rule 1 ("brand chrome never encodes data") forbids spending brand chrome on
+ * it. The repo already ships the right set — `--region-*`, the Okabe-Ito qualitative palette,
+ * seven members for seven regions, declared in `:root` beside the other data ramps.
+ *
+ * Reusing it also removes a disagreement rather than adding one: `turkiye/bolge/[slug]` paints
+ * each region's map with `--region-*` while telling the reader in a badge of an unrelated hue —
+ * Marmara amber beside Marmara blue. The two pages now name the same region the same colour.
+ *
+ * The hues are frozen light (no `--region-*` has a dark half), so they are used ONLY as a 10-15%
+ * tint under `text-foreground`, never as text or as the sole carrier of anything — the badge
+ * spells the region's name out. Measured with `lib/theme/contrast.ts`, `text-foreground` on the
+ * badge tint over the hero band (region/15 over region/10 over `--background`): light 10.18-13.32,
+ * dark 8.66-12.92, worst case İç Anadolu in dark at 8.66:1. T-031c adds `--region-*-tint` and
+ * `--region-*-text` members to `app/globals.css`, which this branch may not touch; when they land
+ * these eight arbitrary values become those tokens with no other change.
+ *
+ * `accentColor` is not here because it was DEAD — seven more raw classes with no reader in this
+ * file. It went with them rather than being converted.
+ */
 const REGION_THEMES: Record<
   string,
   {
@@ -71,57 +96,53 @@ const REGION_THEMES: Record<
     slug: string;
     badgeClass: string;
     gradient: string;
-    accentColor: string;
   }
 > = {
   MARMARA: {
     nameTr: "Marmara Bölgesi",
     slug: "marmara",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    gradient: "from-amber-500/10 via-background to-background",
-    accentColor: "text-amber-600",
+    badgeClass: "bg-[var(--region-marmara)]/15 text-foreground border-[var(--region-marmara)]/40",
+    gradient: "from-[var(--region-marmara)]/10 via-background to-background",
   },
   EGE: {
     nameTr: "Ege Bölgesi",
     slug: "ege",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    gradient: "from-teal-500/10 via-background to-background",
-    accentColor: "text-teal-600",
+    badgeClass: "bg-[var(--region-ege)]/15 text-foreground border-[var(--region-ege)]/40",
+    gradient: "from-[var(--region-ege)]/10 via-background to-background",
   },
   AKDENIZ: {
     nameTr: "Akdeniz Bölgesi",
     slug: "akdeniz",
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    gradient: "from-emerald-500/10 via-background to-background",
-    accentColor: "text-emerald-600",
+    badgeClass: "bg-[var(--region-akdeniz)]/15 text-foreground border-[var(--region-akdeniz)]/40",
+    gradient: "from-[var(--region-akdeniz)]/10 via-background to-background",
   },
   IC_ANADOLU: {
     nameTr: "İç Anadolu Bölgesi",
     slug: "ic-anadolu",
-    badgeClass: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
-    gradient: "from-yellow-500/10 via-background to-background",
-    accentColor: "text-yellow-600",
+    badgeClass:
+      "bg-[var(--region-ic-anadolu)]/15 text-foreground border-[var(--region-ic-anadolu)]/40",
+    gradient: "from-[var(--region-ic-anadolu)]/10 via-background to-background",
   },
   KARADENIZ: {
     nameTr: "Karadeniz Bölgesi",
     slug: "karadeniz",
-    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
-    gradient: "from-cyan-500/10 via-background to-background",
-    accentColor: "text-cyan-600",
+    badgeClass:
+      "bg-[var(--region-karadeniz)]/15 text-foreground border-[var(--region-karadeniz)]/40",
+    gradient: "from-[var(--region-karadeniz)]/10 via-background to-background",
   },
   DOGU_ANADOLU: {
     nameTr: "Doğu Anadolu Bölgesi",
     slug: "dogu-anadolu",
-    badgeClass: "bg-stone-500/15 text-stone-700 dark:text-stone-300 border-stone-500/30",
-    gradient: "from-stone-500/10 via-background to-background",
-    accentColor: "text-stone-600",
+    badgeClass:
+      "bg-[var(--region-dogu-anadolu)]/15 text-foreground border-[var(--region-dogu-anadolu)]/40",
+    gradient: "from-[var(--region-dogu-anadolu)]/10 via-background to-background",
   },
   GUNEYDOGU_ANADOLU: {
     nameTr: "Güneydoğu Anadolu Bölgesi",
     slug: "guneydogu-anadolu",
-    badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
-    gradient: "from-orange-500/10 via-background to-background",
-    accentColor: "text-orange-600",
+    badgeClass:
+      "bg-[var(--region-guneydogu-anadolu)]/15 text-foreground border-[var(--region-guneydogu-anadolu)]/40",
+    gradient: "from-[var(--region-guneydogu-anadolu)]/10 via-background to-background",
   },
 };
 
@@ -399,10 +420,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                     TR-{province.plateCode}
                   </Badge>
                   {isCoastal ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                    >
+                    <Badge variant="info" className="flex items-center gap-1">
                       <Waves className="size-3" /> Kıyı İli
                     </Badge>
                   ) : (
@@ -457,7 +475,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Yüzölçümü</span>
-                <Maximize2 className="size-4 text-teal-600" />
+                <Maximize2 className="size-4 text-accent" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {province.areaKm2 ? `${format.number(province.areaKm2)} km²` : "—"}
@@ -474,7 +492,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Ortalama Rakım</span>
-                <Mountain className="size-4 text-amber-600" />
+                <Mountain className="size-4 text-secondary" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {province.elevationM !== null ? `${province.elevationM} m` : "—"}
@@ -495,7 +513,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Coğrafi Konum</span>
-                <MapPin className="size-4 text-rose-600" />
+                <MapPin className="size-4 text-primary" />
               </div>
               <div className="font-mono font-bold text-sm sm:text-base text-foreground pt-1">
                 {province.latitude ? `${province.latitude.toFixed(2)}°K` : "—"},{" "}
@@ -544,7 +562,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                     {province.hydrographyNoteTr && (
                       <div className="space-y-1.5">
                         <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                          <Droplets className="size-3.5 text-cyan-600" />
+                          <Droplets className="size-3.5 text-info" />
                           <span>{sectionHeading("hydrography")} Su Kaynakları ve Havzaları</span>
                         </span>
                         <p className="text-sm text-muted-foreground leading-relaxed">
@@ -560,11 +578,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                         </span>
                         <div className="flex flex-wrap gap-2">
                           {hydrographyFeatures.map((feat, idx) => (
-                            <Badge
-                              key={idx}
-                              variant="outline"
-                              className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20 text-xs py-1"
-                            >
+                            <Badge key={idx} variant="info" className="text-xs py-1">
                               <Droplets className="size-3 mr-1" />
                               <span>{feat.name}</span>
                               <span className="opacity-70 text-[10px] ml-1">({feat.type})</span>
@@ -625,16 +639,16 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
                 {/* Economic Geography Indicator (TÜİK GSYH Payı) */}
                 {showEconomy && economyIndicator && (
-                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-1.5">
+                  <div className="p-4 rounded-2xl bg-warning/10 border border-warning/20 space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                      <span className="font-semibold text-warning-strong flex items-center gap-1.5">
                         <Activity className="size-3.5" /> {economyIndicator.label}
                       </span>
                       <span className="font-mono text-[11px] text-muted-foreground">
                         {economyIndicator.year}
                       </span>
                     </div>
-                    <div className="font-heading font-extrabold text-2xl text-amber-900 dark:text-amber-200">
+                    <div className="font-heading font-extrabold text-2xl text-warning-strong">
                       {economyIndicator.value}
                     </div>
                     <div className="text-[11px] text-muted-foreground">
@@ -729,12 +743,12 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                           pathname: "/turkiye/[slug]",
                           params: { slug: slugForLocale(sc, locale) },
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-teal-500/15 hover:text-teal-700 dark:hover:text-teal-300 border border-border transition-colors group cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-info/15 hover:text-info-strong border border-border transition-colors group cursor-pointer"
                       >
                         <span className="font-mono text-[10px] opacity-70">#{sc.plateCode}</span>
                         <span>{sc.nameTr}</span>
                         {sc.climateAnnualMeanTempC !== null && (
-                          <span className="font-mono text-[10px] font-semibold text-teal-700 dark:text-teal-300">
+                          <span className="font-mono text-[10px] font-semibold text-info-strong">
                             ·{" "}
                             {format.number(sc.climateAnnualMeanTempC, {
                               minimumFractionDigits: 1,
@@ -798,11 +812,18 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               )}
             </div>
 
-            {/* climate-dark-scope: components/climate/climate.module.css is a frozen V1
-                CSS Module whose text/surface colours are the raw (never dark-adapted)
-                --color-* Terra tokens; this wrapper shadows just those four custom
-                properties for dark mode (see app/globals.css) without touching the
-                frozen file or affecting V1's own /turkiye/[slug] page. */}
+            {/* climate-dark-scope — T-018 added this wrapper so a frozen V1 CSS Module could
+                survive dark mode: `app/globals.css` shadows exactly four raw Terra tokens
+                (--color-ink, --color-slate, --color-surface, --color-border) for this subtree.
+                T-033 task 4 retired that module, so nothing inside reads those four any more
+                and the wrapper is now inert.
+
+                IT STAYS, for two reasons and until a task that owns `app/globals.css` retires
+                the rule with it. `components/air/air-pollution.structure.test.ts` asserts this
+                subtree exists and that <AirPollutionSection> never enters it — the PM2.5 chart
+                draws its axis ink as alphas of --color-ink, which resolves to 1.05:1 on its own
+                white plot in here. And the shadow is why `climate-chart.tsx` draws ITS plot
+                scaffolding from --color-ink-dark instead: see that file's docblock. */}
             <div className="climate-dark-scope">
               <ClimateSection
                 locale={locale}

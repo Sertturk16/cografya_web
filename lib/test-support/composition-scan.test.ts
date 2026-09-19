@@ -264,11 +264,13 @@ describe("the literal extractor's hole semantics", () => {
  * disagreement PR4's guard measured is 0.
  *
  * The number 22 did not disappear with it: the population it named — `<div>`s whose className
- * carries a template hole — is still there and still 22, so it is pinned directly rather than as a
- * difference between two rules. A new hole-bearing `<div>` moves it exactly as it moved the
- * disagreement count before.
+ * carries a template hole — was still there and still 22, so it is pinned directly rather than as
+ * a difference between two rules. A new hole-bearing `<div>` moves it exactly as it moved the
+ * disagreement count before. **21** since T-033 task 4: `climate-section.tsx`'s detail row was
+ * `` `${styles.detailRow} ${styles.d2Rails}` `` — two CSS-Module lookups joined by a hole — and
+ * the conversion made it one constant.
  */
-const TEMPLATE_HOLE_DIVS = 22;
+const TEMPLATE_HOLE_DIVS = 21;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {

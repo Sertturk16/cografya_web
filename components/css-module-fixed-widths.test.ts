@@ -83,8 +83,16 @@ const DECLARATION = new RegExp(`(?:^|[;{}\\s])(${INLINE_AXIS.join("|")})\\s*:\\s
  */
 const stripAtRulePreludes = (css: string): string => css.replace(/@[a-zA-Z-]+[^;{]*/g, " ");
 
-const scan = (file: string): string[] => {
-  const css = stripAtRulePreludes(stripCssComments(readFileSync(file, "utf8")));
+/**
+ * The scanner, split so the two meta-rules at the bottom of this file can exercise it against a
+ * LITERAL stylesheet rather than against whichever module happens to survive. They used to use
+ * `climate.module.css`, which carried both an at-rule prelude and a px value in prose; T-033
+ * retired it, and re-pointing them at another module would have made them hostage to the next
+ * deletion for no gain. A literal fixture also carries its own positive control, which a real
+ * file never did.
+ */
+const scanCss = (source: string): string[] => {
+  const css = stripAtRulePreludes(stripCssComments(source));
   const found: string[] = [];
   for (const match of css.matchAll(DECLARATION)) {
     const property = match[1] as string;
@@ -94,6 +102,8 @@ const scan = (file: string): string[] => {
   }
   return found;
 };
+
+const scan = (file: string): string[] => scanCss(readFileSync(file, "utf8"));
 
 const stylesheets = ["app", "components"]
   .flatMap((root) => walk(join(repoRoot, root), (name) => name.endsWith(".module.css")))
@@ -124,23 +134,6 @@ const EXPECTED: Record<string, string[]> = {
     "max-width: 560px",
     "width: 1px",
   ],
-  "components/climate/climate.module.css": [
-    "flex: 1 1 420px",
-    // The T-046 fix itself. If this line ever reads `min-width: 300px` again, this suite is
-    // where it stops — which is the entire reason this file exists.
-    "min-width: min(300px, 100%)",
-    "flex: 1 1 220px",
-    "min-width: 200px",
-    "width: 20px",
-    "max-width: 560px",
-    "min-width: 320px",
-    // The three below live under `@media (min-width: 1024px)`, where a 300px floor inside a
-    // ~640px rail cannot overflow anything.
-    "flex: 1 1 420px",
-    "min-width: 300px",
-    "flex: 1 1 220px",
-    "min-width: 280px",
-  ],
   "components/earthquake/earthquake.module.css": ["min-width: 520px"],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
   "components/site-search/site-search.module.css": [
@@ -154,7 +147,7 @@ const EXPECTED: Record<string, string[]> = {
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(6);
+    expect(stylesheets.length).toBe(5);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -170,8 +163,9 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * hub's `.basinGrid` and `.valuesTable` floors and the explainer chevron's `width: 9px`),
    * 31 across SEVEN once that file went too, and 29 across SIX once T-033 converted
    * `air-pollution.module.css` (the chart frame's `max-width: 720px` and the year table's
-   * `max-width: 420px`). Every step down is a DELETION of rules no route reached, or a
-   * conversion that moved the floor out of a stylesheet, not a narrowing that was fixed; the
+   * `max-width: 420px`), and 18 across FIVE once it converted `climate.module.css`, the largest
+   * block left in the census at eleven. Every step down is a DELETION of rules no route reached,
+   * or a conversion that moved the floor out of a stylesheet, not a narrowing that was fixed; the
    * population is what it measures, so it is re-measured rather than carried.
    *
    * The three that left with the file are NOT gone from the product: the `11ch 1fr` value
@@ -181,29 +175,49 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * `max-w-[420px]` on the disclosure, in `pm25-chart.tsx` and `pm25-table.tsx`. That is the
    * coverage note below, restated: a Tailwind class in JSX is not in a CSS Module at all, and
    * `pnpm sweep:overflow` is what still covers it.
+   *
+   * **Climate's eleven are the sharpest case of that, because ONE of them is the defect this
+   * file exists for.** `.chartFrame`'s `min-width: min(300px, 100%)` — T-046's fix for the 36px
+   * overflow at 320 — is now `min-w-[min(300px,100%)]` in `climate-chart.tsx`: the same
+   * declaration, in a place this census cannot read. So the docblock's "caught, proven by
+   * mutation" claim is now about the RULE, not about that file, and
+   * `pnpm sweep:overflow -- --filter=/turkiye/istanbul` at 320 is what covers the frame itself.
    */
-  it("counts 29 declarations in total", () => {
+  it("counts 18 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(29);
+    expect(total).toBe(18);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {
-    // `climate.module.css` has three `@media` blocks, two of them `(max-width: 700px)`. If
-    // the prelude strip regressed, those would appear in the census as `max-width: 700px`
-    // and every entry after them would shift.
-    expect(census["components/climate/climate.module.css"]).not.toContain("max-width: 700px");
-    expect(census["components/climate/climate.module.css"]).not.toContain("min-width: 1024px");
+    // The fixture is the retired `climate.module.css`'s shape, which is why this rule exists:
+    // two `(max-width: 700px)` blocks and one `(min-width: 1024px)`. If the prelude strip
+    // regressed, the preludes would enter the census as declarations and every entry after them
+    // would shift.
+    const found = scanCss(
+      [
+        "@media (max-width: 700px) { .a { min-width: 320px; } }",
+        "@media (min-width: 1024px) { .b { flex: 1 1 420px; } }",
+      ].join("\n"),
+    );
+    // Positive control first: declarations INSIDE those blocks are still counted, which is what
+    // makes the two absences below mean anything.
+    expect(found).toEqual(["min-width: 320px", "flex: 1 1 420px"]);
+    expect(found).not.toContain("max-width: 700px");
+    expect(found).not.toContain("min-width: 1024px");
   });
 
   it("reads declarations, not comments", () => {
-    // `climate.module.css`'s `.chartFrame` docblock spells out the rejected `min-width: 300px`
-    // in prose, immediately above the live `min(300px, 100%)`. Counting that comment would
-    // make this suite green on the explanation after someone shipped the defect — the exact
-    // false positive `docs/conventions.md` records four independent arrivals at.
-    const raw = readFileSync(join(repoRoot, "components/climate/climate.module.css"), "utf8");
-    expect(raw).toContain("`min(300px, 100%)`, not a bare 300px");
-    expect(
-      census["components/climate/climate.module.css"]?.filter((d) => d === "min-width: 300px"),
-    ).toHaveLength(1);
+    // Again the retired stylesheet's shape: its `.chartFrame` docblock spelled out the REJECTED
+    // `min-width: 300px` in prose, immediately above the live `min(300px, 100%)`. Counting the
+    // comment would make this suite green on the explanation after someone shipped the defect —
+    // the exact false positive `docs/conventions.md` records four independent arrivals at.
+    const found = scanCss(
+      [
+        "/* `min(300px, 100%)`, not a bare 300px: a bare min-width: 300px was the defect. */",
+        ".chartFrame { min-width: min(300px, 100%); }",
+      ].join("\n"),
+    );
+    expect(found).toEqual(["min-width: min(300px, 100%)"]);
+    expect(found.filter((d) => d === "min-width: 300px")).toHaveLength(0);
   });
 });

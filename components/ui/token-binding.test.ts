@@ -157,7 +157,7 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * GROWS ONE DIRECTORY PER T-033 TASK, AND DELIBERATELY NOT FASTER.
    *
    * `components/marine` is here because T-033 task 2 converted it, `components/air` because
-   * task 3 converted it. The rule that put them here:
+   * task 3 converted it and `components/climate` because task 4 did. The rule that put them here:
    * **the task that retires a module adds that module's directory to this list, in the same
    * commit as the conversion.** Nothing would otherwise have caught a `var(--color-*, #hex)`
    * escape in the four files that conversion rewrote — the constraint was complied with by
@@ -172,6 +172,16 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * rather than asserted: `components/marine/*.tsx` carries no `dark:`, no raw palette class,
    * no bare `white`/`black` utility and no brand hex either. When T-031c lands, the stricter
    * rules arrive for this directory with everything else.
+   *
+   * `components/climate` carries the SECOND deliberate bare `white`, for the same measured
+   * reason and on the same ruling: `climate-chart.tsx`'s plot frame is `bg-white` because
+   * `--chart-precip-bar` measures 6.88:1 on it and **2.47:1 on `--card`**, and
+   * `--chart-temp-line` 5.18:1 against 3.29:1. It differs from the air chart in one way that is
+   * worth writing down here rather than only in the component: its scaffolding is drawn from
+   * `--color-ink-dark`, not `--color-ink`, because the province page renders this chart inside
+   * `.climate-dark-scope`, where `--color-ink` is shadowed to `--color-bg` and `fill-ink/80`
+   * would measure 1.05:1 on the plot's own white ground. `--color-ink-dark` is frozen and
+   * unshadowed. It carries no `dark:`, no raw palette class and no brand hex.
    *
    * `components/air` carries one DELIBERATE bare `white` utility, and it is not an oversight:
    * `pm25-chart.tsx` paints the plot `bg-white` because `--chart-pm25-line`, the section's one
@@ -200,6 +210,7 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
     fileURLToPath(new URL("../v2", import.meta.url)),
     fileURLToPath(new URL("../marine", import.meta.url)),
     fileURLToPath(new URL("../air", import.meta.url)),
+    fileURLToPath(new URL("../climate", import.meta.url)),
     fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 
