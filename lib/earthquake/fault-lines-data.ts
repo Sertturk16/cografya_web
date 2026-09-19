@@ -1,10 +1,29 @@
+import { FAULT_IDENTITY, type FaultId } from "@/lib/theme/fault-identity";
+
+/**
+ * The three fault zones `/deprem` and `/deprem/fay-hatlari` publish.
+ *
+ * COLOUR IS A TOKEN HERE, NOT A HUE (T-031c). `badgeClass`, `borderClass` and `accentColor`
+ * used to hold three literal hue strings per zone — twenty-four raw palette classes, in
+ * `lib/`, where a counter that walked only `components/` and `app/` never looked. The call
+ * sites could have reached zero while the definition went on shipping the hues. They now read
+ * `lib/theme/fault-identity.ts`, which reads `--fault-*`.
+ *
+ * The hue is a CLASSIFICATION, which is why it is data and not decoration: each zone's `type`
+ * field below names its faulting kinematics, and the three are the three kinematic classes an
+ * active-fault legend is built on. `app/globals.css` carries the argument and the measurements.
+ * Binding these to the danger/information/success families would put three data categories on
+ * three semantic hues — the data-viz rule run backwards — and would make red mean both "KAF"
+ * and "hazard" on a card whose risk level is already `text-destructive`.
+ */
 export interface FaultLineSegment {
   name: string;
   detail: string;
 }
 
 export interface FaultLineItem {
-  id: "kaf" | "daf" | "bafs";
+  /** The `--fault-*` token this zone wears, and its in-page anchor. */
+  id: FaultId;
   name: string;
   shortName: string;
   type: string;
@@ -34,9 +53,9 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
     type: "Sağ Yanal Doğrultu Atımlı Fay Zonu",
     riskLevel: "Çok Yüksek",
     lengthKm: 1200,
-    badgeClass: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30",
-    borderClass: "border-red-500/40 hover:border-red-500/60",
-    accentColor: "text-red-600 dark:text-red-400",
+    badgeClass: FAULT_IDENTITY.kaf.badge,
+    borderClass: FAULT_IDENTITY.kaf.articleEdge,
+    accentColor: FAULT_IDENTITY.kaf.label,
     formation:
       "Avrasya Levhası'nın güneye, Anadolu Levhacığı'nın ise Arap Levhası'nın kuzeye doğru sıkıştırmasıyla batıya doğru yılda yaklaşık 20-25 milimetre hızla ötelenmesi sonucunda oluşmuştur. Doğu Anadolu'daki Karlıova üçlü eklem noktasından başlayıp Marmara Denizi ve Saros Körfezi üzerinden Kuzey Ege çukurluklarına kadar uzanan, yerkürenin en sismik ve aktif doğrultu atımlı kıtasal kırık zonlarından biridir.",
     movementMechanism:
@@ -137,9 +156,9 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
     type: "Sol Yanal Doğrultu Atımlı Fay Zonu",
     riskLevel: "Çok Yüksek",
     lengthKm: 550,
-    badgeClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
-    borderClass: "border-blue-500/40 hover:border-blue-500/60",
-    accentColor: "text-blue-600 dark:text-blue-400",
+    badgeClass: FAULT_IDENTITY.daf.badge,
+    borderClass: FAULT_IDENTITY.daf.articleEdge,
+    accentColor: FAULT_IDENTITY.daf.label,
     formation:
       "Arap Levhası'nın kuzeye doğru yaptığı tektonik baskı sonucunda Anadolu Levhacığı'nın güneydoğu sınırını çizer. Hatay-Antakya grabeninden ve İskenderun Körfezi doğusundan başlayarak Kahramanmaraş, Gölbaşı, Hazar Gölü (Elazığ) ve Bingöl üzerinden Karlıova birleşim noktasına uzanır.",
     movementMechanism:
@@ -233,9 +252,9 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
     type: "Normal Faylanma ve Horst-Graben Genişleme Sistemi",
     riskLevel: "Yüksek",
     lengthKm: 800,
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    borderClass: "border-emerald-500/40 hover:border-emerald-500/60",
-    accentColor: "text-emerald-600 dark:text-emerald-400",
+    badgeClass: FAULT_IDENTITY.bafs.badge,
+    borderClass: FAULT_IDENTITY.bafs.articleEdge,
+    accentColor: FAULT_IDENTITY.bafs.label,
     formation:
       "Afrika Levhası'nın Helen Yayı boyunca Ege Denizi'nin altına dalması ve yay gerisi açılma tektoniği (back-arc extension) nedeniyle Batı Anadolu kabuğu kuzey-güney yönünde yılda yaklaşık 30-40 milimetre hızla esnemektedir. Bu gerilme, dağlık kütlelerin (horst) yükselmesine ve aralarındaki çöküntü ovalarının (graben) fay diklikleriyle tabana oturmasına yol açmıştır.",
     movementMechanism:

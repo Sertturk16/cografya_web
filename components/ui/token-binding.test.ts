@@ -356,10 +356,20 @@ describe("every var() fallback in the product tree still equals its token", () =
  * this one spelling. **When T-056 lands, this block becomes redundant and should be deleted**
  * rather than left to accumulate shapes one incident at a time.
  *
- * The PATTERN is deliberately narrow: a `var()` inside a bracketed arbitrary value whose token
- * name contains `*`. A `*` elsewhere in a bracket is legitimate (`w-[calc(100%*2)]`), and a
- * wildcard in prose is fine as long as it is not wrapped in the class shape — write
- * `--sst-band-*` on its own, or describe the utility without spelling it.
+ * IT HAPPENED AGAIN IN TASK 7, IN A DIFFERENT SPELLING, which is why the pattern below is no
+ * longer keyed on the wildcard. That comment described the earthquake ripple's new binding and
+ * wrote the utility out with an ellipsis where the token name goes. No `*` anywhere — and the
+ * emitted declaration still read that ellipsis verbatim, PostCSS still failed on the delimiter,
+ * and every route still 500'd with the whole suite green. The first version of this guard was
+ * silent on it.
+ *
+ * The PATTERN is now the general form of both: a `var()` inside a bracketed arbitrary value
+ * whose FIRST ARGUMENT is not a custom-property name. `--sst-band-*` is not one because of the
+ * wildcard, `...` is not one because it is not a name at all, and anything else somebody
+ * substitutes for the token in prose will not be one either. Legitimate spellings are
+ * unaffected: `w-[calc(100%*2)]` has no `var()`, and every real binding in this repo names a
+ * real token. A wildcard or a placeholder in prose is still fine as long as it is not wrapped
+ * in the class shape — write `--sst-band-*` on its own, or describe the utility in words.
  *
  * The WALK is deliberately wide, and must stay that way. **It has to match Tailwind's own source
  * detection, not a hand-picked subset of it.** `app/globals.css` declares no `@source`, so
@@ -410,7 +420,23 @@ describe("no source comment can compile into an invalid Tailwind utility", () =>
     })().filter(Boolean),
   );
   const files = candidates.filter((f) => !ignored.has(f)).map((f) => join(ROOT, f));
-  const WILDCARD_TOKEN_UTILITY = /-\[[^\]]*var\(\s*--[a-z0-9-]*\*/g;
+  /**
+   * A bracketed utility whose `var()` names something that is not a custom property.
+   *
+   * The negative lookahead is the whole rule: a real binding is `var(--token)` or
+   * `var(--token, fallback)`, so anything that does not open with `--name` followed by `,` or
+   * `)` is prose that has been dressed as markup. Keyed on that rather than on the `*` the
+   * first incident happened to contain, because the second incident contained no `*`.
+   *
+   * A TEMPLATE HOLE IS EXCLUDED, and that is a decision rather than an oversight. Four modules
+   * and two tests describe the assembled-class trap by quoting a bracketed utility with an
+   * interpolation where the token name goes. Those have shipped for three tasks and the
+   * stylesheet compiles: Tailwind's candidate extractor stops at the brace, so no rule is
+   * emitted. Excluding them is also what lets the positive control below assemble its two
+   * offenders through an interpolation — the source text stays legal while the runtime string
+   * is the real defect.
+   */
+  const NON_TOKEN_VAR_UTILITY = /-\[(?![^\]]*\$)[^\]]*var\(\s*(?!--[a-z0-9-]+\s*[,)])[^)\]]*/g;
 
   it("walked the whole scanned project, not a hand-picked subset — positive control", () => {
     expect(files.length).toBeGreaterThan(400);
@@ -425,28 +451,34 @@ describe("no source comment can compile into an invalid Tailwind utility", () =>
     expect([...seen].some((d) => d === "node_modules" || d === ".next")).toBe(false);
   });
 
-  it("spells no bracketed utility around a wildcard token name", () => {
+  it("spells no bracketed utility around anything but a real token name", () => {
     const offenders: string[] = [];
     for (const path of files) {
-      for (const m of readFileSync(path, "utf8").matchAll(WILDCARD_TOKEN_UTILITY)) {
+      for (const m of readFileSync(path, "utf8").matchAll(NON_TOKEN_VAR_UTILITY)) {
         offenders.push(`${path}: ${m[0]}`);
       }
     }
     expect(
       offenders,
-      `these compile to a CSS declaration with a '*' in the property name, which fails the ` +
-        `whole stylesheet and 500s every route:\n${offenders.join("\n")}`,
+      `these compile to a CSS declaration whose property name is not a custom property, ` +
+        `which fails the whole stylesheet and 500s every route:\n${offenders.join("\n")}`,
     ).toEqual([]);
   });
 
-  it("recognises the shape that actually broke the build — positive control", () => {
-    // The offending string is ASSEMBLED rather than written out, because this file is itself
-    // scanned by Tailwind and by the assertion above: spelling the defect here would BE the
+  it("recognises BOTH shapes that actually broke the build — positive control", () => {
+    // Both offending strings are ASSEMBLED rather than written out, because this file is itself
+    // scanned by Tailwind and by the assertion above: spelling either defect here would BE the
     // defect. That is not a workaround, it is the guard proving its own premise — the first
     // run of this test failed on its own doc comment.
     const star = String.fromCharCode(42);
+    const dot = String.fromCharCode(46);
+    // Task 6: a wildcard where the token name goes.
     const offender = `now \`bg-[var(--sst-band-${star})]\`. That legend`;
-    expect(offender).toMatch(WILDCARD_TOKEN_UTILITY);
+    expect(offender).toMatch(NON_TOKEN_VAR_UTILITY);
+    // Task 7: an ELLIPSIS where the token name goes. No wildcard anywhere, and the first
+    // version of this guard was green on it while every route returned 500.
+    const second = `the ripple is a \`stroke-[var(${dot.repeat(3)})]\` class now`;
+    expect(second).toMatch(NON_TOKEN_VAR_UTILITY);
     // And the safe spellings this repo uses all around it stay legal.
     for (const safe of [
       "bg-[var(--sst-band-cool)]",
@@ -455,7 +487,7 @@ describe("no source comment can compile into an invalid Tailwind utility", () =>
       "w-[calc(100%*2)]",
       `the --sst-band-${String.fromCharCode(42)} family`,
     ]) {
-      expect(safe, `${safe} must stay legal`).not.toMatch(WILDCARD_TOKEN_UTILITY);
+      expect(safe, `${safe} must stay legal`).not.toMatch(NON_TOKEN_VAR_UTILITY);
     }
   });
 });

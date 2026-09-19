@@ -55,9 +55,42 @@ import {
  * fallback is stripped before the arm counts). Those fallbacks are pinned instead by
  * `components/ui/token-binding.test.ts`, in both directions.
  *
+ * 438 -> 352 is T-031c Task 7, the earthquake cluster, and it clears four files:
+ * `lib/earthquake/fault-lines-data.ts` 24 -> 0, `components/v2/v2-earthquake-explorer.tsx`
+ * 21 -> 0, `deprem/page.tsx` 21 -> 0 and `deprem/fay-hatlari/page.tsx` 20 -> 0. 48 of the 86
+ * are the `--fault-*` rows the inventory derived, 17 are the magnitude ramp binding to the
+ * `--eq-mag-*` set that already existed, 9 are class names quoted inside one explanatory
+ * comment (the literal spelling goes, the ruling stays), and the rest are semantic rows on the
+ * same lines.
+ *
+ * `fault-lines-data.ts` is the file that made `lib/` a root in the first place: the hue lived
+ * in `lib/`, invisible to a counter that walked only `components/` and `app/`, so the call
+ * sites could have reached zero while the definition went on shipping the palette. Its 24 move
+ * in the same commit as the 41 that spend them.
+ *
+ * The arbitrary arm does NOT move on this task — 72 before, 72 after — and that is the
+ * interesting half. The explorer's marker ripple carried FOUR raw hexes in an SVG `stroke`
+ * prop, a second spelling of the magnitude ramp that neither arm could see (a bare hex in a
+ * prop is not a bracketed class), and they are gone without either number noticing. Nothing
+ * replaced them with a fallback, because the ripple carries its step as a bracketed stroke
+ * utility around the token now rather than as an SVG attribute, so no new entry joins the
+ * `token-binding.test.ts` fallback census either.
+ *
+ * WRITING THAT SENTENCE THE OBVIOUS WAY 500'D EVERY ROUTE, for the second time on this branch.
+ * The first draft spelled the utility out, with an ellipsis where the token name goes. Tailwind
+ * scans source TEXT, so it compiled the prose into a real rule whose declaration read that
+ * ellipsis verbatim, PostCSS failed on the delimiter, and `app/globals.css` stopped compiling
+ * entirely. Typecheck, lint and 5599 tests stayed green throughout. The guard in
+ * `components/ui/token-binding.test.ts` was widened in the same commit: it used to catch only a
+ * `*` inside the token name, and now catches any bracketed utility whose `var()` argument is
+ * not a custom-property name at all.
+ *
+ * A FALL here alongside a fall in the first arm is the good case; the failure this pairing
+ * exists to catch is a fall in one WITH A RISE in the other.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 438;
+const RAW_PALETTE_BUDGET = 352;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

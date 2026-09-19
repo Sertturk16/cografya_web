@@ -263,12 +263,17 @@ describe("the literal extractor's hole semantics", () => {
  * two EXTRACTORS. Both call {@link literalsIn} with `balanceHoles: true`, so the 22-row
  * disagreement PR4's guard measured is 0.
  *
- * The number 22 did not disappear with it: the population it named — `<div>`s whose className
- * carries a template hole — is still there and still 22, so it is pinned directly rather than as a
+ * The number did not disappear with it: the population it named — `<div>`s whose className
+ * carries a template hole — is still there, so it is pinned directly rather than as a
  * difference between two rules. A new hole-bearing `<div>` moves it exactly as it moved the
  * disagreement count before.
+ *
+ * 22 -> 25, T-031c Task 7. `/deprem`'s three KAF/DAF/BAFS cards each spelled their border and
+ * wash as literal hue classes and are now `border ${FAULT_IDENTITY.<id>.card}`. The population
+ * grew because the markup changed shape, not only colour — which is the honest reading, and the
+ * alternative would have been to keep a literal class alive to hold a number still.
  */
-const TEMPLATE_HOLE_DIVS = 22;
+const TEMPLATE_HOLE_DIVS = 25;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {
@@ -307,7 +312,7 @@ describe("the two entry points read every element the same way", () => {
   });
 
   it("the template-hole population is exactly the recorded number", () => {
-    // The 22 that USED to be the disagreement, measured directly now that nothing disagrees.
+    // The rows that USED to be the disagreement, measured directly now that nothing disagrees.
     // Pinned so a new template-hole className is still a visible diff rather than a silent one.
     const holed: string[] = [];
     for (const file of walkCardSurface()) {
