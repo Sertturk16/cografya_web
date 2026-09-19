@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -80,5 +80,69 @@ describe("the CLI entrypoint (main)", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  // The malformed-manifest case above exercises main()'s *diagnostic* branch. What it does
+  // NOT touch is main()'s `failed.length > 0 -> process.exit(1)` branch — the one this whole
+  // task exists for. Reverting that `exit(1)` to a bare `return` would have left every test
+  // green: the guard would print its FAIL rows, `pnpm build` would exit 0, and an API-less
+  // build would ship. This spawns the real CLI against a well-formed but SHORT manifest and
+  // asserts both halves of the contract: the process status, and that a named family is
+  // printed as FAIL rather than the failure being reported only as a total.
+  it("exits 1 and prints a FAIL row per short family for a well-formed but collapsed manifest", () => {
+    const dir = mkdtempSync(join(tmpdir(), "prerender-floor-"));
+    try {
+      mkdirSync(join(dir, ".next"));
+      // Well-formed: `routes` is present and every key is a real route path. It is simply
+      // short — this is the shape an API-less build actually wrote on 2026-09-19, with the
+      // static hub pages surviving while every data family collapsed to nothing.
+      writeFileSync(
+        join(dir, ".next", "prerender-manifest.json"),
+        JSON.stringify({
+          routes: { "/tr": {}, "/en": {}, "/tr/turkiye/bolge": {}, "/en/turkiye/bolge": {} },
+        }),
+      );
+
+      const result = spawnSync(process.execPath, [scriptPath], { cwd: dir, encoding: "utf8" });
+
+      expect(result.status).toBe(1);
+      // Rows go to stdout, the closing summary to stderr. Naming `provinces` specifically is
+      // the point: a single total is satisfiable while a whole category is missing.
+      expect(result.stdout).toMatch(/^FAIL provinces\s+0 = 162$/m);
+      expect(result.stdout).toMatch(/^FAIL total\s+4 >= 980$/m);
+      expect(result.stderr).toMatch(/route families short/);
+      expect(result.stderr).toMatch(/An API-less build looks exactly like this/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+// A guard that is not wired into anything is a guard that does not run, and "quietly absent"
+// is the exact class of defect this task closes. Both assertions below exist because the
+// wiring they pin is a single line in a file no other test reads: reverting either one was,
+// until now, a change that reddened nothing.
+describe("the guard's wiring into the build", () => {
+  const repoRoot = fileURLToPath(new URL("..", import.meta.url));
+
+  it("is chained into package.json's `build` script", () => {
+    // `next build` alone exits 0 on an API-less build. The chaining is what makes `pnpm build`
+    // — and therefore the Dockerfile's RUN, `docker compose build web` and CI's Build job —
+    // fail on one. Reverting this to plain "next build" must red a test.
+    const pkg: { scripts: Record<string, string> } = JSON.parse(
+      readFileSync(join(repoRoot, "package.json"), "utf8"),
+    );
+    expect(pkg.scripts.build).toContain("assert-prerender-floor");
+  });
+
+  it("keeps `required=true` on the Dockerfile's internal-token secret mount", () => {
+    // Without `required=true` a missing secret is not an error at that RUN: the mount simply
+    // does not exist, `cat` fails, and `VAR="$(cat ...)" pnpm build` takes its status from
+    // `pnpm build`, so the token silently becomes "" and the build dies two hops downstream
+    // on a zod message that names neither the secret nor the compose file. Since
+    // docker-compose.prod.yml lives outside every git repo here, that mount is the only thing
+    // that fails a compose file missing its `secrets:` entry loudly and by name.
+    const dockerfile = readFileSync(join(repoRoot, "Dockerfile"), "utf8");
+    expect(dockerfile).toMatch(/--mount=type=secret,id=internal_request_token,required=true/);
   });
 });
