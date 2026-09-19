@@ -467,8 +467,21 @@ describe("no source comment can compile into an invalid Tailwind utility", () =>
    *
    * The token-name class is `[A-Za-z0-9_-]`, not `[a-z0-9-]`. A custom property may carry
    * uppercase and underscores, so the narrower class reported a legal binding as fatal.
+   *
+   * THE LEADING WHITESPACE IS INSIDE THE LOOKAHEAD, and that placement is the fix for a false
+   * positive rather than a stylistic choice. Written as `var\(\s*(?!--…)`, the engine ate the
+   * space, matched and correctly negated `--ring)`, then BACKTRACKED: `\s*` gave the space back,
+   * the lookahead re-ran against ` --ring`, failed on the space, and the negation succeeded. So
+   * `[color:var( --ring )]` reported as fatal. It is reachable only in prose — a real Tailwind
+   * arbitrary value cannot contain a literal space, `_` stands in for one — which is why the
+   * clean tree never showed it.
+   *
+   * WHICH DIRECTION THE RISK RUNS, because the next person reading this lookahead will want to
+   * know: backtracking only ever ADDS a match. Widening the lookahead can therefore produce a
+   * false positive and can never produce a new MISS, so a change here is checked by re-proving
+   * the offenders still red — never by trusting that nothing slipped through silently.
    */
-  const NON_TOKEN_VAR_UTILITY = /\[(?![^\]]*\$\{)[^\]]*var\(\s*(?!--[A-Za-z0-9_-]+\s*[,)])[^)\]]*/g;
+  const NON_TOKEN_VAR_UTILITY = /\[(?![^\]]*\$\{)[^\]]*var\((?!\s*--[A-Za-z0-9_-]+\s*[,)])[^)\]]*/g;
 
   it("walked the whole scanned project, not a hand-picked subset — positive control", () => {
     expect(files.length).toBeGreaterThan(400);
@@ -538,6 +551,13 @@ describe("no source comment can compile into an invalid Tailwind utility", () =>
       // These emit no rule at all.
       "bg-(--fault-kaf)",
       "text-[var(--fault-kaf, #e7000b)]",
+      // Both whitespace spellings around a REAL token. The second is the backtracking false
+      // positive this pattern was rewritten to clear; the first is what must not regress with it.
+      "[color:var(--ring)]",
+      "[color:var( --ring )]",
+      // The arbitrary-property twin of this branch's goal state. Legal exactly as the utility
+      // form is — the guard checks SYNTAX, and deliberately does not check that a token exists.
+      "[fill:var(--region-marmara)]",
     ]) {
       expect(safe, `${safe} must stay legal`).not.toMatch(NON_TOKEN_VAR_UTILITY);
     }
