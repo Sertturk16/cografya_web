@@ -16,7 +16,7 @@ Read on demand, not every session:
 ## Commands
 
 ```bash
-pnpm dev                                  # http://localhost:3000 (needs the API on :3001)
+pnpm dev                                  # rarely needed: cografya-web-dev already serves :3000 from this tree
 pnpm typecheck && pnpm lint && pnpm test  # gate before every commit
 pnpm build                                # needs the API on :3001 (prerenders flags + district routes)
 pnpm codegen                              # after replacing openapi/openapi.json from the API repo
