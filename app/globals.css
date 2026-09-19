@@ -612,6 +612,144 @@
   --continent-okyanusya-text: oklch(0.5 0.115 346.3);
   --continent-antarktika-text: oklch(0.52 0.11 105);
 
+  /* ---- Sea-basin palette (DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
+     The four deniz havzası are an unordered categorical variable, exactly as the region and
+     continent sets above are, so they get the same treatment: their own token set, physically
+     separate from the Terra brand tokens, and a floor of ΔE00 >= 10 on all 6 pairs under normal
+     vision and all three CVD simulations. `lib/theme/basin-palette.test.ts` measures it and
+     compares this block against its own table in BOTH directions.
+
+     WHY NOT THE OKABE-ITO SET THE OTHER TWO SHARE. Regions and continents share seven values
+     because they never meet on a screen. Basins and regions DO meet: `turkiye/bolge/[slug]`
+     paints its hero, badge and border from `--region-*` and lists that region's
+     `coastalSeas` as `--basin-*` chips in the same viewport. Two encodings sharing one value
+     there would be ambiguous, so these four values are disjoint from the seven above.
+
+     WHAT SHIPPED, AND WHAT HAD TO MOVE. Four files already agreed on cyan / amber / teal /
+     rose, so the starting point was the shipped identity rather than a new one. Measured, that
+     set FAILS the floor twice: cyan-600 / teal-600 is 3.8 under tritanopia, and
+     amber-600 / rose-600 is 9.6 under deuteranopia. Two members therefore move, and both move
+     one step DOWN inside their own family rather than out of it — the smallest correction in
+     the shipped palette that clears the floor (searched over every Tailwind family at 500/600/
+     700, minimising total ΔE00 from what ships):
+
+       karadeniz  cyan-600  #0092b8  unchanged
+       marmara    amber-600 #e17100  unchanged
+       ege        teal-600 -> teal-700  #00786f   moved 10.9
+       akdeniz    rose-600 -> rose-700  #c70036   moved  7.9
+
+     Worst pair per vision on the set that ships here: normal 20.7 karadeniz/ege ·
+     protanopia 16.7 ege/akdeniz · deuteranopia 17.7 karadeniz/ege · tritanopia 12.7
+     karadeniz/ege. All six pairs clear 10 under all four.
+
+     THE ONE CROSS-SET COLLISION THIS RESOLVES. `--sst-band-warm` below is teal-600, and Ege
+     was teal-600 too — two different encodings on one value, in ONE component
+     (`v2-marine-map-explorer` paints basin group headers and SST chips on the same screen).
+     Moving Ege to teal-700 separates them: ΔE00 10.3-11.2 across the four visions, so they are
+     distinct values AND tellable apart.
+
+     THE ONE IT DOES NOT, NAMED RATHER THAN LEFT TO BE REDISCOVERED. `--basin-marmara`
+     (amber-600) and `--sst-band-hot` (orange-600) measure 11.8 normal but 1.6 under
+     deuteranopia. They are not interchangeable and never encode the same axis — one names a
+     basin, one names a temperature band, and both marks carry their own text — but a
+     deuteranope sees two similar warm hues on that page. Moving Marmara was rejected: it clears
+     the categorical floor, cross-set ΔE00 is not the bar this set is measured against, and
+     every alternative measured worse against the shipped identity. Recorded here so the next
+     reader knows it was measured, not missed.
+
+     CONTRAST. Figures for `-text` on each surface, WITH THE BACKDROP EACH IS A RATIO TO, are
+     below the `-text` declarations. Nothing restates them elsewhere. */
+  --basin-karadeniz: #0092b8; /* cyan */
+  --basin-marmara: #e17100; /* amber */
+  --basin-ege: #00786f; /* deep teal */
+  --basin-akdeniz: #c70036; /* rose */
+  --basin-karadeniz-tint: color-mix(in srgb, var(--basin-karadeniz) 15%, transparent);
+  --basin-marmara-tint: color-mix(in srgb, var(--basin-marmara) 15%, transparent);
+  --basin-ege-tint: color-mix(in srgb, var(--basin-ege) 15%, transparent);
+  --basin-akdeniz-tint: color-mix(in srgb, var(--basin-akdeniz) 15%, transparent);
+  /* The basin label. Solved against the WORST surface it is ever painted on, not the most
+     flattering one, so every call site is covered by one value per basin per theme.
+
+     FIVE NAMED BACKDROPS, all of them surfaces a page actually paints:
+       GROUP  the 15% tint over `--muted`/50 over `--card`  — the station-table group header
+              in `v2-marine-map-explorer`. The BINDING case in both themes; measuring this
+              badge against a bare `--card` would overstate it by ~1.4.
+       DECK   the 15% tint over `--card`/80 over `--background` — `v2-marine-basin-cards`,
+              whose Card is `bg-card/80 backdrop-blur-sm`, not `bg-card`.
+       PANEL  the 10% tint over `--card` — the `coastalSeas` chips on `turkiye/bolge/[slug]`.
+       LINK   the 5% wash over the `deniz/kiyi-tipleri` cross-nav section, whose own background
+              is `from-card via-muted/30 to-card`; both the card end and the muted middle are
+              measured, because a gradient has no single backdrop.
+       CARD   the bare `--card`, which bounds nothing but is what a reader assumes.
+
+     LIGHT   GROUP · DECK · PANEL · LINK(end/mid) · bare --card
+       karadeniz  4.64 · 5.02 · 5.37 · 5.71/5.21 · 6.04
+       marmara    4.63 · 5.00 · 5.33 · 5.63/5.13 · 5.93
+       ege        4.68 · 5.07 · 5.51 · 5.88/5.40 · 6.32
+       akdeniz    4.62 · 5.00 · 5.55 · 6.06/5.56 · 6.64
+     Worst 4.62 (akdeniz on GROUP) against the 4.5 floor.
+
+     NO MOVING BACKDROP CARRIES A BASIN CHIP, and that was checked rather than assumed — it is
+     the shape that bit `--region-*` and `--continent-*`, where a chip over a row hovering to
+     `bg-muted/50` measured 4.41:1. Here the group header is static `bg-muted/50`, the basin
+     Card changes only its border and shadow on hover, the `bolge/[slug]` chips sit on a static
+     panel, and the `kiyi-tipleri` link cards change only their border. So no `badgeOpaque`
+     member exists in `lib/theme/basin-identity.ts`: there is nothing for it to protect. The SST
+     set below is where a chip DOES sit on a moving backdrop, and it is solved there. */
+  --basin-karadeniz-text: oklch(0.485 0.11 221.723);
+  --basin-marmara-text: oklch(0.51 0.11 58.318);
+  --basin-ege-text: oklch(0.465 0.11 186.391);
+  --basin-akdeniz-text: oklch(0.49 0.11 16.935);
+
+  /* ---- Sea-surface-temperature bands (GEOPHYSICAL RAMP — stays standard) ----
+     SST is a geophysical scale, so it is NOT restyled to Terra: the same rule that keeps the
+     earthquake magnitude ramp and the AQI bands standard. What follows is a BINDING of the
+     ramp this product already ships, not a new one.
+
+     THE RAMP ALREADY SHIPPED TWICE, IN ONE FILE, AND THE TWO SPELLINGS DISAGREED.
+     `v2-marine-map-explorer` painted the same three bands in two places:
+       - the map station pins, as raw SVG `fill` attributes: #2563eb / #0d9488 / #ea580c
+       - the `Su Sıcaklığı` table chips, as utility classes: blue-500/15 + blue-700,
+         teal-500/15 + teal-700, orange-500/15 + orange-700
+     Same three families (blue / teal / orange), same thresholds (< 25 °C, 25-28 °C, >= 28 °C),
+     two different shades — and the pin hexes are Tailwind v3 values this repo stopped shipping
+     at the v4 upgrade. The tokens take the v4 `-600` of those same three families, which is the
+     shade the pins already used: it moves the painted pin by ΔE00 2.7 / 0.8 / 3.2, i.e. a
+     palette-generation refresh inside the identical family and shade, and leaves the chips in
+     their own families. That is the whole of the change — the ramp is not redesigned, it is
+     given one name each so the two spellings cannot drift apart again.
+
+     ORDER, NOT CATEGORY. Three ordered steps, so `CATEGORICAL_MIN` does not apply; what matters
+     is that adjacent steps are separable and that the order reads cool -> warm -> hot.
+     Adjacent ΔE00: cool/warm 40.4, warm/hot 56.9 (cool/hot 52.4). */
+  --sst-band-cool: #155dfc; /* < 25 °C */
+  --sst-band-warm: #009689; /* 25-28 °C */
+  --sst-band-hot: #f54900; /* >= 28 °C */
+  --sst-band-cool-tint: color-mix(in srgb, var(--sst-band-cool) 15%, transparent);
+  --sst-band-warm-tint: color-mix(in srgb, var(--sst-band-warm) 15%, transparent);
+  --sst-band-hot-tint: color-mix(in srgb, var(--sst-band-hot) 15%, transparent);
+  /* The band label. THIS is the set whose chip sits on a backdrop that MOVES, so the four row
+     states are the backdrops, not the resting one:
+       ROW            the 15% tint over `--card`            — a resting station row
+       ROW_HOVER      ... over `--muted`/40 over `--card`   — `hover:bg-muted/40`
+       ROW_SEL        ... over `--primary`/10 over `--card` — the selected station
+       ROW_SEL_HOVER  ... over `--primary`/15 over `--card` — selected AND hovered: the BINDING
+                      case in both themes, and the one state nobody screenshots
+
+     LIGHT   ROW · ROW_HOVER · ROW_SEL · ROW_SEL_HOVER
+       cool   5.60 · 5.21 · 4.92 · 4.62
+       warm   5.58 · 5.24 · 4.95 · 4.63
+       hot    5.56 · 5.18 · 4.92 · 4.62
+     Worst 4.62 against the 4.5 floor.
+
+     Solved against ROW_SEL_HOVER rather than patched afterwards, which is why this set needs no
+     opaque-chip member: `--region-*` and `--continent-*` each measured 4.41:1 on exactly this
+     shape and had to grow a `badgeOpaque` to escape it, because their labels were already fixed
+     when the shape was found. These labels were authored knowing it. */
+  --sst-band-cool-text: oklch(0.47 0.11 262.881);
+  --sst-band-warm-text: oklch(0.45 0.11 184.704);
+  --sst-band-hot-text: oklch(0.485 0.11 41.116);
+
   /* ---- Map-game answer states (UI STATE, not a data scale) ----
      These mark what the PLAYER just did, so they are semantic UI colours (the
      success/danger family), not an encoding of any geographic value. Each is paired in
@@ -1265,6 +1403,33 @@
   --continent-guney-amerika-text: oklch(0.69 0.17 47.5);
   --continent-okyanusya-text: oklch(0.72 0.115 346.3);
   --continent-antarktika-text: oklch(0.8 0.17 105);
+  /* The basin label, lifted for the dark card exactly as the two sets above are, and for the
+     same reason: only `-text` flips. `--basin-*-tint` is translucent and composites over
+     whichever surface it lands on, and `--basin-*` itself must not flip, because the four fills
+     are a measured categorical set and a theme-dependent data encoding would be two sets to
+     keep separable instead of one. Hue angle is each basin's own, unchanged from the light
+     block; lightness moves UP here instead of down.
+
+     DARK, same five named backdrops as the light block lists:
+             GROUP · DECK · PANEL · LINK(end/mid) · bare --card
+       karadeniz  4.66 · 5.13 · 5.37 · 5.73/5.93 · 6.08
+       marmara    4.67 · 5.12 · 5.40 · 5.75/5.93 · 6.05
+       ege        4.67 · 5.11 · 5.27 · 5.49/5.66 · 5.74
+       akdeniz    4.67 · 5.03 · 5.05 · 5.10/5.25 · 5.15
+     Worst 4.66 (karadeniz on GROUP) against the 4.5 floor. GROUP binds in both themes. */
+  --basin-karadeniz-text: oklch(0.675 0.13 221.723);
+  --basin-marmara-text: oklch(0.695 0.13 58.318);
+  --basin-ege-text: oklch(0.65 0.13 186.391);
+  --basin-akdeniz-text: oklch(0.66 0.13 16.935);
+  /* The SST band label, same treatment, same four row states as the light block:
+             ROW · ROW_HOVER · ROW_SEL · ROW_SEL_HOVER
+       cool   5.46 · 5.13 · 4.91 · 4.61
+       warm   5.48 · 5.19 · 4.92 · 4.66
+       hot    5.70 · 5.38 · 5.01 · 4.63
+     Worst 4.61 (cool, selected AND hovered) against the 4.5 floor. */
+  --sst-band-cool-text: oklch(0.695 0.13 262.881);
+  --sst-band-warm-text: oklch(0.69 0.13 184.704);
+  --sst-band-hot-text: oklch(0.72 0.13 41.116);
   /* A bare `<a>`. Light mode's link colour is a Terra token the `.dark` block cannot reach, so
      the base rule reads `--link` and this is the value it gets here. */
   --link: oklch(0.78 0.11 40.65);
