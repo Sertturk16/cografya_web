@@ -41,10 +41,17 @@ function Tabs({
   );
 }
 
-function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
+function TabsList({ className, activateOnFocus = true, ...props }: TabsPrimitive.List.Props) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
+      // Automatic activation, not Base UI's `false` default: every consumer here (T-031d Task
+      // 15) is a cheap view switch — a login/register form pair or a re-rendered catalogue —
+      // where moving focus without moving the selection just means Left/Right does nothing
+      // visible until a separate Enter/Space, which is exactly what a keyboard user hit before
+      // this prop was added. A future consumer whose panel is expensive to render can still opt
+      // back into manual activation with `activateOnFocus={false}`.
+      activateOnFocus={activateOnFocus}
       className={cn(listVariants[React.useContext(TabsVariantContext)], className)}
       {...props}
     />

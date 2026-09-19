@@ -43,12 +43,22 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
   });
 
   describe("V2MemberHub Accessibility & Panels", () => {
-    it("contains accessible tabs with proper ARIA roles and keyboard controls", () => {
-      expect(hubSource).toContain('role="tablist"');
-      expect(hubSource).toContain('role="tab"');
-      expect(hubSource).toContain('role="tabpanel"');
-      expect(hubSource).toContain("aria-selected=");
-      expect(hubSource).toContain("aria-controls=");
+    // T-031d Task 15: the hub no longer writes role="tablist" / role="tab" / role="tabpanel"
+    // itself — components/v2/tablist-adoption.test.ts forbids that under components/v2, because
+    // the hand-rolled version here carried the roles and the aria-* correctly but no onKeyDown,
+    // so ARIA APG's Left/Right requirement went unmet. The five panels now go through
+    // components/ui/tabs.tsx (Base UI Tabs), which supplies every role, aria-* and the roving
+    // tabindex/arrow-key behaviour at runtime; this test checks the hub still routes through it
+    // rather than re-inlining the tablist, and that none of the five panels was dropped.
+    it("routes its five member panels through the shared Tabs primitive", () => {
+      expect(hubSource).toContain('from "@/components/ui/tabs"');
+      expect(hubSource).toContain("<TabsList");
+      expect(hubSource).toContain("<TabsTrigger");
+      expect(hubSource).toContain("<TabsContent");
+      expect(hubSource).toContain("onValueChange=");
+      for (const panel of ["favorites", "videos", "games", "measurements", "profile"]) {
+        expect(hubSource).toContain(`value="${panel}"`);
+      }
     });
 
     it("contains an aria-live polite status announcement region", () => {

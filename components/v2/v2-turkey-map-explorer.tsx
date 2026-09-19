@@ -20,6 +20,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Waves,
   ArrowRight,
@@ -870,135 +871,124 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
       {/* 2. PROVINCES CATALOGUE & CONTROLS */}
       <section className="space-y-6">
-        <div className="border-b border-border pb-4 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" size="sm">
-                81 İl Kataloğu
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {filteredProvinces.length} İl Listeleniyor
-              </span>
+        {/*
+          A control switching between three renderings of the same catalogue, so `pills`
+          (T-034 rationale, components/ui/tabs.tsx). `className="contents"` keeps this
+          context provider out of the box model so it does not disturb the section's own
+          flex/spacing between the toolbar and the panels.
+        */}
+        <Tabs
+          value={viewMode}
+          onValueChange={(value) => setViewMode(value as "region" | "table" | "fihrist")}
+          variant="pills"
+          className="contents"
+        >
+          <div className="border-b border-border pb-4 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" size="sm">
+                  81 İl Kataloğu
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  {filteredProvinces.length} İl Listeleniyor
+                </span>
+              </div>
+              <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
+                İller Listesi &amp; Coğrafi Detaylar
+              </h3>
             </div>
-            <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-              İller Listesi &amp; Coğrafi Detaylar
-            </h3>
-          </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-            {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="İl adı, plaka veya bölge ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-8 py-1.5 text-xs bg-card"
-              />
-              {searchQuery && (
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+              {/* Search Input */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="İl adı, plaka veya bölge ara..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 pr-8 py-1.5 text-xs bg-card"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Sort Filter */}
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border text-xs w-full sm:w-auto justify-between">
                 <button
                   type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  onClick={() => setSortBy("plate")}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                    sortBy === "plate"
+                      ? "bg-card text-foreground font-bold shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <X className="size-3.5" />
+                  Plaka
                 </button>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => setSortBy("name")}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                    sortBy === "name"
+                      ? "bg-card text-foreground font-bold shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  A-Z İsim
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy("pop-desc")}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                    sortBy === "pop-desc"
+                      ? "bg-card text-foreground font-bold shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Nüfus
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSortBy("area-desc")}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
+                    sortBy === "area-desc"
+                      ? "bg-card text-foreground font-bold shadow-2xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Yüzölçümü
+                </button>
+              </div>
 
-            {/* Sort Filter */}
-            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border text-xs w-full sm:w-auto justify-between">
-              <button
-                type="button"
-                onClick={() => setSortBy("plate")}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "plate"
-                    ? "bg-card text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Plaka
-              </button>
-              <button
-                type="button"
-                onClick={() => setSortBy("name")}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "name"
-                    ? "bg-card text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                A-Z İsim
-              </button>
-              <button
-                type="button"
-                onClick={() => setSortBy("pop-desc")}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "pop-desc"
-                    ? "bg-card text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Nüfus
-              </button>
-              <button
-                type="button"
-                onClick={() => setSortBy("area-desc")}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                  sortBy === "area-desc"
-                    ? "bg-card text-foreground font-bold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Yüzölçümü
-              </button>
-            </div>
-
-            {/* View Mode Switcher: 3 Modes (Region Grouped / Table / Fihrist) */}
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-xl border border-border">
-              <button
-                type="button"
-                onClick={() => setViewMode("region")}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold px-2.5 ${
-                  viewMode === "region"
-                    ? "bg-card text-primary shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-label={t("regionGroupedView")}
-              >
-                <Layers className="size-3.5" />
-                <span className="hidden sm:inline">Bölge Gruplu</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-card text-primary shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-label={t("tableView")}
-              >
-                <List className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("fihrist")}
-                className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === "fihrist"
-                    ? "bg-card text-primary shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-label={t("indexView")}
-              >
-                <AlignLeft className="size-4" />
-              </button>
+              {/* View Mode Switcher: 3 Modes (Region Grouped / Table / Fihrist) */}
+              <TabsList aria-label="Görünüm Seçenekleri" className="h-auto p-1">
+                <TabsTrigger
+                  value="region"
+                  className="gap-1 px-2.5 text-xs font-semibold"
+                  aria-label={t("regionGroupedView")}
+                >
+                  <Layers className="size-3.5" />
+                  <span className="hidden sm:inline">Bölge Gruplu</span>
+                </TabsTrigger>
+                <TabsTrigger value="table" className="px-1.5" aria-label={t("tableView")}>
+                  <List className="size-4" />
+                </TabsTrigger>
+                <TabsTrigger value="fihrist" className="px-1.5" aria-label={t("indexView")}>
+                  <AlignLeft className="size-4" />
+                </TabsTrigger>
+              </TabsList>
             </div>
           </div>
-        </div>
 
-        {/* Search Restriction Helper Banner — a CAUTION, not neutral information: the region
+          {/* Search Restriction Helper Banner — a CAUTION, not neutral information: the region
             filter is suppressing results the reader asked for, and the escape from it is the
             button on the right. Hence the warning family rather than `info`.
             Measured with lib/theme/contrast.ts, BACKDROP NAMED: this banner sits in a bare
@@ -1018,95 +1008,94 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             label is an OPAQUE PAIR — `--warning-strong` on `--card`, no alpha anywhere, so the
             analytic figure is exact by construction: 6.81:1 light, 9.64:1 dark (a paint
             confirmed 6.814). Every figure floored. */}
-        {isSearchRestrictedByRegion && (
-          <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Info className="size-4 shrink-0 text-warning-strong" />
-              <span>
-                <strong>
-                  {provinces.find((p) => p.regionId === selectedRegion)?.region
-                    ? REGION_DATA[provinces.find((p) => p.regionId === selectedRegion)!.region]
-                        ?.name
-                    : "Seçili Bölge"}
-                </strong>{" "}
-                filtresi etkinken &quot;{searchQuery}&quot; bulunamadı.
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs h-7 px-2.5 bg-card border-warning/40 text-warning-strong"
-              onClick={() => setSelectedRegion("all")}
-            >
-              Tüm İllerde Ara
-            </Button>
-          </div>
-        )}
-
-        {/* Alphabet Initial Letters Filter Bar */}
-        <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setSelectedLetter(null)}
-            className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 cursor-pointer ${
-              selectedLetter === null
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted/40 hover:bg-muted text-muted-foreground border border-border/60"
-            }`}
-          >
-            Tümü
-          </button>
-          {ALPHABET_TURKISH.map((letter) => {
-            const hasProvinces = provinces.some((p) =>
-              p.name.toLocaleUpperCase("tr-TR").startsWith(letter),
-            );
-            const isSelected = selectedLetter === letter;
-            return (
-              <button
-                key={letter}
-                type="button"
-                disabled={!hasProvinces}
-                onClick={() => setSelectedLetter(isSelected ? null : letter)}
-                className={`size-7 rounded-lg text-xs font-medium shrink-0 flex items-center justify-center transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-primary text-primary-foreground font-bold shadow-2xs"
-                    : hasProvinces
-                      ? "bg-card hover:bg-muted text-foreground border border-border/80"
-                      : "opacity-30 text-muted-foreground cursor-not-allowed"
-                }`}
+          {isSearchRestrictedByRegion && (
+            <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Info className="size-4 shrink-0 text-warning-strong" />
+                <span>
+                  <strong>
+                    {provinces.find((p) => p.regionId === selectedRegion)?.region
+                      ? REGION_DATA[provinces.find((p) => p.regionId === selectedRegion)!.region]
+                          ?.name
+                      : "Seçili Bölge"}
+                  </strong>{" "}
+                  filtresi etkinken &quot;{searchQuery}&quot; bulunamadı.
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs h-7 px-2.5 bg-card border-warning/40 text-warning-strong"
+                onClick={() => setSelectedRegion("all")}
               >
-                {letter}
-              </button>
-            );
-          })}
-        </div>
+                Tüm İllerde Ara
+              </Button>
+            </div>
+          )}
 
-        {/* Results Info and Reset Filters */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>
-            Toplam{" "}
-            <strong className="text-foreground font-semibold">{filteredProvinces.length}</strong> il
-            listeleniyor.
-          </span>
-          {(searchQuery || selectedLetter || selectedRegion !== "all" || onlyCoastal) && (
+          {/* Alphabet Initial Letters Filter Bar */}
+          <div className="flex items-center gap-1 overflow-x-auto py-1 scrollbar-none">
             <button
               type="button"
-              onClick={() => {
-                setSearchQuery("");
-                setSelectedLetter(null);
-                setSelectedRegion("all");
-                setOnlyCoastal(false);
-              }}
-              className="text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
+              onClick={() => setSelectedLetter(null)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 cursor-pointer ${
+                selectedLetter === null
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted/40 hover:bg-muted text-muted-foreground border border-border/60"
+              }`}
             >
-              <X className="size-3" /> Tüm Filtreleri Temizle
+              Tümü
             </button>
-          )}
-        </div>
+            {ALPHABET_TURKISH.map((letter) => {
+              const hasProvinces = provinces.some((p) =>
+                p.name.toLocaleUpperCase("tr-TR").startsWith(letter),
+              );
+              const isSelected = selectedLetter === letter;
+              return (
+                <button
+                  key={letter}
+                  type="button"
+                  disabled={!hasProvinces}
+                  onClick={() => setSelectedLetter(isSelected ? null : letter)}
+                  className={`size-7 rounded-lg text-xs font-medium shrink-0 flex items-center justify-center transition-all cursor-pointer ${
+                    isSelected
+                      ? "bg-primary text-primary-foreground font-bold shadow-2xs"
+                      : hasProvinces
+                        ? "bg-card hover:bg-muted text-foreground border border-border/80"
+                        : "opacity-30 text-muted-foreground cursor-not-allowed"
+                  }`}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
 
-        {/* 1. REGION GROUPED VIEW (DEFAULT & ELEGANT) */}
-        {viewMode === "region" && (
-          <div className="space-y-6">
+          {/* Results Info and Reset Filters */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              Toplam{" "}
+              <strong className="text-foreground font-semibold">{filteredProvinces.length}</strong>{" "}
+              il listeleniyor.
+            </span>
+            {(searchQuery || selectedLetter || selectedRegion !== "all" || onlyCoastal) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedLetter(null);
+                  setSelectedRegion("all");
+                  setOnlyCoastal(false);
+                }}
+                className="text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
+              >
+                <X className="size-3" /> Tüm Filtreleri Temizle
+              </button>
+            )}
+          </div>
+
+          {/* 1. REGION GROUPED VIEW (DEFAULT & ELEGANT) */}
+          <TabsContent value="region" className="space-y-6">
             {regionGroupedProvinces.map((group) => (
               <div
                 key={group.id}
@@ -1193,12 +1182,13 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 </div>
               </div>
             ))}
-          </div>
-        )}
+          </TabsContent>
 
-        {/* 2. TABLE VIEW */}
-        {viewMode === "table" && (
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs">
+          {/* 2. TABLE VIEW */}
+          <TabsContent
+            value="table"
+            className="rounded-2xl border border-border bg-card overflow-hidden shadow-xs"
+          >
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/40">
@@ -1269,12 +1259,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 ))}
               </TableBody>
             </Table>
-          </div>
-        )}
+          </TabsContent>
 
-        {/* 3. FIHRIST (A-Z BLOCK) VIEW */}
-        {viewMode === "fihrist" && (
-          <div className="space-y-6">
+          {/* 3. FIHRIST (A-Z BLOCK) VIEW */}
+          <TabsContent value="fihrist" className="space-y-6">
             {Object.entries(fihristGroups).map(([letter, groupList]) => (
               <div key={letter} className="p-4 rounded-2xl border border-border bg-card space-y-3">
                 <div className="flex items-center gap-2 border-b border-border pb-2">
@@ -1306,8 +1294,8 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 </div>
               </div>
             ))}
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </section>
     </div>
   );

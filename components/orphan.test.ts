@@ -220,8 +220,18 @@ const verdictsOf = (files: readonly string[], verdict: Verdict): string[] =>
  * The other three — `callout`, `empty-state` and `map-legend` — were deleted, with their
  * specimens, their registry entries and their two `patterns-contract.test.ts` blocks. Each was
  * a component the design system had argued about at length and no page had ever rendered.
+ *
+ * ## `tabs.tsx` left this list — T-031d Task 15
+ *
+ * The decision recorded above ("KEEP IT") is now acted on. All four call sites this docblock
+ * named — `v2-auth-dialog.tsx`, `v2-member-hub.tsx`, `v2-turkey-map-explorer.tsx` and
+ * `v2-world-map-explorer.tsx` — render `<Tabs`/`<TabsList`/`<TabsTrigger`/`<TabsContent` now, all
+ * four already inside `PRODUCT_ROOTS`'s closure, so `tabs.tsx` classifies as `product` and the
+ * list below is empty. `components/v2/tablist-adoption.test.ts` is what keeps a hand-rolled
+ * tablist from coming back; this list empty is what would catch the primitive itself being
+ * orphaned again.
  */
-const KNOWN_SHOWCASE_ONLY = ["components/ui/tabs.tsx"];
+const KNOWN_SHOWCASE_ONLY: string[] = [];
 
 /**
  * REACHED FROM NOTHING AT ALL — not the product, not even the showcase. **EMPTY, AND THE EMPTY
