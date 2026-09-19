@@ -1,34 +1,11 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripCssComments } from "@/lib/test-support/strip-comments";
+import { blockOf } from "@/lib/test-support/css-tokens";
 
-/**
- * Comments are stripped before parsing, the same precaution
- * `components/anchor-offset-token.test.ts` takes. Without it a prose mention of a selector
- * inside a comment is found first and the parser returns the wrong block — which is exactly
- * what happened when the `--success` comment below was written to say "re-exported in
- * `@theme inline` below".
- */
-const CSS = stripCssComments(
-  readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
-);
-
+const CSS = readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8");
 /** Returns the body of the first top-level block whose selector starts with `name`. */
-function section(name: string): string {
-  const start = CSS.indexOf(name);
-  if (start === -1) throw new Error(`${name} block not found`);
-  const open = CSS.indexOf("{", start);
-  let depth = 0;
-  for (let i = open; i < CSS.length; i += 1) {
-    if (CSS[i] === "{") depth += 1;
-    if (CSS[i] === "}") {
-      depth -= 1;
-      if (depth === 0) return CSS.slice(open, i);
-    }
-  }
-  throw new Error(`${name} block never closed`);
-}
+const section = (name: string): string => blockOf(CSS, name);
 
 const SEMANTIC = ["success", "warning", "info", "chip"] as const;
 
