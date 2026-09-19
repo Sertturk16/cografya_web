@@ -130,25 +130,3 @@
   font-weight: 700;
   color: var(--color-ink);
 }
-
-/* ---- Attribution / disclaimer (§5.8) ----------------------------------------- */
-
-.sources {
-  max-width: 70ch;
-}
-
-.sources p {
-  color: var(--color-slate);
-}
-
-.regulationReference {
-  color: var(--color-slate);
-}
-
-.disclaimer {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-left: 3px solid var(--color-accent);
-  background: var(--color-surface);
-  color: var(--color-ink);
-}

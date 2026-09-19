@@ -9,12 +9,12 @@ import { Card } from "@/components/ui/card";
  * redefine per theme, which is what they are for.
  *
  * The stylesheet is left in place for its three remaining consumers (the list, the magnitude
- * badge, the province section) — they have the same latent problem and it is T-035/T-033's to
+ * badge, the province section) — they have the same latent problem and it is T-033 task 6's to
  * fix, not this component's to fix on their behalf. It used to have five; T-036 deleted the
  * map and the filter island, and the rules that only they used went with them. The three
- * classes this block itself abandoned (`.sources`, `.regulationReference`, `.disclaimer`) are
- * still in the file: they predate T-036 and removing them is this note's own debt to settle,
- * not a side effect of deleting someone else's component.
+ * classes this block itself abandoned (`.sources`, `.regulationReference`, `.disclaimer`) have
+ * now gone too: T-033 task 6 deleted them as the debt this note recorded, ahead of converting
+ * the rest of the file.
  */
 
 interface EarthquakeAttributionProps {

@@ -50,8 +50,15 @@ const EXPECTED_MODULE_COUNT = 4;
  * header search a reader actually meets is the v2 command dialog, which was already Tailwind.
  * T-054 owns what to do with the unrendered branch; this task converted it rather than deleting
  * it, because deleting it changes the `variant` contract.
+ *
+ * 57 once `earthquake.module.css` lost the three classes with no call site — `.sources`,
+ * `.regulationReference` and `.disclaimer`, the rules `earthquake-attribution.tsx` abandoned
+ * when it moved to bridge tokens and recorded in its own docblock as a debt left unpaid. They
+ * took FIVE reads with them, not three: `.sources p` and `.regulationReference` each read
+ * `--color-slate`, and `.disclaimer` alone read three (`--color-accent`, `--color-surface`,
+ * `--color-ink`). The IMPORTER-SCOPED, test-excluding loop printed exactly those three names.
  */
-const TOTAL_RAW_READS = 62;
+const TOTAL_RAW_READS = 57;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {
