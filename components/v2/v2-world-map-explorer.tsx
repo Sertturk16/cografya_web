@@ -722,8 +722,21 @@ export function V2WorldMapExplorer({
                   }
 
                   if (isHovered || isSelected) {
+                    // --map-graticule sits INSIDE the continent fills' own contrast range
+                    // against --map-ocean (3.35-13.15 light, 3.74-14.65 dark; graticule is
+                    // 4.03/4.49) and its hue (~208°) sits 6° from Avrupa/Kuzey Amerika's blue —
+                    // it read as a de-emphasised, switched-off country rather than a picked-out
+                    // one (T-031d Task 10 fix round 1). --primary-strong clears every continent
+                    // but Antarktika in dark (9.33 vs the 3.74-14.65 range) and its warm hue
+                    // (~16°) is not a Okabe-Ito continent hue, so dark now uses it. It is NOT
+                    // used in light: --primary-strong resolves to the dark "ink on paper" value
+                    // there (#7e3a1e, calibrated as TEXT on a light surface), which measures only
+                    // 2.08:1 against the light ocean -- worse than --map-graticule's 4.03:1, not
+                    // better. Every other checked UI-state "-strong" token shares that same
+                    // light-mode shape (dark-toned by design), so light keeps --map-graticule
+                    // pending a dedicated always-bright token; see the Task 10 fix-round-1 report.
                     fillClass =
-                      "stroke-[var(--map-graticule)] stroke-[1.8] fill-[var(--map-graticule)]/90 opacity-100";
+                      "stroke-[var(--map-graticule)] dark:stroke-[var(--primary-strong)] stroke-[1.8] fill-[var(--map-graticule)]/90 dark:fill-[var(--primary-strong)]/90 opacity-100";
                   }
 
                   const cItem = countryMap.get(shape.iso);
