@@ -120,17 +120,13 @@ const census = Object.fromEntries(
  * whether it fits inside 288px of content box at a 320px viewport.
  */
 const EXPECTED: Record<string, string[]> = {
-  "app/[locale]/(site)/kitaplar/[slug]/book-detail.module.css": [
-    "grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr))",
-    "width: 1px",
-  ],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
 };
 
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(2);
+    expect(stylesheets.length).toBe(1);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -193,10 +189,23 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * cleanest kind of step down — nothing moved out of the census into JSX, it simply stopped
    * existing. The two that survive are the question index's `minmax(min(88px, 100%), 1fr)` cell
    * floor and the visually-hidden `width: 1px`, and both are live on that page.
+   *
+   * 2 across ONE once the same task converted the file and deleted it. Neither of those two
+   * evaporated into the sweep: the cell floor is
+   * `grid-cols-[repeat(auto-fit,minmax(min(88px,100%),1fr))]` inside the page's own hoisted
+   * `QUESTION_GRID` constant and `components/book/book-detail-floors.test.ts` pins it
+   * bidirectionally — red when the floor goes, red when that test's fixture drifts from the real
+   * constant, red when nothing renders `QUESTION_GRID` any more, and red when the declaration is
+   * de-hoisted back onto the JSX where the extractor goes blind. The `width: 1px` became
+   * Tailwind's own `sr-only`, and the same file pins that the tile still carries it.
+   *
+   * That pin had to be written OUTSIDE the directory it is about: the page lives under `app/`,
+   * which `vitest.config.ts` does not include, so a test beside it would never have run. Marine's,
+   * air's and climate's five remain the only ones this programme left to the sweep alone.
    */
-  it("counts 4 declarations in total", () => {
+  it("counts 2 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(4);
+    expect(total).toBe(2);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

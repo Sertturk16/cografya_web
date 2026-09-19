@@ -150,9 +150,11 @@ describe("CSS Modules", () => {
    * lists and each would answer for the other — a dead sheet certified by a live namesake, which
    * is a hair's breadth from the `map.module.css` / `locator-map.module.css` accident this file's
    * docblock is mostly about. Measured: all 4 basenames are distinct today
-   * (`book-detail`, `book-video`, `earthquake`, `locator-map`) — `marine`, `air-pollution`,
-   * `climate` and `site-search` left with T-033 tasks 2, 3, 4 and 5. Asserted rather than resolved
-   * to full paths because a
+   * (`locator-map` is the only one left) — `marine`, `air-pollution`, `climate`, `site-search`,
+   * `earthquake`, `book-video` and `book-detail` left with T-033 tasks 2 through 8. With one
+   * stylesheet the rule is trivially satisfied and is kept anyway: it costs nothing and it is the
+   * assertion that would have caught the collision the day a second one arrived. Asserted rather
+   * than resolved to full paths because a
    * `*.module.css` specifier is not resolvable by `resolveSpecifier` (its extension list is
    * TS/JS only), so the honest fix is to keep the cheap key and fail loudly the day it stops
    * being unique.
@@ -182,10 +184,13 @@ describe("CSS Modules", () => {
     // The floor steps down with T-033, which is retiring these stylesheets one task at a time:
     // 8 when this was written, 4 once tasks 2-5 had taken `marine`, `air-pollution`, `climate`
     // and `site-search`, 3 once task 6 took `earthquake`, 2 once task 7 took `book-video` —
-    // the one with five importers, all of them parsed and all of them now Tailwind. It is an
-    // anti-vacuity floor on the PARSER, not a pin on the population — the "are all imported by
-    // something a reader can reach" case above is what holds that.
-    expect(importersByStylesheet.size, "parsed *.module.css import specifiers").toBeGreaterThan(1);
+    // the one with five importers, all of them parsed and all of them now Tailwind, and 1 once
+    // task 8 took `book-detail` — the last module outside `components/`. It is an anti-vacuity
+    // floor on the PARSER, not a pin on the population — the "are all imported by something a
+    // reader can reach" case above is what holds that. Task 9 takes the last one and this file
+    // loses its subject; the plan rules there on whether it is deleted or reduced to a
+    // count-is-zero assertion, and it must not be left passing vacuously.
+    expect(importersByStylesheet.size, "parsed *.module.css import specifiers").toBeGreaterThan(0);
     expect(reachable.size, "files reachable from a route").toBeGreaterThan(100);
   });
 

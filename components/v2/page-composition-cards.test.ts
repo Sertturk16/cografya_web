@@ -755,8 +755,23 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * is outside {@link CARD_ROUNDING} for the same reason the two notes above give for the same
  * spelling — it is the deleted stylesheet's own `var(--radius)`, not a card radius.
  * `deneme-video.tsx`'s `THUMB_BOX` is the same `rounded-lg`. The `ternary` figure does not move.
+ *
+ * T-033 task 8: **181 -> 193**, `member` 27 -> 14. The last module outside `components/`.
+ * `book-detail.module.css` had 13 `className={styles.x}` sites, all in one consumer
+ * (`app/[locale]/(site)/kitaplar/[slug]/page.tsx`), and every one left the member bucket. Twelve
+ * became bare identifiers; the thirteenth was the module's own `.srOnly` block, which is
+ * Tailwind's `sr-only` now — a string literal, so READABLE, so it left this population
+ * altogether. 13 - 1 = 12, which is the gap. The `indexClassName={INDEX}` site is a different
+ * prop and was never in this census in either spelling.
+ *
+ * NO NEW HAND-DRAWN CARD, measured the same way as the three notes above. Two constants are
+ * surface-ish and neither is card-shaped: `JUMP_ITEM` and `QUESTION_LINK` are both
+ * `rounded-lg border border-border bg-card`, and `rounded-lg` is outside {@link CARD_ROUNDING}
+ * for the reason those notes already give for the same spelling — it is the deleted stylesheet's
+ * own `var(--radius)` at 10px, not a card radius. A 44×44 fragment tile is a control, not a
+ * panel. The `ternary` and `call` figures do not move; this conversion introduced neither.
  */
-export const COMPUTED_CARD_CLASSNAMES = 181;
+export const COMPUTED_CARD_CLASSNAMES = 193;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -767,11 +782,12 @@ export const COMPUTED_CARD_CLASSNAMES = 181;
  * reappear, in T-033 task 7, and the pin worked exactly as designed: the element is
  * `video-progress-controls.tsx`'s watched toggle, whose checked fill is additive over a base the
  * control keeps in both states. See {@link COMPUTED_CARD_CLASSNAMES}'s note for why that is a
- * composition rather than a ternary, and for the whole 154 -> 181 / 57 -> 27 arithmetic. */
+ * composition rather than a ternary, and for the whole 154 -> 181 / 57 -> 27 arithmetic, and the
+ * 181 -> 193 / 27 -> 14 one that task 8 added on top of it. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   ["call", 1],
-  ["identifier", 181],
-  ["member", 27],
+  ["identifier", 193],
+  ["member", 14],
   ["ternary", 2],
 ];
 

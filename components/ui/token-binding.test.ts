@@ -234,6 +234,15 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * the stylesheet painted `#fff` outright — it is `bg-card` now, because unlike the two chart
    * plates above it carries no data token that needs a fixed ground.
    *
+   * `app/[locale]` has been in this list from the start, which is why T-033 task 8 —
+   * `book-detail.module.css`, whose one consumer is `app/[locale]/(site)/kitaplar/[slug]/page.tsx`
+   * — added no entry here. The rule still held: the task's job was to check that the directory it
+   * converted was already scanned, and it was, so the fourteen converted class constants were
+   * under the escape rule the moment they were written rather than one commit later. That page
+   * carries no escape, no `dark:`, no raw palette class, no brand hex and no bare `white`/`black`
+   * utility; where the stylesheet painted `#fff` on 210 tiles it is `bg-card` now, for the same
+   * reason the timeline card is — there is no data token on it that needs a fixed ground.
+   *
    * The tempting move is to widen this to every feature directory at once. Do NOT. The six
    * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a
    * blanket widening reds immediately and the only way back to green is an exemption list —

@@ -213,7 +213,11 @@ describe("the delegated listener stays narrow", () => {
     expect(FLAT_PAGE).toMatch(/<article[^>]*\bdata-deneme=\{video\.orderNo\}/);
     expect(FLAT_PAGE).not.toMatch(/<ul[^>]*\bdata-deneme=/);
     // And the id that landing resolves to is inside it.
-    expect(FLAT_PAGE).toMatch(/<article[^>]*>\s*<div className=\{styles\.denemeHead\}>\s*<h3 id=/);
+    // `DENEME_HEAD`, not `styles.denemeHead`: T-033 task 8 retired `book-detail.module.css` and
+    // hoisted its fourteen rules into class constants on the page. The SHAPE this line asserts —
+    // article, then the head div, then the `<h3>` carrying the id — is unchanged; only the
+    // expression naming the class is.
+    expect(FLAT_PAGE).toMatch(/<article[^>]*>\s*<div className=\{DENEME_HEAD\}>\s*<h3 id=/);
   });
 
   it("names each of the thirty index rows", () => {
@@ -477,7 +481,7 @@ describe("the jump strip emits no dead fragment", () => {
     // it existed to guard against. Every number this strip can name now has a target by
     // construction, so there is no second branch to get backwards.
     expect(FLAT_PAGE).toMatch(
-      /\{jumpNumbers\.map\(\(no\) => \(\s*<li key=\{no\}>\s*<a className=\{styles\.jumpItem\} href=\{`#\$\{videoFragment\(no\)\}`\}/,
+      /\{jumpNumbers\.map\(\(no\) => \(\s*<li key=\{no\}>\s*<a className=\{JUMP_ITEM\} href=\{`#\$\{videoFragment\(no\)\}`\}/,
     );
     expect(FLAT_PAGE).not.toContain("jumpItemEmpty");
     expect(FLAT_PAGE).not.toContain("coveredDenemeNumbers");

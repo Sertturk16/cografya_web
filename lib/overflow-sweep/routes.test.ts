@@ -26,12 +26,13 @@ import {
  *
  *  2. A NEW CSS MODULE ARRIVES WITH NO ROUTE. Two of the three defects the sweep exists for
  *     were CSS-Module declarations (`climate.module.css`'s `min-width: 300px`,
- *     `marine-attribution`'s licence notice). The four surviving modules are therefore the
+ *     `marine-attribution`'s licence notice). The ONE surviving module is therefore the
  *     part of the tree that must stay covered, and coverage is only meaningful if adding a
- *     fifth forces someone to say which page renders it. Four, not ten, since T-042 deleted
+ *     second forces someone to say which page renders it. One, not ten, since T-042 deleted
  *     `tools.module.css` (514 lines, three importers, none reachable) and `home.module.css`
  *     (one importer, itself unreachable), and T-033 deleted `marine.module.css`,
- *     `air-pollution.module.css`, `climate.module.css` and `site-search.module.css`. `home.module.css` was CLAIMED by the `home` shape below, so
+ *     `air-pollution.module.css`, `climate.module.css`, `site-search.module.css`,
+ *     `earthquake.module.css`, `book-video.module.css` and `book-detail.module.css`. `home.module.css` was CLAIMED by the `home` shape below, so
  *     this map asserted coverage of a file that route never loaded — which is why the claim
  *     went with the file rather than being quietly left to pass.
  *
@@ -40,7 +41,9 @@ import {
  *     claimed by `home` and `province`, which genuinely imported it, but both marine blocks
  *     are gated on `MARINE_ENABLED`, false in production today, so no run ever measured those
  *     rules. T-033 converted its four consumers to Tailwind and deleted it, which is why the
- *     count below no longer names it. The map is honest about reachability and silent about rendering;
+ *     count below no longer names it. The `book` shape's claim went the same way in task 8: its
+ *     geometry did not leave the route, it moved into hoisted class constants in the page, where
+ *     `components/book/book-detail-floors.test.ts` reads it and this sweep still measures it. The map is honest about reachability and silent about rendering;
  *     a flag-gated module is covered on paper and unmeasured in fact.
  *
  * Neither assertion needs a browser, which is the point: the sweep's aim is checkable even on

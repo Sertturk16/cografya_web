@@ -20,7 +20,7 @@ export const SURVIVING_MODULES: readonly string[] = [
  * Steps down as T-033 converts each module. The count is the POSITIVE CONTROL: without it, a
  * walk that found nothing would satisfy the raw-token assertion perfectly.
  */
-const EXPECTED_MODULE_COUNT = 2;
+const EXPECTED_MODULE_COUNT = 1;
 
 /**
  * Raw Terra tokens are frozen at their light values — `.dark` redefines not one of the 13
@@ -95,13 +95,40 @@ const EXPECTED_MODULE_COUNT = 2;
  * `/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri` in which not one of the eleven hashed
  * class names appears.
  *
+ * 7 once the file itself went, taking the remaining 14 — the LAST module outside
+ * `components/`, and the only one of the eight with no unit cover at all. Its readings were the
+ * "light box on a night page" shape at its largest count rather than its largest size: 30 jump
+ * tiles and 180 question tiles painted a literal `#fff`, measuring **18.65:1** against dark
+ * `--background`, each ringed by a `--color-border` hairline at **12.85:1**, with
+ * `--color-primary-dark` labels frozen ON that white at 8.36:1 — correct-looking numbers on a
+ * surface the page never paints. Off the tiles the ink was frozen the other way:
+ * `--color-primary-dark` on the two headings at **2.23:1** and `--color-slate` on the fact strip
+ * at **2.36:1**, both against the night `--background` they actually sit on. The hover was the
+ * same defect again — a `--color-surface` tile at **15.50:1**.
+ *
+ * Converted, measured against the same named backdrops: `text-primary-strong` 7.89 light /
+ * **8.99** dark on `--background` and 8.36 / **8.20** on its own `bg-card` tile;
+ * `text-muted-foreground` 7.48 / **8.53** on `--background`; the hovered tile's label 6.95 /
+ * **7.06** on `bg-muted` and its `border-primary` boundary 4.26 / **4.29** on that fill; the
+ * focus ring 6.13 / **5.44** on the tile. Every text reading clears 4.5:1 in both themes and
+ * every non-text indicator clears 3:1.
+ *
+ * `--color-taupe` on the fact strip's separator dot is the one colour that deliberately MOVED:
+ * 3.64:1 on light `--background`, sub-AA, and the second dot on that same line — `DenemeMeta`'s,
+ * converted in task 7 — was already `text-muted-foreground`. The two agree now.
+ *
+ * Nothing under `app/` is executed by vitest (`vitest.config.ts` includes `lib/`, `components/`
+ * and `tools/`), so the fourteen rules were hoisted into named class constants and pinned by
+ * `components/book/book-detail-floors.test.ts`, which reads the page's source from a directory
+ * vitest does run. Mutation-checked in five directions.
+ *
  * What did NOT move is `magnitude-badge.tsx`'s `--eq-mag-1`…`-5` ramp. It is a data token set
  * encoding a public-safety scale, so it is absent from the bridge mapping by design — and it is
  * measured rather than assumed: **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** on dark `--card`, four of
  * five under 3:1. That is T-031d's to re-derive with the other dark data surfaces; the reading is
  * recorded in the badge's own docblock rather than left silent.
  */
-const TOTAL_RAW_READS = 21;
+const TOTAL_RAW_READS = 7;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {
