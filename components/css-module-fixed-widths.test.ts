@@ -121,9 +121,6 @@ const census = Object.fromEntries(
  */
 const EXPECTED: Record<string, string[]> = {
   "app/[locale]/(site)/kitaplar/[slug]/book-detail.module.css": [
-    "width: 180px",
-    "flex: 1 1 320px",
-    "grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr))",
     "grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr))",
     "width: 1px",
   ],
@@ -189,10 +186,17 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * red when nothing renders `TABLE` any more. `lib/test-support/converted-floor.ts` carries the
    * rule. Marine's, air's and climate's five are still covered by the sweep alone; this census
    * records that rather than implying otherwise.
+   *
+   * 4 across TWO once T-033 task 8 deleted `book-detail.module.css`'s eleven classes with no
+   * call site: the cover box's `width: 180px`, the intro body's `flex: 1 1 320px` and the künye
+   * sheet's `minmax(min(150px, 100%), 1fr)` track. All three were DEAD rules, so this is the
+   * cleanest kind of step down — nothing moved out of the census into JSX, it simply stopped
+   * existing. The two that survive are the question index's `minmax(min(88px, 100%), 1fr)` cell
+   * floor and the visually-hidden `width: 1px`, and both are live on that page.
    */
-  it("counts 7 declarations in total", () => {
+  it("counts 4 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(7);
+    expect(total).toBe(4);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

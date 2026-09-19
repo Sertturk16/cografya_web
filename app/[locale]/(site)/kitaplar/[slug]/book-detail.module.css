@@ -1,156 +1,18 @@
-/* Kitap detay sayfası — künye, kapak ve soru dizini. Terra tokens only (DESIGN.md §2); no
-   hardcoded brand hex. `#fff` is the same card neutral the global layer already uses.
-   Contrast verified against DESIGN §5: ink on white 14.13:1 (AAA), slate on white 7.92:1
-   (AAA), primary-dark on white 7.89:1 (AAA), primary-dark on surface 6.95:1 (AA). */
+/* Kitap detay sayfası — atlama şeridi, tezgâh ve soru dizini. Terra tokens only
+   (DESIGN.md §2); no hardcoded brand hex. `#fff` is the same card neutral the global layer
+   already uses.
 
-/* ── Giriş şeridi: kapak + anlatı ─────────────────────────────────────────────────────── */
+   T-033 task 8 deleted the eleven classes with no call site — the intro strip, the cover box,
+   the künye sheet and the source statement — so the `--color-ink` readings this header used to
+   quote have no subject left in the file. What remains is re-measured against the surface each
+   rule ACTUALLY paints on, which is not the one the retired header named: primary-dark on the
+   `#fff` tile 8.36:1, primary-dark on `--color-bg` (the two headings' real ground) 7.89:1,
+   primary-dark on `--color-surface` (the hovered tile) 6.95:1, slate on `--color-bg` (the fact
+   strip's real ground, NOT white) 7.48:1, taupe on `--color-bg` 3.64:1 — decorative only, which
+   is what `.factSeparator` is. Figures from `lib/theme/contrast.ts`.
 
-/* `center` AND NOT `flex-start`, and the case it fixes is the one with no narrative rather than
-   the one with a long one. `introTr` is nullable by contract and `introEn` is null permanently,
-   so the English page — and any Turkish book whose narrative is not written yet — renders an
-   intro body of two chips and a button: 106.8px beside a 270px cover. Pinned to the start, that
-   left a measured 163.2px-tall empty rectangle under them — 524px wide at 768 and 876px wide at
-   1440, the body's own width at each — which reads as a broken band rather than as breathing
-   room.
-
-   Centring is safe in the other direction because the taller item is the one that gives way: on
-   the Turkish page the body is the taller of the two, so it is the COVER that shifts (8px at
-   1440, 21.5px at 768) and the prose keeps its position. The strip's own height does not change
-   at any viewport, so nothing below it moves and the change costs no layout shift. At 320 and
-   360 the two are on separate flex lines, where `align-items` has nothing to centre against and
-   the measurement confirms no movement at all. */
-.intro {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 24px;
-  margin-top: 24px;
-}
-
-/* FIXED BOX, CONTAINED IMAGE. The contract publishes a cover PATH and no width/height pair
-   (web SPEC §4.5/A3), so the box's size is ours and the ratio is the file's: `contain`
-   letterboxes any proportion inside a rectangle that is reserved before the image loads,
-   which is the whole CLS guarantee `next/image`'s explicit dimensions would otherwise give.
-   `flex: none` keeps it from shrinking beside the prose. */
-.coverBox {
-  position: relative;
-  flex: none;
-  width: 180px;
-  height: 270px;
-  /* CENTRES ONLY WHEN THE STRIP HAS WRAPPED, and it needs no breakpoint to know the difference.
-     The strip wraps when the two flex bases stop fitting side by side: 180px cover + 24px gap +
-     `.introBody`'s 320px basis = 524px of container, which the page's 20px gutters put at a
-     564px viewport. MEASURED BY SWEEP, not derived: 562 wraps, 564 does not. So the wrapped case
-     is 320 and 360 only — 768 is already a single line, and this comment is NOT about 64rem,
-     which is the one breakpoint `DESIGN.md` §4 pins and which has nothing to do with this rule.
-
-     Wrapped, the cover sits alone on its line — 180px inside a 280px column at 320 and a 320px
-     column at 360, left-aligned, with 100–140px of ragged space beside it while every other
-     element uses the full column. Auto margins absorb a flex line's leftover space, so the cover
-     centres there.
-
-     From 564 up it is inert, and that is a property of the box rather than a hope: `.introBody`
-     is `flex: 1 1 320px`, so flex-grow consumes the free space during line sizing and leaves the
-     auto margins nothing to absorb. Measured both ways — cover x moves 20 → 70 at 320 and
-     20 → 90 at 360, and stays at 20 / 180 at 768 / 1440. */
-  margin-inline: auto;
-}
-
-.coverImage {
-  object-fit: contain;
-}
-
-.introBody {
-  flex: 1 1 320px;
-  min-width: 0;
-}
-
-.prose {
-  max-width: 70ch;
-  line-height: 1.7;
-  color: var(--color-ink);
-}
-
-/* ── Künye ────────────────────────────────────────────────────────────────────────────── */
-
-.factSheet {
-  margin: 0;
-  display: grid;
-  /* THE SAME DECLARATION THE PROVINCE AND COUNTRY FACT SHEETS CARRY, character for character
-     (`province-detail.module.css`, `country-detail.module.css`). This page kept `auto-fill` at a
-     180px floor because PR #64's design-tour round moved the other two and missed this one, so
-     what looks like a design change here is a missed propagation being closed.
-
-     What the 180px floor produced, measured on live data: six künye cards landed [5, 1] at BOTH
-     1024 and 1440, leaving the ISBN card alone on its own row with ~875px of empty parchment
-     beside it — the shape İRİS's tour recorded as A5 on three pages, of which this was the last
-     one still open. At 360px the same floor stacked all six in one column, 584px tall.
-
-     With the sibling rule: 1440 and 1024 both resolve to a single [6] row, and 360 drops to
-     [2, 2, 2] and 350px. The cost is real and is not hidden: 768 moves from a balanced [3, 3] to
-     [4, 2] and the block grows 195px → 233px. The trade was recorded as an open assumption in the
-     task's `fix-plan.md` and cleared at the Faz-1 plan gate — an Atlas plan approval, NOT an owner
-     ruling. What actually carries the decision is the reason: the province page at 768 is ALREADY
-     [4, 4] on a 171.5px track, so this page lands on its sibling's measurement instead of keeping
-     a private one.
-
-     `min()` rather than a bare 150px, unchanged in intent from the rule it replaces: an
-     `auto-fit` floor wider than the container keeps its width and spills the row past the
-     viewport, which is the horizontal overflow the 320px viewport exists to catch. */
-  grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
-  gap: 14px;
-}
-
-.fact {
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 14px 16px;
-}
-
-.fact dt {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-slate);
-  margin-bottom: 4px;
-}
-
-/* `overflow-wrap: break-word` TRAVELS WITH THE TRACK RULE ABOVE. The two landed together in
-   `f32e5af` on the province and country sheets and must not be separated, because narrowing the
-   floor to 150px is what makes the value box too small for a seeded token: at 360 the sheet goes
-   from one column to [2, 2, 2] and a value's content width goes 286px → 119px. Künye values are
-   api free text — a publisher or an author surname of 13 characters ("Karahasanoğlu") measures
-   161px in this face and size.
-
-   Measured, at 360 with the rule removed: the value overflows its own card by 42px and the
-   document's `scrollWidth` reads 365 against a 360 client width — horizontal scroll at one of
-   the two viewports `DESIGN.md` §4 makes mandatory. With the rule, 0 and 360/360.
-
-   320 is the LOOSER of the two viewports, not the tighter one, because its single column leaves a
-   246px content box. Two thresholds there, and they are different numbers: at this face and size
-   (~12.4px/char) a token needs ~20 characters to leave its own card, and ~23 to reach the document
-   edge. Both are far past the 13 that already spill at 360, which is why 360 is the trigger.
-
-   `break-word` and NOT `anywhere`, for the reason the province sheet's own comment states:
-   `anywhere` also shrinks the box's min-content contribution, which is an input to the grid's
-   track sizing. This rule is meant to change where a word breaks, not how the sheet is laid out.
-   `dt` needs nothing — those are our own short labels, not seeded text. */
-.fact dd {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
-  font-family: var(--font-heading);
-  color: var(--color-ink);
-  line-height: 1.2;
-  overflow-wrap: break-word;
-}
-
-/* An ISBN is an identifier rather than a measurement, so it is set smaller and allowed to
-   break: 13 digits at the value size above overflow a 180px card at 320px. */
-.fact dd.factIdentifier {
-  font-size: 1rem;
-  overflow-wrap: anywhere;
-}
+   Every one of them is a LIGHT reading and every token above is frozen at its light value,
+   which is why this file is retired in the commit after this one. */
 
 /* ── Video çözümler: atlama şeridi + tezgâh (sahne + dizin) ──────────────────────────── */
 
@@ -423,76 +285,6 @@ a.jumpItem:hover {
 .questionLink:hover {
   border-color: var(--color-primary);
   background: var(--color-surface);
-}
-/* ── Kaynak beyanı ────────────────────────────────────────────────────────────────────── */
-
-/* Deliberately the SAME geometry, size and color as the province and country pages' Kaynaklar
-   line (`province-detail.module.css`): the reader meets one source-statement form across every
-   detail page rather than a per-hub variant, and slate on white is 7.92:1 (AAA) — the token
-   `--color-taupe` would be sub-AA here and is barred for body text (`DESIGN.md` §5). */
-.sources {
-  margin-top: 40px;
-  font-size: 0.85rem;
-  color: var(--color-slate);
-  max-width: 70ch;
-}
-
-.sourcesLabel {
-  font-weight: 700;
-  color: var(--color-ink);
-}
-
-/* THE YOUTUBE CREDIT'S LINK — mark and sentence as ONE visual unit, and one link.
-   `inline-flex` so the 28px mark and the 0.85rem sentence share a centre line inside a
-   paragraph that keeps wrapping around them; `gap` rather than a margin so the spacing
-   belongs to the pair and not to either half. No colour is declared: the global `a` rule's
-   `--color-primary-dark` (7.89:1 on bg, AAA) applies, and the mark itself is printed in the
-   provider's own colour, which is the one place `DESIGN.md` §2's token rule does not reach —
-   it governs surfaces WE draw, and a brand mark is not ours to re-tint. No raw hex is added
-   here either way. */
-.sourceLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  /* THE UNIT'S OWN ALIGNMENT AGAINST THE PARAGRAPH, which `align-items` does NOT set: that
-     property positions the mark and the sentence relative to each other INSIDE the box, and
-     says nothing about where the box sits on the line it shares with the `Kaynaklar:` label,
-     the separator and the partner credit. A flex container exports the baseline of its first
-     baseline-aligned item; with `align-items: center` no item is baseline-aligned, so the UA
-     synthesizes one from the border box — the 28px box is hung by its BOTTOM EDGE on the
-     paragraph's baseline and the whole credit floats 10px above the text beside it (measured
-     on the pre-fix frames: link baseline y177, label and partner baseline y187 at 1280).
-     `middle` centres the box on the parent's baseline + half its x-height instead, which is
-     the alignment the two halves of this rule were always meant to have (→ PR #65 review
-     `CODE65-I1`). */
-  vertical-align: middle;
-  /* Cancelled on the link and re-applied to the sentence below, for a mechanical reason: an
-     underline on the anchor is drawn across its atomic inline children too, so the line would
-     run under the logo — a decoration through a brand mark, which is exactly what "do not
-     modify the file in any way" is about. The link therefore stays underlined where a link
-     should be, and the mark stays clean. */
-  text-decoration: none;
-}
-
-/* The visible sentence — the underline the reader identifies a link by. `span` and not a
-   class, because the notice element may not carry one: `attribution-gate.test.ts` pins it as
-   `<span lang="tr">{row.requiredNoticeTr}</span>` so that the untouchable string cannot be
-   decorated, wrapped or re-typed on its way to the page. The visually-hidden suffix is matched
-   too and takes the underline with it, which costs nothing at 1×1px. */
-.sourceLink span {
-  text-decoration: underline;
-}
-
-/* HEIGHT ONLY, WIDTH FROM THE FILE. The element carries the asset's real 1255×1075, so the
-   browser derives its aspect ratio from those attributes and computes the width itself —
-   28 × (1255/1075) ≈ 32.7px. Pinning a rounded pair instead (35×30) would stretch the mark by
-   ~0.06% and touch the one rule the Branding Guidelines state absolutely. 28px is the BOX; the
-   mark inside the file occupies 53.86% of the canvas height, so what the reader sees is a
-   ≈15.1px mark optically matched to the 13.6px line beside it, with the file's own clear space
-   filling the rest. The box is fixed before the bytes arrive, so it costs no layout shift. */
-.sourceMark {
-  height: 28px;
-  width: auto;
 }
 
 /* Visually hidden, AT-readable. Local to this module because the repo has no global utility

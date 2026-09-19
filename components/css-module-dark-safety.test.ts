@@ -78,13 +78,30 @@ const EXPECTED_MODULE_COUNT = 2;
  * player branch of `deneme-video.tsx` need an authenticated session, so they were measured with
  * one rather than left unmeasured.
  *
+ * 21 once `book-detail.module.css` lost the ELEVEN classes with no call site: the intro strip
+ * (`.intro`, `.coverBox`, `.coverImage`, `.introBody`, `.prose`), the künye sheet (`.factSheet`,
+ * `.fact` and its `dt`/`dd`/`.factIdentifier` rules) and the whole source statement (`.sources`,
+ * `.sourcesLabel`, `.sourceLink`, `.sourceMark`) — 11 of 25 selectors, 44%, and 219 of 511 lines.
+ * ELEVEN and not the ten the plan predicted: `.sourceLink` and `.sourceLink span` were hidden
+ * from the repo-wide loop by a prose mention of `styles.sourceLink` in a docblock in
+ * `components/book/attribution-gate.test.ts`, which the importer-scoped, test-excluding loop does
+ * not read.
+ *
+ * They took SIX reads with them, including all THREE of this file's `--color-ink` reads —
+ * `.prose`, `.fact dd` and `.sourcesLabel` — which were its 1.14:1 readings on dark `--card`.
+ * This module has no vitest cover at all (it lives under `app/`, which `vitest.config.ts` does
+ * not include), so deadness was established three ways instead: the importer-scoped loop, the
+ * absence of any dynamic `styles[…]` access in the one importer, and a rendered-DOM census of
+ * `/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri` in which not one of the eleven hashed
+ * class names appears.
+ *
  * What did NOT move is `magnitude-badge.tsx`'s `--eq-mag-1`…`-5` ramp. It is a data token set
  * encoding a public-safety scale, so it is absent from the bridge mapping by design — and it is
  * measured rather than assumed: **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** on dark `--card`, four of
  * five under 3:1. That is T-031d's to re-derive with the other dark data surfaces; the reading is
  * recorded in the badge's own docblock rather than left silent.
  */
-const TOTAL_RAW_READS = 27;
+const TOTAL_RAW_READS = 21;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {
