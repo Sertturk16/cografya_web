@@ -373,7 +373,7 @@ describe("the disc's ring: the plate boundary is the fill's job, not the ring's"
       ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
       expect(
         ratio(RAMP.light[n], grounds.light.hover),
-        `--eq-mag-${n} on the light hover fill (muted/70 over --map-plate) — the binding case, worst 3.83`,
+        `--eq-mag-${n} on the light hover fill (muted/70 over --map-plate) — the binding COMPOSITE at 3.83; the flat --map-plate is lower still at 3.71 and is the binding ground overall`,
       ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
       expect(
         ratio(RAMP.dark[n], grounds.dark.province),
