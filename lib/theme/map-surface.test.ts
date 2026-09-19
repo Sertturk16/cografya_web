@@ -3,78 +3,22 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { resolveVars, tokensIn } from "@/lib/test-support/css-tokens";
 import { GRAPHICAL_MIN, ratio, TEXT_MIN } from "./contrast";
+import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
 
 /**
- * Every painted map surface, per theme, exactly as `app/globals.css` declares it.
- *
- * Committed here rather than only parsed, for the reason `region-palette.test.ts` gives: this
- * is the set the floors below are ABOUT, so a stylesheet edit should make this file disagree
- * loudly rather than quietly re-measure whatever the stylesheet now says. The
- * `matches app/globals.css` test compares the two in both directions.
- *
- * WHAT IS NOT HERE. There is no `--map-land-line` and no second, deeper sea. Six of the eight
- * surfaces that draw Türkiye already carry their coastline on `--province-stroke`, which the
- * light palette's luminance budget was built around (`globals.css:161`) and which measures
- * 4.38:1 on the dark land and 4.21:1 on the dark sea without being redefined. The two that
- * did not — the play board and the workbench canvas — were also the only two that missed a
- * floor in EITHER theme. They adopt these tokens; their private tones are deleted, not ported.
- *
- * ELEVEN, not ten, as of review round 1: `--map-water` joins the table. It shipped before
- * this file did (`--map-water: var(--map-sea)`, inland water on the Türkiye map) and was
- * always a real surface — the original oversight was leaving it out of `MAP_SURFACES` while
- * the `matches app/globals.css` test filtered `shipped` down to `name in table`, so a real
- * `--map-*` token nobody had written down here could never make that test fail either way.
- * See `NOT_A_SURFACE` and `mapSurfacesIn` below for the prefix-based filter that replaced it
- * and now needs `--map-water` accounted for on purpose. It resolves to the sea in both
- * themes, so its value here is the same as `--map-sea`'s, per theme.
- *
- * TWELVE, THEN BACK TO ELEVEN, as of review round 2: `--map-tectonic` lived here for one
- * round and was removed again. It was meant to cover the earthquake explorer's
- * `fill-[#537b93] dark:fill-[#5a86a0]` sea-basin fill as "a real third surface, neither land
- * nor water", measured with `ratio` against `--map-sea` at 3.59:1 light / 4.14:1 dark — both
- * clearing `GRAPHICAL_MIN`. The review that produced those figures never opened the
- * component: the element is `<text>` (sea-name labels), so its floor is `TEXT_MIN` (4.5:1),
- * not `GRAPHICAL_MIN`; and it carries `opacity-60`, so its RENDERED contrast — the fill
- * blended over `--map-sea` at 60%, not the undiluted fill this table measured — is 2.03:1
- * light / 2.35:1 dark, clearing neither floor. The token documented a surface the app does
- * not have, so it came back out; the actual defect (a label at 60% opacity with no floor of
- * its own) is fixed on the component, in Task 7, not carried by a token here.
- *
- * BINDING NOTE FOR TASK 3: `.dark` must declare `--map-water` explicitly (as
- * `var(--map-sea)`, the same alias `:root` already carries), not leave it to inherit from
- * `:root`. Same decision the plan already records for `--map-graticule` and
- * `--map-unknown-land` (both identical across themes, both still declared in `.dark`): a
- * token missing from a block reads as either "unchanged from light" or "forgotten", and
- * nothing here can tell those apart except declaring it.
+ * `MAP_SURFACES` — the table these tests measure — lives in
+ * `test/fixtures/theme/map-surfaces.ts`, not in this file. It was declared and exported from
+ * THIS file until `region-palette.test.ts` and `continent-palette.test.ts` needed to import it
+ * too: a `.test.ts` import executes the module, so importing this file for its export re-ran
+ * its 21 cases inside every importer (and inside every file that transitively imports one of
+ * THOSE for `REGION_TINTS`/`CONTINENT_TINTS`) — the suite went from 5804 to 6008 tests for a
+ * five-case change. Moving it to a plain module under `lib/theme/` fixed that but tripped a
+ * second guard, `components/ui/raw-palette-count.test.ts`, which reads any non-test `.ts` file
+ * under `lib/` for literal colour values — so it now lives under `test/fixtures/`, outside
+ * every root either guard walks. See `test/fixtures/theme/map-surfaces.ts`'s own docblock for
+ * the full incident (both halves) and the rule it leaves for the next shared table. Every
+ * assertion below is unchanged; only where the table is declared moved.
  */
-export const MAP_SURFACES = {
-  light: {
-    "--map-plate": "#dbe7e8",
-    "--map-sea": "#dbe7e8",
-    "--map-water": "#dbe7e8",
-    "--map-land": "#ffffff",
-    "--map-context-land": "#f1ece3",
-    "--map-context-line": "#8a8078",
-    "--map-water-line": "#002337",
-    "--map-label": "#635a4e",
-    "--map-ocean": "#0d1b2a",
-    "--map-graticule": "#4d7ea8",
-    "--map-unknown-land": "#64748b",
-  },
-  dark: {
-    "--map-plate": "#152228",
-    "--map-sea": "#152228",
-    "--map-water": "#152228",
-    "--map-land": "#201c18",
-    "--map-context-land": "#2d2822",
-    "--map-context-line": "#7d7468",
-    "--map-water-line": "#5d8fb8",
-    "--map-label": "#a89e92",
-    "--map-ocean": "#070e17",
-    "--map-graticule": "#4d7ea8",
-    "--map-unknown-land": "#64748b",
-  },
-} as const;
 
 /**
  * `--map-*` tokens that are declared in `app/globals.css` but are not painted surfaces, so

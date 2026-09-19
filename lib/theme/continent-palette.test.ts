@@ -6,7 +6,11 @@ import { CATEGORICAL_MIN, deltaE00 } from "./delta-e";
 import { simulate, VISIONS, type Vision } from "./cvd";
 import { REGION_TINTS } from "./region-palette.test";
 import { GRAPHICAL_MIN, blendOver, ratio } from "./contrast";
-import { MAP_SURFACES } from "./map-surface.test";
+// From test/fixtures, not `./map-surface.test` and not a plain lib/theme module either — see
+// test/fixtures/theme/map-surfaces.ts's docblock for both incidents this avoids (a test-file
+// import re-registers its suites; a lib/ module gets read as a painted colour by the palette
+// scanner).
+import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
 
 /**
  * The seven `--continent-*` fills exactly as `app/globals.css` defines them.
