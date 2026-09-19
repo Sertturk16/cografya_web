@@ -69,6 +69,8 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
   `lib/theme/contrast.ts` is what produces those figures — use it rather than recalling a
   ratio. `blendOver` matters as much as `contrastRatio`: a tinted chip's real contrast is
   against the BLEND, and measuring against the untinted token hides failures.
+  `contrast.ts` reads oklch as well as hex since PR0, so a `.dark` figure is computed from the
+  authored value rather than read back out of a browser.
 - **Colour in a component comes from a bridge token.** No `bg-[var(--color-x,#hex)]` escape,
   no raw Tailwind palette class, no brand hex, and no hand-written `dark:`. A component that
   needs a `dark:` is bound to the wrong token. `components/ui/token-binding.test.ts` enforces
@@ -257,7 +259,12 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 1. Brand ≠ data. Terra chrome tokens never encode values.
 2. No rainbow / jet ramps. Perceptually uniform only.
 3. Colourblind-safe by construction; reinforce hue with lightness, shape, label or pattern.
-   Simulate deuteranopia / protanopia / tritanopia before shipping a new palette.
+   Simulate deuteranopia / protanopia / tritanopia before shipping a new palette —
+   `lib/theme/cvd.ts` does it, and `lib/theme/region-palette.test.ts` is the worked example.
+   **Measure categorical separation with `deltaE00` (`lib/theme/delta-e.ts`), never with a
+   contrast ratio.** A ratio is a luminance relationship: 20 of the 21 pairs in the shipped
+   Okabe-Ito region set sit below 3:1 and the set is fine. Contrast ratio keeps text, focus
+   rings, and adjacent steps of an ordered ramp.
 4. Scale type matches data type: sequential → monotonic-lightness ramp (`--map-1..6`,
    pale green → brown, hypsometric); diverging → two hues with neutral centre; categorical →
    qualitative set ≤ 8 (Okabe-Ito).
