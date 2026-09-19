@@ -323,3 +323,80 @@ describe("every var() fallback in the product tree still equals its token", () =
     });
   });
 });
+
+/**
+ * A CLASS-SHAPED STRING IN A COMMENT IS STILL A CLASS, and an invalid one breaks every page.
+ *
+ * Tailwind v4 scans source TEXT for candidate class names. It does not parse the file, so it
+ * cannot tell a rendered `className` from prose inside a `/* … *\/` block — which means a
+ * comment that documents a family of tokens by wrapping the family name in a background
+ * utility's bracket produces a real rule whose declaration reads that family name verbatim,
+ * wildcard and all.
+ *
+ * A wildcard is not part of a custom property name, so PostCSS fails on the delimiter,
+ * and the failure is not local: `app/globals.css` is imported by `app/[locale]/layout.tsx`, so
+ * the whole stylesheet fails to compile and EVERY route returns 500.
+ *
+ * This is written down because it actually happened, in T-031c Task 6, in a doc comment in
+ * `raw-palette-count.test.ts` describing the legend fix — and the full suite stayed green
+ * through it. Typecheck, lint and 5456 tests all passed while no page would load, because
+ * nothing in the suite compiles the stylesheet. The only signal was opening a route.
+ *
+ * The guard is deliberately narrow: a `var()` inside a bracketed arbitrary value whose token
+ * name contains `*`. A `*` elsewhere in a bracket is legitimate (`w-[calc(100%*2)]`), and a
+ * wildcard in prose is fine as long as it is not wrapped in the class shape — write
+ * `--sst-band-*` on its own, or describe the utility without spelling it.
+ */
+describe("no source comment can compile into an invalid Tailwind utility", () => {
+  const ROOTS = ["../../components", "../../app", "../../lib"] as const;
+
+  function walkAll(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === "node_modules" ? [] : walkAll(full);
+      return entry.name.endsWith(".ts") || entry.name.endsWith(".tsx") ? [full] : [];
+    });
+  }
+
+  /** Read RAW — not comment-stripped. The comments are the whole point of this guard. */
+  const files = ROOTS.flatMap((rel) => walkAll(fileURLToPath(new URL(rel, import.meta.url))));
+  const WILDCARD_TOKEN_UTILITY = /-\[[^\]]*var\(\s*--[a-z0-9-]*\*/g;
+
+  it("walked the tree — positive control", () => {
+    expect(files.length).toBeGreaterThan(100);
+  });
+
+  it("spells no bracketed utility around a wildcard token name", () => {
+    const offenders: string[] = [];
+    for (const path of files) {
+      for (const m of readFileSync(path, "utf8").matchAll(WILDCARD_TOKEN_UTILITY)) {
+        offenders.push(`${path}: ${m[0]}`);
+      }
+    }
+    expect(
+      offenders,
+      `these compile to a CSS declaration with a '*' in the property name, which fails the ` +
+        `whole stylesheet and 500s every route:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("recognises the shape that actually broke the build — positive control", () => {
+    // The offending string is ASSEMBLED rather than written out, because this file is itself
+    // scanned by Tailwind and by the assertion above: spelling the defect here would BE the
+    // defect. That is not a workaround, it is the guard proving its own premise — the first
+    // run of this test failed on its own doc comment.
+    const star = String.fromCharCode(42);
+    const offender = `now \`bg-[var(--sst-band-${star})]\`. That legend`;
+    expect(offender).toMatch(WILDCARD_TOKEN_UTILITY);
+    // And the safe spellings this repo uses all around it stay legal.
+    for (const safe of [
+      "bg-[var(--sst-band-cool)]",
+      "fill-[var(--region-marmara)]/80",
+      "bg-[var(--map-sea,#dbe7e8)]",
+      "w-[calc(100%*2)]",
+      `the --sst-band-${String.fromCharCode(42)} family`,
+    ]) {
+      expect(safe, `${safe} must stay legal`).not.toMatch(WILDCARD_TOKEN_UTILITY);
+    }
+  });
+});

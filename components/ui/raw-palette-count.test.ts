@@ -42,7 +42,8 @@ import {
  *
  * The arbitrary-colour arm moved for the first time on this branch: 75 -> 72, and all three
  * are the marine map's temperature LEGEND (`bg-[#ea580c]`, `bg-[#0d9488]`, `bg-[#2563eb]`),
- * now `bg-[var(--sst-band-*)]`. That legend was the SST ramp's THIRD spelling in one file —
+ * now a `bg-[...]` arbitrary value wrapping the band token. That legend was the SST ramp's
+ * THIRD spelling in one file —
  * after the SVG pins and the table chips — and the one a reader actually uses to decode the
  * map, so it could have gone on describing a scale the pins no longer painted.
  *
@@ -216,7 +217,8 @@ const NOT_A_LAUNDERED_COLOUR: readonly string[] = [
  * T-031c Task 6: `v2-marine-map-explorer.tsx`'s sea-surface-temperature legend swatches
  * (`bg-[#ea580c]`, `bg-[#0d9488]`, `bg-[#2563eb]` — orange-600, teal-600 and blue-600 spelled
  * as literals). The `--sst-band-*` set they were waiting for now exists, the legend reads
- * `bg-[var(--sst-band-*)]`, and the assertion below did exactly what its comment promised: it
+ * the band tokens through a `bg-[...]` arbitrary value, and the assertion below did exactly
+ * what its comment promised: it
  * went RED naming all three, which is how the entries came to be deleted instead of going
  * stale.
  *
