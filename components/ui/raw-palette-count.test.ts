@@ -368,9 +368,43 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after.
  *
+ * 126 -> 113 is T-031c Task 10's first file: `components/v2/v2-favorite-button.tsx` 13 -> 0,
+ * all thirteen decoration, all removed rather than re-tokenised. The button already carries
+ * `role="switch"`, `aria-checked`, a filled versus outline `Heart`, a label that flips between
+ * "Favoriye Ekle" and "Favorilerde", and -- the tell -- a `variant` that is already chosen from
+ * the favourited flag. The rose was an override of a variant that encodes the state correctly.
+ *
+ * THE HOVERED STATE IS WHY THIS FILE IS NOT A ONE-LINE DELETION, and it is the seventh time on
+ * this branch that a surface measured fine at rest and failed once hovered. Deleting the rose
+ * hands the favourited button back to the primary variant, whose own hover is the base token at
+ * 90% over the parent surface: the label measures 5.13 light and 4.94 dark at REST but 4.28 and
+ * 4.24 HOVERED, under the 4.5:1 floor in both themes, and worse than the opaque rose-700 hover
+ * it replaces (6.03). The favourited branch therefore sets its own hover fill, the primary
+ * strong member, which deepens in light and lifts in dark: 8.36 and 8.13. No state of this
+ * button is now below 4.5.
+ *
+ * The other figures, each against the surface it is a ratio to. The un-favourited labelled
+ * button is an 80% card wash over `--background` at rest (#fefefd light, #111c1f dark) and bare
+ * `--card` hovered; its `Heart` inherits `--foreground` there -- 14.83 / 14.97 light and
+ * 15.02 / 14.73 dark -- where the raw rose-500 measured 3.72 / 3.75 and 4.62 / 4.53, failing
+ * light in both states. The icon-only button keeps the outline variant's own pair,
+ * `--muted-foreground` on `--card` at rest (7.92 / 7.79) and `--foreground` on `--muted`
+ * hovered (12.44 / 12.67). The favourited fill itself is a graphical mark on `--card`:
+ * `--primary` 5.13 / 4.99 against rose-600's 4.53 / 3.76, which was under the 3:1 floor in
+ * neither theme but under 4.5 in dark. The post-toggle `Sparkles` was amber-300 on the rose
+ * fill, 3.13; it inherits `--primary-foreground` now, 5.13 / 4.94.
+ *
+ * The two `Heart` glyphs and the label stop spelling white directly and inherit the variant's
+ * own foreground, because a fixed white on a fill that lifts in dark is the failure the rose
+ * was already making.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 before,
+ * 16 after. Nothing here was rewritten as a bracketed literal, an SVG attribute or an inline
+ * style, and nothing gained a `var()` fallback.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 126;
+const RAW_PALETTE_BUDGET = 113;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
