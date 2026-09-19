@@ -616,15 +616,36 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * Both reverted.
  */
 /**
- * T-033: **23 → 44**, and `member` 186 → 164 one door down. The same 22 elements, re-spelled:
- * `marine.module.css` was retired, so `components/marine/{province-marine-section,value-cell}
- * .tsx` stopped writing `className={styles.x}` (member) and started writing
- * `className={ROW}` (identifier) over a hoisted Tailwind string. Nothing was hidden that was
- * visible before — a `styles.x` lookup was already unreadable to this scanner, which is the
- * whole reason the member bucket exists. The two buckets moved by equal and opposite 22.
+ * T-033: **23 → 44**, `member` 186 → 164 one door down. **−22 and +21, NOT a swap** — an
+ * earlier draft of this note said "the same 22 elements, re-spelled, equal and opposite",
+ * and that is wrong in the direction that matters. Measured, retiring `marine.module.css`:
  *
- * The one element of that conversion that IS a card surface was deliberately NOT hoisted, so
- * it lands in {@link HAND_DRAWN_CARDS} instead of here. See that docblock.
+ *   - 22 `className={styles.x}` elements left the `member` bucket, across
+ *     `components/marine/{province-marine-section,value-cell,vintage-line,direction-arrow}.tsx`;
+ *   - only **15** of those 22 came back here as a bare identifier over a hoisted Tailwind
+ *     string. The other **7** became literal strings the scanner reads in full: the block
+ *     grid, the card surface, the `<dl>`, the kunye rule, `sr-only`, the kunye list and the
+ *     arrow glyph;
+ *   - and **6** entries here are NEW carriers, not re-spellings. The three `<dt>`s and three
+ *     `<dd>`s of the value rows had NO `className` at all before — they were styled by the
+ *     module's `.provinceValue dt` / `.provinceValue dd` descendant selectors, and a
+ *     descendant selector has no element-level attribute for any scanner to see. Tailwind has
+ *     no descendant form, so the styling moved onto the elements themselves.
+ *
+ * So six elements newly entered the population this counter cannot read. That is the honest
+ * statement, and it is why this note is not "nothing became invisible": something did. What
+ * did NOT become invisible is the thing this file exists to count — see below.
+ *
+ * THE RULE THE REMAINING SEVEN CONVERSIONS FOLLOW. A CARD SURFACE IS WRITTEN INLINE. Any
+ * className carrying a {@link CARD_ROUNDING} token together with `bg-card` or `border-border`
+ * stays a literal string on its element: not hoisted into a module constant, and not moved to
+ * an off-language radius. Both of those keep {@link HAND_DRAWN_CARDS} still while the card
+ * exists, and both were available for marine's reference-point block — which had been a
+ * hand-drawn card since W2b (`background: #fff` plus a `--color-border` hairline) and was
+ * invisible here for four rounds only because a CSS-Module class lookup is opaque to this
+ * scanner. It is now inline at `rounded-2xl` and counted. Hoist the quiet vocabulary —
+ * `TERM`, `DESC`, `ROW` — freely; hoisting is what this counter is FOR noticing, and it
+ * notices it. Never hoist the surface.
  */
 export const COMPUTED_CARD_CLASSNAMES = 44;
 

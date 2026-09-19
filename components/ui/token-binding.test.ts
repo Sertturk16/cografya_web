@@ -153,8 +153,35 @@ describe("components bind colour through the token bridge", () => {
  * out explicitly and T-031c owns. Asserting them now would fail on work nobody has started.
  */
 describe("the V2 surface binds chrome colour through the bridge too", () => {
+  /**
+   * GROWS ONE DIRECTORY PER T-033 TASK, AND DELIBERATELY NOT FASTER.
+   *
+   * `components/marine` is here because T-033 task 2 converted it. The rule that put it here:
+   * **the task that retires a module adds that module's directory to this list, in the same
+   * commit as the conversion.** Nothing would otherwise have caught a `var(--color-*, #hex)`
+   * escape in the four files that conversion rewrote — the constraint was complied with by
+   * hand and enforced by nothing, which is the shape every defect in this file's docblocks
+   * started as.
+   *
+   * What this buys is the ESCAPE rule and only the escape rule, because that is all this
+   * `describe` checks — see its own docblock: raw palette classes and hand-written `dark:`
+   * are the categorical accent system across this whole surface and T-031c owns them, so
+   * asserting them here for one directory would both contradict that scoping and collide
+   * with the branch doing the sweep. Measured on the converted files anyway, and recorded
+   * rather than asserted: `components/marine/*.tsx` carries no `dark:`, no raw palette class,
+   * no bare `white`/`black` utility and no brand hex either. When T-031c lands, the stricter
+   * rules arrive for this directory with everything else.
+   *
+   * The tempting move is to widen this to every feature directory at once. Do NOT. The seven
+   * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a
+   * blanket widening reds immediately and the only way back to green is an exemption list —
+   * a list that then has to be pruned seven times, by seven tasks, each of which could
+   * silently prune one row too many. Growing the scan in step with the conversion needs no
+   * bookkeeping and cannot go stale: a directory is either converted and scanned, or neither.
+   */
   const V2_DIRS = [
     fileURLToPath(new URL("../v2", import.meta.url)),
+    fileURLToPath(new URL("../marine", import.meta.url)),
     fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 
