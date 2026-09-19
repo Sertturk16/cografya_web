@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { REGION_TINTS } from "@/lib/theme/region-palette.test";
+import { REGION_IDENTITY, regionIdentityOf, type RegionSlug } from "@/lib/theme/region-identity";
+import { REGION_KEYS, regionSlug } from "@/lib/game/region-slug";
 
 /**
  * A region wears ONE colour.
@@ -11,6 +13,17 @@ import { REGION_TINTS } from "@/lib/theme/region-palette.test";
  * set that was written in an unrelated raw Tailwind hue. Marmara was badged amber and
  * painted blue; Ege was badged teal and painted orange. Six of seven disagreed. This file is
  * what keeps the two halves of a region's identity from drifting apart again.
+ *
+ * ## Four tables, then one
+ *
+ * T-031c Task 3 fixed two of the four tables that spelled a region's colour; Task 4 fixed the
+ * other two — `v2-turkey-map-explorer`'s `REGION_DATA`, whose `color` field was the MAP FILL on
+ * `/turkiye` (so the deck painted Marmara amber while `/turkiye/bolge/marmara` painted it blue),
+ * and `v2-game-screen`'s `REGION_COLOR_CLASSES`. All four now read `lib/theme/region-identity.ts`,
+ * which is the only file that turns a `--region-*` token into a class. Four tables that AGREE are
+ * not the same property as one table, so the assertions below check both halves: that the module
+ * binds each region to its own tokens and nothing else, and that every consumer reaches for the
+ * identity of the region it is describing.
  *
  * ## Why the blocks are parsed and not `split` on
  *
@@ -31,7 +44,16 @@ import { REGION_TINTS } from "@/lib/theme/region-palette.test";
  * a planted hue, and fails if the locator returns an empty, merged or misaligned block.
  */
 
-const SLUGS = Object.keys(REGION_TINTS);
+const SLUGS = Object.keys(REGION_TINTS) as RegionSlug[];
+
+/**
+ * How a consumer names one region's identity in source, e.g. `REGION_IDENTITY.marmara` or
+ * `REGION_IDENTITY["ic-anadolu"]`. A slug with a hyphen is not a valid property name, so the
+ * two spellings are not interchangeable and a single `toContain` would miss three of the seven.
+ */
+function identityReference(slug: RegionSlug): string {
+  return slug.includes("-") ? `REGION_IDENTITY["${slug}"]` : `REGION_IDENTITY.${slug}`;
+}
 
 const PAGE_PATH = fileURLToPath(
   new URL("../../app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx", import.meta.url),
@@ -103,16 +125,18 @@ function matchBraces(source: string, open: number): string {
  * elsewhere in the file are all free to change without this test quietly reading the wrong
  * text.
  */
-export function locateRegionBlocks(source: string): Map<string, string> {
-  const declaration = source.indexOf("const REGION_THEMES");
-  if (declaration < 0) {
-    throw new Error("REGION_THEMES is gone from the page — this test is about that table");
-  }
-  // The table's own opener is the first `= {` after the declaration; the `{` inside the
+function tableOf(source: string, declaration: string): string {
+  const at = source.indexOf(declaration);
+  if (at < 0) throw new Error(`${declaration} is gone — this test is about that table`);
+  // The table's own opener is the first `= {` after the declaration; the `{` inside a
   // `Record<string, { ... }>` type annotation is not preceded by `=`.
-  const opener = /=\s*\{/.exec(source.slice(declaration));
-  if (opener === null) throw new Error("REGION_THEMES has no object literal");
-  const table = matchBraces(source, declaration + opener.index + opener[0].length - 1);
+  const opener = /=\s*\{/.exec(source.slice(at));
+  if (opener === null) throw new Error(`${declaration} has no object literal`);
+  return matchBraces(source, at + opener.index + opener[0].length - 1);
+}
+
+export function locateRegionBlocks(source: string): Map<string, string> {
+  const table = tableOf(source, "const REGION_THEMES");
 
   const blocks = new Map<string, string>();
   const entry = /([A-Z][A-Z0-9_]*):\s*\{/g;
@@ -170,8 +194,13 @@ describe("a region wears one colour, not two", () => {
 
   it.each(SLUGS)("%s draws its badge from its own region token", (slug) => {
     const block = blocks.get(slug)!;
-    expect(block).toContain(`--region-${slug}-tint`);
-    expect(block).toContain(`--region-${slug}-text`);
+    // The page no longer spells the token; it names the identity, and the identity is what
+    // spells the token. Both halves are asserted, because either one alone is satisfiable
+    // while the bug is present: a block could name the WRONG region's identity, and an
+    // identity could be bound to the wrong region's tokens.
+    expect(block).toContain(identityReference(slug));
+    expect(REGION_IDENTITY[slug].badge).toContain(`--region-${slug}-tint`);
+    expect(REGION_IDENTITY[slug].badge).toContain(`--region-${slug}-text`);
   });
 
   it.each(SLUGS)("%s declares both derived members in app/globals.css", (slug) => {
@@ -254,8 +283,9 @@ describe("the region card deck wears the same colour", () => {
   });
 
   it.each(SLUGS)("%s's card header is bound to its own region token", (slug) => {
-    expect(deck).toContain(`--region-${slug}-tint`);
-    expect(deck).toContain(`--region-${slug}-text`);
+    expect(deck).toContain(identityReference(slug));
+    expect(REGION_IDENTITY[slug].banner).toContain(`--region-${slug}-tint`);
+    expect(REGION_IDENTITY[slug].banner).toContain(`--region-${slug}-text`);
   });
 
   /**
@@ -290,5 +320,75 @@ describe("the region card deck wears the same colour", () => {
     const bannerBlock = deck.slice(banner!.index, deck.indexOf("</div>", banner!.index));
     expect(bannerBlock).toContain("<Link");
     expect(bannerBlock.match(/<Link[\s\S]*?className="([^"]*)"/)![1]).not.toMatch(/\btext-/);
+  });
+});
+
+/**
+ * The module the other four tables now read.
+ *
+ * Its job is narrow and checkable: turn a `--region-*` token into a class, once. What it must
+ * NOT do is what the four tables it replaced did — hold a hue of its own, or hand one region
+ * another region's token. Both are asserted, because "no raw hue" alone would be satisfied by a
+ * module that bound every region to `--region-marmara`.
+ */
+describe("one module spells a region's colour", () => {
+  const identitySource = readFileSync(
+    fileURLToPath(new URL("../../lib/theme/region-identity.ts", import.meta.url)),
+    "utf8",
+  );
+
+  it("holds no raw palette hue of its own", () => {
+    expect(identitySource.match(new RegExp(RAW_HUE.source, "g"))).toBeNull();
+  });
+
+  it("has one entry per region, and each entry knows its own slug", () => {
+    expect(Object.keys(REGION_IDENTITY).sort()).toEqual([...SLUGS].sort());
+    for (const slug of SLUGS) expect(REGION_IDENTITY[slug].slug).toBe(slug);
+  });
+
+  it.each(SLUGS)("%s names no region token but its own", (slug) => {
+    const named = new Set<string>();
+    for (const cls of Object.values(REGION_IDENTITY[slug])) {
+      for (const m of cls.matchAll(/--region-([a-z-]+?)(?:-tint|-text)?\)/g)) named.add(m[1]!);
+    }
+    // Positive control on the premise: the entry really does reference tokens at all, so an
+    // entry that had been emptied could not pass by naming nothing.
+    expect(named.size, `${slug} references no --region-* token`).toBeGreaterThan(0);
+    expect([...named]).toEqual([slug]);
+  });
+
+  it("crosses from the API enum to the identity without a second mapping", () => {
+    for (const region of REGION_KEYS) {
+      expect(regionIdentityOf(region).slug).toBe(regionSlug(region));
+    }
+  });
+});
+
+/**
+ * The two tables T-031c Task 4 bound: the `/turkiye` explorer's map fill and the game screen's
+ * region round. Between them they were 91 raw palette occurrences, and the explorer's was the
+ * one that mattered most — its `color` field WAS the map fill, so `/turkiye` painted Marmara
+ * amber while `/turkiye/bolge/marmara`, one breadcrumb click away, painted it blue.
+ */
+describe("the /turkiye map and the game map wear the same colour as the pages they link to", () => {
+  const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8");
+  const explorer = read("./v2-turkey-map-explorer.tsx");
+  const game = read("./v2-game-screen.tsx");
+
+  it("REGION_DATA names an identity per region and holds no hue of its own", () => {
+    const table = tableOf(explorer, "export const REGION_DATA");
+    // Positive control: we are holding the table, not an empty string a `not.toMatch` would
+    // pass on.
+    expect(table).toContain("identity:");
+    expect(table).not.toMatch(RAW_HUE);
+    for (const slug of SLUGS) expect(table).toContain(identityReference(slug));
+  });
+
+  it("the game map paints regions from the module, not from a table of its own", () => {
+    expect(
+      game.includes("REGION_COLOR_CLASSES"),
+      "the game screen has grown its own region colour table again",
+    ).toBe(false);
+    expect(game).toContain("regionIdentityOf(prov.target.region).fillSoft");
   });
 });

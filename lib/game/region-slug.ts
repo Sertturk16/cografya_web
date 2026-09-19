@@ -31,8 +31,16 @@ const REGION_SLUGS = {
 /** Every region key, in the order the region picker lists them. */
 export const REGION_KEYS = Object.keys(REGION_SLUGS) as readonly GeographicRegion[];
 
-/** The region's URL identifier. */
-export function regionSlug(region: GeographicRegion): string {
+/**
+ * The region's URL identifier.
+ *
+ * Returns the literal union rather than `string`: `lib/theme/region-identity.ts` keys the seven
+ * region colour identities on exactly these values, so a slug added or renamed here stops that
+ * module compiling instead of silently handing a component `undefined` for its region's colour.
+ */
+export type RegionSlugName = (typeof REGION_SLUGS)[GeographicRegion];
+
+export function regionSlug(region: GeographicRegion): RegionSlugName {
   return REGION_SLUGS[region];
 }
 

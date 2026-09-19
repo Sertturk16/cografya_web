@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import type { GeographicRegion } from "@/lib/api/types";
+import { regionIdentityOf } from "@/lib/theme/region-identity";
 import { BreadcrumbsNav, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs-nav";
 import type { GameModeId } from "@/lib/game/config";
 import type { GameShapeEntry, GameShapeTargetEntry } from "@/lib/game/map-shapes";
@@ -97,18 +98,18 @@ export interface V2GameScreenProps {
   readonly currentPath: string;
 }
 
-const REGION_COLOR_CLASSES: Record<GeographicRegion, { fill: string; border: string }> = {
-  MARMARA: { fill: "fill-amber-500/80 hover:fill-amber-400", border: "border-amber-500" },
-  EGE: { fill: "fill-teal-500/80 hover:fill-teal-400", border: "border-teal-500" },
-  AKDENIZ: { fill: "fill-emerald-500/80 hover:fill-emerald-400", border: "border-emerald-500" },
-  IC_ANADOLU: { fill: "fill-yellow-500/80 hover:fill-yellow-400", border: "border-yellow-500" },
-  KARADENIZ: { fill: "fill-cyan-600/80 hover:fill-cyan-500", border: "border-cyan-500" },
-  DOGU_ANADOLU: { fill: "fill-stone-500/80 hover:fill-stone-400", border: "border-stone-500" },
-  GUNEYDOGU_ANADOLU: {
-    fill: "fill-orange-600/80 hover:fill-orange-500",
-    border: "border-orange-500",
-  },
-};
+/**
+ * The three answer states the map paints, from the `--game-*` set in `app/globals.css`.
+ *
+ * They are UI STATE, not a data encoding, and they are the set that already carries a distinct
+ * stroke treatment per state so right / wrong / revealed stay tellable apart with no colour
+ * perception at all. They were raw Tailwind hues here (emerald / amber) and `fill-destructive/80`
+ * for the wrong state — a bridge token doing a data job, which `docs/design.md` rule 1 forbids in
+ * the other direction too. The reveal marker is deliberately the one dark, low-hue value: it has
+ * to read as "look here" over all seven region tints at once.
+ */
+const CORRECT_FILL = "fill-[var(--game-correct)]/80 animate-in fade-in";
+const CORRECT_STROKE = "stroke-[var(--game-correct-edge)] stroke-[1.5]";
 
 export function V2GameScreen({
   mode,
@@ -1113,30 +1114,34 @@ export function V2GameScreen({
                 let strokeClass = "stroke-border/70 hover:stroke-primary stroke-[0.7]";
 
                 if (mode === "regions") {
-                  // In region finding mode, show beautiful regional colors
-                  const regColor = prov.target?.region
-                    ? REGION_COLOR_CLASSES[prov.target.region]
+                  // In the region round the map is painted BY region, which is the same
+                  // identity `/turkiye` and `/turkiye/bolge/[slug]` paint — one module spells
+                  // it (`lib/theme/region-identity.ts`), so this screen cannot drift from
+                  // them again. It used to keep its own table of raw Tailwind hues and paint
+                  // Marmara amber against those pages' blue.
+                  const regionFill = prov.target?.region
+                    ? regionIdentityOf(prov.target.region).fillSoft
                     : null;
                   if (isCorrectRegion) {
-                    fillClass = "fill-emerald-500/80 animate-in fade-in";
-                    strokeClass = "stroke-emerald-700 stroke-[1.5]";
+                    fillClass = CORRECT_FILL;
+                    strokeClass = CORRECT_STROKE;
                   } else {
-                    fillClass = regColor ? regColor.fill : "fill-card";
+                    fillClass = regionFill ?? "fill-card";
                     strokeClass = "stroke-border/60 stroke-[0.6]";
                   }
                 } else {
                   if (isCorrectProvince) {
-                    fillClass = "fill-emerald-500/80 animate-in fade-in";
-                    strokeClass = "stroke-emerald-700 stroke-[1.5]";
+                    fillClass = CORRECT_FILL;
+                    strokeClass = CORRECT_STROKE;
                   } else if (isRevealed) {
-                    fillClass = "fill-amber-400/80 animate-pulse";
-                    strokeClass = "stroke-amber-700 stroke-[2]";
+                    fillClass = "fill-[var(--game-reveal)]/80 animate-pulse";
+                    strokeClass = "stroke-[var(--game-reveal-edge)] stroke-[2]";
                   }
                 }
 
                 if (isFlashingWrong) {
-                  fillClass = "fill-destructive/80 animate-pulse";
-                  strokeClass = "stroke-destructive stroke-[2]";
+                  fillClass = "fill-[var(--game-wrong)]/80 animate-pulse";
+                  strokeClass = "stroke-[var(--game-wrong-edge)] stroke-[2]";
                 }
 
                 const displayName = prov.target ? prov.target.name : prov.plateCode;

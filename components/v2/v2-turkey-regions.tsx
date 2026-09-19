@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Mountain, ArrowRight } from "lucide-react";
 import { tr } from "@/lib/text/format-number";
+import { REGION_IDENTITY } from "@/lib/theme/region-identity";
 
 export const CANONICAL_REGION_SLUGS: Record<string, string> = {
   marmara: "marmara",
@@ -49,8 +50,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "marmara",
     name: "Marmara Bölgesi",
     badgeVariant: "primary",
-    identityClass:
-      "bg-[var(--region-marmara-tint)] text-[var(--region-marmara-text)] border-b-2 border-[var(--region-marmara)]",
+    identityClass: REGION_IDENTITY.marmara.banner,
     provincesCount: 11,
     climate: "Geçiş İklimi (Akdeniz - Karadeniz - Karasal)",
     description:
@@ -67,8 +67,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "ege",
     name: "Ege Bölgesi",
     badgeVariant: "info",
-    identityClass:
-      "bg-[var(--region-ege-tint)] text-[var(--region-ege-text)] border-b-2 border-[var(--region-ege)]",
+    identityClass: REGION_IDENTITY.ege.banner,
     provincesCount: 8,
     climate: "Tipik Akdeniz İklimi",
     description:
@@ -85,8 +84,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "akdeniz",
     name: "Akdeniz Bölgesi",
     badgeVariant: "secondary",
-    identityClass:
-      "bg-[var(--region-akdeniz-tint)] text-[var(--region-akdeniz-text)] border-b-2 border-[var(--region-akdeniz)]",
+    identityClass: REGION_IDENTITY.akdeniz.banner,
     provincesCount: 8,
     climate: "Sıcak & Kurak Yazlar, Ilık Kışlar",
     description:
@@ -103,8 +101,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "icanadolu",
     name: "İç Anadolu Bölgesi",
     badgeVariant: "warning",
-    identityClass:
-      "bg-[var(--region-ic-anadolu-tint)] text-[var(--region-ic-anadolu-text)] border-b-2 border-[var(--region-ic-anadolu)]",
+    identityClass: REGION_IDENTITY["ic-anadolu"].banner,
     provincesCount: 13,
     climate: "Step (Karasal) İklimi",
     description:
@@ -121,8 +118,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "karadeniz",
     name: "Karadeniz Bölgesi",
     badgeVariant: "info",
-    identityClass:
-      "bg-[var(--region-karadeniz-tint)] text-[var(--region-karadeniz-text)] border-b-2 border-[var(--region-karadeniz)]",
+    identityClass: REGION_IDENTITY.karadeniz.banner,
     provincesCount: 18,
     climate: "Her Mevsim Yağışlı Ilıman İklim",
     description:
@@ -139,8 +135,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "doguanadolu",
     name: "Doğu Anadolu Bölgesi",
     badgeVariant: "default",
-    identityClass:
-      "bg-[var(--region-dogu-anadolu-tint)] text-[var(--region-dogu-anadolu-text)] border-b-2 border-[var(--region-dogu-anadolu)]",
+    identityClass: REGION_IDENTITY["dogu-anadolu"].banner,
     provincesCount: 14,
     climate: "Sert Karasal & Uzun Kışlar",
     description:
@@ -157,8 +152,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "guneydogu",
     name: "Güneydoğu Anadolu",
     badgeVariant: "outline",
-    identityClass:
-      "bg-[var(--region-guneydogu-anadolu-tint)] text-[var(--region-guneydogu-anadolu-text)] border-b-2 border-[var(--region-guneydogu-anadolu)]",
+    identityClass: REGION_IDENTITY["guneydogu-anadolu"].banner,
     provincesCount: 9,
     climate: "Şiddetli Yaz Kuraklığı & Karasal",
     description:

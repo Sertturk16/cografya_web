@@ -14,6 +14,7 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { REGION_IDENTITY } from "@/lib/theme/region-identity";
 import { FaqSection } from "@/components/patterns/faq-section";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
@@ -81,57 +82,50 @@ const REGION_THEMES: Record<
 > = {
   MARMARA: {
     nameTr: "Marmara Bölgesi",
-    badgeClass:
-      "bg-[var(--region-marmara-tint)] text-[var(--region-marmara-text)] border-[var(--region-marmara)]/30",
-    gradient: "from-[var(--region-marmara-tint)] via-background to-background",
+    badgeClass: REGION_IDENTITY.marmara.badge,
+    gradient: REGION_IDENTITY.marmara.heroGradient,
     mapFill: "var(--region-marmara, #0072b2)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   EGE: {
     nameTr: "Ege Bölgesi",
-    badgeClass:
-      "bg-[var(--region-ege-tint)] text-[var(--region-ege-text)] border-[var(--region-ege)]/30",
-    gradient: "from-[var(--region-ege-tint)] via-background to-background",
+    badgeClass: REGION_IDENTITY.ege.badge,
+    gradient: REGION_IDENTITY.ege.heroGradient,
     mapFill: "var(--region-ege, #e69f00)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   AKDENIZ: {
     nameTr: "Akdeniz Bölgesi",
-    badgeClass:
-      "bg-[var(--region-akdeniz-tint)] text-[var(--region-akdeniz-text)] border-[var(--region-akdeniz)]/30",
-    gradient: "from-[var(--region-akdeniz-tint)] via-background to-background",
+    badgeClass: REGION_IDENTITY.akdeniz.badge,
+    gradient: REGION_IDENTITY.akdeniz.heroGradient,
     mapFill: "var(--region-akdeniz, #56b4e9)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   IC_ANADOLU: {
     nameTr: "İç Anadolu Bölgesi",
-    badgeClass:
-      "bg-[var(--region-ic-anadolu-tint)] text-[var(--region-ic-anadolu-text)] border-[var(--region-ic-anadolu)]/30",
-    gradient: "from-[var(--region-ic-anadolu-tint)] via-background to-background",
+    badgeClass: REGION_IDENTITY["ic-anadolu"].badge,
+    gradient: REGION_IDENTITY["ic-anadolu"].heroGradient,
     mapFill: "var(--region-ic-anadolu, #f0e442)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   KARADENIZ: {
     nameTr: "Karadeniz Bölgesi",
-    badgeClass:
-      "bg-[var(--region-karadeniz-tint)] text-[var(--region-karadeniz-text)] border-[var(--region-karadeniz)]/30",
-    gradient: "from-[var(--region-karadeniz-tint)] via-background to-background",
+    badgeClass: REGION_IDENTITY.karadeniz.badge,
+    gradient: REGION_IDENTITY.karadeniz.heroGradient,
     mapFill: "var(--region-karadeniz, #cc79a7)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   DOGU_ANADOLU: {
     nameTr: "Doğu Anadolu Bölgesi",
-    badgeClass:
-      "bg-[var(--region-dogu-anadolu-tint)] text-[var(--region-dogu-anadolu-text)] border-[var(--region-dogu-anadolu)]/30",
-    gradient: "from-[var(--region-dogu-anadolu-tint)] via-background to-background",
+    badgeClass: REGION_IDENTITY["dogu-anadolu"].badge,
+    gradient: REGION_IDENTITY["dogu-anadolu"].heroGradient,
     mapFill: "var(--region-dogu-anadolu, #009e73)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   GUNEYDOGU_ANADOLU: {
     nameTr: "Güneydoğu Anadolu Bölgesi",
-    badgeClass:
-      "bg-[var(--region-guneydogu-anadolu-tint)] text-[var(--region-guneydogu-anadolu-text)] border-[var(--region-guneydogu-anadolu)]/30",
-    gradient: "from-[var(--region-guneydogu-anadolu-tint)] via-background to-background",
+    badgeClass: REGION_IDENTITY["guneydogu-anadolu"].badge,
+    gradient: REGION_IDENTITY["guneydogu-anadolu"].heroGradient,
     mapFill: "var(--region-guneydogu-anadolu, #d55e00)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
