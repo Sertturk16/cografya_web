@@ -432,6 +432,140 @@
   --region-dogu-anadolu-text: oklch(0.46 0.095 165.5);
   --region-guneydogu-anadolu-text: oklch(0.48 0.13 47.5);
 
+  /* ---- World-map continent palette (DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
+     Colouring the world map by kıta is the same DATA encoding the region set above is, one
+     level out, so it gets the same treatment: its own token set, physically separate from the
+     Terra brand tokens, and the same Okabe–Ito qualitative palette. Seven continents, seven
+     members, the black member unused — rule 4's ≤ ~8 ceiling again.
+
+     WHY THE SAME SEVEN COLOURS AS `--region-*`, DECIDED RATHER THAN DRIFTED INTO. Regions and
+     continents wear an identical set here. That is deliberate. The two are the same problem —
+     an unordered categorical variable with seven levels, painted as map fills and as badges —
+     and PR0 measured the answer to that problem once. Inventing a second seven-hue set that
+     also had to clear ΔE00 ≥ 10 across 21 pairs under three CVD simulations would mean either
+     a second set no better than this one, or a worse one chosen to look different.
+     The cost of sharing is confusion, and it needs the two sets to meet. They do not:
+     `--region-*` paints Türkiye's coğrafi bölgeler (`/turkiye`, `/turkiye/bolge/*`, the region
+     round of the game) and `--continent-*` paints the world's continents (`/dunya`,
+     `/dunya/kita/*`), and no route renders both encodings. The single screen where both entity
+     TYPES appear is `components/v2/v2-member-hub.tsx`'s favourites list, and there neither
+     wears its identity colour: a favourite row is tinted by its entity type, one constant
+     colour for every region and one for every continent, so no two rows there are being told
+     apart by a region or continent hue. If a surface ever does paint both encodings at once,
+     it needs a legend for each, not a second palette — a reader who cannot tell "Ege" from
+     "Asya" by hue alone on such a screen could not tell them apart under any assignment.
+
+     WHICH CONTINENT GETS WHICH HUE — by measurement, not taste. Each continent keeps the
+     Okabe–Ito member NEAREST the map fill it already wore (`CONTINENT_META.color`, the -600
+     shade), under CIEDE2000, minimising total distance over all 7! assignments. The winner
+     scores 151.2 total and is the only assignment below 160; it holds every continent inside
+     its previous hue family except Antarktika, whose teal-600 has no Okabe–Ito neighbour left
+     once the other six are placed (42.7, its nearest free member). So this is a re-spelling of
+     the shipped identity rather than a re-colouring of the world map.
+       avrupa         #0072b2  blue            was indigo-600   ΔE00 22.2
+       asya           #e69f00  orange          was amber-600    ΔE00 16.4
+       afrika         #009e73  bluish green    was emerald-600  ΔE00  2.9
+       kuzey-amerika  #56b4e9  sky blue        was sky-600      ΔE00 15.6
+       guney-amerika  #d55e00  vermillion      was rose-600     ΔE00 23.4
+       okyanusya      #cc79a7  reddish purple  was purple-600   ΔE00 28.0
+       antarktika     #f0e442  yellow          was teal-600     ΔE00 42.7
+     Pairwise separation is pinned — floor, worst figure AND worst pair, per vision — by
+     `lib/theme/continent-palette.test.ts`, which also compares this block against its own
+     table in both directions. Worst pairs: 21.7 asya/antarktika normal, 12.3 avrupa/okyanusya
+     protanopia, 11.5 asya/antarktika deuteranopia, 11.1 asya/okyanusya tritanopia. Identical
+     to the region set's four figures because it is the same seven colours; only the names of
+     the binding pairs differ. Every country shape keeps its stroke, so continent edges are
+     readable as line work as well as colour. */
+  --continent-avrupa: #0072b2; /* blue */
+  --continent-asya: #e69f00; /* orange */
+  --continent-afrika: #009e73; /* bluish green */
+  --continent-kuzey-amerika: #56b4e9; /* sky blue */
+  --continent-guney-amerika: #d55e00; /* vermillion */
+  --continent-okyanusya: #cc79a7; /* reddish purple */
+  --continent-antarktika: #f0e442; /* yellow */
+
+  /* ---- Continent identity off the map: the tint and the text member (T-031c Task 5) ----
+     The same two derived members the region set carries, for the same reason: the seven hues
+     above are map FILLS, and a badge that names a continent in prose needs the same identity at
+     text size. Before this block existed there were THREE spellings of a continent's colour —
+     `lib/map/continent-theme.ts`'s `CONTINENT_META`, `components/v2/v2-world-continents.tsx`'s
+     `CONTINENTS_DATA`, and (recorded as `DES133-I1` in the first file's own docblock) a
+     `CONTINENT_THEMES` table on `/dunya/[slug]` that disagreed with the map on six of seven
+     continents. `lib/theme/continent-identity.ts` is now the only file that turns these tokens
+     into a class.
+
+     `-tint`  the badge/hero surface, a 15% wash of the continent's own fill. Translucent on
+              purpose, so one value serves both themes.
+     `-text`  the label ON that tint, derived the region way: the fill's own oklch hue angle
+              held EXACTLY, only lightness moved until it carries text, chroma then the most
+              sRGB allows at that lightness. Per-continent lightness, not one shared L — these
+              seven are a CATEGORICAL set and a common lightness is what would blur two of them
+              together. The values equal `--region-*-text`'s for the same hue, because the
+              input hue and the derivation are the same; they are declared here independently
+              rather than aliased, so the two data sets can be re-tuned apart.
+
+     MEASURED (lib/theme/contrast.ts, `ratio` + `blendOver`), AGAINST THE THREE SURFACES THESE
+     LABELS ARE ACTUALLY PAINTED ON. Every figure names its backdrop:
+
+       HERO  the continent badge on `/dunya/kita/[slug]` and `/dunya/[slug]`. `variant="outline"`
+             supplies `bg-card`, but the identity's `badge` overrides it, so the badge's own 15%
+             tint composites straight onto the hero band: tint over the hero gradient's TINT END
+             over --background. The gradient is `from-<tint> via-background to-background`, so
+             the tint end is the worst case and the badge row sits in it. Binding in both themes.
+       CARD  the continent badge on `/dunya/kita`, whose card is an opaque `bg-card`, and the
+             panel header on `/dunya`'s grouped country list. One 15% tint over --card.
+       DECK  the continent badge on `components/v2/v2-world-continents.tsx`, whose card is
+             `bg-card/80 backdrop-blur-sm` — NOT `bg-card`. The backdrop is --card at 80% over
+             --background (#fefefd light, #111c1f dark), then the 15% tint over that. It is its
+             own column because it is its own surface; `backdrop-blur-sm` changes nothing here
+             because what it blurs is a flat --background.
+     EVERY FIGURE BELOW IS ROUNDED DOWN, not to nearest, so no number here can overstate what
+     was measured.
+                          light                    dark
+                     hero   card   deck      hero   card   deck
+       avrupa         4.69   5.97   5.91      4.59   4.77   4.89
+       asya           4.69   5.42   5.37      4.65   5.58   5.66
+       afrika         4.67   5.70   5.68      4.75   5.33   5.40
+       kuzey-amerika  4.70   5.48   5.43      4.65   5.46   5.61
+       guney-amerika  4.60   5.71   5.66      4.60   4.95   5.06
+       okyanusya      4.64   5.53   5.48      4.66   5.24   5.37
+       antarktika     4.76   5.18   5.13      4.72   6.26   6.43
+     Worst case 4.60:1 light and 4.59:1 dark, against the 4.5:1 floor of WCAG 1.4.3.
+
+     WHAT `HERO` DOES NOT INCLUDE, and why that is now safe. Both continent heroes also paint a
+     decorative `size-96 <glow> rounded-full blur-3xl` overlay, and the glow is per-continent
+     (`identity.glow`), so it is this file's colour landing on this file's label. A blurred
+     overlay is not a blend any analytic model expresses, and 384px plus blur spread is wider
+     than a 320px viewport, so below `md` it washed over the badge row — the same shape that
+     falsified the region table. Both overlays are now `hidden md:block`
+     (`dunya/kita/[slug]/page.tsx`, `dunya/[slug]/page.tsx`), bounded rather than paid for by
+     darkening seven data colours. Painted-pixel minimums at 320px with the bound in place are
+     recorded beside each overlay. The hero band also carries ordinary body text, which is not a
+     second case to watch: --foreground on the gradient's tint end measures 11.47-13.59 light
+     and 11.33-14.21 dark. */
+  --continent-avrupa-tint: color-mix(in srgb, var(--continent-avrupa) 15%, transparent);
+  --continent-asya-tint: color-mix(in srgb, var(--continent-asya) 15%, transparent);
+  --continent-afrika-tint: color-mix(in srgb, var(--continent-afrika) 15%, transparent);
+  --continent-kuzey-amerika-tint: color-mix(
+    in srgb,
+    var(--continent-kuzey-amerika) 15%,
+    transparent
+  );
+  --continent-guney-amerika-tint: color-mix(
+    in srgb,
+    var(--continent-guney-amerika) 15%,
+    transparent
+  );
+  --continent-okyanusya-tint: color-mix(in srgb, var(--continent-okyanusya) 15%, transparent);
+  --continent-antarktika-tint: color-mix(in srgb, var(--continent-antarktika) 15%, transparent);
+  --continent-avrupa-text: oklch(0.45 0.11 244);
+  --continent-asya-text: oklch(0.5 0.105 76.8);
+  --continent-afrika-text: oklch(0.46 0.095 165.5);
+  --continent-kuzey-amerika-text: oklch(0.49 0.105 236.2);
+  --continent-guney-amerika-text: oklch(0.48 0.13 47.5);
+  --continent-okyanusya-text: oklch(0.5 0.115 346.3);
+  --continent-antarktika-text: oklch(0.52 0.11 105);
+
   /* ---- Map-game answer states (UI STATE, not a data scale) ----
      These mark what the PLAYER just did, so they are semantic UI colours (the
      success/danger family), not an encoding of any geographic value. Each is paired in
@@ -1071,6 +1205,20 @@
   --region-karadeniz-text: oklch(0.72 0.115 346.3);
   --region-dogu-anadolu-text: oklch(0.69 0.125 165.5);
   --region-guneydogu-anadolu-text: oklch(0.69 0.17 47.5);
+  /* The continent label, lifted for the dark card exactly as `--region-*-text` is above, and
+     for the same reasons: only `-text` flips, because `--continent-*-tint` is translucent and
+     composites over whichever card it lands on, and `--continent-*` itself must not, since the
+     seven fills are a measured categorical set and a theme-dependent data encoding would mean
+     two sets to keep separable instead of one. Hue angle is each continent's own, unchanged
+     from the light block; lightness moves UP here instead of down. The `dark` columns of the
+     HERO/CARD/DECK table above are these values. */
+  --continent-avrupa-text: oklch(0.66 0.13 244);
+  --continent-asya-text: oklch(0.74 0.155 76.8);
+  --continent-afrika-text: oklch(0.69 0.125 165.5);
+  --continent-kuzey-amerika-text: oklch(0.73 0.115 236.2);
+  --continent-guney-amerika-text: oklch(0.69 0.17 47.5);
+  --continent-okyanusya-text: oklch(0.72 0.115 346.3);
+  --continent-antarktika-text: oklch(0.8 0.17 105);
   /* A bare `<a>`. Light mode's link colour is a Terra token the `.dark` block cannot reach, so
      the base rule reads `--link` and this is the value it gets here. */
   --link: oklch(0.78 0.11 40.65);
