@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { resolveVars, tokensIn } from "@/lib/test-support/css-tokens";
-import { GRAPHICAL_MIN, ratio, TEXT_MIN } from "./contrast";
+import { GRAPHICAL_MIN, ratio, relativeLuminance, TEXT_MIN } from "./contrast";
 import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
 
 /**
@@ -38,8 +38,16 @@ import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
  *   would test the same six colours against floors this file's surfaces don't share (a
  *   sequential ramp's job is to be perceptually ordered, not to clear a fixed contrast ratio
  *   against a single background).
+ * - `--map-artifact-sea` is the FROZEN GROUND under the locator figure, not a themed surface.
+ *   It transcribes ink `lib/map/base-map-svg.ts` bakes into an isolated `<img>` SVG that cannot
+ *   read this stylesheet, so it is declared in `:root` and deliberately NOT in `.dark`. Demanding
+ *   it in `MAP_SURFACES` would demand a dark value — the exact thing that must never exist, and
+ *   whose accidental arrival on `--map-sea` is what broke the locator frame in the first place.
+ *   `components/map/locator-map-floors.test.ts` owns the assertion that `.dark` stays silent
+ *   about it; this entry only keeps the surface filter from asking for the opposite.
  */
 const NOT_A_SURFACE: ReadonlySet<string> = new Set([
+  "--map-artifact-sea",
   "--map-hover-width",
   "--map-1",
   "--map-2",
@@ -63,7 +71,17 @@ function mapSurfacesIn(tokens: Readonly<Record<string, string>>): Record<string,
   );
 }
 
-/** `--province-stroke`, which `.dark` deliberately does not redefine. See the docblock above. */
+/**
+ * `--province-stroke`, which `.dark` deliberately does not redefine — ONE coastline tone for
+ * both themes is this branch's headline decision, and every coastline figure below is measured
+ * on this literal.
+ *
+ * It is a free literal here, which is exactly the exposure `the coastline tone is one tone` (the
+ * block after the tables) closes: transcribed from `:root` and asserted against it, and `.dark`
+ * asserted silent about both `--province-stroke` and the `--color-taupe` it aliases. Without
+ * that, a `.dark` override would paint a different coastline with all four assertions above
+ * still green, because they measure this string rather than the stylesheet.
+ */
 const PROVINCE_STROKE = "#8a8078";
 
 const CSS = readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8");
@@ -147,6 +165,49 @@ describe.each(THEMES)("the %s map surfaces", (theme, selector, table) => {
 });
 
 /**
+ * THE DECISION THE FOUR COASTLINE ASSERTIONS ABOVE REST ON, asserted instead of assumed.
+ *
+ * T-031d's headline ruling is that `--province-stroke` stays ONE tone across both themes: it
+ * measures 4.38:1 on the dark `--map-land` and 4.21:1 on the dark `--map-sea`, so a dark half
+ * would buy nothing and would split the coastline across two values that could drift. Nothing
+ * held that ruling. `PROVINCE_STROKE` above is a free literal, so a `.dark { --province-stroke:
+ * … }` — or a `.dark` override of the `--color-taupe` it aliases, which reaches it just as
+ * surely — would repaint every coastline in dark mode with all four assertions above still
+ * green, because they measure the string, not the stylesheet.
+ *
+ * Two halves, and both are needed. The ABSENCE assertion says the decision still holds. The
+ * TRANSCRIPTION assertion says the literal is still the value the decision is about, so a retune
+ * of `--color-taupe` in `:root` cannot leave this file quietly measuring a colour the site no
+ * longer draws. `region-palette.test.ts` carries the same pair for its own free literal,
+ * `--game-hover-edge`.
+ */
+describe("the coastline tone is one tone, and this file transcribes it correctly", () => {
+  const root = resolveVars(tokensIn(CSS, ":root"));
+  const dark = tokensIn(CSS, ".dark {");
+
+  it("positive control — both blocks parsed", () => {
+    expect(root["--map-sea"], ":root declares --map-sea").toBeDefined();
+    expect(dark["--map-sea"], ".dark declares --map-sea").toBeDefined();
+  });
+
+  it("PROVINCE_STROKE is the :root value it transcribes, resolved through --color-taupe", () => {
+    expect(root["--color-taupe"]).toBe(PROVINCE_STROKE);
+    // One `resolveVars` hop: `--province-stroke: var(--color-taupe)`.
+    expect(root["--province-stroke"]).toBe(PROVINCE_STROKE);
+  });
+
+  it.each(["--province-stroke", "--color-taupe"] as const)(
+    ".dark declares no %s — the coastline is one tone in both themes",
+    (token) => {
+      expect(
+        Object.keys(dark),
+        `${token} must not be redefined in .dark; see this block's docblock before changing it`,
+      ).not.toContain(token);
+    },
+  );
+});
+
+/**
  * Proves the hole review round 1 found is actually closed: a `--map-*` token this file never
  * wrote down must fail the comparison, not be silently dropped before it runs. Constructed
  * with a mock token map — `app/globals.css` is not touched to prove this, since the whole
@@ -165,6 +226,7 @@ describe("the surface filter is genuinely bidirectional", () => {
   it("the excluded non-surface tokens never get mistaken for a missing or stray surface", () => {
     const shipped = {
       ...MAP_SURFACES.light,
+      "--map-artifact-sea": "#dbe7e8",
       "--map-hover-width": "3.5px",
       "--map-1": "#e8efce",
       "--map-6": "#6e3a1c",
@@ -216,12 +278,32 @@ describe("land is warm and sea is cool, in both themes", () => {
  * LIGHTER than the page it sits on, in dark mode. Stated as an ordering rather than a ratio
  * because it is a relationship, not a floor: a figure here would have to be re-picked every
  * time `--background` moves.
+ *
+ * MEASURED IN LUMINANCE, NOT IN `ratio`, and that is the correction this block needed. `ratio`
+ * is symmetric and never below 1, so `ratio(plate, background) > 1` is true of EVERY plate
+ * colour except one exactly equal to the background — a pure black plate satisfies it at 1.13,
+ * which is the opposite of what the heading claims. `relativeLuminance` is signed by
+ * construction, so comparing it is the only way this asserts the direction it names.
+ *
+ * Measured on the shipped values: L 0.014567 plate · 0.011670 card · 0.006294 background.
  */
 describe("the dark map panel is lighter than the page under it", () => {
   it("--map-plate is lighter than --background and than --card", () => {
     const dark = tokensIn(CSS, ".dark {");
-    expect(ratio(MAP_SURFACES.dark["--map-plate"], dark["--background"]!)).toBeGreaterThan(1);
-    expect(ratio(MAP_SURFACES.dark["--map-plate"], dark["--card"]!)).toBeGreaterThan(1);
+    const plate = relativeLuminance(MAP_SURFACES.dark["--map-plate"]);
+    expect(plate).toBeGreaterThan(relativeLuminance(dark["--background"]!));
+    expect(plate).toBeGreaterThan(relativeLuminance(dark["--card"]!));
+  });
+
+  /**
+   * The negative control for the instrument, not for the palette: a black plate is what the old
+   * `ratio`-based assertion accepted. Kept so the reason this block reads luminance survives the
+   * next person who finds `ratio` more familiar.
+   */
+  it("POSITIVE CONTROL — a black plate would fail this, where the old ratio test passed it", () => {
+    const dark = tokensIn(CSS, ".dark {");
+    expect(relativeLuminance("#000000")).toBeLessThan(relativeLuminance(dark["--background"]!));
+    expect(ratio("#000000", dark["--background"]!)).toBeGreaterThan(1);
   });
 });
 

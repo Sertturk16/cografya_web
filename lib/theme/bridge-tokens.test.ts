@@ -2,8 +2,11 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { blockOf } from "@/lib/test-support/css-tokens";
+import { stripCssComments } from "@/lib/test-support/strip-comments";
 
 const CSS = readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8");
+/** For the whole-file matches below. `blockOf` strips comments itself; a raw match must not. */
+const STRIPPED = stripCssComments(CSS);
 /** Returns the body of the first top-level block whose selector starts with `name`. */
 const section = (name: string): string => blockOf(CSS, name);
 
@@ -118,8 +121,13 @@ describe("semantic bridge tokens", () => {
   it("the focus ring reads --ring, which .dark redefines", () => {
     // --color-accent is a light-mode Terra token, so the ring was identical in both themes:
     // 5.79:1 in light, 3.04:1 in dark — clearing WCAG 1.4.11 by 0.04.
-    expect(CSS).toContain("outline: 3px solid var(--ring)");
-    expect(CSS).not.toContain("outline: 3px solid var(--color-accent)");
+    //
+    // STRIPPED, like every other read in this file: the two assertions below are the one place
+    // that matched the raw `CSS`, so a comment QUOTING the old rule would have satisfied the
+    // first and broken the second — the "prose in a comment fools a string match" defect
+    // `blockOf` strips comments to avoid everywhere else.
+    expect(STRIPPED).toContain("outline: 3px solid var(--ring)");
+    expect(STRIPPED).not.toContain("outline: 3px solid var(--color-accent)");
   });
 });
 

@@ -173,6 +173,29 @@
      (taupe 3.05:1 against it) — going cooler/darker to buy fill contrast would quietly break
      a floor a previous a11y review set, so it does not. */
   --map-sea: #dbe7e8;
+  /* THE FROZEN GROUND UNDER THE LOCATOR ARTIFACT, and it is DELIBERATELY NOT REDEFINED IN
+     `.dark`. That absence is the token's entire contract, not an omission: `#dbe7e8` is the
+     sea `lib/map/base-map-svg.ts` PAINTS INTO the shared world silhouette, and that file is
+     served through `<img src>` as an isolated SVG document which cannot see this stylesheet
+     at all. Its ink is literal hex in both themes, so any page surface that has to agree with
+     it must be frozen to the same literal — a theme-aware ground under that frozen ink is the
+     defect this token exists to prevent.
+
+     WHY IT IS NOT JUST `--map-sea`. It was, until `--map-sea` gained a dark value (#152228)
+     in T-031d: `components/map/locator-map.tsx`'s frame then went near-black under a #dbe7e8
+     artifact — 12.86:1 measured with `lib/theme/contrast.ts`, a full-frame flash while the
+     image loads and a mismatched strip at every clipped edge. The artifact and the frame
+     under it now name ONE frozen token instead of two things that happened to agree, so the
+     invariant is carried by the name rather than by a coincidence (`BASE_MAP_TOKEN_PINS` in
+     `lib/map/base-map-svg.ts` pins this same token; `components/map/locator-map-floors.test.ts`
+     asserts both the binding and this token's ABSENCE from `.dark`).
+
+     THE REAL FIX IS A DARK-ADAPTED ARTIFACT — emitting a themed silhouette (or a second dark
+     file) so the ground can follow the page again — and that is a SEPARATE TASK, not this
+     one. Until it lands, do not give this token a `.dark` value: a dark ground here would be
+     wrong against ink that stays light. When the artifact does go dark, this token and the
+     `base-map-svg.ts` pin move together or neither moves. */
+  --map-artifact-sea: #dbe7e8;
   /* INLAND water (lakes + reservoirs) on the Türkiye map. An ALIAS of the sea, not a second
      literal — the same single-source pattern --land-inert uses below. Published political
      maps draw inland water and sea in one blue (su-envanteri §2, E5/E7), and the alias means
@@ -212,14 +235,13 @@
      dark one, and 3:1 over Marmara #0072b2 caps it at L ≤ 0.0175.
 
      Measured (WCAG 1.4.11, 3:1 graphical-object floor). ALL TEN backdrops this layer is
-     ever drawn over, not just the three neutral ones:
+     ever drawn over, not just the three neutral ones. EVERY ROW BELOW IS THE LIGHT THEME —
+     this value (#002337) on the light surfaces; the dark half is its own table underneath,
+     because a dark row spliced into a light table leaves one table mixing two themes and no
+     way to tell which figure belongs to which:
        vs --province-fill  #ffffff   16.21:1   (#527a84 4.69 · taupe 3.86)
        vs --province-inert #f1e9de   13.47:1   (#527a84 3.90 · taupe 3.21)
        vs --map-water      #dbe7e8   12.82:1   (#527a84 3.71 · taupe 3.05)
-         dark: --map-water-line (#5d8fb8) vs --map-water (dark, #152228) 4.71:1 — the
-         shipped dark figure (see .dark). Derived against the dark sea/land pair alone,
-         not re-run against the seven region tints below; re-run this whole sweep against
-         the dark literal first if a dark Bölge Bulma binding is ever added.
        vs --region-ic-anadolu        #f0e442   12.26:1   (#527a84 3.55)
        vs --region-ege               #e69f00    7.20:1   (#527a84 2.08 ✗)
        vs --region-akdeniz           #56b4e9    7.02:1   (#527a84 2.03 ✗)
@@ -227,6 +249,14 @@
        vs --region-dogu-anadolu      #009e73    4.74:1   (#527a84 1.37 ✗)
        vs --region-guneydogu-anadolu #d55e00    4.19:1   (#527a84 1.21 ✗)
        vs --region-marmara           #0072b2    3.13:1   (#527a84 1.11 ✗)  ← binding case
+
+     DARK, a separate table for a separate value: .dark redefines this token to #5d8fb8 (the
+     near-black above measures 1.00:1 on the dark sea, see .dark's own note).
+       vs --map-water #152228   4.71:1
+       vs --map-land  #201c18   4.91:1
+     Those two are the whole dark table: the dark figures were derived against the dark
+     sea/land pair alone and NOT re-run against the seven region tints above. Re-run the whole
+     sweep against the dark literal first if a dark Bölge Bulma binding is ever added.
 
      It is a dark PETROL, not a neutral black: still a darker shade of the water it outlines
      (the atlas convention), still unmistakably cool against the warm administrative taupe,
@@ -322,14 +352,29 @@
      nowhere: 72 bracketed colour values and 15 raw palette classes across them, four
      different spellings of one sea. The six tokens below, the two re-recorded just above,
      the two that already shipped (--map-sea, --map-water), and --map-water-line (declared
-     further above, beside --map-water) are the full set: eleven, not ten. */
-  /* The panel the map itself is drawn on. An ALIAS of --map-sea in light, where the plate and
-     the water are one tone; --map-plate only earns a value of its own in .dark, where the
-     panel is deliberately LIGHTER than the page under it (owner direction 2026-09-17, "koyu
-     masa üzerinde ışıklı harita masası" — a lit table on a dark desk). It absorbs #dbe8ee,
-     which v2-game-screen and v2-tool-workbench spelled inline for this exact surface and
-     which measures 1.01:1 against --map-sea — a difference nobody can see, so no separate
-     literal survives here. */
+     further above, beside --map-water) are the full set: eleven, not ten. --map-artifact-sea
+     (declared above, beside --map-sea) is NOT one of them and must never be added: it is the
+     frozen ground under an isolated SVG, has no dark half by design, and is excluded by name
+     from the surface table in lib/theme/map-surface.test.ts. */
+  /* The panel the map itself is drawn on. PLATE AND SEA ARE ONE TONE IN BOTH THEMES TODAY —
+     an alias here, and in .dark a literal #152228 that is byte-identical to the dark --map-sea
+     beside it. An earlier version of this comment said --map-plate "only earns a value of its
+     own in .dark". It does not earn one anywhere, and that sentence was the same class of
+     error as --map-tectonic: a token name asserting a distinction its values did not carry,
+     which survived a review round before it was caught and dropped (see
+     test/fixtures/theme/map-surfaces.ts's own account of that one).
+
+     WHAT THE TOKEN CARRIES IS A ROLE, NOT A SECOND TONE. The plate is the PANEL the map is
+     mounted on — the surface PR2's play board and tool workbench bind to — while --map-sea is
+     the water drawn on it; two names for two roles that happen to agree today, so the panel
+     can be lifted off the water later (owner direction 2026-09-17, "koyu masa üzerinde ışıklı
+     harita masası" — a lit table on a dark desk) without touching every water fill. It absorbs
+     #dbe8ee, which v2-game-screen and v2-tool-workbench spelled inline for this exact surface
+     and which measures 1.01:1 against --map-sea — a difference nobody can see, so no separate
+     literal survives here.
+
+     IF IT STILL NEVER DIVERGES FROM THE SEA once PR2's consumers have landed, collapse it into
+     --map-sea rather than keeping a second name for one tone. */
   --map-plate: var(--map-sea);
   /* Türkiye's own land — the country fill itself, distinct from --province-fill (the il-map
      base tone, still white but a separate token for a separate map) and from --land-inert
@@ -1692,6 +1737,12 @@
      3:1 on these dark surfaces on all seven, binding at Marmara, and a second categorical
      table is the defect T-031c spent 939 occurrences closing.
 
+     `--map-artifact-sea` IS ABSENT ON PURPOSE AND MUST STAY ABSENT. It is not a surface this
+     palette owns: it transcribes ink baked into the isolated locator SVG, which cannot see
+     this stylesheet, so it has to be frozen at #dbe7e8 in both themes. Its `:root` docblock
+     carries the full reasoning and `components/map/locator-map-floors.test.ts` asserts the
+     absence, so adding a dark value here reds rather than silently re-breaking the frame.
+
      `--map-water` and `--map-graticule` and `--map-unknown-land` are declared here at the
      SAME value they'd inherit from `:root` — not left to inherit. `map-surface.test.ts`
      reads this block directly, and a token missing from it is indistinguishable from a token
@@ -1702,7 +1753,10 @@
        --map-context-line vs --map-context-land 3.18 · vs --map-sea 3.54
        --map-water-line   vs --map-sea 4.71 · vs --map-land 4.91
        --map-label        vs --map-sea 6.17 · vs --map-land 6.42 · vs --map-context-land 5.54
-       --map-plate        vs --background 1.15 · vs --card 1.05  (lighter than both, on purpose)
+       --map-plate        vs --background 1.15 · vs --card 1.05  (lighter than both, on purpose —
+         and the DIRECTION is what matters, so map-surface.test.ts asserts relative luminance,
+         not this ratio: L 0.01457 plate · 0.01167 card · 0.00629 background. A ratio is
+         symmetric, so a BLACK plate would satisfy "1.15 against --background" just as well.)
        --map-land vs --map-sea 1.04, and that is CORRECT: the distinction is warm against
          cool, exactly as in light, where the same pair measures 1.26:1. */
   --map-plate: #152228;

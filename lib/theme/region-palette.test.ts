@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { stripCssComments } from "@/lib/test-support/strip-comments";
+import { resolveVars, tokensIn } from "@/lib/test-support/css-tokens";
 import { CATEGORICAL_MIN, deltaE00 } from "./delta-e";
 import { simulate, VISIONS, type Vision } from "./cvd";
 import { GRAPHICAL_MIN, blendOver, ratio } from "./contrast";
@@ -151,6 +152,50 @@ describe("the seven region tints are a usable categorical set", () => {
  * themes (Tasks 6 and 9).
  */
 const HOVER_EDGE = "#211c19"; // --game-hover-edge = --color-ink-dark, not redefined in .dark
+
+/**
+ * The same guard `map-surface.test.ts` puts on `--province-stroke`, for this file's own free
+ * literal. `HOVER_EDGE` is a transcription, and every figure in the suite below measures the
+ * transcription rather than the stylesheet: a `.dark` override of `--game-hover-edge` — or of
+ * the `--color-ink-dark` it aliases, which reaches it just as surely — would draw a different
+ * identifying line in dark mode with every assertion below still green. So the absence is
+ * asserted, and the literal is tied to the `:root` value it copies.
+ */
+describe("the identifying line is one tone, and this file transcribes it correctly", () => {
+  /**
+   * ONE `it`, deliberately, where `map-surface.test.ts`'s twin block uses four.
+   *
+   * This file is imported by six other test files for `REGION_TINTS`, and an import EXECUTES a
+   * test module, so every case declared here is registered seven times over. That is the
+   * multiplier `test/fixtures/theme/map-surfaces.ts`'s docblock records an incident about. The
+   * assertions below are one indivisible claim — "the hover edge is the `:root` value, in both
+   * themes" — so folding them into a single case costs no signal (each `expect` carries its own
+   * message) and costs the suite 7 registrations instead of 28.
+   */
+  it("--game-hover-edge is #211c19 in :root and .dark overrides neither it nor --color-ink-dark", () => {
+    const CSS = readFileSync(
+      fileURLToPath(new URL("../../app/globals.css", import.meta.url)),
+      "utf8",
+    );
+    const root = resolveVars(tokensIn(CSS, ":root"));
+    const dark = tokensIn(CSS, ".dark {");
+    // Positive control: both blocks really parsed, so the absences below are facts about the
+    // stylesheet rather than about an empty object.
+    expect(root["--color-ink-dark"], ":root declares --color-ink-dark").toBeDefined();
+    expect(dark["--background"], ".dark declares --background").toBeDefined();
+
+    expect(root["--color-ink-dark"], "HOVER_EDGE transcribes --color-ink-dark").toBe(HOVER_EDGE);
+    // One `resolveVars` hop: `--game-hover-edge: var(--color-ink-dark)`.
+    expect(root["--game-hover-edge"], "HOVER_EDGE transcribes --game-hover-edge").toBe(HOVER_EDGE);
+
+    for (const token of ["--game-hover-edge", "--color-ink-dark"] as const) {
+      expect(
+        Object.keys(dark),
+        `${token} must not be redefined in .dark; read this block's docblock before changing it`,
+      ).not.toContain(token);
+    }
+  });
+});
 
 describe("the line that identifies a region clears 1.4.11 on every ground", () => {
   it.each(["light", "dark"] as const)(

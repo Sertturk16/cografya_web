@@ -202,4 +202,33 @@ describe("the fill that identifies a continent clears 1.4.11 against its only gr
       }
     },
   );
+
+  /**
+   * THE NEGATIVE CONTROL, so the block above cannot be read as a guarantee it does not make.
+   *
+   * Everything above measures FULL STRENGTH. What ships today is `fillSoft`, the `/85` opacity
+   * `CONTINENT_IDENTITY` renders resting continents at (`lib/theme/continent-identity.ts`), and
+   * at that alpha Avrupa measures 2.78:1 on the light ocean — under `GRAPHICAL_MIN`. Without
+   * this case the suite reads like "the continents clear 3:1", which is not true of the pixels
+   * the site actually paints; with it, the gap between the token floor and the shipped render is
+   * a fact the suite states rather than a fact its docblock discloses while its assertions imply
+   * the opposite. Same shape as `region-palette.test.ts`'s "would MISS the floor if the fills
+   * were softened again in dark".
+   *
+   * A GREEN HERE IS THE REGRESSION, NOT A RED. It means either that `fillSoft` was dropped from
+   * the world map (Task 10, the later task that owns the consumer change — in which case delete
+   * this case deliberately, in that commit, and say so) or that the palette or the ocean moved
+   * (in which case re-derive every figure in this file before touching anything). Do not "fix" a
+   * red by lowering `GRAPHICAL_MIN` or by moving the 0.85 to an alpha that passes: that is
+   * rebuilding the defect. Do not delete it in passing.
+   *
+   * LIGHT ONLY, and the asymmetry is measured rather than an oversight: the same blend on the
+   * DARK ocean (#070e17) lands at 3.01:1, which clears the floor by 0.01, so dark cannot serve
+   * as a control in either direction. The shipped softening fails in exactly one theme, and this
+   * is that theme.
+   */
+  it("would MISS the floor at the /85 opacity the world map still renders at, in light", () => {
+    const softened = blendOver(CONTINENT_TINTS.avrupa!, 0.85, MAP_SURFACES.light["--map-ocean"]);
+    expect(ratio(softened, MAP_SURFACES.light["--map-ocean"])).toBeLessThan(GRAPHICAL_MIN);
+  });
 });
