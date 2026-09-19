@@ -839,9 +839,12 @@ describe("the raw palette is retired everywhere but one named file", () => {
   it("walks real files, not an empty scope — real-tree control", () => {
     // Deliberately NOT `collectPaletteOccurrences(["components"]).length > 0`: that is the
     // population this arm exists to drive to zero, so it would have gone red on the commit that
-    // finished the job. The arbitrary arm shares `sourceFiles` with this one, so a scope that
-    // stopped walking would empty both, and 72 bracketed map surfaces are not going anywhere.
-    expect(collectArbitraryColorOccurrences(["components"]).length).toBeGreaterThan(0);
+    // finished the job. The arbitrary arm used to be the witness here, but T-031d Task 11 fixed
+    // the header wordmark -- the tree's last bracketed colour literal -- so that arm's real
+    // population is now 0 too, for the same reason. The inline arm shares `sourceFiles` with
+    // both, and its painted map-surface pins and canvas fills (`INLINE_PINNED`) are not going
+    // anywhere, so the witness moves there.
+    expect(collectInlineColorOccurrences(["components"]).length).toBeGreaterThan(0);
   });
 });
 
@@ -1027,8 +1030,19 @@ describe("the palette cannot be laundered into brackets", () => {
 
   it("collects something at all — positive control", () => {
     // The same anti-vacuity guard the first arm carries: a budget satisfied by an empty result
-    // is not a budget.
-    expect(collectArbitraryColorOccurrences(["components"]).length).toBeGreaterThan(0);
+    // is not a budget. This one had to go synthetic for the reason arm 1's own real-tree
+    // control did: T-031d Task 11 fixed the header wordmark, the tree's last bracketed colour
+    // literal, so `collectArbitraryColorOccurrences` is now 0 on every real root, including
+    // `["components"]`. A temp file this test writes and deletes proves the actual collector
+    // function -- not just `inlinesAColor` in isolation, which the launder-spelling cases above
+    // already cover -- sees a real match end to end.
+    const dir = mkdtempSync(join(tmpdir(), "t11-arb-"));
+    try {
+      writeFileSync(join(dir, "probe.tsx"), 'const a = <div className="bg-[#ea580c]" />;', "utf8");
+      expect(collectArbitraryColorOccurrences([dir]).length).toBeGreaterThan(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
     expect(hexOf("bg-[#EA580C]")).toBe("#ea580c");
     expect(hexOf("fill-[#abc]")).toBe("#aabbcc");
     // A colour function has no hex to report, and the caller has to cope with that.
@@ -1263,4 +1277,16 @@ describe("the third arm reads values, not prose and not token references", () =>
       "#059669",
     ]);
   });
+});
+
+/**
+ * T-031d Task 11 emptied both deferral tables: the raw-palette arm's `RAW_EXEMPT` and the
+ * arbitrary-colour arm's `ARBITRARY_PINNED` each held their last row (the world map's 15
+ * classes, the header wordmark's one bracketed hex) and both are now `[]`. This is the
+ * checkable version of that fact — a literal zero on the tables themselves, not just on the
+ * trees the other describes above walk, so a row added back to either fails here by name.
+ */
+it("the deferral tables are empty — the arm is closed, not budgeted", () => {
+  expect(RAW_EXEMPT).toEqual([]);
+  expect(ARBITRARY_PINNED).toEqual([]);
 });
