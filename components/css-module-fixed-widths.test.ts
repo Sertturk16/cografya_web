@@ -23,9 +23,9 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
  *
  * ## What it is NOT
  *
- * NOT a prohibition. A fixed px width is often right: `site-search.module.css`'s `min-width:
- * 44px` is the pointer-target floor, `.swatch`'s `width: 20px` is a legend chip, and every
- * `width: 1px` here is a visually-hidden clip rect. The rule is that the POPULATION is
+ * NOT a prohibition. A fixed px width is often right: `earthquake.module.css`'s `min-width:
+ * 520px` is what makes a wide table scroll instead of squeezing, and every `width: 1px` here is a
+ * visually-hidden clip rect. The rule is that the POPULATION is
  * known — adding to it costs one line here and forces one question ("does this floor fit
  * inside 288px of content box at 320?"), which is exactly the question nobody asked about
  * `.chartFrame`.
@@ -136,18 +136,12 @@ const EXPECTED: Record<string, string[]> = {
   ],
   "components/earthquake/earthquake.module.css": ["min-width: 520px"],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
-  "components/site-search/site-search.module.css": [
-    "min-width: 28px",
-    "min-width: 32px",
-    "width: 1px",
-    "width: 420px",
-  ],
 };
 
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(5);
+    expect(stylesheets.length).toBe(4);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -183,9 +177,9 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * mutation" claim is now about the RULE, not about that file, and
    * `pnpm sweep:overflow -- --filter=/turkiye/istanbul` at 320 is what covers the frame itself.
    */
-  it("counts 18 declarations in total", () => {
+  it("counts 14 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(18);
+    expect(total).toBe(14);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

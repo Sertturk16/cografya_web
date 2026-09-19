@@ -58,7 +58,7 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "home",
     pathname: "/",
     locales: ["tr", "en"],
-    modules: ["site-search.module.css"],
+    modules: [],
     why:
       "The homepage: the densest single composition on the site (hero, live ticker, card " +
       "grids). It claimed `home.module.css` too, and that claim was the clearest thing this " +
@@ -69,7 +69,11 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "It also claimed `marine.module.css`, through `VintageLine`; T-033 converted that " +
       "component to Tailwind and deleted the stylesheet, so the claim went with the file " +
       "rather than being left to pass vacuously. The marine block on this page is still " +
-      "flag-gated (`MARINE_ENABLED`) and is still swept as markup, just no longer as a module.",
+      "flag-gated (`MARINE_ENABLED`) and is still swept as markup, just no longer as a module. " +
+      "It claimed `site-search.module.css` too, through the header combobox that every page " +
+      "carries; T-033 task 5 converted that component and deleted the stylesheet, so this shape " +
+      "now renders none of the surviving four. The header is still swept here at every width, " +
+      "and it is the only route that sweeps the combobox panel at all.",
   },
   {
     id: "about",

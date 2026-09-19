@@ -149,9 +149,9 @@ describe("CSS Modules", () => {
    * THE MATCHER IS KEYED BY BASENAME, so two stylesheets sharing one would merge their importer
    * lists and each would answer for the other — a dead sheet certified by a live namesake, which
    * is a hair's breadth from the `map.module.css` / `locator-map.module.css` accident this file's
-   * docblock is mostly about. Measured: all 5 basenames are distinct today
-   * (`book-detail`, `book-video`, `earthquake`, `locator-map`, `site-search`) — `marine`,
-   * `air-pollution` and `climate` left with T-033 tasks 2, 3 and 4. Asserted rather than resolved
+   * docblock is mostly about. Measured: all 4 basenames are distinct today
+   * (`book-detail`, `book-video`, `earthquake`, `locator-map`) — `marine`, `air-pollution`,
+   * `climate` and `site-search` left with T-033 tasks 2, 3, 4 and 5. Asserted rather than resolved
    * to full paths because a
    * `*.module.css` specifier is not resolvable by `resolveSpecifier` (its extension list is
    * TS/JS only), so the honest fix is to keep the cheap key and fail loudly the day it stops
@@ -180,10 +180,10 @@ describe("CSS Modules", () => {
     // it proves the PARSER works, not just that files were read.
     expect(stylesheets.length, "*.module.css files").toBeGreaterThan(0);
     // The floor steps down with T-033, which is retiring these stylesheets one task at a time:
-    // 8 when this was written, 5 once tasks 2-4 had taken `marine`, `air-pollution` and
-    // `climate`. It is an anti-vacuity floor on the PARSER, not a pin on the population — the
-    // "are all imported by something a reader can reach" case above is what holds that.
-    expect(importersByStylesheet.size, "parsed *.module.css import specifiers").toBeGreaterThan(4);
+    // 8 when this was written, 4 once tasks 2-5 had taken `marine`, `air-pollution`, `climate`
+    // and `site-search`. It is an anti-vacuity floor on the PARSER, not a pin on the population —
+    // the "are all imported by something a reader can reach" case above is what holds that.
+    expect(importersByStylesheet.size, "parsed *.module.css import specifiers").toBeGreaterThan(3);
     expect(reachable.size, "files reachable from a route").toBeGreaterThan(100);
   });
 

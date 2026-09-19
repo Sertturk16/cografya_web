@@ -13,7 +13,6 @@ import { useTranslations } from "next-intl";
 import { nextActiveIndex } from "@/lib/search/active-option";
 import { prepareSearchIndex, type PreparedEntry, searchPrepared } from "@/lib/search/match";
 import { isSearchIndexPayload } from "@/lib/search/types";
-import styles from "./site-search.module.css";
 
 /** How many hits the listbox shows before the "see the full list" row. */
 const RESULT_LIMIT = 8;
@@ -40,6 +39,189 @@ const COLLATION_LOCALE = "tr";
 const NEVER_CHANGES = () => () => {};
 const onClient = () => true;
 const onServer = () => false;
+
+/* ---------------------------------------------------------------------------------------------
+ * THE HEADER SEARCH'S OWN CHROME, AS BRIDGE-TOKEN UTILITIES.
+ *
+ * T-033 retired `site-search.module.css`. Every colour in it was a raw Terra token and `.dark`
+ * redefines none of the thirteen, so the panel rendered as a WHITE card carrying `--color-ink`
+ * text on a dark page: 1.13:1 for the input's own text against dark `--card` #121e21, measured
+ * with `lib/theme/contrast.ts`. Each string below is the deleted rule, value for value, with
+ * colour rebound to the bridge. Comments that recorded a MEASUREMENT or a defect came with it;
+ * the ones that only restated CSS did not.
+ *
+ * `min-[70rem]` is the stylesheet's `@media (min-width: 70rem)` verbatim — the measured
+ * single-row header breakpoint, which is not one of Tailwind's own (lg is 64rem, xl 80rem).
+ *
+ * The strings are HOISTED rather than inlined on the JSX because
+ * `lib/test-support/converted-floor.ts`'s extractor reads a top-level `const NAME = …;` and hands
+ * back `null` for an inline class string — a floor left inline pins nothing, and does it quietly.
+ * `search-combobox.structure.test.ts` carries the pin for the 28px one.
+ *
+ * Unchanged geometry rule: the SLOT is fixed-size and the island only swaps what is inside it, so
+ * hydration and opening never move the header (CLS).
+ * ------------------------------------------------------------------------------------------ */
+
+/**
+ * No width or height of its own on mobile: the trigger below IS the box, and the header must not
+ * grow by a single pixel with the search closed.
+ *
+ * `ml-auto` on the FIRST item of the trailing group pushes that whole group — this slot and every
+ * sibling after it — to the header's right edge. Below the nav-collapse breakpoint nothing else
+ * fills that role; from 70rem up the desktop nav's own auto margin already does, so the slot goes
+ * back to normal flow and becomes the panel's containing block instead (see PANEL).
+ */
+const SLOT = "flex items-center ml-auto min-[70rem]:relative min-[70rem]:ml-0";
+
+/**
+ * 28x28, and the exact number is MEASURED, not chosen for looks. The binding acceptance criterion
+ * is that the header does not grow by a single pixel with search closed, and on a 390px viewport
+ * the trigger shares the header's first row with the brand link, whose line box is 30.72px: at
+ * 44px the header grew 177 -> 190px, at 32px it still grew by 1.09px. 28px sits below the brand
+ * with ~2.7px of headroom and still clears the WCAG 2.5.8 (AA) 24x24 target floor.
+ *
+ * `border-input`, not `border-border`. A control boundary must be perceivable and WCAG 1.4.11 asks
+ * 3:1 of it; `--input` is the bridge token for exactly that job, and its light value IS the
+ * `--color-taupe` this rule already carried (3.86:1 on `--card`, 3.64:1 on the header's
+ * `--background` plate). Unlike the raw token it is redefined in `.dark` — #5c8189, 4.01:1 on dark
+ * `--card`. `border-border` is the decorative edge at 1.45:1 light / 1.53:1 dark and was rejected
+ * here for that reason when the rule was first written.
+ *
+ * `[&[hidden]]:invisible` is REQUIRED — the `hidden` attribute does not hide this control on its
+ * own. `[hidden]` is applied only by the UA stylesheet's `display: none`, and the author-origin
+ * `inline-flex` here beats it unconditionally in the cascade (the repo ships no `[hidden]` reset).
+ * Without it the collapsed trigger stayed rendered, focusable and — below the desktop breakpoint,
+ * where its label is hidden — NAMELESS while the panel was open (WCAG 4.1.2). `invisible` rather
+ * than `hidden`: the slot has no size of its own, so removing the trigger from flow would collapse
+ * the header's first row, trading an a11y defect for the layout shift this design exists to
+ * prevent. `invisible` keeps the box and exits both the a11y tree and the tab order.
+ */
+const TRIGGER =
+  "inline-flex items-center justify-center gap-1.5 min-w-[28px] min-h-[28px] px-[7px] " +
+  "rounded-lg border border-input bg-card text-muted-foreground no-underline " +
+  "text-[0.9rem] font-semibold hover:border-primary hover:text-primary " +
+  "[&[hidden]]:invisible min-[70rem]:justify-start";
+
+/**
+ * Hidden on narrow viewports: the trigger collapses to the icon alone so it fits beside the brand
+ * on the header's FIRST row and adds no row of its own. From the measured breakpoint up it shows a
+ * SHORT word next to the icon, and the trigger has no fixed width — it sizes to its content.
+ * Measured why: with a 210px fixed trigger the Turkish header needed 985px of a 984px line at
+ * 1024px wide and wrapped the nav onto a second row.
+ */
+const TRIGGER_TEXT = "hidden whitespace-nowrap min-[70rem]:inline";
+
+const ICON = "flex-none";
+
+/**
+ * The open panel is ABSOLUTELY positioned, so opening the search overlays content instead of
+ * pushing it — no layout shift at any viewport.
+ *
+ * WHICH element it is positioned against changes with the viewport, and that is the point.
+ * Narrow: the slot is unpositioned, so the panel resolves against the sticky header and spans the
+ * viewport with a 16px inset — the mobile sheet. Anchoring it to the slot there was a real bug:
+ * the trigger sits ~250px in on a 390px screen, so a right-aligned 92vw panel started at -109px
+ * and the result names were clipped off-screen. Wide: the slot becomes the containing block, so
+ * the panel hangs directly under the trigger. The 15px top margin there is measured — the
+ * trigger's bottom edge sits 42px below the header's top and the header is 57px tall, so 15px puts
+ * the panel flush with the header's lower border instead of overlapping it.
+ *
+ * `rounded-[16px]` is the deleted rule's `var(--radius-lg)`, which resolves to 16px at runtime;
+ * Tailwind's own `rounded-lg` is `--radius` (10px) and `rounded-2xl` is 18px, so neither spells it.
+ * `shadow-xl` replaces a hand-rolled `rgb(43 38 34 / 14%)` shadow — a raw Terra ink frozen at its
+ * light value — and is what the header's sibling dropdowns already use.
+ *
+ * NOT `components/ui/card.tsx`, and the exemption is measured rather than asserted. This is a
+ * popover, not a section panel: `Card`'s `panel` variant is `rounded-3xl border border-border
+ * bg-card p-6 sm:p-8`, which is a 22px radius, 24-32px of padding on a dropdown whose padding is
+ * 10px, and a `border-border` edge at 1.45:1 light / 1.53:1 dark where this panel needs the same
+ * 3:1 control boundary as the trigger it hangs from (`border-input`, 3.86:1 / 4.01:1 on `--card`).
+ * The header's sibling dropdowns hand-draw their surface for the same reason.
+ */
+const PANEL =
+  "absolute top-full left-4 right-4 mt-2 z-50 p-2.5 rounded-[16px] border border-input " +
+  "bg-card shadow-xl min-[70rem]:left-0 min-[70rem]:right-auto min-[70rem]:w-[420px] " +
+  "min-[70rem]:mt-[15px]";
+
+/**
+ * ONE ring, on the OUTER box, and it is the row that owns it.
+ *
+ * Before the rule existed the row drew its border while the `<input>` inside it drew the global
+ * 3px ring, so a focused search box showed two nested rings clipping each other. The ring belongs
+ * to the row, which is what the reader perceives as the search box.
+ *
+ * Scoped to the INPUT, not `:focus-within`. The row has a second focusable child — the close
+ * button, which is genuinely Tab-reachable — and with `:focus-within` the row drew its ring at the
+ * same time as the button drew the global one: two concentric rings on the very tab stop this rule
+ * was written to clean up, and the outer one then named the wrong component. `input:focus` rather
+ * than `:focus-visible` keeps today's behaviour exactly: a text input matches `:focus-visible` on
+ * pointer focus too, so the box is ringed when clicked into.
+ *
+ * `outline-ring`, not the `--color-accent` the deleted rule painted. That raw token is frozen at
+ * #276b70 in both themes: on the panel's old frozen-white ground it measured 6.13:1, but the panel
+ * is `bg-card` now, and #276b70 on dark `--card` is 2.77:1 — a focus ring BELOW WCAG 1.4.11's 3:1
+ * floor for the one user who cannot do without it. `--ring` is redefined in `.dark` and lands at
+ * 5.43:1 dark / 6.13:1 light on `--card`, at the same 3px width and 2px offset.
+ */
+const INPUT_ROW =
+  "flex items-center gap-2 px-2.5 rounded-lg border border-input text-muted-foreground " +
+  "has-[input:focus]:outline-3 has-[input:focus]:outline-offset-2 has-[input:focus]:outline-ring";
+
+/**
+ * Suppressing the INNER ring needs `!`, and that is a fact about layers rather than a shortcut.
+ *
+ * `app/globals.css`'s `:focus-visible { outline: 3px solid var(--ring) }` sits OUTSIDE every
+ * `@layer`, and an unlayered rule beats every rule in `@layer utilities` whatever its specificity —
+ * the trap that file's own T-041 note records. A plain `focus-visible:outline-none` is a layered
+ * utility, so it loses and the input draws the global ring INSIDE the row's: the two concentric
+ * rings again. Measured, not assumed: the v2 command dialog's input carries `outline-none` today
+ * and its computed outline is still `3px solid`. The important form wins because importance
+ * reverses layer order. The ring is not lost, it moved — INPUT_ROW above owns it.
+ *
+ * `text-[1rem]` rather than `text-base`, and it is the same class of trap: `text-base` would also
+ * set `line-height: 1.5`, which the deleted rule did not — the input inherits 1.6 from the body.
+ */
+const INPUT =
+  "flex-1 min-w-0 min-h-10 border-none bg-transparent font-sans text-[1rem] text-foreground " +
+  "placeholder:text-muted-foreground focus-visible:outline-none!";
+
+const CLOSE =
+  "inline-flex items-center justify-center min-w-[32px] min-h-[32px] border-none bg-transparent " +
+  "cursor-pointer text-muted-foreground text-[1.3rem] leading-none hover:text-primary";
+
+/** Eight rows overflow a short viewport, so the listbox scrolls rather than the panel growing. */
+const RESULTS = "list-none mt-2 mb-0 p-0 max-h-[min(50vh,360px)] overflow-y-auto";
+
+const RESULT_ITEM = "m-0";
+
+const RESULT =
+  "flex items-center justify-between gap-2.5 px-2.5 py-[9px] rounded-lg text-link no-underline " +
+  "font-semibold text-[0.95rem] hover:bg-chip";
+
+/** The highlighted option, and the hover state above paint the same ground on purpose. */
+const RESULT_ACTIVE = "bg-chip";
+
+const RESULT_NAME = "min-w-0 wrap-anywhere";
+
+/**
+ * A TEXT badge: the province/country distinction is never carried by colour alone.
+ * `text-chip-foreground` on `bg-chip` is 6.59:1 light and 8.01:1 dark.
+ */
+const RESULT_KIND =
+  "flex-none px-2 py-0.5 rounded-full bg-chip text-chip-foreground text-[0.75rem] font-bold";
+
+/** `mb-0` is deliberate: this is a `<p>`, and dropping the explicit zero lets a base margin back. */
+const NOTICE = "mt-2.5 mx-1 mb-0 text-muted-foreground text-[0.9rem]";
+
+/**
+ * The closing row: province index + country index, side by side. The separator lives on the ROW,
+ * once, so the two links do not each draw one; a gap rather than a margin so the row stays
+ * symmetric when it wraps on a narrow panel.
+ */
+const SEE_ALL_ROW = "flex flex-wrap gap-x-[18px] gap-y-0.5 mt-2 pt-0.5 border-t border-border";
+
+const SEE_ALL_LINK =
+  "px-2.5 py-[9px] text-link no-underline text-[0.9rem] font-bold hover:text-primary hover:underline";
 
 interface SearchComboboxProps {
   /**
@@ -374,15 +556,15 @@ export function SearchCombobox({
       );
     }
     return (
-      <div className={styles.slot}>
+      <div className={SLOT}>
         <a
           ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
-          className={styles.trigger}
+          className={TRIGGER}
           href={provinceIndexHref}
           aria-label={t("label")}
         >
           <SearchIcon />
-          <span className={styles.triggerText}>{t("triggerLabel")}</span>
+          <span className={TRIGGER_TEXT}>{t("triggerLabel")}</span>
         </a>
       </div>
     );
@@ -544,10 +726,10 @@ export function SearchCombobox({
   }
 
   return (
-    <div className={styles.slot} onBlur={onBlur}>
+    <div className={SLOT} onBlur={onBlur}>
       <a
         ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
-        className={styles.trigger}
+        className={TRIGGER}
         href={provinceIndexHref}
         aria-label={t("openLabel")}
         aria-expanded={open}
@@ -560,20 +742,20 @@ export function SearchCombobox({
         onFocus={() => void ensureIndex()}
       >
         <SearchIcon />
-        <span className={styles.triggerText}>{t("triggerLabel")}</span>
+        <span className={TRIGGER_TEXT}>{t("triggerLabel")}</span>
       </a>
 
       {open ? (
-        <div className={styles.panel}>
-          <label className={styles.srOnly} htmlFor={inputId}>
+        <div className={PANEL}>
+          <label className="sr-only" htmlFor={inputId}>
             {t("label")}
           </label>
-          <div className={styles.inputRow}>
+          <div className={INPUT_ROW}>
             <SearchIcon />
             <input
               ref={inputRef}
               id={inputId}
-              className={styles.input}
+              className={INPUT}
               type="text"
               role="combobox"
               autoComplete="off"
@@ -590,16 +772,16 @@ export function SearchCombobox({
             />
             <button
               type="button"
-              className={styles.close}
+              className={CLOSE}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => close(true)}
             >
-              <span className={styles.srOnly}>{t("closeLabel")}</span>
+              <span className="sr-only">{t("closeLabel")}</span>
               <span aria-hidden="true">×</span>
             </button>
           </div>
 
-          {indexUnavailable ? <p className={styles.notice}>{t("loadFailed")}</p> : null}
+          {indexUnavailable ? <p className={NOTICE}>{t("loadFailed")}</p> : null}
 
           {hits.length > 0 ? (
             <ul
@@ -607,23 +789,23 @@ export function SearchCombobox({
               id={listboxId}
               role="listbox"
               aria-label={t("label")}
-              className={styles.results}
+              className={RESULTS}
             >
               {hits.map((hit, index) => {
                 const resolvedPath = resolvePath(hit.path);
                 return (
-                  <li key={hit.path} role="presentation" className={styles.resultItem}>
+                  <li key={hit.path} role="presentation" className={RESULT_ITEM}>
                     <a
                       id={optionId(index)}
                       role="option"
                       tabIndex={-1}
                       aria-selected={index === activeIndex}
                       href={resolvedPath}
-                      className={`${styles.result} ${index === activeIndex ? styles.resultActive : ""}`}
+                      className={`${RESULT} ${index === activeIndex ? RESULT_ACTIVE : ""}`}
                       onMouseEnter={() => setActiveIndex(index)}
                     >
-                      <span className={styles.resultName}>{hit.name}</span>
-                      <span className={styles.resultKind}>
+                      <span className={RESULT_NAME}>{hit.name}</span>
+                      <span className={RESULT_KIND}>
                         {hit.kind === "p" ? t("province") : t("country")}
                       </span>
                     </a>
@@ -633,18 +815,18 @@ export function SearchCombobox({
             </ul>
           ) : null}
 
-          {showNoResults ? <p className={styles.notice}>{t("noResults")}</p> : null}
+          {showNoResults ? <p className={NOTICE}>{t("noResults")}</p> : null}
 
-          <div className={styles.seeAllRow}>
-            <a className={styles.seeAllLink} href={provinceIndexHref}>
+          <div className={SEE_ALL_ROW}>
+            <a className={SEE_ALL_LINK} href={provinceIndexHref}>
               {t("seeAllProvinces")}
             </a>
-            <a className={styles.seeAllLink} href={countryIndexHref}>
+            <a className={SEE_ALL_LINK} href={countryIndexHref}>
               {t("seeAllCountries")}
             </a>
           </div>
 
-          <div role="status" aria-live="polite" className={styles.srOnly}>
+          <div role="status" aria-live="polite" className="sr-only">
             {announcement}
           </div>
         </div>
@@ -657,7 +839,7 @@ export function SearchCombobox({
 function SearchIcon() {
   return (
     <svg
-      className={styles.icon}
+      className={ICON}
       viewBox="0 0 20 20"
       width="18"
       height="18"

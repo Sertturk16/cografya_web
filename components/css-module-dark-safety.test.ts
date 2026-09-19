@@ -20,7 +20,7 @@ export const SURVIVING_MODULES: readonly string[] = [
  * Steps down as T-033 converts each module. The count is the POSITIVE CONTROL: without it, a
  * walk that found nothing would satisfy the raw-token assertion perfectly.
  */
-const EXPECTED_MODULE_COUNT = 5;
+const EXPECTED_MODULE_COUNT = 4;
 
 /**
  * Raw Terra tokens are frozen at their light values — `.dark` redefines not one of the 13
@@ -36,8 +36,14 @@ const EXPECTED_MODULE_COUNT = 5;
  * 82 once `climate.module.css` followed it, taking 22. That file had no dead class to delete
  * first: all 22 reads were live, on the ERA5-Land table, the chart's axis ink and the three
  * attribution blocks, and every one of them rendered inside `.climate-dark-scope`.
+ *
+ * 62 once `site-search.module.css` went the same way, taking 20. That one painted the header
+ * combobox, the most-seen of the eight: a `#fff` panel with `--color-ink` text (1.13:1 on dark
+ * `--card`) and `--color-primary-dark` result links (2.03:1). Its focus ring was frozen too —
+ * `--color-accent` at 2.77:1 on the ground the panel takes after conversion, below WCAG 1.4.11's
+ * 3:1 floor for the one reader who cannot do without a ring.
  */
-const TOTAL_RAW_READS = 82;
+const TOTAL_RAW_READS = 62;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {

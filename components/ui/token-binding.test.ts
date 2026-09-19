@@ -157,7 +157,8 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * GROWS ONE DIRECTORY PER T-033 TASK, AND DELIBERATELY NOT FASTER.
    *
    * `components/marine` is here because T-033 task 2 converted it, `components/air` because
-   * task 3 converted it and `components/climate` because task 4 did. The rule that put them here:
+   * task 3 converted it, `components/climate` because task 4 did and `components/site-search`
+   * because task 5 did. The rule that put them here:
    * **the task that retires a module adds that module's directory to this list, in the same
    * commit as the conversion.** Nothing would otherwise have caught a `var(--color-*, #hex)`
    * escape in the four files that conversion rewrote — the constraint was complied with by
@@ -199,6 +200,12 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * still follows the theme underneath it; an opaque white surface does not, which is why this
    * one owes a measurement and the other 88 belong to T-031c with the rest of the palette.
    *
+   * `components/site-search` is the one directory here with NO exception to record: the header
+   * combobox carries no `dark:`, no raw palette class, no brand hex and no bare `white`/`black`
+   * utility, because it has no data surface to protect — every colour in it is chrome and every
+   * one of them is a bridge token. Its focus ring is `outline-ring`, measured at 5.43:1 dark and
+   * 6.13:1 light on `--card`; the `--color-accent` it replaced was 2.77:1 on the dark half.
+   *
    * The tempting move is to widen this to every feature directory at once. Do NOT. The six
    * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a
    * blanket widening reds immediately and the only way back to green is an exemption list —
@@ -211,6 +218,7 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
     fileURLToPath(new URL("../marine", import.meta.url)),
     fileURLToPath(new URL("../air", import.meta.url)),
     fileURLToPath(new URL("../climate", import.meta.url)),
+    fileURLToPath(new URL("../site-search", import.meta.url)),
     fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 

@@ -694,8 +694,24 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * the table's scroll container (`rounded-lg border border-border`) is hoisted only because
  * `rounded-lg` is outside {@link CARD_ROUNDING} — it is the deleted stylesheet's own
  * `var(--radius)`, not a `rounded-2xl` surface hidden behind a constant.
+ *
+ * T-033 task 5: **119 -> 139**, `member` 89 -> 66. The arithmetic is smaller than the last two
+ * and it closes exactly: `components/site-search/search-combobox.tsx` held 23
+ * `className={styles.x}` elements, 20 came back as bare identifiers, and the 3 that did not are
+ * the visually-hidden ones — the `<label>`, the close button's name and the live region — which
+ * are now the literal `"sr-only"` and therefore READABLE rather than unreadable. No element
+ * gained or lost a className; the file is the same tree it was.
+ *
+ * ONE element is card-shaped and it is not a card in disguise: the combobox panel, hoisted as
+ * `PANEL`. It is a popover — `rounded-[16px]` (the deleted stylesheet's `var(--radius-lg)`, which
+ * `rounded-2xl` at 18px and `rounded-lg` at 10px do not spell), `p-2.5`, and an edge of
+ * `border-input` rather than `border-border` because it must carry the same 3:1 control boundary
+ * as the trigger it hangs from. `Card`'s `panel` variant is `rounded-3xl border border-border
+ * bg-card p-6 sm:p-8`: a 22px radius, a 1.45:1 decorative edge and 24-32px of padding on a
+ * dropdown whose padding is 10px. Both the radius and the edge are outside {@link CARD_ROUNDING}
+ * and the surface predicate anyway, so the hoist hides nothing this counter would have seen.
  */
-export const COMPUTED_CARD_CLASSNAMES = 119;
+export const COMPUTED_CARD_CLASSNAMES = 139;
 
 /** The whole unreadable-className population by expression shape — the 210 the counter above
  * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
@@ -703,8 +719,8 @@ export const COMPUTED_CARD_CLASSNAMES = 119;
  * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
  * shape rather than as a moved number. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 119],
-  ["member", 89],
+  ["identifier", 139],
+  ["member", 66],
   ["ternary", 2],
 ];
 

@@ -43,7 +43,8 @@
    never `visible`) yet never actually triggered — with no height ceiling the box just grew
    with content (~2300px at 50 rows) and dragged the whole page down with it. `max-height`
    matching this repo's own `min(vh, px)` scrollable-list convention
-   (`components/site-search/site-search.module.css` `.results`) gives `overflow-y` real
+   (`components/site-search/search-combobox.tsx`'s `RESULTS`, which was that stylesheet's
+   `.results` until T-033 converted it) gives `overflow-y` real
    overflow to act on; `overflow-x` stays for the `min-width: 520px` table on narrow
    viewports. Sized taller than the search dropdown's `min(50vh, 360px)` on purpose — this is
    the page's primary content list (up to 50 rows), not a small transient popover. */
