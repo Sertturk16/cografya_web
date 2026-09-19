@@ -1041,7 +1041,7 @@ export function V2GameScreen({
           {/* 3. SVG INTERACTIVE MAP VIEWPORT */}
           <div
             ref={mapViewportRef}
-            className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[#dbe8ee] dark:bg-[#15232d] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
+            className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
           >
             {/* Zoom / Pan Floating Toolbar */}
             <div className="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-md">
@@ -1101,18 +1101,9 @@ export function V2GameScreen({
                   <path
                     key={country.iso}
                     d={country.d}
-                    className="fill-[#e8edea] dark:fill-[#202b33] stroke-[#c0cec5] dark:stroke-[#2e3c46] stroke-[0.8]"
+                    className="fill-[var(--map-land)] stroke-[var(--province-stroke)] stroke-[0.8]"
                   />
                 ))}
-
-              {/* Inland Lakes & Water Bodies */}
-              {INLAND_WATER_SHAPES.map((water) => (
-                <path
-                  key={water.id}
-                  d={water.d}
-                  className="fill-[#a9ccdf] dark:fill-[#122b3d] stroke-[#8bb7cf] dark:stroke-[#0e2230] stroke-[0.5]"
-                />
-              ))}
 
               {/* Turkey Context Casing Outline */}
               {!region && trCasing && (
@@ -1140,7 +1131,7 @@ export function V2GameScreen({
                   // them again. It used to keep its own table of raw Tailwind hues and paint
                   // Marmara amber against those pages' blue.
                   const regionFill = prov.target?.region
-                    ? regionIdentityOf(prov.target.region).fillSoft
+                    ? regionIdentityOf(prov.target.region).fill
                     : null;
                   if (isCorrectRegion) {
                     fillClass = CORRECT_FILL;
@@ -1187,6 +1178,20 @@ export function V2GameScreen({
                   </path>
                 );
               })}
+
+              {/* Inland Lakes & Water Bodies. Painted AFTER the province layer above (not
+                  before, as it was originally) because SVG paints in document order and the
+                  province layer's fill is opaque or near-opaque in every state (fill-card,
+                  the region fills, the correct/reveal/wrong fills): with the lakes underneath,
+                  that fill covered them almost entirely in both themes, independent of colour
+                  -- the same inversion `v2-earthquake-explorer.tsx` carried until Task 7. */}
+              {INLAND_WATER_SHAPES.map((water) => (
+                <path
+                  key={water.id}
+                  d={water.d}
+                  className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5]"
+                />
+              ))}
             </svg>
             <MapAttribution inlandWater context />
 

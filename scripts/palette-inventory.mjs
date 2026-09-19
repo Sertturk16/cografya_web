@@ -180,16 +180,6 @@ export function isRawExempt(file) {
  */
 export const ARBITRARY_PINNED = [
   {
-    file: "components/v2/v2-game-screen.tsx",
-    count: 10,
-    why: "the play-screen map surfaces: the board plate in both themes, land and hairline, and the sea pair",
-  },
-  {
-    file: "components/v2/v2-tool-workbench.tsx",
-    count: 10,
-    why: "the workbench canvas plate in both themes, plus the same land/hairline/sea set the play screen draws",
-  },
-  {
     file: "components/v2/v2-world-map-explorer.tsx",
     count: 2,
     why: "the world map's two-stop dark ocean plate, deferred to T-031d with that file's raw-palette rows",
