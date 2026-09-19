@@ -545,9 +545,35 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 40 -> 33 is Task 10's eighth file: `components/v2/v2-learning-paths.tsx` 7 -> 0, six
+ * decoration and one semantic.
+ *
+ * The six are three card-header washes, and this is the one place in the task where "removed"
+ * COULD NOT mean deleted: the header is a white-on-colour plate, so a gradient with no stops
+ * leaves white text on no background at all. What the verdict removes is the VARIETY -- three
+ * different hues for three cards that are already named in the header they sit behind -- so the
+ * three collapse into one brand wash running from the base to the strong member, a pair that is
+ * declared in both themes and needs no alpha.
+ *
+ * AND THE PLATE'S OWN WHITE UTILITIES HAD TO GO WITH THEM, which is the part a row cannot see.
+ * A fixed white on a fill that lifts in dark is the same failure this task already found on the
+ * favourite button, and on the amber card it was failing in LIGHT too: the title measured 3.20,
+ * the 80%-alpha eyebrow 2.57 and the 20%-white badge 2.54, none of them within reach of the
+ * floor they are held to. The plate now carries `--primary-foreground` throughout. Measured at
+ * the from-end of the gradient, where the badge and the glyph actually sit: title and eyebrow
+ * 5.13 light / 4.94 dark, badge 5.13 / 4.94 as a solid inverse chip rather than a 20% wash
+ * (which would have measured 3.54 / 3.64 and failed at 10px), and the play glyph 3.54 / 3.64 on
+ * its 20% plate, which is a graphical object and clears 3:1. The to-end is 8.36 / 8.13.
+ *
+ * The seventh is a single affirmative tick, emerald throughout the component rather than per
+ * card, so it is semantic: `--success-strong` on `--card`, 7.50 light and 8.78 dark against
+ * 3.65 and 4.66.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 40;
+const RAW_PALETTE_BUDGET = 33;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

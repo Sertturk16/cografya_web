@@ -272,8 +272,18 @@ describe("the literal extractor's hole semantics", () => {
  * wash as literal hue classes and are now `border ${FAULT_IDENTITY.<id>.card}`. The population
  * grew because the markup changed shape, not only colour — which is the honest reading, and the
  * alternative would have been to keep a literal class alive to hold a number still.
+ *
+ * 25 -> 24, T-031c Task 10, and this one FELL. `components/v2/v2-learning-paths.tsx` interpolated
+ * a per-card gradient into its header `<div>`; the three cards now share one brand wash, so the
+ * className is a static string and that `<div>` leaves the population.
+ *
+ * ISOLATED, AND PROVED IN BOTH DIRECTIONS, because a ratchet stepped to make a suite green is
+ * the defect this branch exists to undo. Forward: the failure listed all 24 survivors and the
+ * learning-paths header was the only row missing from them; every other row is character for
+ * character what it was. Reverse: putting a hole back into THAT `<div>` and nothing else
+ * restores the count to 25 against the unchanged constant. One file, one element, one step.
  */
-const TEMPLATE_HOLE_DIVS = 25;
+const TEMPLATE_HOLE_DIVS = 24;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {
