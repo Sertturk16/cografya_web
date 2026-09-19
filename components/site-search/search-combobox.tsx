@@ -45,7 +45,7 @@ const onServer = () => false;
  *
  * T-033 retired `site-search.module.css`. Every colour in it was a raw Terra token and `.dark`
  * redefines none of the thirteen, so the panel rendered as a WHITE card carrying `--color-ink`
- * text on a dark page: 1.13:1 for the input's own text against dark `--card` #121e21, measured
+ * text on a dark page: 1.14:1 for the input's own text against dark `--card` #121e21, measured
  * with `lib/theme/contrast.ts`. Each string below is the deleted rule, value for value, with
  * colour rebound to the bridge. Comments that recorded a MEASUREMENT or a defect came with it;
  * the ones that only restated CSS did not.
@@ -83,24 +83,30 @@ const SLOT = "flex items-center ml-auto min-[70rem]:relative min-[70rem]:ml-0";
  * `border-input`, not `border-border`. A control boundary must be perceivable and WCAG 1.4.11 asks
  * 3:1 of it; `--input` is the bridge token for exactly that job, and its light value IS the
  * `--color-taupe` this rule already carried (3.86:1 on `--card`, 3.64:1 on the header's
- * `--background` plate). Unlike the raw token it is redefined in `.dark` — #5c8189, 4.01:1 on dark
+ * `--background` plate). Unlike the raw token it is redefined in `.dark` — #5c8189, 4.02:1 on dark
  * `--card`. `border-border` is the decorative edge at 1.45:1 light / 1.53:1 dark and was rejected
  * here for that reason when the rule was first written.
  *
- * `[&[hidden]]:invisible` is REQUIRED — the `hidden` attribute does not hide this control on its
- * own. `[hidden]` is applied only by the UA stylesheet's `display: none`, and the author-origin
- * `inline-flex` here beats it unconditionally in the cascade (the repo ships no `[hidden]` reset).
- * Without it the collapsed trigger stayed rendered, focusable and — below the desktop breakpoint,
- * where its label is hidden — NAMELESS while the panel was open (WCAG 4.1.2). `invisible` rather
- * than `hidden`: the slot has no size of its own, so removing the trigger from flow would collapse
- * the header's first row, trading an a11y defect for the layout shift this design exists to
- * prevent. `invisible` keeps the box and exits both the a11y tree and the tab order.
+ * NOTHING here hides the collapsed trigger, and that is now correct rather than a gap. The
+ * stylesheet carried a `.trigger[hidden] { visibility: hidden }` rule and a comment saying the
+ * `hidden` attribute does not hide this control on its own, because the repo shipped no
+ * `[hidden]` reset and the author-origin `display: inline-flex` beat the UA sheet. **Both halves
+ * of that are false today** and this conversion re-measured rather than carrying the comment
+ * over: Tailwind v4's preflight ships `[hidden]:where(:not([hidden="until-found"])) { display:
+ * none !important }` (`node_modules/tailwindcss/preflight.css:396`), which is author-origin and
+ * important, so it beats `inline-flex` outright. Measured through CDP on the open panel at 390
+ * and 1280: the trigger matches that rule, computes `display: none`, has a 0x0 rect and is not
+ * tabbable — so the WCAG 4.1.2 defect the old rule existed for (a focusable, NAMELESS control
+ * behind an open panel) cannot occur. A `[&[hidden]]:invisible` utility was written here first
+ * and removed once measured: it matched, set `visibility: hidden`, and changed nothing.
+ *
+ * The layout-shift worry that chose `visibility` over `display` is also measured away in this
+ * header: nav height is 65px with the panel closed AND open, at both widths.
  */
 const TRIGGER =
   "inline-flex items-center justify-center gap-1.5 min-w-[28px] min-h-[28px] px-[7px] " +
   "rounded-lg border border-input bg-card text-muted-foreground no-underline " +
-  "text-[0.9rem] font-semibold hover:border-primary hover:text-primary " +
-  "[&[hidden]]:invisible min-[70rem]:justify-start";
+  "text-[0.9rem] font-semibold hover:border-primary hover:text-primary min-[70rem]:justify-start";
 
 /**
  * Hidden on narrow viewports: the trigger collapses to the icon alone so it fits beside the brand
@@ -135,7 +141,7 @@ const ICON = "flex-none";
  * popover, not a section panel: `Card`'s `panel` variant is `rounded-3xl border border-border
  * bg-card p-6 sm:p-8`, which is a 22px radius, 24-32px of padding on a dropdown whose padding is
  * 10px, and a `border-border` edge at 1.45:1 light / 1.53:1 dark where this panel needs the same
- * 3:1 control boundary as the trigger it hangs from (`border-input`, 3.86:1 / 4.01:1 on `--card`).
+ * 3:1 control boundary as the trigger it hangs from (`border-input`, 3.86:1 / 4.02:1 on `--card`).
  * The header's sibling dropdowns hand-draw their surface for the same reason.
  */
 const PANEL =
@@ -159,9 +165,9 @@ const PANEL =
  *
  * `outline-ring`, not the `--color-accent` the deleted rule painted. That raw token is frozen at
  * #276b70 in both themes: on the panel's old frozen-white ground it measured 6.13:1, but the panel
- * is `bg-card` now, and #276b70 on dark `--card` is 2.77:1 — a focus ring BELOW WCAG 1.4.11's 3:1
+ * is `bg-card` now, and #276b70 on dark `--card` is 2.78:1 — a focus ring BELOW WCAG 1.4.11's 3:1
  * floor for the one user who cannot do without it. `--ring` is redefined in `.dark` and lands at
- * 5.43:1 dark / 6.13:1 light on `--card`, at the same 3px width and 2px offset.
+ * 5.44:1 dark / 6.13:1 light on `--card`, at the same 3px width and 2px offset.
  */
 const INPUT_ROW =
   "flex items-center gap-2 px-2.5 rounded-lg border border-input text-muted-foreground " +

@@ -62,6 +62,29 @@ describe("the header trigger keeps its measured 28x28 floor", () => {
     expect(poisoned).not.toContain("min-w-[28px]");
     expect(poisoned).toMatch(REJECTED);
   });
+
+  it("POSITIVE CONTROL — a DE-HOISTED floor reds, which is the failure mode that is silent", () => {
+    // The control above exercises `String.split`, not `classConstant`, and `classConstant` is the
+    // part that fails quietly: `lib/test-support/converted-floor.ts` returns `null` for a floor
+    // left inline on a `className`, so a pin built on it asserts nothing and stays green. So this
+    // control mutates the SHAPE rather than the value — it puts the floor back where the extractor
+    // cannot read it — and proves the `not.toBeNull()` guard above is what stands between this
+    // suite and a vacuous pass.
+    const declaration = classConstant(source, "TRIGGER")!;
+    const literal = declaration.slice(declaration.indexOf("=") + 1, -1).trim();
+    const deHoisted = source
+      .split(declaration)
+      .join("")
+      .split("className={TRIGGER}")
+      .join(`className={${literal}}`);
+
+    // The floor is still THERE — the value did not move, only its shape did. That is the whole
+    // point: the pin goes blind while the component is still correct, and stays blind when it
+    // stops being correct.
+    expect(deHoisted).toContain("min-w-[28px]");
+    expect(classConstant(deHoisted, "TRIGGER"), "the extractor read a de-hoisted floor").toBeNull();
+    expect(renderSites(deHoisted, "TRIGGER")).toBe(0);
+  });
 });
 
 /**
@@ -108,8 +131,8 @@ describe("the panel's close button keeps its 32x32 target floor", () => {
  *    "the input is focused" while focus was elsewhere.
  *
  * And the colour: `outline-ring`, not the `--color-accent` the deleted rule painted. That raw
- * token is frozen at #276b70 in both themes and measures 2.77:1 on dark `--card`, the ground the
- * converted panel takes — a focus ring below WCAG 1.4.11's 3:1 floor. `--ring` is 5.43:1 dark and
+ * token is frozen at #276b70 in both themes and measures 2.78:1 on dark `--card`, the ground the
+ * converted panel takes — a focus ring below WCAG 1.4.11's 3:1 floor. `--ring` is 5.44:1 dark and
  * 6.13:1 light on the same surface.
  */
 describe("the focused search box draws exactly one ring, from the themed token", () => {
@@ -139,6 +162,22 @@ describe("the focused search box draws exactly one ring, from the themed token",
     const poisoned = real.split("focus-visible:outline-none!").join("focus-visible:outline-none");
     expect(poisoned).not.toBe(real);
     expect(poisoned).not.toContain("focus-visible:outline-none!");
+  });
+
+  it("POSITIVE CONTROL — the suppression de-hoisted goes unread, same as the floor", () => {
+    // Same sharpening as the trigger's: exercise `classConstant`, not `String.split`. Inlining
+    // INPUT on its `className` leaves the `!` in the file and takes it out of the pin's reach.
+    const declaration = classConstant(source, "INPUT")!;
+    const literal = declaration.slice(declaration.indexOf("=") + 1, -1).trim();
+    const deHoisted = source
+      .split(declaration)
+      .join("")
+      .split("className={INPUT}")
+      .join(`className={${literal}}`);
+
+    expect(deHoisted).toContain("focus-visible:outline-none!");
+    expect(classConstant(deHoisted, "INPUT"), "the extractor read a de-hoisted INPUT").toBeNull();
+    expect(renderSites(deHoisted, "INPUT")).toBe(0);
   });
 });
 

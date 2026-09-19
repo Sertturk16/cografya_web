@@ -203,8 +203,8 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * `components/site-search` is the one directory here with NO exception to record: the header
    * combobox carries no `dark:`, no raw palette class, no brand hex and no bare `white`/`black`
    * utility, because it has no data surface to protect — every colour in it is chrome and every
-   * one of them is a bridge token. Its focus ring is `outline-ring`, measured at 5.43:1 dark and
-   * 6.13:1 light on `--card`; the `--color-accent` it replaced was 2.77:1 on the dark half.
+   * one of them is a bridge token. Its focus ring is `outline-ring`, measured at 5.44:1 dark and
+   * 6.13:1 light on `--card`; the `--color-accent` it replaced was 2.78:1 on the dark half.
    *
    * The tempting move is to widen this to every feature directory at once. Do NOT. The six
    * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a

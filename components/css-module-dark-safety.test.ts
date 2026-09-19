@@ -37,11 +37,19 @@ const EXPECTED_MODULE_COUNT = 4;
  * first: all 22 reads were live, on the ERA5-Land table, the chart's axis ink and the three
  * attribution blocks, and every one of them rendered inside `.climate-dark-scope`.
  *
- * 62 once `site-search.module.css` went the same way, taking 20. That one painted the header
- * combobox, the most-seen of the eight: a `#fff` panel with `--color-ink` text (1.13:1 on dark
- * `--card`) and `--color-primary-dark` result links (2.03:1). Its focus ring was frozen too —
- * `--color-accent` at 2.77:1 on the ground the panel takes after conversion, below WCAG 1.4.11's
- * 3:1 floor for the one reader who cannot do without a ring.
+ * 62 once `site-search.module.css` went the same way, taking 20. Its readings were the second
+ * worst of the eight — a `#fff` panel with `--color-ink` text (1.14:1 on dark `--card`),
+ * `--color-primary-dark` result links (2.04:1), and a `--color-accent` focus ring that this
+ * conversion's own move to `bg-card` would have left at 2.78:1, below WCAG 1.4.11's 3:1 floor for
+ * the one reader who cannot do without a ring.
+ *
+ * NOT "the most-seen of the eight", which is what the plan said and what an earlier version of
+ * this docblock repeated. Measured: all 20 reads lived in `search-combobox.tsx`'s `variant
+ * !== "v2"` branch, and the tree's only mount passes `variant="v2"`, so the stylesheet was
+ * REACHABLE — which is all `orphan-stylesheets.test.ts` asks — and rendered by no route. The
+ * header search a reader actually meets is the v2 command dialog, which was already Tailwind.
+ * T-054 owns what to do with the unrendered branch; this task converted it rather than deleting
+ * it, because deleting it changes the `variant` contract.
  */
 const TOTAL_RAW_READS = 62;
 
