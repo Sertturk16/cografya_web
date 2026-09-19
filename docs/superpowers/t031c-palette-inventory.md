@@ -509,6 +509,38 @@ same treatment together, which is what keeps them agreeing.
 
 **Totals:** data 0, semantic 12, decoration 30.
 
+**APPLIED, Task 9 — all 42. The verdicts are unchanged; what "removed" DOES is corrected.**
+
+The 12 semantic went as written: `--success-strong` on the comparison table's "✓ Var" cells,
+7.50 light / 8.78 dark on `--card` and 7.09 / 8.41 with the row hovered to a 30% muted wash,
+against 3.77 / 3.56 and 4.52 / 4.33 for the raw emerald-600. Light was failing in both states.
+
+The 30 decoration rows are **bound to `--secondary` and `--info` rather than deleted**, and the
+reason is the second half of this section's own argument. The set holds brand members — that is
+what disqualifies it as a data set — and this file is the clearest instance of it on the branch:
+card 1 is `--primary` from its `to-primary/5` gradient through its plate, its badge, its hover
+heading and its three ticks; cards 2 and 3 are the SAME markup with `emerald-*` and `sky-*`
+substituted; and their own CTAs already resolve to bridge tokens, because
+`components/ui/button.tsx` defines `variant="emerald"` as `bg-secondary` and `variant="sky"` as
+`bg-info`. Deleting the tints would leave two grey cards with a green and a blue button still at
+the bottom of them, beside a card 1 that stays fully terracotta — less coherent than what ships
+today. The mapping applied is the one `button.tsx` already made, across all three surfaces per
+tool, which is exactly what "all three surfaces collapse onto the same treatment together"
+asks for. It also fixes a disagreement removal would have preserved: card 2 painted a bright
+emerald chrome above an OLIVE button and card 3 a bright sky chrome above a DARK TEAL one, each
+card contradicting its own call to action. All three now read terracotta, olive and teal from
+gradient to button, confirmed in both themes at 1280. The `decoration` verdict is what licenses it: `docs/design.md` rule 1 forbids brand
+chrome that ENCODES DATA, and the finding here is that these encode nothing.
+
+| Surface                                  | Floor | `--secondary` | `--info`    | `--primary` (already shipping) | raw, light             |
+| ---------------------------------------- | ----- | ------------- | ----------- | ------------------------------ | ---------------------- |
+| `<th>` column header, text on `--card`   | 4.5   | 5.89 / 5.42   | 6.13 / 5.44 | 5.13 / 4.99                    | emerald 3.77, sky 4.10 |
+| card tick, glyph on the `to-<hue>/5` end | 3     | 5.52 / 5.09   | 5.73 / 5.10 | 4.79 / 4.72                    | —                      |
+| icon plate, glyph on its own 15% tint    | 3     | 4.79 / 4.34   | 4.96 / 4.35 | 4.18 / 4.15                    | —                      |
+
+Both hand-drawn card badges become `Badge variant="secondary"` and `variant="info"`, so no new
+spelling joins `page-composition-cards.test.ts`'s hand-drawn census.
+
 ### components/v2/v2-world-map-explorer.tsx (27)
 
 | Line          | Class(es)                                                                                                                                            | #   | Verdict  | Becomes                                               | Note                                                                                                                                                                |

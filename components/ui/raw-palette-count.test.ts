@@ -295,9 +295,53 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after.
  *
+ * 168 -> 126 is T-031c Task 9's sixth file: `components/v2/v2-tools-hub.tsx` 42 -> 0, and it is
+ * the heaviest single file left on the branch.
+ *
+ * The 12 semantic are the "Var" cells of the comparison table, emerald in all three columns
+ * and therefore affirmative rather than tool identity. They take `--success-strong`: 7.50 light
+ * / 8.78 dark on `--card`, 7.09 / 8.41 with the row hovered to a 30% muted wash, against 3.77 /
+ * 3.56 and 4.52 / 4.33 for the raw emerald-600 they replace. Light was failing in both states.
+ *
+ * The 30 decoration are the tool-identity rows, and the verdict stands exactly as the inventory
+ * ruled it after two rounds of argument: nothing is carried by colour alone, because all three
+ * surfaces -- the card, the audience-card icon plate and the `<th>` -- name their tool in
+ * adjacent text; and a set holding brand members cannot be a data set. What CHANGED is only
+ * what "removed" does to a decoration hue whose own set is already half brand, and this file is
+ * the clearest case of it on the branch. Card 1 is `--primary` from its gradient to its ticks;
+ * cards 2 and 3 are that same markup with emerald and sky substituted -- AND THEIR OWN CTAs
+ * ALREADY RESOLVE TO BRIDGE TOKENS, because `components/ui/button.tsx` defines
+ * `variant="emerald"` as `bg-secondary` and `variant="sky"` as `bg-info`. Deleting the tints
+ * would have left two grey cards with a green and a blue button still at the bottom of them,
+ * which is less coherent than what ships today, while card 1 stayed fully terracotta.
+ *
+ * AND THE BINDING FIXED A DISAGREEMENT THE REMOVAL WOULD HAVE PRESERVED. Card 2 painted a
+ * bright emerald chrome above an olive `--secondary` button, and card 3 a bright sky chrome
+ * above a dark teal `--info` button -- each card contradicting its own call to action. After
+ * binding, all three cards read terracotta, olive and teal from gradient to button. Confirmed
+ * in both themes at 1280.
+ *
+ * So emerald becomes `--secondary` and sky becomes `--info` -- a mapping this repo had already
+ * made, not a new one -- across all three surfaces per tool, which is what the inventory means
+ * by collapsing them together. The `decoration` verdict is what LICENSES this: `docs/design.md`
+ * rule 1 forbids brand chrome that encodes data, and the whole finding here is that these
+ * encode nothing.
+ *
+ * Measured, with the surface each figure is a ratio to. `<th>` cells are TEXT at 4.5:1 on
+ * `--card`: `--secondary` 5.89 light / 5.42 dark and `--info` 6.13 / 5.44, beside the
+ * `--primary` header already there at 5.13 / 4.99 -- where raw emerald-600 measured 3.77 and
+ * sky-600 4.10 in light, both failing. The ticks are glyphs at 3:1 on the card's own
+ * `to-<hue>/5` gradient end: 5.52 / 5.09 and 5.73 / 5.10, against `--primary`'s shipping 4.79 /
+ * 4.72. The icon plates are glyphs on their own 15% tint: 4.79 / 4.34 and 4.96 / 4.35, both
+ * BETTER than the `--primary` plate beside them at 4.18 / 4.15. The two hand-drawn badges
+ * become `Badge variant="secondary"` and `variant="info"`, so no new spelling joins the
+ * hand-drawn card census -- the lesson the previous file paid for.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 168;
+const RAW_PALETTE_BUDGET = 126;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

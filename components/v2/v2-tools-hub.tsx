@@ -90,23 +90,19 @@ export function V2ToolsHub() {
           </div>
 
           {/* Card 2: Koordinat Bulucu (Yeşil / Beyaz Buton) */}
-          <div className="p-6 sm:p-7 rounded-3xl border border-border bg-gradient-to-b from-card via-card to-emerald-500/5 hover:border-emerald-500/50 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+          <div className="p-6 sm:p-7 rounded-3xl border border-border bg-gradient-to-b from-card via-card to-secondary/5 hover:border-secondary/50 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="p-3 rounded-2xl bg-emerald-600/15 text-emerald-600 group-hover:scale-110 transition-transform">
+                <span className="p-3 rounded-2xl bg-secondary/15 text-secondary group-hover:scale-110 transition-transform">
                   <MapPin className="size-6" />
                 </span>
-                <Badge
-                  variant="outline"
-                  size="sm"
-                  className="border-emerald-600/30 text-emerald-700 dark:text-emerald-300 bg-emerald-500/10"
-                >
+                <Badge variant="secondary" size="sm">
                   WGS84, DMS &amp; UTM
                 </Badge>
               </div>
 
               <div>
-                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-emerald-600 transition-colors">
+                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-secondary transition-colors">
                   Koordinat &amp; Konum Bulucu
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
@@ -118,15 +114,15 @@ export function V2ToolsHub() {
               {/* Feature Highlights */}
               <ul className="space-y-2 text-xs text-muted-foreground pt-3 border-t border-border/70">
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-secondary shrink-0" />
                   <span>Ondalık Derece (DD) &amp; DMS Çift Format</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-secondary shrink-0" />
                   <span>Noktadan İl Tespiti (Reverse Geocoding)</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-secondary shrink-0" />
                   <span>6° UTM Dilim (Zone 35-38N) eşlemesi</span>
                 </li>
               </ul>
@@ -148,23 +144,19 @@ export function V2ToolsHub() {
           </div>
 
           {/* Card 3: Alan Hesaplama (Mavi / Beyaz Buton) */}
-          <div className="p-6 sm:p-7 rounded-3xl border border-border bg-gradient-to-b from-card via-card to-sky-500/5 hover:border-sky-500/50 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
+          <div className="p-6 sm:p-7 rounded-3xl border border-border bg-gradient-to-b from-card via-card to-info/5 hover:border-info/50 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between group relative overflow-hidden">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="p-3 rounded-2xl bg-sky-600/15 text-sky-600 group-hover:scale-110 transition-transform">
+                <span className="p-3 rounded-2xl bg-info/15 text-info group-hover:scale-110 transition-transform">
                   <Layers className="size-6" />
                 </span>
-                <Badge
-                  variant="outline"
-                  size="sm"
-                  className="border-sky-600/30 text-sky-700 dark:text-sky-300 bg-sky-500/10"
-                >
+                <Badge variant="info" size="sm">
                   Küresel Çokgen Yüzölçümü
                 </Badge>
               </div>
 
               <div>
-                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-sky-600 transition-colors">
+                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-info transition-colors">
                   Çokgen Yüzölçümü &amp; Alan Hesabı
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-2">
@@ -176,15 +168,15 @@ export function V2ToolsHub() {
               {/* Feature Highlights */}
               <ul className="space-y-2 text-xs text-muted-foreground pt-3 border-t border-border/70">
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 text-sky-600 shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-info shrink-0" />
                   <span>L&apos;Huilier küresel açı fazlalığı teoremi</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 text-sky-600 shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-info shrink-0" />
                   <span>km², Hektar ve Dönüm eşzamanlı dönüşümü</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 text-sky-600 shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-info shrink-0" />
                   <span>Kesişen çokgen tespiti &amp; Dış hat sıralaması</span>
                 </li>
               </ul>
@@ -255,7 +247,7 @@ export function V2ToolsHub() {
 
           {/* Audience 2: Coğrafya Öğretmenleri & Eğitmenler */}
           <div className="p-6 rounded-2xl bg-card border border-border space-y-4 shadow-xs">
-            <div className="size-10 rounded-xl bg-emerald-600/15 text-emerald-600 flex items-center justify-center">
+            <div className="size-10 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center">
               <BookOpen className="size-5" />
             </div>
             <div>
@@ -280,7 +272,7 @@ export function V2ToolsHub() {
 
           {/* Audience 3: CBS & Harita Araştırmacıları / Gezginler */}
           <div className="p-6 rounded-2xl bg-card border border-border space-y-4 shadow-xs">
-            <div className="size-10 rounded-xl bg-sky-600/15 text-sky-600 flex items-center justify-center">
+            <div className="size-10 rounded-xl bg-info/15 text-info flex items-center justify-center">
               <Compass className="size-5" />
             </div>
             <div>
@@ -327,8 +319,8 @@ export function V2ToolsHub() {
               <tr className="border-b border-border/80 text-muted-foreground font-semibold">
                 <th className="pb-3 pr-4">Özellik / Yetenek</th>
                 <th className="pb-3 px-4 text-primary">Kuş Uçuşu Mesafe Ölçer</th>
-                <th className="pb-3 px-4 text-emerald-600">Koordinat &amp; Konum Bulucu</th>
-                <th className="pb-3 pl-4 text-sky-600">Çokgen Alan Hesaplama</th>
+                <th className="pb-3 px-4 text-secondary">Koordinat &amp; Konum Bulucu</th>
+                <th className="pb-3 pl-4 text-info">Çokgen Alan Hesaplama</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/50 text-foreground">
@@ -352,13 +344,13 @@ export function V2ToolsHub() {
                 <td className="py-3 pr-4 font-semibold text-muted-foreground">
                   81 İl Seçici Desteği
                 </td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                <td className="py-3 px-4 text-success-strong font-semibold">
                   ✓ Var (MGM Koordinatları)
                 </td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                <td className="py-3 px-4 text-success-strong font-semibold">
                   ✓ Var (İl Merkez Noktası)
                 </td>
-                <td className="py-3 pl-4 text-emerald-600 font-semibold">
+                <td className="py-3 pl-4 text-success-strong font-semibold">
                   ✓ Var (Köşe Noktası Olarak)
                 </td>
               </tr>
@@ -366,19 +358,25 @@ export function V2ToolsHub() {
                 <td className="py-3 pr-4 font-semibold text-muted-foreground">
                   Doğrudan Koordinat Girişi
                 </td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (DD &amp; DMS)</td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">✓ Var (DD &amp; DMS)</td>
-                <td className="py-3 pl-4 text-emerald-600 font-semibold">✓ Var (DD &amp; DMS)</td>
+                <td className="py-3 px-4 text-success-strong font-semibold">
+                  ✓ Var (DD &amp; DMS)
+                </td>
+                <td className="py-3 px-4 text-success-strong font-semibold">
+                  ✓ Var (DD &amp; DMS)
+                </td>
+                <td className="py-3 pl-4 text-success-strong font-semibold">
+                  ✓ Var (DD &amp; DMS)
+                </td>
               </tr>
               <tr className="hover:bg-muted/30">
                 <td className="py-3 pr-4 font-semibold text-muted-foreground">Ölçüm Kaydetme</td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                <td className="py-3 px-4 text-success-strong font-semibold">
                   ✓ Var (Hesaba Bağlı Bulut Arşivi)
                 </td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                <td className="py-3 px-4 text-success-strong font-semibold">
                   ✓ Var (Hesaba Bağlı Bulut Arşivi)
                 </td>
-                <td className="py-3 pl-4 text-emerald-600 font-semibold">
+                <td className="py-3 pl-4 text-success-strong font-semibold">
                   ✓ Var (Hesaba Bağlı Bulut Arşivi)
                 </td>
               </tr>
@@ -386,13 +384,13 @@ export function V2ToolsHub() {
                 <td className="py-3 pr-4 font-semibold text-muted-foreground">
                   PNG Olarak İndirme
                 </td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                <td className="py-3 px-4 text-success-strong font-semibold">
                   ✓ Var (Yüksek Çözünürlük)
                 </td>
-                <td className="py-3 px-4 text-emerald-600 font-semibold">
+                <td className="py-3 px-4 text-success-strong font-semibold">
                   ✓ Var (Yüksek Çözünürlük)
                 </td>
-                <td className="py-3 pl-4 text-emerald-600 font-semibold">
+                <td className="py-3 pl-4 text-success-strong font-semibold">
                   ✓ Var (Yüksek Çözünürlük)
                 </td>
               </tr>
