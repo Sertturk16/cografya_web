@@ -470,7 +470,8 @@ import {
  * is itself a 10% tint over the card's own muted gradient end. Measured there the three raw
  * glyphs were 2.99, 3.39 and 3.35 in light -- one under the 3:1 graphical floor and all three
  * under 4.5 -- against 4.74 light and 5.26 dark for the brand glyph already shipping beside
- * them. The tile edge moves from 1.91 to 4.33 light, which is the difference between a tint
+ * them. That pair is the MODEL, and the re-probe below confirms it: painted on the real page
+ * the same glyph reads 4.74 / 5.31. The tile edge moves from 1.91 to 4.33 light, which is the difference between a tint
  * with no edge and a tile.
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
@@ -652,15 +653,36 @@ import {
  * takes the rotation token, 6.13 / 5.44. That was true of the amber it replaces too, so the row
  * moved exactly one mark.
  *
- * ONE MORE FIGURE THE PAINT MOVED, and it is an alpha figure. The achievement glyph's plate is
- * `--background` at EIGHTY per cent, well past the ~20% above which this branch stopped trusting
- * the model. Computed it was 4.74 light / 5.26 dark; painted it is 4.49 and 4.63. The painted
- * pair is what ships and both clear the 3:1 a glyph is held to, but the gap is a quarter of a
- * point and a whole point respectively -- larger than the one byte the two agree to at 5% and
- * 15%. The unlocked tile needs a session, so the probe injected the tile's own class strings
- * into the live page and let the page's compiled CSS and Chromium's compositing do the rest.
+ * ONE FIGURE THAT WAS WRONG, AND THE RULE THAT WAS DRAWN FROM IT, WITHDRAWN. Commit `9b8589b`
+ * recorded the achievement glyph's 80% plate as 4.49 light / 4.63 dark against a model of
+ * 4.74 / 5.26, and generalised that gap into standing prose: that 80% is where `blendOver` and
+ * paint part, by a quarter point light and a whole point dark. **It does not reproduce, and
+ * there is no such rule.**
  *
- * Both figures are read from these collectors, not arithmetic.
+ * RE-PROBED on the real stack: a real achievement tile on `/oyun`, flipped to the unlocked
+ * branch in place in the page's own flow, with the plate's backdrop read from screenshot PIXELS
+ * (30 of 30 identical in both themes) and the glyph — opaque `--primary`, so computed is
+ * painted — converted to sRGB by the browser's own engine. It paints **4.74 light and 5.31
+ * dark**, against a model of 4.73 / 5.36. The two agree to 0.01 and 0.05, which is the ±1-byte
+ * quantisation band this file already documents at 5% and 15%. Eighty per cent is not special.
+ *
+ * WHAT THE FIRST PROBE WAS ACTUALLY STANDING ON, because the number was not noise. It named a
+ * dark backdrop of `#212322`, a NEUTRAL grey; this page's dark `--background` paints `#0b1416`,
+ * teal-tinted. `ratio(--primary-dark #d0714e, #212322)` is **4.63 exactly** — the recorded
+ * "painted" dark figure is the flat grey's own ratio, and the light 4.49 falls on a neutral near
+ * `#f0f0f0` rather than on this page's `#fbf8f3`. The probe injected the tile's class strings
+ * into a stack that was not this one. Direction was conservative, so nothing shipped under a
+ * floor, and no other figure on this branch depends on it.
+ *
+ * (`opacity-60` is not the explanation either: the locked tile's treatment reads 2.44 / 2.62.)
+ *
+ * A SECOND-ORDER TRAP THE RE-PROBE HIT, worth one line because it is how a probe measures the
+ * wrong element while believing otherwise: written and read inside ONE `page.evaluate`,
+ * Chromium hands back the PRE-mutation computed style. The first run of the re-probe reported a
+ * `bg-muted/20` tile at 0.2 alpha after setting `bg-primary/10` on it. The flip and the read
+ * have to be separate round trips.
+ *
+ * Both collector figures are read from these collectors, not arithmetic.
  */
 /**
  * THE END STATE OF THIS ARM, AND WHY THE NUMBER IS GONE.
