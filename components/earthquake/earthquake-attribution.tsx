@@ -2,19 +2,20 @@ import { getTranslations } from "next-intl/server";
 import type { EarthquakeAttribution as EarthquakeAttributionRow } from "@/lib/api/types";
 import { Card } from "@/components/ui/card";
 /**
- * NO STYLESHEET IMPORT. `earthquake.module.css` styles this block's paragraphs with
- * `var(--color-slate)` and `var(--color-ink)` — RAW Terra tokens, frozen at their light values
- * and never redefined under `.dark`. On the V2 pages this component now renders on, that put the
- * mandated AFAD notice at roughly 2.3:1 against the dark page. The bridge tokens used below
- * redefine per theme, which is what they are for.
+ * NO STYLESHEET IMPORT, AND THERE IS NO LONGER A STYLESHEET TO IMPORT. `earthquake.module.css`
+ * used to style this block's paragraphs with `var(--color-slate)` and `var(--color-ink)` — RAW
+ * Terra tokens, frozen at their light values and never redefined under `.dark`. Measured on
+ * dark `--card` (#121e21), the fill of the `<Card variant="panel">` this block renders as:
+ * `--color-slate` #57504a is **2.15:1** and `--color-ink` #2b2622 is **1.14:1**, so the mandated
+ * AFAD notice was effectively unreadable on a dark page. This component moved to bridge tokens
+ * first; `text-muted-foreground` is **7.79:1** and `text-foreground` **14.73:1** on the same
+ * backdrop.
  *
- * The stylesheet is left in place for its three remaining consumers (the list, the magnitude
- * badge, the province section) — they have the same latent problem and it is T-033 task 6's to
- * fix, not this component's to fix on their behalf. It used to have five; T-036 deleted the
- * map and the filter island, and the rules that only they used went with them. The three
- * classes this block itself abandoned (`.sources`, `.regulationReference`, `.disclaimer`) have
- * now gone too: T-033 task 6 deleted them as the debt this note recorded, ahead of converting
- * the rest of the file.
+ * T-033 task 6 finished the job: it deleted the three classes this block had abandoned
+ * (`.sources`, `.regulationReference`, `.disclaimer`), converted the file's other three
+ * consumers — the list, the magnitude badge, the province section — and removed the stylesheet.
+ * The badge's `--eq-mag-*` ramp is the one thing that did not move: it is a data token set, and
+ * `magnitude-badge.tsx` carries its measurement and whose branch owns the dark half.
  */
 
 interface EarthquakeAttributionProps {

@@ -199,11 +199,15 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     id: "earthquake",
     pathname: "/deprem",
     locales: ["tr"],
-    modules: ["earthquake.module.css"],
+    modules: [],
     why:
-      "`earthquake.module.css`: a live AFAD list whose rows carry magnitude, depth, time and " +
-      "a place name of unbounded length. The only route where the content width is decided " +
-      "by upstream data rather than by the repo.",
+      "A live AFAD list whose rows carry magnitude, depth, time and a place name of unbounded " +
+      "length. The only route where the content width is decided by upstream data rather than " +
+      "by the repo, which is why it is swept whatever paints it. The module claim is gone: " +
+      "T-033 task 6 converted `earthquake.module.css` and deleted it, and the claim was " +
+      "mis-addressed even before that — `/deprem` renders `V2EarthquakeExplorer`, and the " +
+      "stylesheet's event table only ever reached `/turkiye/[slug]`, which the `province` " +
+      "shape covers.",
   },
   {
     id: "book",

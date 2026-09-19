@@ -20,7 +20,7 @@ export const SURVIVING_MODULES: readonly string[] = [
  * Steps down as T-033 converts each module. The count is the POSITIVE CONTROL: without it, a
  * walk that found nothing would satisfy the raw-token assertion perfectly.
  */
-const EXPECTED_MODULE_COUNT = 4;
+const EXPECTED_MODULE_COUNT = 3;
 
 /**
  * Raw Terra tokens are frozen at their light values — `.dark` redefines not one of the 13
@@ -57,8 +57,22 @@ const EXPECTED_MODULE_COUNT = 4;
  * took FIVE reads with them, not three: `.sources p` and `.regulationReference` each read
  * `--color-slate`, and `.disclaimer` alone read three (`--color-accent`, `--color-surface`,
  * `--color-ink`). The IMPORTER-SCOPED, test-excluding loop printed exactly those three names.
+ *
+ * 46 once the file itself went, taking the remaining 11. Its readings were not the worst of the
+ * eight but they were the most repeated: `--color-ink` (1.14:1 on dark `--card`) on every place
+ * name and every header cell, `--color-slate` (2.15:1) on the caption, the binding sentence, the
+ * empty state and the magnitude-floor note, and a `--color-accent` focus ring at 2.78:1 — under
+ * WCAG 1.4.11's 3:1 floor for the one reader who cannot do without it. The `--color-surface`
+ * header band was the "light card on a dark page" shape again in miniature: #f1e9de at 14.15:1
+ * against the card it sat on.
+ *
+ * What did NOT move is `magnitude-badge.tsx`'s `--eq-mag-1`…`-5` ramp. It is a data token set
+ * encoding a public-safety scale, so it is absent from the bridge mapping by design — and it is
+ * measured rather than assumed: **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** on dark `--card`, four of
+ * five under 3:1. That is T-031d's to re-derive with the other dark data surfaces; the reading is
+ * recorded in the badge's own docblock rather than left silent.
  */
-const TOTAL_RAW_READS = 57;
+const TOTAL_RAW_READS = 46;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {

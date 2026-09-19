@@ -157,8 +157,9 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * GROWS ONE DIRECTORY PER T-033 TASK, AND DELIBERATELY NOT FASTER.
    *
    * `components/marine` is here because T-033 task 2 converted it, `components/air` because
-   * task 3 converted it, `components/climate` because task 4 did and `components/site-search`
-   * because task 5 did. The rule that put them here:
+   * task 3 converted it, `components/climate` because task 4 did, `components/site-search`
+   * because task 5 did and `components/earthquake` because task 6 did. The rule that put them
+   * here:
    * **the task that retires a module adds that module's directory to this list, in the same
    * commit as the conversion.** Nothing would otherwise have caught a `var(--color-*, #hex)`
    * escape in the four files that conversion rewrote — the constraint was complied with by
@@ -206,6 +207,22 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * one of them is a bridge token. Its focus ring is `outline-ring`, measured at 5.44:1 dark and
    * 6.13:1 light on `--card`; the `--color-accent` it replaced was 2.78:1 on the dark half.
    *
+   * `components/earthquake` carries the THIRD deliberate bare `white`, and it is the opaque form
+   * again rather than a scrim: `magnitude-badge.tsx` prints its label `text-white` because the
+   * label sits on the `--eq-mag-1`…`-5` fill, a data ramp encoding a public-safety scale that no
+   * theme redefines. Measured — #fff on the five fills: **4.69 / 6.43 / 9.01 / 13.15 / 17.21:1**.
+   * A bridge token would track the page instead of the ground the label is actually on and would
+   * put `--foreground`'s light value at 1.12:1 on `--eq-mag-5`.
+   *
+   * The ramp ITSELF fails on the dark half and is recorded rather than quietly tolerated:
+   * **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** against dark `--card` (#121e21), the panel these
+   * badges render on. Four of five are under WCAG 1.4.11's 3:1. It is not repaired here for the
+   * same reason the map tints above are not — a ramp is an ordered scale, not five independent
+   * colours — and it belongs to T-031d with them. Everything else in the directory is a bridge
+   * token: no `dark:`, no raw palette class, no brand hex, and the focus ring on the event
+   * table is `outline-ring` (5.44:1 dark / 6.13:1 light on `--card`) where the stylesheet had
+   * `--color-accent` at 2.78:1.
+   *
    * The tempting move is to widen this to every feature directory at once. Do NOT. The six
    * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a
    * blanket widening reds immediately and the only way back to green is an exemption list —
@@ -219,6 +236,7 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
     fileURLToPath(new URL("../air", import.meta.url)),
     fileURLToPath(new URL("../climate", import.meta.url)),
     fileURLToPath(new URL("../site-search", import.meta.url)),
+    fileURLToPath(new URL("../earthquake", import.meta.url)),
     fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 

@@ -23,9 +23,10 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
  *
  * ## What it is NOT
  *
- * NOT a prohibition. A fixed px width is often right: `earthquake.module.css`'s `min-width:
- * 520px` is what makes a wide table scroll instead of squeezing, and every `width: 1px` here is a
- * visually-hidden clip rect. The rule is that the POPULATION is
+ * NOT a prohibition. A fixed px width is often right: the 520px floor that used to sit in
+ * `earthquake.module.css` is what makes a wide table scroll instead of squeezing — it now lives
+ * in `earthquake-list.tsx`'s `TABLE`, pinned by `components/earthquake/earthquake.structure.test.ts`
+ * — and every `width: 1px` here is a visually-hidden clip rect. The rule is that the POPULATION is
  * known — adding to it costs one line here and forces one question ("does this floor fit
  * inside 288px of content box at 320?"), which is exactly the question nobody asked about
  * `.chartFrame`.
@@ -134,14 +135,13 @@ const EXPECTED: Record<string, string[]> = {
     "max-width: 560px",
     "width: 1px",
   ],
-  "components/earthquake/earthquake.module.css": ["min-width: 520px"],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
 };
 
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(4);
+    expect(stylesheets.length).toBe(3);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -176,10 +176,19 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * declaration, in a place this census cannot read. So the docblock's "caught, proven by
    * mutation" claim is now about the RULE, not about that file, and
    * `pnpm sweep:overflow -- --filter=/turkiye/istanbul` at 320 is what covers the frame itself.
+   *
+   * 13 across THREE once T-033 converted `earthquake.module.css`, whose single entry —
+   * `.table`'s `min-width: 520px` — is the first one this programme did NOT let evaporate into
+   * the sweep. It is now `min-w-[520px]` inside `earthquake-list.tsx`'s hoisted `TABLE`
+   * constant, and `components/earthquake/earthquake.structure.test.ts` pins it bidirectionally:
+   * red when the floor goes, red when that test's own fixture drifts from the real constant, and
+   * red when nothing renders `TABLE` any more. `lib/test-support/converted-floor.ts` carries the
+   * rule. Marine's, air's and climate's five are still covered by the sweep alone; this census
+   * records that rather than implying otherwise.
    */
-  it("counts 14 declarations in total", () => {
+  it("counts 13 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(14);
+    expect(total).toBe(13);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

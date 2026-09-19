@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
+import { classConstant, renderSites } from "@/lib/test-support/converted-floor";
 
 /**
  * This repo's vitest environment is `node`, and the list/badge are plain, hook-free components
@@ -132,5 +133,84 @@ describe("EarthquakeAttribution renders API strings verbatim, never re-authors t
 
   it("carries no client directive — attribution is server-rendered with the page", () => {
     expect(attributionCode).not.toMatch(/["']use client["']/);
+  });
+});
+
+/**
+ * THE EVENT TABLE'S 520px FLOOR, RE-PINNED WHERE IT NOW LIVES.
+ *
+ * `earthquake.module.css`'s `.table` had a `min-width: 520px` entry in
+ * `components/css-module-fixed-widths.test.ts`, the census of fixed-`px` inline-axis
+ * declarations that exists because one such declaration scrolled a province page sideways at
+ * 320. T-033 task 6 deleted the stylesheet, the entry went with it, and the floor moved into
+ * `TABLE` — where the census cannot read it and `pnpm sweep:overflow`, which is NOT in
+ * `.github/workflows/ci.yml`, would have become its only cover. See
+ * `lib/test-support/converted-floor.ts` for the rule and
+ * `components/air/air-pollution.structure.test.ts` / `components/climate/d2-variant.test.ts`
+ * for the two siblings.
+ *
+ * The floor is measured, not incidental: three columns of event data do not fit in 288px of
+ * content box at a 320px viewport, so the table scrolls INSIDE the `SCROLL` box rather than
+ * crushing its columns. That makes `overflow-x-auto` the other half of one mechanism — the
+ * retired stylesheet said so in as many words ("`overflow-x` stays for the `min-width: 520px`
+ * table on narrow viewports") — so it is asserted here too. With the floor and no
+ * `overflow-x-auto`, 520px escapes the card and scrolls the page; with `overflow-x-auto` and no
+ * floor, the columns squeeze and nothing scrolls. Neither half is enough on its own.
+ *
+ * HOIST FIRST, THEN PIN. `classConstant` reads a top-level `const NAME = "…";`. A floor left
+ * inline on a JSX `className` is not one, so it returns `null` and every assertion built on it
+ * asserts nothing — with the suite green. The last control below is exactly that case, run
+ * against a DE-HOISTED copy of this file's own source rather than an invented string.
+ */
+describe("the event table keeps its measured 520px floor", () => {
+  const FLOOR = "min-w-[520px]";
+
+  it("TABLE still carries the floor", () => {
+    const table = classConstant(listCode, "TABLE");
+    expect(table, "earthquake-list.tsx has no TABLE constant").not.toBeNull();
+    expect(table, `TABLE lost ${FLOOR}`).toContain(FLOOR);
+    // A floor that stopped being a floor is the same loss as a deleted one.
+    expect(table!.split(FLOOR).join(" ")).not.toMatch(/min-w-(0|full|fit|min|auto)\b/);
+  });
+
+  it("…on the constant the table actually renders", () => {
+    // Half of "bidirectional": a pin that only reads the declaration stays green on a constant
+    // nothing uses, so the floor could be deleted from the page while this file agreed.
+    expect(renderSites(listCode, "TABLE")).toBe(1);
+  });
+
+  it("…inside a box that can scroll horizontally", () => {
+    // The other half of the mechanism. Without this the floor is a page-widener, not a scroller.
+    const scroll = classConstant(listCode, "SCROLL");
+    expect(scroll, "earthquake-list.tsx has no SCROLL constant").not.toBeNull();
+    expect(scroll, "SCROLL lost overflow-x-auto").toContain("overflow-x-auto");
+    expect(renderSites(listCode, "SCROLL")).toBe(1);
+  });
+
+  it("POSITIVE CONTROL — the same reading reds when the floor is removed", () => {
+    // Anti-vacuity, run against a MUTATION of the real declaration rather than an invented
+    // string: take what the file really says and drop the floor to nothing.
+    const real = classConstant(listCode, "TABLE")!;
+    const poisoned = real.split(FLOOR).join("min-w-0");
+    expect(poisoned).not.toBe(real);
+    expect(poisoned).not.toContain(FLOOR);
+    expect(poisoned.split(FLOOR).join(" ")).toMatch(/min-w-(0|full|fit|min|auto)\b/);
+  });
+
+  it("POSITIVE CONTROL — de-hoisting the floor makes classConstant return null", () => {
+    // THE FAILURE THIS PIN IS SHAPED AROUND, and the reason the conversion hoisted at all.
+    // `classConstant` finds only a top-level `const`; a floor written inline on the JSX
+    // `className` hands back `null`, and a pin that skipped `not.toBeNull()` would then pass
+    // every `toContain` it never ran. Built by DE-HOISTING this file's real subject, so the
+    // control cannot drift from what it is controlling for.
+    const real = classConstant(listCode, "TABLE")!;
+    const value = /"([^"]*)"/.exec(real)![1]!;
+    const deHoisted = listCode
+      .replace(real, "")
+      .split("className={TABLE}")
+      .join(`className="${value}"`);
+    expect(deHoisted).toContain(value);
+    expect(classConstant(deHoisted, "TABLE")).toBeNull();
+    expect(renderSites(deHoisted, "TABLE")).toBe(0);
   });
 });

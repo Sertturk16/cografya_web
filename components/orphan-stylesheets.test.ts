@@ -181,9 +181,10 @@ describe("CSS Modules", () => {
     expect(stylesheets.length, "*.module.css files").toBeGreaterThan(0);
     // The floor steps down with T-033, which is retiring these stylesheets one task at a time:
     // 8 when this was written, 4 once tasks 2-5 had taken `marine`, `air-pollution`, `climate`
-    // and `site-search`. It is an anti-vacuity floor on the PARSER, not a pin on the population —
-    // the "are all imported by something a reader can reach" case above is what holds that.
-    expect(importersByStylesheet.size, "parsed *.module.css import specifiers").toBeGreaterThan(3);
+    // and `site-search`, 3 once task 6 took `earthquake`. It is an anti-vacuity floor on the
+    // PARSER, not a pin on the population — the "are all imported by something a reader can
+    // reach" case above is what holds that.
+    expect(importersByStylesheet.size, "parsed *.module.css import specifiers").toBeGreaterThan(2);
     expect(reachable.size, "files reachable from a route").toBeGreaterThan(100);
   });
 

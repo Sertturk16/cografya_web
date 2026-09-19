@@ -710,8 +710,24 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * bg-card p-6 sm:p-8`: a 22px radius, a 1.45:1 decorative edge and 24-32px of padding on a
  * dropdown whose padding is 10px. Both the radius and the edge are outside {@link CARD_ROUNDING}
  * and the surface predicate anyway, so the hoist hides nothing this counter would have seen.
+ *
+ * T-033 task 6: **139 -> 154**, `member` 66 -> 57. Nine `styles.x` lookups into
+ * `earthquake.module.css` left the tree — six in `earthquake-list.tsx`, three in
+ * `province-earthquake-section.tsx` — and fifteen bare identifiers arrived: twelve in the list
+ * (`SCROLL`, `TABLE`, `CAPTION`, `EMPTY_STATE`, `PLACE_NAME`, `BINDING_NOTE`, plus three
+ * `HEAD_CELL` header cells and three `CELL` data cells that the stylesheet had styled through
+ * `.table th, .table td` with no className at all) and three in the province section
+ * (`FLOOR_NOTE`, `FLOOR_LABEL`, `HUB_LINK`). The gap of six is those six previously bare cells:
+ * six elements genuinely entered this population, the other nine only changed shape.
+ *
+ * NO NEW HAND-DRAWN CARD, measured rather than asserted. Two constants are surface-ish and
+ * neither is card-shaped: the event table's scroll box is `rounded-lg border border-border` —
+ * the deleted stylesheet's own `var(--radius)`, and `rounded-lg` is outside
+ * {@link CARD_ROUNDING}, the same reading the climate note above already records for the same
+ * spelling — and the magnitude badge is `rounded-full`, a pill. The `ternary` figure does not
+ * move; this conversion introduced none.
  */
-export const COMPUTED_CARD_CLASSNAMES = 139;
+export const COMPUTED_CARD_CLASSNAMES = 154;
 
 /** The whole unreadable-className population by expression shape — the 210 the counter above
  * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
@@ -719,8 +735,8 @@ export const COMPUTED_CARD_CLASSNAMES = 139;
  * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
  * shape rather than as a moved number. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 139],
-  ["member", 66],
+  ["identifier", 154],
+  ["member", 57],
   ["ternary", 2],
 ];
 
