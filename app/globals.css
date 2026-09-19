@@ -178,7 +178,10 @@
      maps draw inland water and sea in one blue (su-envanteri §2, E5/E7), and the alias means
      a future retune of --map-sea carries the lakes with it instead of leaving two tones to
      drift apart. Contrast is inherited unchanged: --province-stroke measures 3.05:1 against
-     this tint, clear of WCAG 1.4.11's 3:1 for a graphical object. */
+     this tint, clear of WCAG 1.4.11's 3:1 for a graphical object.
+     Dark inherits the same way: --map-water aliases --map-sea's dark value (#152228), and
+     --province-stroke — not redefined in .dark — measures 4.21:1 against it, the binding
+     figure for this pair in dark (see .dark's own MEASURED table). */
   --map-water: var(--map-sea);
   /* Outline for inland water. NOT --province-stroke, and this is a correction made from
      rendered samples rather than a preference: Türkiye's biggest reservoirs (Keban,
@@ -192,8 +195,10 @@
      the arms are still sub-pixel, so the reasoning above is unchanged). The width matters to
      the numbers below: a SUB-PIXEL line is antialiased, i.e. composited at roughly its
      device-pixel coverage, so on a DPR-1 screen the ratios it actually achieves are lower
-     than the full-alpha figures in this table. Re-measure at the shipped width — the α≈0.5
-     table lives in components/map/inland-water.module.css, next to the width itself.
+     than the full-alpha figures in this table. Re-measure at the shipped width before
+     relying on it for a new consumer — the α≈0.5 re-measurement used to live in
+     components/map/inland-water.module.css, which T-033 retired along with every other
+     CSS Module, and no replacement table has been recorded since.
 
      THAT is why the value is a near-black cold tone and not the mid-teal #527a84 this layer
      shipped with first. The layer renders UNCONDITIONALLY inside the game's Bölge Bulma
@@ -211,6 +216,10 @@
        vs --province-fill  #ffffff   16.21:1   (#527a84 4.69 · taupe 3.86)
        vs --province-inert #f1e9de   13.47:1   (#527a84 3.90 · taupe 3.21)
        vs --map-water      #dbe7e8   12.82:1   (#527a84 3.71 · taupe 3.05)
+         dark: --map-water-line (#5d8fb8) vs --map-water (dark, #152228) 4.71:1 — the
+         shipped dark figure (see .dark). Derived against the dark sea/land pair alone,
+         not re-run against the seven region tints below; re-run this whole sweep against
+         the dark literal first if a dark Bölge Bulma binding is ever added.
        vs --region-ic-anadolu        #f0e442   12.26:1   (#527a84 3.55)
        vs --region-ege               #e69f00    7.20:1   (#527a84 2.08 ✗)
        vs --region-akdeniz           #56b4e9    7.02:1   (#527a84 2.03 ✗)
@@ -239,12 +248,17 @@
      Single source: the two tones cannot drift apart by someone editing one hex, and the call
      site in map.module.css still reads as "land" rather than reaching for a province token.
 
-     Measured against the flat --map-sea (#dbe7e8):
-       land vs sea 1.26:1 — the MAXIMUM available, because white is the ceiling of the narrow
-         luminance band the 3:1 stroke floor leaves (see --map-sea above), plus the warm/cool
-         hue break that actually carries the distinction.
+     Measured against the flat --map-sea (#dbe7e8 light / #152228 dark):
+       land vs sea 1.26:1 light — the MAXIMUM available, because white is the ceiling of the
+         narrow luminance band the 3:1 stroke floor leaves (see --map-sea above), plus the
+         warm/cool hue break that actually carries the distinction.
+       land vs sea (dark) 16.26:1 — --land-inert is NOT redefined in .dark, so it stays
+         #ffffff; its only consumer, lib/map/base-map-svg.ts, is a light-only static SVG
+         asset (isolated from page CSS, so it never sees .dark at all), so this pairing
+         does not currently render.
        taupe coastline on land 3.86:1 ✓ — also the best case, well clear of WCAG 1.4.11's 3:1
-         (the earlier separate backdrop tone #f8f4ee measured 3.52:1).
+         (the earlier separate backdrop tone #f8f4ee measured 3.52:1); unchanged in dark,
+         since neither --province-stroke nor --land-inert is redefined there.
      Land-vs-land is 1.00:1 BY DESIGN: clickability is not encoded in colour on this map. It
      is carried by three non-colour signals — element type (a real <a> vs a bare
      `<path aria-hidden>`), tab order, and the pointer/hover/focus-visible state change (fill
@@ -306,8 +320,9 @@
   /* ---- MAP SURFACES, dark half added T-031d (see the .dark block for the dark table) ----
      Before this task nine components each spelled these tones inline, dark mode included
      nowhere: 72 bracketed colour values and 15 raw palette classes across them, four
-     different spellings of one sea. The six tokens below plus the two re-recorded just
-     above and the two that already shipped (--map-sea, --map-water) are the full set. */
+     different spellings of one sea. The six tokens below, the two re-recorded just above,
+     the two that already shipped (--map-sea, --map-water), and --map-water-line (declared
+     further above, beside --map-water) are the full set: eleven, not ten. */
   /* The panel the map itself is drawn on. An ALIAS of --map-sea in light, where the plate and
      the water are one tone; --map-plate only earns a value of its own in .dark, where the
      panel is deliberately LIGHTER than the page under it (owner direction 2026-09-17, "koyu
