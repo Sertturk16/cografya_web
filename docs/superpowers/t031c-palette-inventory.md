@@ -572,6 +572,34 @@ eight lines that carry no `dark:` pair (147, 191, 279, 281, 359, 394, 410, 419).
 
 **Totals:** data 0, semantic 5, decoration 17.
 
+**APPLIED, Task 9 — all 22, with two `Becomes` cells sharpened and one row widened.**
+
+1. **Row 147's figure named the wrong surface, though the token is right.** The note quotes
+   `--info-strong` at 7.07 light / 7.50 dark, which is that token on a 15% tint of itself. The
+   "Maksimum Derinlik" reading sits on a BARE `--card` metric tile (`bg-card border-border`),
+   where it paints **8.16 light / 8.68 dark**. Today's cyan-600 was 3.68.
+2. **Row 191 deletes the element, not just the class.** `bg-cyan-500` was the whole of that
+   span; removing the class alone leaves an 8px transparent dot still running `animate-pulse`.
+   The heading's own first word, "Canlı", is the carrier the verdict rests on, so the span goes.
+3. **Rows 384 and 437 take the `Badge` primitive rather than nothing.** Removing the tint
+   alone leaves plain text where chips were, so both sets become `Badge variant="outline"` —
+   whose own definition is `border border-border bg-card text-foreground`, the treatment the
+   note already cites for the six coastal-type articles. Spelling those classes BY HAND, which
+   was the first attempt, fires `page-composition-cards.test.ts`: it counts rounded + bg-card +
+   border-border as a hand-drawn card surface, and the two chips moved it 189 → 191 elements,
+   234 → 236 spellings and 358 → 360 total. The primitive puts all three back. A raw palette
+   class traded for a hand-drawn card surface is not progress.
+
+Rows 242/245 are measured in BOTH row states, because the table row hovers to a 20% muted wash:
+backdrop painted at #ffffff rest / #fcfbf8 hovered in light and #121e21 / #132123 in dark, with
+`--foreground` on it at 14.97 / 14.46 and 14.73 / 14.31. Rows 279/281 paint 5.81 light / 7.58
+dark on the callout's own `from-destructive/5 via-card to-card` gradient.
+
+**The three uncoloured eyebrows are a deliberate asymmetry.** Five of this file's eight section
+eyebrows keep a hue and three lose one. The five are already bridge tokens; the three had the
+recorded reason the notes give; and the cards stack full width rather than in a grid, so no
+plain eyebrow sits beside a coloured one. Confirmed in both themes at 1280 before committing.
+
 ### components/v2/v2-earthquake-explorer.tsx (21)
 
 A public-safety magnitude scale. It binds to the existing `--eq-mag-1..5` purple ramp, which is

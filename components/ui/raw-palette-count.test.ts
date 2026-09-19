@@ -208,9 +208,50 @@ import {
  * The arbitrary arm does not move: 72 before, 72 after. The wordmark's one bracketed hex is
  * the dark brand tone and is not this task's row.
  *
+ * 202 -> 180 is T-031c Task 9's fourth file: `components/v2/v2-sea-basin-detail-view.tsx`
+ * 22 -> 0, the sixth frozen colour recorded in T-044(3). 5 semantic, 17 decoration, no data.
+ *
+ * The five semantic are the "Maksimum Derinlik" reading and the submarine-fault callout, and
+ * their backdrops are not the ones a card-shaped guess would name. The depth figure sits on a
+ * BARE `--card` metric tile, where `--info-strong` paints 8.16 light / 8.68 dark; the
+ * inventory's 7.07 / 7.50 is that token on a tint of its own, which is not what this tile is.
+ * The callout's icon plate is a 10% destructive tint over the callout's own
+ * `from-destructive/5 via-card to-card` gradient, and `--destructive-strong` on it paints
+ * 5.81 light / 7.58 dark. Both figures are from pixels, not from the model.
+ *
+ * The 17 decoration are removed as written, with two carriers kept and one element deleted.
+ *
+ *   - The two flat telemetry columns (SST, wave height) were one colour for every value, so
+ *     they named the column and the `<th>` already does. They take `--foreground` like the
+ *     wind column beside them. The table row hovers to a 20% muted wash, so the backdrop was
+ *     painted in both states -- #ffffff rest / #fcfbf8 hovered light, #121e21 / #132123 dark --
+ *     and the ratio computed against the painted backdrop: 14.97 / 14.46 and 14.73 / 14.31.
+ *     Light rose-600 measured 4.70 and cyan-600 3.68 on the same tile.
+ *   - Two chip sets -- coastal types and river names -- take `Badge variant="outline"`, the
+ *     primitive whose own definition is `border border-border bg-card text-foreground`. THE
+ *     FIRST ATTEMPT SPELLED THAT BY HAND and fired a different ratchet:
+ *     `page-composition-cards.test.ts` counts a hand-drawn card surface as rounded + bg-card +
+ *     border-border, and the two chips took it 189 -> 191 elements, 234 -> 236 spellings and
+ *     358 -> 360 in total, +2 on each, which is exactly the two elements. Reaching for the
+ *     primitive put all three back to 189 / 234 / 358 -- the arithmetic proved in both
+ *     directions, and no ratchet stepped. Trading one census against another is not progress.
+ *   - THE PULSING DOT IS DELETED, NOT UNCOLOURED. `bg-cyan-500` was the whole of that
+ *     element; stripping the class alone leaves an 8px transparent span still running an
+ *     `animate-pulse`, which is markup that renders nothing. Its heading's first word is
+ *     "Canli", which is the carrier the verdict relies on.
+ *
+ * Three section-card eyebrows lose their hue and five keep theirs, and that asymmetry is
+ * deliberate rather than overlooked: the five that keep it are already bridge tokens
+ * (`--primary`, `--secondary`, `--destructive`), the three raw ones had a recorded reason to
+ * go (`lib/marine/coastal-types-detail.ts` carries no colour field at all), and the cards
+ * stack full width rather than in a grid, so no plain eyebrow sits beside a coloured one.
+ * Confirmed in both themes at 1280 before committing.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 202;
+const RAW_PALETTE_BUDGET = 180;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
