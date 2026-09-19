@@ -14,8 +14,11 @@ describe("relativeLuminance", () => {
     expect(relativeLuminance("#ffffff")).toBeCloseTo(1, 10);
   });
 
-  it("uses the linear ramp below the 0.03928 breakpoint", () => {
-    // #0a0a0a is 10/255 = 0.0392, just under the knee, so it takes the /12.92 branch.
+  it("agrees with the published curve at a low value", () => {
+    // #0a0a0a is 10/255 ≈ 0.0392, below both candidate sRGB knees (0.03928 and 0.04045), so
+    // this does not by itself discriminate which branch ran: the curve is continuous at the
+    // knee, and at this sample size the two branches agree to 7.5e-7 against this 5e-5
+    // tolerance, so an implementation that deleted the conditional would also pass.
     expect(relativeLuminance("#0a0a0a")).toBeCloseTo(0.0392 / 12.92, 4);
   });
 });
@@ -38,10 +41,6 @@ describe("contrastRatio", () => {
 
   it("accepts three-digit hex and a missing #", () => {
     expect(ratio("#fff", "000")).toBe(21);
-  });
-
-  it("rejects anything that is not an sRGB hex", () => {
-    expect(() => relativeLuminance("oklch(0.65 0.13 40)")).toThrow(/sRGB hex/);
   });
 });
 
@@ -93,5 +92,35 @@ describe("blendOver", () => {
 
   it("rejects an alpha outside 0-1", () => {
     expect(() => blendOver("#000000", 1.5, "#ffffff")).toThrow(/alpha/);
+  });
+});
+
+describe("oklch input", () => {
+  it("resolves the two achromatic endpoints to pure white and pure black", () => {
+    expect(relativeLuminance("oklch(1 0 0)")).toBeCloseTo(1, 6);
+    expect(relativeLuminance("oklch(0 0 0)")).toBe(0);
+  });
+
+  it("gives the published maximum for oklch white on oklch black", () => {
+    expect(ratio("oklch(1 0 0)", "oklch(0 0 0)")).toBe(21);
+  });
+
+  it("measures a real .dark brand token against a real .dark surface", () => {
+    // --primary and --background, both copied from app/globals.css's .dark block.
+    // This is the query the module could not answer before: one oklch, one hex.
+    expect(ratio("oklch(0.65 0.13 40.65)", "#0b1416")).toBe(5.47);
+  });
+
+  it("measures the warning token on the card surface it is actually used over", () => {
+    expect(ratio("oklch(0.75 0.13 75)", "#121e21")).toBe(7.53);
+  });
+
+  it("still rejects a string that is neither hex nor oklch", () => {
+    expect(() => relativeLuminance("rebeccapurple")).toThrow(/hex or oklch/);
+  });
+
+  it("blends an oklch fill over a hex backdrop", () => {
+    // 100% of the fill is the fill, whatever syntax it arrived in.
+    expect(blendOver("oklch(1 0 0)", 1, "#000000")).toBe("#ffffff");
   });
 });
