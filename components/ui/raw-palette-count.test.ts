@@ -430,9 +430,30 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 100 -> 90 is Task 10's third file: `components/v2/v2-marine-layer-catalogue.tsx` 10 -> 0,
+ * five decoration and five semantic.
+ *
+ * The five are one glyph per catalogue row, and they cannot be the identifier: two of the five
+ * rows draw the SAME glyph (a compass, for wave direction and wind direction) and two share a
+ * hue, while every row is named in the cell beside it and no map mark reads any of them. Their
+ * backdrop is a 60% muted plate over the row, and the row hovers -- 3.37 / 3.25 / 3.29 / 2.18
+ * and 4.11 light at rest, each about 0.1 worse hovered, four of the five under the 3:1
+ * graphical floor. The plate already declares `--foreground`; the glyphs stop overriding it and
+ * measure 13.44 rest and 12.99 hovered.
+ *
+ * The status badge is availability -- one of the five meanings -- and takes the DECLARED
+ * success badge rather than a hand-spelled tint, for the reason the previous file settled: the
+ * design system already ships this exact shape, and a second hand-drawn spelling of it is a
+ * spelling somebody has to keep in step. On the row it measures 6.09 light / 7.05 dark at rest
+ * and 5.71 / 6.66 hovered, where the emerald it replaces was 4.87 and then **4.54** hovered at
+ * 10px -- a third of a point from failing in the state a reader is pointing at. Its dark pair
+ * goes with it.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 100;
+const RAW_PALETTE_BUDGET = 90;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
