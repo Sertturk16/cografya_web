@@ -61,6 +61,28 @@ function literalValue(declaration: string): string {
   return [...declaration.matchAll(/"([^"]*)"/g)].map((match) => match[1]).join("");
 }
 
+/**
+ * Does a declaration carry this EXACT utility, as a whole token?
+ *
+ * `toContain` is the wrong instrument for a Tailwind class and it fails in the one direction that
+ * matters: `"…p-1 …".includes("p-1")` is also true of `p-1.5`, so a pin on the 4px jump-tile
+ * padding stayed green when it drifted to 6px, `mt-2` stayed green at `mt-2.5` (8px → 10px),
+ * `gap-6` at `gap-64` and `hover:bg-muted` at `hover:bg-muted-foreground` — a different token
+ * entirely. Every one of those is a real, reachable edit, and with no other automated cover on
+ * this page a pin that tolerates the drift it exists to catch is worth less than it reads
+ * (→ fix round 1).
+ *
+ * Both boundaries are load-bearing, and the LEADING one is the less obvious: `"gap-1.5"` contains
+ * `"p-1"` at index 2, so a trailing boundary alone would still match inside another utility.
+ * The classes excluded on each side are exactly those that can continue a Tailwind token —
+ * word characters, `.` (the half-step scale), `-` (a longer token name), `:` (a variant prefix)
+ * and `[` (an arbitrary value).
+ */
+function carries(declaration: string, utility: string): boolean {
+  const escaped = utility.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\w.:\\-\\[])${escaped}(?![\\w.\\-\\[])`).test(declaration);
+}
+
 /** The declaration, with `not.toBeNull()` already discharged. */
 function required(name: string): string {
   const declaration = classConstant(PAGE, name);
@@ -103,6 +125,36 @@ describe("the book page hoisted every rule the retired stylesheet carried", () =
     expect(PAGE).toContain('className="sr-only"');
   });
 
+  it("POSITIVE CONTROL — `carries` reds on the drifts `toContain` passed", () => {
+    // The instrument, proved against the real declarations rather than invented strings. Each
+    // pair below is a reachable one-character edit that changes real geometry or a real token,
+    // and `toContain` is green on every one of them.
+    const jumpItem = required("JUMP_ITEM");
+    const grid = required("QUESTION_GRID");
+    const workbench = required("WORKBENCH");
+    const drifts: ReadonlyArray<readonly [string, string, string]> = [
+      [jumpItem, "p-1", "p-1.5"], // 4px → 6px on the jump tile
+      [grid, "mt-2", "mt-2.5"], // 8px → 10px above the question index
+      [grid, "p-0", "p-0.5"], // the ul's padding stops being zero
+      [workbench, "gap-6", "gap-64"], // 24px → 256px between the stage and the index
+      [jumpItem, "hover:bg-muted", "hover:bg-muted-foreground"], // a different token entirely
+      [jumpItem, "min-h-11", "min-h-11.5"], // the WCAG target floor
+    ];
+    for (const [declaration, utility, drift] of drifts) {
+      const drifted = declaration.split(utility).join(drift);
+      expect(drifted, `${utility} is not in the declaration to drift`).not.toBe(declaration);
+      // What the old spelling did: green on the drift.
+      expect(drifted).toContain(utility);
+      // What this file does now.
+      expect(carries(declaration, utility), `${utility} is not carried`).toBe(true);
+      expect(carries(drifted, utility), `${drift} still satisfies a pin on ${utility}`).toBe(false);
+    }
+    // And the leading boundary, which is the half that is easy to leave out: "gap-1.5" contains
+    // "p-1", so a trailing-only boundary would report the question grid as carrying `p-1`.
+    expect(grid).toContain("gap-1.5");
+    expect(carries(grid, "p-1")).toBe(false);
+  });
+
   it("still reads no CSS Module", () => {
     // The point of the task. `styles.x` anywhere means the stylesheet came back.
     expect(PAGE).not.toContain("book-detail.module.css");
@@ -135,7 +187,7 @@ describe("the question index keeps its measured 88px cell floor", () => {
     // so this is the locale that binds. Measured on the built page: 89px cells at 320, 103px at
     // 360, 116px at 768, 96px at 1024 and 106px at 1440, six on one row from 768 up.
     const grid = required("QUESTION_GRID");
-    expect(grid, `QUESTION_GRID lost ${FLOOR}`).toContain(FLOOR);
+    expect(carries(grid, FLOOR), `QUESTION_GRID lost ${FLOOR}`).toBe(true);
   });
 
   it("…with auto-fit and not auto-fill, which is what makes the floor safe to raise", () => {
@@ -161,7 +213,7 @@ describe("the question index keeps its measured 88px cell floor", () => {
     // `mt-2` alone is a bet on preflight; spelling the zeros out is what makes it a translation.
     const grid = required("QUESTION_GRID");
     for (const utility of ["mt-2", "mx-0", "mb-0", "p-0", "list-none", "gap-1.5"]) {
-      expect(grid, `QUESTION_GRID lost ${utility}`).toContain(utility);
+      expect(carries(grid, utility), `QUESTION_GRID lost ${utility}`).toBe(true);
     }
   });
 
@@ -183,9 +235,9 @@ describe("the jump strip keeps its intrinsic 2.75rem column floor", () => {
     // This floor was never in the fixed-width census — it is a rem value and that scan only
     // reads `px` — so retiring the stylesheet would have left it with no reader at all.
     const list = required("JUMP_LIST");
-    expect(list, `JUMP_LIST lost ${FLOOR}`).toContain(FLOOR);
-    expect(list).toContain("m-0");
-    expect(list).toContain("p-0");
+    expect(carries(list, FLOOR), `JUMP_LIST lost ${FLOOR}`).toBe(true);
+    expect(carries(list, "m-0"), "JUMP_LIST lost m-0").toBe(true);
+    expect(carries(list, "p-0"), "JUMP_LIST lost p-0").toBe(true);
   });
 
   it("…with auto-fill and not auto-fit, which is the opposite of the index's choice", () => {
@@ -212,7 +264,7 @@ describe("the row heading keeps the 6.5rem floor that makes all thirty rows wrap
     // `tabular-nums` was tried first and rejected — the computed style applies but the widths do
     // not move, because the self-hosted Fraunces subset carries no `tnum` feature.
     const heading = required("DENEME_HEADING");
-    expect(heading, `DENEME_HEADING lost ${FLOOR}`).toContain(FLOOR);
+    expect(carries(heading, FLOOR), `DENEME_HEADING lost ${FLOOR}`).toBe(true);
     // A floor that stopped being a floor is the same loss as a deleted one.
     expect(heading.split(FLOOR).join(" ")).not.toMatch(/min-w-(0|full|fit|min|auto)\b/);
   });
@@ -222,7 +274,7 @@ describe("the row heading keeps the 6.5rem floor that makes all thirty rows wrap
     // 8.4px bottom margin the stylesheet's `margin: 0` was cancelling, and every row grows by it.
     // This is the one trap of the three that cost this programme real damage and is invisible to
     // typecheck, lint and every other test.
-    expect(required("DENEME_HEADING")).toContain("m-0");
+    expect(carries(required("DENEME_HEADING"), "m-0"), "DENEME_HEADING lost m-0").toBe(true);
   });
 
   it("POSITIVE CONTROL — de-hoisting DENEME_HEADING makes the extractor return null", () => {
@@ -246,7 +298,7 @@ describe("both fragment targets keep their one-addend anchor offset", () => {
 
   it.each(["DENEME_HEADING", "QUESTION_LINK"] as const)("%s still carries it", (name) => {
     const declaration = required(name);
-    expect(declaration, `${name} lost ${OFFSET}`).toContain(OFFSET);
+    expect(carries(declaration, OFFSET), `${name} lost ${OFFSET}`).toBe(true);
     // A second addend would mean the sticky row came back without this comment being reread.
     expect(declaration).not.toMatch(/scroll-mt-\[calc\(var\(--header-height\)\+1rem\+/);
   });
@@ -264,11 +316,13 @@ describe("both tile controls keep WCAG 2.2 §2.5.5's 44×44 target", () => {
     ["QUESTION_LINK", "p-1.5"],
   ] as const)("%s carries %s and the target floor", (name, padding) => {
     const declaration = required(name);
-    expect(declaration, `${name} lost ${TARGET}`).toContain(TARGET);
+    expect(carries(declaration, TARGET), `${name} lost ${TARGET}`).toBe(true);
     // The padding is load-bearing on the index, not decoration: 6px rather than 8px is what put
     // the English label's requirement at 85px instead of 89px, and 89 was a third of a pixel too
     // wide for the 1024px index column.
-    expect(declaration, `${name} lost ${padding}`).toContain(padding);
+    // THE PIN THAT USED TO PASS ON THE DRIFT IT GUARDS: `toContain("p-1")` is true of `p-1.5`,
+    // so the jump tile's 4px could become 6px with this case green.
+    expect(carries(declaration, padding), `${name} lost ${padding}`).toBe(true);
   });
 
   it("POSITIVE CONTROL — the reading reds when the target is dropped to the AA floor", () => {
@@ -296,9 +350,9 @@ describe("the workbench keeps its derived 40% stage column at the one pinned bre
     // viewport (1024px → 984px of content, minus the 24px gap) a 40% stage leaves it 566px. A
     // fixed pixel column could satisfy that end or the 1440 end, not both.
     const workbench = required("WORKBENCH");
-    expect(workbench, `WORKBENCH lost ${COLUMNS}`).toContain(COLUMNS);
-    expect(workbench).toContain("gap-6");
-    expect(workbench).toContain("items-start");
+    expect(carries(workbench, COLUMNS), `WORKBENCH lost ${COLUMNS}`).toBe(true);
+    expect(carries(workbench, "gap-6"), "WORKBENCH lost gap-6").toBe(true);
+    expect(carries(workbench, "items-start"), "WORKBENCH lost items-start").toBe(true);
   });
 
   it("…at `lg` and at no other breakpoint", () => {
@@ -318,7 +372,7 @@ describe("the workbench keeps its derived 40% stage column at the one pinned bre
     }
     // And the index keeps `min-w-0`, without which a long row pushes the column past its track —
     // a grid item's default `min-width: auto` is what lets that happen silently.
-    expect(required("INDEX")).toContain("min-w-0");
+    expect(carries(required("INDEX"), "min-w-0"), "INDEX lost min-w-0").toBe(true);
   });
 
   it("POSITIVE CONTROL — de-hoisting WORKBENCH makes the extractor return null", () => {
@@ -373,8 +427,13 @@ describe("colour on this page comes from the bridge, measured rather than looked
     // the signal that actually carries.
     for (const name of ["JUMP_ITEM", "QUESTION_LINK"] as const) {
       const declaration = required(name);
-      expect(declaration, `${name} lost its hover boundary`).toContain("hover:border-primary");
-      expect(declaration, `${name} lost its hover fill`).toContain("hover:bg-muted");
+      // Whole-token, not substring: `hover:border-primary` is a prefix of
+      // `hover:border-primary-strong` and `hover:bg-muted` of `hover:bg-muted-foreground`, and
+      // either drift swaps the token while leaving a `toContain` green.
+      expect(carries(declaration, "hover:border-primary"), `${name} lost its hover boundary`).toBe(
+        true,
+      );
+      expect(carries(declaration, "hover:bg-muted"), `${name} lost its hover fill`).toBe(true);
       // `bg-card` IS the resting fill, so mapping the hover to it deletes the hover instead of
       // translating it — the tempting reading of the plan's own bridge table.
       expect(declaration).not.toContain("hover:bg-card");
@@ -388,10 +447,10 @@ describe("colour on this page comes from the bridge, measured rather than looked
     // A named size carries a line-height the stylesheet never set. Measured on this page: the
     // fact strip inherits 1.6 from `body` and renders 13.6px/21.76px, where `text-sm` would make
     // it 14px/20px and reflow all thirty rows.
-    expect(required("JUMP_HEADING")).toContain("text-[0.95rem]");
-    expect(required("DENEME_HEADING")).toContain("text-[1.05rem]");
-    expect(required("DENEME_FACTS")).toContain("text-[0.85rem]");
-    expect(required("QUESTION_LINK")).toContain("text-[0.85rem]");
+    expect(carries(required("JUMP_HEADING"), "text-[0.95rem]")).toBe(true);
+    expect(carries(required("DENEME_HEADING"), "text-[1.05rem]")).toBe(true);
+    expect(carries(required("DENEME_FACTS"), "text-[0.85rem]")).toBe(true);
+    expect(carries(required("QUESTION_LINK"), "text-[0.85rem]")).toBe(true);
     for (const name of ["JUMP_HEADING", "DENEME_HEADING", "DENEME_FACTS", "QUESTION_LINK"]) {
       expect(required(name)).not.toMatch(/\btext-(xs|sm|base|lg|xl)\b/);
     }
