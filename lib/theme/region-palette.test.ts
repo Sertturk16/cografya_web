@@ -57,13 +57,18 @@ describe("the seven region tints are a usable categorical set", () => {
     expect(worst).toBe(WORST[vision]);
   });
 
-  it("fails the floor for a set that genuinely collapses — positive control", () => {
-    // Two blues a dichromat cannot separate. If the assertion above were vacuous (a broken
-    // deltaE00 returning something huge, a simulate() that no-ops), this would pass too.
-    const collapsed = deltaE00(
-      simulate("#0072b2", "deuteranopia"),
-      simulate("#0082c8", "deuteranopia"),
-    );
-    expect(collapsed).toBeLessThan(CATEGORICAL_MIN);
+  it("discriminates: a pair that is clear to normal vision and collapses under deuteranopia", () => {
+    // #008000 / #a52a2a measure 65.6 apart normally and 4.6 under deuteranopia.
+    // Both halves matter. The first says the pair is a fair test rather than two colours
+    // that were never distinguishable. The second is what a no-op `simulate` would break:
+    // it would report 65.6 here and this assertion would fail. The previous pair (two
+    // blues, 6.2 apart in raw space) collapsed with or without simulation, so it could not
+    // tell a working `simulate` from an identity one.
+    expect(
+      deltaE00(simulate("#008000", "normal"), simulate("#a52a2a", "normal")),
+    ).toBeGreaterThanOrEqual(CATEGORICAL_MIN);
+    expect(
+      deltaE00(simulate("#008000", "deuteranopia"), simulate("#a52a2a", "deuteranopia")),
+    ).toBeLessThan(CATEGORICAL_MIN);
   });
 });
