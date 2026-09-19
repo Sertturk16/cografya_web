@@ -2,6 +2,46 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* =============================================================================
+   WHAT TAILWIND IS ALLOWED TO READ A CLASS OUT OF.
+
+   Tailwind v4 scans source TEXT, not JSX. With no `@source` declared it auto-detects from
+   the project root, so every non-gitignored text file in the repo is a stylesheet input —
+   including prose. That is not theoretical: `docs/superpowers/t031c-palette-inventory.md`
+   is a 461-occurrence census of the raw palette classes this branch removed, and every one
+   of them was being compiled into a real rule. `text-purple-600` and `text-rose-500` exist
+   nowhere else in this repo, and both shipped. It is the same defect T-031c already fixed
+   once inside a single component (a comment quoting a class name), at repository scale.
+
+   Three trees are subtracted, and each one is prose or tooling rather than markup:
+
+     docs           the design notes, plans, specs and the palette census itself
+     scripts        build-time generators; their output lands in lib/ and is still scanned
+     the tests      which necessarily NAME the classes they forbid
+
+   (The patterns themselves are the four `@source not` lines below. They are not repeated
+   here because a CSS comment cannot contain the `.test` glob without ending itself — which
+   is how the fourth arm earned its keep before it had finished being written.)
+
+   Nothing here narrows what the application can use: every route, component and library
+   module is still auto-detected. `components/ui/raw-palette-count.test.ts`'s fourth arm
+   compiles this file and asserts the result, which is what keeps this list honest — drop a
+   line and the palette classes it was holding back reappear in the compiled sheet and fail.
+
+   THE PATHS ARE RELATIVE TO THIS FILE, not to the project root. `@source not "docs/**"`
+   resolves against `app/` and silently matches nothing; the leading `../` is load-bearing
+   and was verified by compiling both spellings against this file. Measured on the file as it
+   now stands: 147 distinct raw-palette rules without the `docs` line, 56 with it — and both
+   halves of that pair are read by walking SELECTORS, because a text scan anchored on the `.`
+   in front of the property misses every variant-prefixed rule and reports 122 and 45 instead.
+   (An earlier version of this comment said "125 vs 53". Those were the text-scan figures taken
+   before the `scripts` and test exclusions were added, and neither reproduces today.)
+   ============================================================================= */
+@source not "../docs/**";
+@source not "../scripts/**";
+@source not "../**/*.test.ts";
+@source not "../**/*.test.tsx";
+
 @custom-variant dark (&:is(.dark *));
 
 /* =============================================================================
@@ -348,6 +388,505 @@
   --region-karadeniz: #cc79a7; /* reddish purple */
   --region-dogu-anadolu: #009e73; /* bluish green */
   --region-guneydogu-anadolu: #d55e00; /* vermillion */
+
+  /* ---- Region identity off the map: the tint and the text member (T-031c Task 3) ----
+     The seven hues above are map FILLS — shapes, with a stroke, at whatever size the map
+     draws them. A page that names a region in prose needs the same identity at text size on
+     a card, and that is a different problem: #f0e442 as a label on white measures 1.09:1.
+     Before this block existed, `turkiye/bolge/[slug]` solved it by inventing a SECOND colour
+     per region out of the raw Tailwind palette — Marmara badged amber while its map fill
+     painted blue, Ege badged teal while its fill painted orange, six of seven disagreeing.
+     A region wears one colour; these two members are how it wears it off the map.
+
+     `-tint`  the chip/banner surface, a 15% wash of the region's own fill. Translucent on
+              purpose: it composites over whatever card it lands on, so one value serves both
+              themes and no `dark:` variant is needed.
+     `-text`  the label ON that tint. Derived from the region's own oklch hue with the hue
+              angle held EXACTLY and only the lightness moved — away from the fill until it
+              carries text, and no further, so the label still reads as the region's colour.
+              Chroma is then the most sRGB allows at that lightness (fitted per region rather
+              than shared, so a hue is never asked for saturation its lightness cannot hold,
+              and no value here depends on how a browser gamut-maps).
+              Per-region lightness, not one shared L like the `-strong` family: these seven
+              are a CATEGORICAL set, and flattening them to a common lightness is exactly
+              what would blur two of them together.
+
+     MEASURED (lib/theme/contrast.ts, `ratio` + `blendOver`), AGAINST THE TWO SURFACES THESE
+     LABELS ARE ACTUALLY PAINTED ON. Naming the backdrop is not bookkeeping: the first version
+     of this table recorded ratios against `--card`, and `--card` is a surface the hero badge
+     never touches — its `variant="outline"` supplies `bg-card`, but `badgeClass` overrides it
+     with the tint, so the badge composites straight onto the hero band. Seven of seven were
+     recorded passing and were in fact 3.92-4.32. A ratio without its surface is how that
+     happened; every figure below says what it is a ratio TO.
+
+       HERO    `turkiye/bolge/[slug]`'s region badge. The badge's own 15% tint over the hero
+               gradient's tint end over --background — tint over tint over --background. The
+               gradient is `from-<tint> via-background to-background`, so its TINT END is the
+               worst case, not its middle, and the badge row sits in that end. Binding in
+               both themes.
+       BANNER  `components/v2/v2-turkey-regions.tsx`'s card header. One 15% tint over --card,
+               because a Card is opaque.
+     AND ONE SURFACE THAT IS DELIBERATELY NOT IN THE TABLE, because the fix was to stop painting
+     onto it:
+       ROW   `v2-turkey-map-explorer.tsx`'s province table gives every row `hover:bg-muted/50`.
+             The tinted badge over THAT over --card measures 4.80-5.50 light but 4.41-5.73 dark,
+             and marmara's 4.41 is under the floor with guneydogu-anadolu at 4.57 — a data label
+             failing only while the pointer is over its own row, which is the one state nobody
+             screenshots. That chip wears `identity.badgeOpaque` instead: `bg-card` + the label +
+             the edge, no tint of its own, so its backdrop is --card whatever the row is doing
+             (5.42-7.36 light, 5.50-9.21 dark). A moving backdrop is not a column to measure, it
+             is a surface not to composite onto. Found in T-031c Task 5's fix round while
+             measuring the identical shape on `/dunya`'s country table; `--continent-*` carries
+             the same note and the same member, and both call sites are pinned by their identity
+             tests.
+     EVERY FIGURE BELOW IS ROUNDED DOWN, not to nearest, so no number here can overstate what
+     was measured. Dark marmara is the case that makes the rule worth stating: it measures
+     4.5962 and is recorded 4.59, because rounding to 4.60 in the direction that flatters the
+     result is the habit this branch exists to break.
+                          light             dark
+                         hero   banner    hero   banner
+       marmara            4.69    5.97     4.59    4.77
+       ege                4.69    5.42     4.65    5.58
+       akdeniz            4.70    5.48     4.65    5.46
+       ic-anadolu         4.76    5.18     4.72    6.26
+       karadeniz          4.64    5.53     4.66    5.24
+       dogu-anadolu       4.67    5.70     4.75    5.33
+       guneydogu-anadolu  4.60    5.71     4.60    4.95
+     Worst case 4.60:1 light and 4.59:1 dark, against the 4.5:1 floor of WCAG 1.4.3.
+
+     WHAT `HERO` DOES NOT INCLUDE, and why that is now safe. The hero also paints a decorative
+     `bg-primary/10 blur-3xl` glow. A blurred overlay is not a blend this or any analytic model
+     can express, and below `md` that glow is wider than the viewport, so it landed on the badge
+     row and took these same members to 4.22-4.36 light and 4.27-4.49 dark — the table was
+     conservative for the surfaces it NAMES while the page painted one it did not name. The glow
+     is now `hidden md:block` (`bolge/[slug]`), bounding the decoration rather than darkening
+     seven data colours to survive it. Painted interior minimums across 320/360/390/414/768/
+     1024/1280 in both themes are recorded in that component's comment and all clear 4.5. On the bare
+     surfaces, which nothing paints these labels on but which bound nothing anyway, every
+     member measures higher still: 5.42-7.37 on light --card and 5.51-9.22 on dark --card.
+     The hero band also carries ordinary body text, and that is not a second case to watch:
+     --foreground on the gradient's tint end measures 11.48-13.60 light, 11.33-14.21 dark. */
+  --region-marmara-tint: color-mix(in srgb, var(--region-marmara) 15%, transparent);
+  --region-ege-tint: color-mix(in srgb, var(--region-ege) 15%, transparent);
+  --region-akdeniz-tint: color-mix(in srgb, var(--region-akdeniz) 15%, transparent);
+  --region-ic-anadolu-tint: color-mix(in srgb, var(--region-ic-anadolu) 15%, transparent);
+  --region-karadeniz-tint: color-mix(in srgb, var(--region-karadeniz) 15%, transparent);
+  --region-dogu-anadolu-tint: color-mix(in srgb, var(--region-dogu-anadolu) 15%, transparent);
+  --region-guneydogu-anadolu-tint: color-mix(
+    in srgb,
+    var(--region-guneydogu-anadolu) 15%,
+    transparent
+  );
+  --region-marmara-text: oklch(0.45 0.11 244);
+  --region-ege-text: oklch(0.5 0.105 76.8);
+  --region-akdeniz-text: oklch(0.49 0.105 236.2);
+  --region-ic-anadolu-text: oklch(0.52 0.11 105);
+  --region-karadeniz-text: oklch(0.5 0.115 346.3);
+  --region-dogu-anadolu-text: oklch(0.46 0.095 165.5);
+  --region-guneydogu-anadolu-text: oklch(0.48 0.13 47.5);
+
+  /* ---- World-map continent palette (DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
+     Colouring the world map by kıta is the same DATA encoding the region set above is, one
+     level out, so it gets the same treatment: its own token set, physically separate from the
+     Terra brand tokens, and the same Okabe–Ito qualitative palette. Seven continents, seven
+     members, the black member unused — rule 4's ≤ ~8 ceiling again.
+
+     WHY THE SAME SEVEN COLOURS AS `--region-*`, DECIDED RATHER THAN DRIFTED INTO. Regions and
+     continents wear an identical set here. That is deliberate. The two are the same problem —
+     an unordered categorical variable with seven levels, painted as map fills and as badges —
+     and PR0 measured the answer to that problem once. Inventing a second seven-hue set that
+     also had to clear ΔE00 ≥ 10 across 21 pairs under three CVD simulations would mean either
+     a second set no better than this one, or a worse one chosen to look different.
+     The cost of sharing is confusion, and it needs the two sets to meet. They do not:
+     `--region-*` paints Türkiye's coğrafi bölgeler (`/turkiye`, `/turkiye/bolge/*`, the region
+     round of the game) and `--continent-*` paints the world's continents (`/dunya`,
+     `/dunya/kita/*`), and no route renders both encodings. The single screen where both entity
+     TYPES appear is `components/v2/v2-member-hub.tsx`'s favourites list, and there neither
+     wears its identity colour: a favourite row is tinted by its entity type, one constant
+     colour for every region and one for every continent, so no two rows there are being told
+     apart by a region or continent hue. If a surface ever does paint both encodings at once,
+     it needs a legend for each, not a second palette — a reader who cannot tell "Ege" from
+     "Asya" by hue alone on such a screen could not tell them apart under any assignment.
+
+     WHICH CONTINENT GETS WHICH HUE. With the seven VALUES fixed by PR0, every assignment of them
+     is identically accessible — the pairwise ΔE00 matrix is permutation-invariant, so the four
+     worst-case figures below are the same whichever continent gets which. The only free variable
+     left is RECOGNITION CONTINUITY, so that is what the assignment optimises: each continent
+     keeps the Okabe–Ito member NEAREST the map fill it already wore (`CONTINENT_META.color`, the
+     -600 shade), under CIEDE2000, minimising total distance over all 7! = 5040 assignments. The
+     winner scores 151.200 and is the UNIQUE minimum, 2.1 clear of the next (153.3).
+       avrupa         #0072b2  blue            was indigo-600   ΔE00 22.2
+       asya           #e69f00  orange          was amber-600    ΔE00 16.4
+       afrika         #009e73  bluish green    was emerald-600  ΔE00  2.9
+       kuzey-amerika  #56b4e9  sky blue        was sky-600      ΔE00 15.6
+       guney-amerika  #d55e00  vermillion      was rose-600     ΔE00 23.4
+       okyanusya      #cc79a7  reddish purple  was purple-600   ΔE00 28.0
+       antarktika     #f0e442  yellow          was teal-600     ΔE00 42.7
+     HOW MUCH CONTINUITY THAT ACTUALLY BUYS, stated honestly rather than generously. Six of the
+     seven land in a neighbouring hue family, but "a re-spelling rather than a re-colouring" would
+     overstate it: THREE moved further than 21.7, which is this set's own worst-pair separation
+     under normal vision — guney-amerika 23.4, okyanusya 28.0, antarktika 42.7. For those three a
+     returning reader sees a different colour, and the minimum is the floor of that change, not
+     the absence of it. What the objective buys is that no cheaper assignment exists.
+     AND ONE PART OF IT IS A JUDGEMENT, not a measurement. Antarktika took the yellow while the
+     sky blue went to kuzey-amerika; a SEMANTIC objective would have swapped them, since ice reads
+     blue and nothing about Antarctica reads yellow. Continuity was preferred because sky-600 was
+     already Kuzey Amerika's own fill (15.6 away) and Antarktika is `count: 1` — the least-painted
+     shape on the map, and the one carrying a label wherever it is named. If that trade is ever
+     revisited, swapping those two costs 37.7 continuity (42.7+15.6 = 58.3 against 26.0+70.0 =
+     96.0) and changes no accessibility figure in this file.
+     Pairwise separation is pinned — floor, worst figure AND worst pair, per vision — by
+     `lib/theme/continent-palette.test.ts`, which also compares this block against its own
+     table in both directions. Worst pairs: 21.7 asya/antarktika normal, 12.3 avrupa/okyanusya
+     protanopia, 11.5 asya/antarktika deuteranopia, 11.1 asya/okyanusya tritanopia. Identical
+     to the region set's four figures because it is the same seven colours; only the names of
+     the binding pairs differ. Every country shape keeps its stroke, so continent edges are
+     readable as line work as well as colour. */
+  --continent-avrupa: #0072b2; /* blue */
+  --continent-asya: #e69f00; /* orange */
+  --continent-afrika: #009e73; /* bluish green */
+  --continent-kuzey-amerika: #56b4e9; /* sky blue */
+  --continent-guney-amerika: #d55e00; /* vermillion */
+  --continent-okyanusya: #cc79a7; /* reddish purple */
+  --continent-antarktika: #f0e442; /* yellow */
+
+  /* ---- Continent identity off the map: the tint and the text member (T-031c Task 5) ----
+     The same two derived members the region set carries, for the same reason: the seven hues
+     above are map FILLS, and a badge that names a continent in prose needs the same identity at
+     text size. Before this block existed there were THREE spellings of a continent's colour —
+     `lib/map/continent-theme.ts`'s `CONTINENT_META`, `components/v2/v2-world-continents.tsx`'s
+     `CONTINENTS_DATA`, and (recorded as `DES133-I1` in the first file's own docblock) a
+     `CONTINENT_THEMES` table on `/dunya/[slug]` that disagreed with the map on six of seven
+     continents. `lib/theme/continent-identity.ts` is now the only file that turns these tokens
+     into a class.
+
+     `-tint`  the badge/hero surface, a 15% wash of the continent's own fill. Translucent on
+              purpose, so one value serves both themes.
+     `-text`  the label ON that tint, derived the region way: the fill's own oklch hue angle
+              held EXACTLY, only lightness moved until it carries text, chroma then the most
+              sRGB allows at that lightness. Per-continent lightness, not one shared L — these
+              seven are a CATEGORICAL set and a common lightness is what would blur two of them
+              together. The values equal `--region-*-text`'s for the same hue, because the
+              input hue and the derivation are the same; they are declared here independently
+              rather than aliased, so the two data sets can be re-tuned apart.
+
+     MEASURED (lib/theme/contrast.ts, `ratio` + `blendOver`), AGAINST THE THREE SURFACES THESE
+     LABELS ARE ACTUALLY PAINTED ON. Every figure names its backdrop:
+
+       HERO  the continent badge on `/dunya/kita/[slug]` and `/dunya/[slug]`. `variant="outline"`
+             supplies `bg-card`, but the identity's `badge` overrides it, so the badge's own 15%
+             tint composites straight onto the hero band: tint over the hero gradient's TINT END
+             over --background. The gradient is `from-<tint> via-background to-background`, so
+             the tint end is the worst case and the badge row sits in it. Binding in both themes.
+       CARD  the continent badge on `/dunya/kita`, whose card is an opaque `bg-card`, and the
+             panel header on `/dunya`'s grouped country list. One 15% tint over --card.
+       DECK  the continent badge on `components/v2/v2-world-continents.tsx`, whose card is
+             `bg-card/80 backdrop-blur-sm` — NOT `bg-card`. The backdrop is --card at 80% over
+             --background (#fefefd light, #111c1f dark), then the 15% tint over that. It is its
+             own column because it is its own surface; `backdrop-blur-sm` changes nothing here
+             because what it blurs is a flat --background.
+     AND ONE SURFACE THAT IS DELIBERATELY NOT IN THE TABLE, because the fix was to stop painting
+     onto it:
+       ROW   `/dunya`'s country table gives every row `hover:bg-muted/50`. The tinted badge over
+             THAT over --card measures 4.80-5.50 light but 4.41-5.73 dark, and Avrupa's 4.41 is
+             under the floor — a data label failing only while the pointer is over its own row.
+             The badge there wears `identity.badgeOpaque` instead: `bg-card` + the label + the
+             edge, no tint of its own, so its backdrop is --card whatever the row is doing. A
+             moving backdrop is not a column to measure, it is a surface not to composite onto.
+     EVERY FIGURE BELOW IS ROUNDED DOWN, not to nearest, so no number here can overstate what
+     was measured.
+                          light                    dark
+                     hero   card   deck      hero   card   deck
+       avrupa         4.69   5.97   5.91      4.59   4.77   4.89
+       asya           4.69   5.42   5.37      4.65   5.58   5.66
+       afrika         4.67   5.70   5.68      4.75   5.33   5.40
+       kuzey-amerika  4.70   5.48   5.43      4.65   5.46   5.61
+       guney-amerika  4.60   5.71   5.66      4.60   4.95   5.06
+       okyanusya      4.64   5.53   5.48      4.66   5.24   5.37
+       antarktika     4.76   5.18   5.13      4.72   6.26   6.43
+     Worst case 4.60:1 light and 4.59:1 dark, against the 4.5:1 floor of WCAG 1.4.3.
+
+     WHAT `HERO` DOES NOT INCLUDE, and why that is now safe. Both continent heroes also paint a
+     decorative `size-96 <glow> rounded-full blur-3xl` overlay, and the glow is per-continent
+     (`identity.glow`), so it is this file's colour landing on this file's label. A blurred
+     overlay is not a blend any analytic model expresses, and 384px plus blur spread is wider
+     than a 320px viewport, so below `md` it washed over the badge row — the same shape that
+     falsified the region table. Both overlays are now `hidden md:block`
+     (`dunya/kita/[slug]/page.tsx`, `dunya/[slug]/page.tsx`), bounded rather than paid for by
+     darkening seven data colours. Painted-pixel minimums at 320px with the bound in place are
+     recorded beside each overlay.
+     CONFIRMED FROM PAINTED PIXELS, 56 cases — both heroes, all seven continents, both themes, at
+     320 (glow suppressed) and 768 (glow painted). The badge's own backdrop was read out of the
+     screenshot and its label colour resolved through a canvas, because Chrome reports an
+     oklch-authored colour as `lab(...)`. Every case clears the floor and every case measures
+     ABOVE the HERO column, which is the direction that makes this table safe to quote: the
+     column assumes the gradient's tint END, and the badge row sits below it, where
+     `via-background` has already lightened the band.
+       HERO painted   4.75-5.00 light, 4.82-5.50 dark   (recorded 4.60-4.76 / 4.59-4.75)
+       CARD painted   5.18-5.97 light, 4.83-6.34 dark   (recorded 5.18-5.97 / 4.77-6.26)
+       DECK painted   5.15-5.93 light, 4.96-6.55 dark   (recorded 5.13-5.91 / 4.89-6.43)
+     768 is where the glow IS painted, and it does not bind: the light minimum there is 4.75
+     against 4.80 at 320. The hero band also carries ordinary body text, which is not a
+     second case to watch: --foreground on the gradient's tint end measures 11.47-13.59 light
+     and 11.33-14.21 dark. */
+  --continent-avrupa-tint: color-mix(in srgb, var(--continent-avrupa) 15%, transparent);
+  --continent-asya-tint: color-mix(in srgb, var(--continent-asya) 15%, transparent);
+  --continent-afrika-tint: color-mix(in srgb, var(--continent-afrika) 15%, transparent);
+  --continent-kuzey-amerika-tint: color-mix(
+    in srgb,
+    var(--continent-kuzey-amerika) 15%,
+    transparent
+  );
+  --continent-guney-amerika-tint: color-mix(
+    in srgb,
+    var(--continent-guney-amerika) 15%,
+    transparent
+  );
+  --continent-okyanusya-tint: color-mix(in srgb, var(--continent-okyanusya) 15%, transparent);
+  --continent-antarktika-tint: color-mix(in srgb, var(--continent-antarktika) 15%, transparent);
+  --continent-avrupa-text: oklch(0.45 0.11 244);
+  --continent-asya-text: oklch(0.5 0.105 76.8);
+  --continent-afrika-text: oklch(0.46 0.095 165.5);
+  --continent-kuzey-amerika-text: oklch(0.49 0.105 236.2);
+  --continent-guney-amerika-text: oklch(0.48 0.13 47.5);
+  --continent-okyanusya-text: oklch(0.5 0.115 346.3);
+  --continent-antarktika-text: oklch(0.52 0.11 105);
+
+  /* ---- Sea-basin palette (DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
+     The four deniz havzası are an unordered categorical variable, exactly as the region and
+     continent sets above are, so they get the same treatment: their own token set, physically
+     separate from the Terra brand tokens, and a floor of ΔE00 >= 10 on all 6 pairs under normal
+     vision and all three CVD simulations. `lib/theme/basin-palette.test.ts` measures it and
+     compares this block against its own table in BOTH directions.
+
+     WHY NOT THE OKABE-ITO SET THE OTHER TWO SHARE. Regions and continents share seven values
+     because they never meet on a screen. Basins and regions DO meet: `turkiye/bolge/[slug]`
+     paints its hero, badge and border from `--region-*` and lists that region's
+     `coastalSeas` as `--basin-*` chips in the same viewport. Two encodings sharing one value
+     there would be ambiguous, so these four values are disjoint from the seven above.
+
+     WHAT SHIPPED, AND WHAT HAD TO MOVE. Four files already agreed on cyan / amber / teal /
+     rose, so the starting point was the shipped identity rather than a new one. Measured, that
+     set FAILS the floor twice: cyan-600 / teal-600 is 3.8 under tritanopia, and
+     amber-600 / rose-600 is 9.6 under deuteranopia. Two members therefore move, and both move
+     one step DOWN inside their own family rather than out of it — the smallest correction in
+     the shipped palette that clears the floor (searched over every Tailwind family at 500/600/
+     700, minimising total ΔE00 from what ships):
+
+       karadeniz  cyan-600  #0092b8  unchanged
+       marmara    amber-600 #e17100  unchanged
+       ege        teal-600 -> teal-700  #00786f   moved 10.9
+       akdeniz    rose-600 -> rose-700  #c70036   moved  7.9
+
+     Worst pair per vision on the set that ships here: normal 20.7 karadeniz/ege ·
+     protanopia 16.7 ege/akdeniz · deuteranopia 17.7 karadeniz/ege · tritanopia 12.7
+     karadeniz/ege. All six pairs clear 10 under all four.
+
+     THE ONE CROSS-SET COLLISION THIS RESOLVES. `--sst-band-warm` below is teal-600, and Ege
+     was teal-600 too — two different encodings on one value, in ONE component
+     (`v2-marine-map-explorer` paints basin group headers and SST chips on the same screen).
+     Moving Ege to teal-700 separates them: ΔE00 10.3-11.2 across the four visions, so they are
+     distinct values AND tellable apart.
+
+     THE ONE IT DOES NOT, NAMED RATHER THAN LEFT TO BE REDISCOVERED. `--basin-marmara`
+     (amber-600) and `--sst-band-hot` (orange-600) measure 11.8 normal but 1.6 under
+     deuteranopia. They are not interchangeable and never encode the same axis — one names a
+     basin, one names a temperature band, and both marks carry their own text — but a
+     deuteranope sees two similar warm hues on that page. Moving Marmara was rejected: it clears
+     the categorical floor, cross-set ΔE00 is not the bar this set is measured against, and
+     every alternative measured worse against the shipped identity. Recorded here so the next
+     reader knows it was measured, not missed.
+
+     CONTRAST. Figures for `-text` on each surface, WITH THE BACKDROP EACH IS A RATIO TO, are
+     below the `-text` declarations. Nothing restates them elsewhere. */
+  --basin-karadeniz: #0092b8; /* cyan */
+  --basin-marmara: #e17100; /* amber */
+  --basin-ege: #00786f; /* deep teal */
+  --basin-akdeniz: #c70036; /* rose */
+  --basin-karadeniz-tint: color-mix(in srgb, var(--basin-karadeniz) 15%, transparent);
+  --basin-marmara-tint: color-mix(in srgb, var(--basin-marmara) 15%, transparent);
+  --basin-ege-tint: color-mix(in srgb, var(--basin-ege) 15%, transparent);
+  --basin-akdeniz-tint: color-mix(in srgb, var(--basin-akdeniz) 15%, transparent);
+  /* The basin label. Solved against the WORST surface it is ever painted on, not the most
+     flattering one, so every call site is covered by one value per basin per theme.
+
+     FIVE NAMED BACKDROPS, all of them surfaces a page actually paints:
+       GROUP  the 15% tint over `--muted`/50 over `--card`  — the station-table group header
+              in `v2-marine-map-explorer`. The BINDING case in both themes; measuring this
+              badge against a bare `--card` would overstate it by ~1.4.
+       DECK   the 15% tint over `--card`/80 over `--background` — `v2-marine-basin-cards`,
+              whose Card is `bg-card/80 backdrop-blur-sm`, not `bg-card`.
+       PANEL  the 10% tint over `--card` — the `coastalSeas` chips on `turkiye/bolge/[slug]`.
+       LINK   the 5% wash over the `deniz/kiyi-tipleri` cross-nav section, whose own background
+              is `from-card via-muted/30 to-card`; both the card end and the muted middle are
+              measured, because a gradient has no single backdrop.
+       CARD   the bare `--card`, which bounds nothing but is what a reader assumes.
+
+     LIGHT   GROUP · DECK · PANEL · LINK(end/mid) · bare --card
+       karadeniz  4.64 · 5.02 · 5.37 · 5.71/5.21 · 6.04
+       marmara    4.63 · 5.00 · 5.33 · 5.63/5.13 · 5.93
+       ege        4.68 · 5.07 · 5.51 · 5.88/5.40 · 6.32
+       akdeniz    4.62 · 5.00 · 5.55 · 6.06/5.56 · 6.64
+     Worst 4.62 (akdeniz on GROUP) against the 4.5 floor.
+
+     NO MOVING BACKDROP CARRIES A BASIN CHIP, and that was checked rather than assumed — it is
+     the shape that bit `--region-*` and `--continent-*`, where a chip over a row hovering to
+     `bg-muted/50` measured 4.41:1. Here the group header is static `bg-muted/50`, the basin
+     Card changes only its border and shadow on hover, the `bolge/[slug]` chips sit on a static
+     panel, and the `kiyi-tipleri` link cards change only their border. So no `badgeOpaque`
+     member exists in `lib/theme/basin-identity.ts`: there is nothing for it to protect. The SST
+     set below is where a chip DOES sit on a moving backdrop, and it is solved there. */
+  --basin-karadeniz-text: oklch(0.485 0.11 221.723);
+  --basin-marmara-text: oklch(0.51 0.11 58.318);
+  --basin-ege-text: oklch(0.465 0.11 186.391);
+  --basin-akdeniz-text: oklch(0.49 0.11 16.935);
+
+  /* ---- Sea-surface-temperature bands (GEOPHYSICAL RAMP — stays standard) ----
+     SST is a geophysical scale, so it is NOT restyled to Terra: the same rule that keeps the
+     earthquake magnitude ramp and the AQI bands standard. What follows is a BINDING of the
+     ramp this product already ships, not a new one.
+
+     THE RAMP ALREADY SHIPPED TWICE, IN ONE FILE, AND THE TWO SPELLINGS DISAGREED.
+     `v2-marine-map-explorer` painted the same three bands in two places:
+       - the map station pins, as raw SVG `fill` attributes: #2563eb / #0d9488 / #ea580c
+       - the `Su Sıcaklığı` table chips, as utility classes: blue-500/15 + blue-700,
+         teal-500/15 + teal-700, orange-500/15 + orange-700
+     Same three families (blue / teal / orange), same thresholds (< 25 °C, 25-28 °C, >= 28 °C),
+     two different shades — and the pin hexes are Tailwind v3 values this repo stopped shipping
+     at the v4 upgrade. The tokens take the v4 `-600` of those same three families, which is the
+     shade the pins already used: it moves the painted pin by ΔE00 2.7 / 0.8 / 3.2, i.e. a
+     palette-generation refresh inside the identical family and shade, and leaves the chips in
+     their own families. That is the whole of the change — the ramp is not redesigned, it is
+     given one name each so the two spellings cannot drift apart again.
+
+     ORDER, NOT CATEGORY. Three ordered steps, so `CATEGORICAL_MIN` does not apply; what matters
+     is that adjacent steps are separable and that the order reads cool -> warm -> hot.
+     Adjacent ΔE00: cool/warm 40.4, warm/hot 56.9 (cool/hot 52.4). */
+  --sst-band-cool: #155dfc; /* < 25 °C */
+  --sst-band-warm: #009689; /* 25-28 °C */
+  --sst-band-hot: #f54900; /* >= 28 °C */
+  --sst-band-cool-tint: color-mix(in srgb, var(--sst-band-cool) 15%, transparent);
+  --sst-band-warm-tint: color-mix(in srgb, var(--sst-band-warm) 15%, transparent);
+  --sst-band-hot-tint: color-mix(in srgb, var(--sst-band-hot) 15%, transparent);
+  /* The band label. THIS is the set whose chip sits on a backdrop that MOVES, so the four row
+     states are the backdrops, not the resting one:
+       ROW            the 15% tint over `--card`            — a resting station row
+       ROW_HOVER      ... over `--muted`/40 over `--card`   — `hover:bg-muted/40`
+       ROW_SEL        ... over `--primary`/10 over `--card` — the selected station
+       ROW_SEL_HOVER  ... over `--primary`/15 over `--card` — selected AND hovered: the BINDING
+                      case in both themes, and the one state nobody screenshots
+
+     LIGHT   ROW · ROW_HOVER · ROW_SEL · ROW_SEL_HOVER
+       cool   5.60 · 5.21 · 4.92 · 4.62
+       warm   5.58 · 5.24 · 4.95 · 4.63
+       hot    5.56 · 5.18 · 4.92 · 4.62
+     Worst 4.62 against the 4.5 floor.
+
+     Solved against ROW_SEL_HOVER rather than patched afterwards, which is why this set needs no
+     opaque-chip member: `--region-*` and `--continent-*` each measured 4.41:1 on exactly this
+     shape and had to grow a `badgeOpaque` to escape it, because their labels were already fixed
+     when the shape was found. These labels were authored knowing it. */
+  --sst-band-cool-text: oklch(0.47 0.11 262.881);
+  --sst-band-warm-text: oklch(0.45 0.11 184.704);
+  --sst-band-hot-text: oklch(0.485 0.11 41.116);
+
+  /* ---- Fault-zone palette (GEOPHYSICAL CLASSIFICATION — stays standard) ----
+     A BINDING of what this product already ships, not a palette anybody designed here. The
+     three members are the three fault zones `/deprem` and `/deprem/fay-hatlari` publish, and
+     what separates them is a real classification rather than an editorial choice: each zone's
+     `type` field in `lib/earthquake/fault-lines-data.ts` names its faulting kinematics, and the
+     three are the three kinematic classes an active-fault map legend is built on —
+
+       kaf   Kuzey Anadolu   "Sağ Yanal Doğrultu Atımlı Fay Zonu"      dextral strike-slip
+       daf   Doğu Anadolu    "Sol Yanal Doğrultu Atımlı Fay Zonu"      sinistral strike-slip
+       bafs  Batı Anadolu    "Normal Faylanma ve Horst-Graben ..."     normal / extensional
+
+     So the AXIS is standard and is not restyled to Terra, exactly as the magnitude ramp above
+     and the SST bands below are not. No institution is named for it: this repo already ruled
+     that citing a published fault map for prose it did not read is an unearned claim
+     (`components/v2/v2-sources-section.tsx`, and `components/v2/v2-earthquake-a11y.test.ts`
+     holds it), and the classification is legible from the product's own data.
+
+     NOT `destructive` / `info` / `success`. Three data categories on three semantic hues is the
+     data-viz rule run backwards (`docs/design.md` rule 1): red would then mean both "KAF" and
+     "hazard" on a card that carries a `text-destructive` risk level two elements away. The
+     fault zones get their own set; hazard keeps the semantic family.
+
+     WHAT SHIPPED, AND WHAT MOVED: NO HUE. Four files agreed on red / blue / emerald
+     (`lib/earthquake/fault-lines-data.ts` and both `/deprem` routes), and unlike the basin set
+     the shipped identity PASSES on measurement, so no member changes family. Values are the v4
+     `-600` of those three families, the shade the TEXT spellings already used.
+
+     One shade DID move on the way, and saying "nothing moved" would flatter it: the four files
+     agreed on the family, not the shade. Borders and washes were spelled at `-500`
+     (`border-red-500/30 bg-red-500/5` on the `/deprem` cards, `-500` tints and `/40` edges in
+     `fault-lines-data.ts`) while the text was `-600` / `-700`. One token cannot be two shades,
+     so the borders and washes now composite `-600`. The contrast tables below are measured on
+     that new state, and the painted verification ran against it, so nothing here is stale —
+     but the painted border and wash are a shade deeper than before. Worst pair per vision:
+     normal 48.5 kaf/daf · protanopia 23.1 kaf/bafs · deuteranopia 17.2 kaf/bafs ·
+     tritanopia 16.5 daf/bafs. All three pairs clear ΔE00 10 under all four.
+     `lib/theme/fault-palette.test.ts` measures it and compares this block against its own table
+     in both directions.
+
+     TWO CROSS-SET NEIGHBOURS, MEASURED AND LEFT ALONE, because neither pair can share a screen:
+       daf is the SAME VALUE as `--sst-band-cool` (ΔE00 0) — both are blue-600. The SST bands
+         paint only `/deniz`; the fault set paints only the two `/deprem` routes. Nothing in
+         either tree renders both.
+       bafs and `--region-dogu-anadolu` / `--continent-afrika` measure ΔE00 2.9. Same argument:
+         `/deprem`'s map paints provinces `fill-card/90`, never a region tint, and no continent
+         surface exists on either route.
+     Moving a member that clears its own floor, to dodge a collision that cannot be painted,
+     would be restyling a standard scale for tidiness. Both figures are pinned in
+     `lib/theme/fault-palette.test.ts` instead — the value equality and the ΔE00 — so a change
+     to EITHER SET has to walk past a failing test with this reasoning in front of it.
+
+     What no test can tell you is that a page has started rendering two of these sets together:
+     the pins compare values, not screens, and they would stay green on such a page. That claim
+     rests on a check rather than on a guard, and the check is recorded so it can be repeated —
+     the rendered DOM of both `/deprem` routes carries `fault-` 10 and 16 times and `sst-band-`,
+     `region-`, `continent-` and `basin-` zero times. Re-run it before adding a data set to
+     either route.
+
+     CONTRAST. Figures for `-text`, WITH THE BACKDROP EACH IS A RATIO TO, sit below the `-text`
+     declarations. Nothing restates them elsewhere. */
+  --fault-kaf: #e7000b; /* red */
+  --fault-daf: #155dfc; /* blue */
+  --fault-bafs: #009966; /* emerald */
+  --fault-kaf-tint: color-mix(in srgb, var(--fault-kaf) 15%, transparent);
+  --fault-daf-tint: color-mix(in srgb, var(--fault-daf) 15%, transparent);
+  --fault-bafs-tint: color-mix(in srgb, var(--fault-bafs) 15%, transparent);
+  /* The fault label. Solved against the WORST surface it is ever painted on, so one value per
+     fault per theme covers every call site.
+
+     FIVE NAMED BACKDROPS, every one of them a surface a page actually paints. The `/deprem`
+     cards sit inside a section whose own background is a gradient (from-card via-card to
+     `--muted`/20 over `--background`), so both ends of it are measured — a gradient has no
+     single backdrop, and the three cards sit at its lower end.
+       TILE   the bare `--card` — the `fay-hatlari` metric strip, the only unwashed case
+       BADGE  the 15% tint over `--card` — the fault-type badge on each `fay-hatlari` article
+       PANEL  `--muted`/20 over `--card` — the accent glyph in the formation/mechanism panels
+       DECK   the 5% wash over the `/deprem` section gradient, at both ends
+       CHIP   the 10% wash over that 5% wash, at both ends — the mechanism chip, and the
+              BINDING case in light, where its lower-gradient end is the darkest backdrop any
+              fault label is painted on
+
+     LIGHT   TILE · BADGE · PANEL · DECK(top/bottom) · CHIP(top/bottom)
+       kaf    6.35 · 4.85 · 6.13 · 5.81/5.37 · 4.90/4.54
+       daf    6.08 · 4.89 · 5.87 · 5.66/5.21 · 4.94/4.56
+       bafs   5.90 · 4.93 · 5.70 · 5.56/5.12 · 4.95/4.57
+     Worst 4.54 (kaf on CHIP, lower end) against the 4.5 floor.
+
+     NO MOVING BACKDROP CARRIES A FAULT LABEL, and it was checked rather than assumed — this is
+     the shape that took `--region-*`, `--continent-*` and the SST chip to 4.41:1. The only
+     hovering surfaces on these two routes are the historical-earthquake table rows, which
+     carry `text-destructive` and `text-foreground` and no fault label at all, and the province
+     links, which are neutral. The `/deprem` cards declare no hover state, and the article's
+     own hover changes its border alpha only. So `lib/theme/fault-identity.ts` carries no
+     opaque-badge member: there is nothing for it to protect. */
+  --fault-kaf-text: oklch(0.5 0.11 27.325);
+  --fault-daf-text: oklch(0.5 0.11 262.881);
+  --fault-bafs-text: oklch(0.49 0.11 163.225);
 
   /* ---- Map-game answer states (UI STATE, not a data scale) ----
      These mark what the PLAYER just did, so they are semantic UI colours (the
@@ -972,6 +1511,76 @@
      so a `-strong` member reads as one family whatever its hue. */
   --primary-strong: oklch(0.78 0.11 40.65);
   --secondary-strong: oklch(0.78 0.085 130.85);
+  /* The region label, lifted for the dark card the same way the `-strong` members above are.
+     Only `-text` flips: `--region-*-tint` is translucent and composites over whichever card
+     it lands on, and the seven fills themselves NEVER flip — they are a measured categorical
+     set (lib/theme/region-palette.test.ts), and a theme-dependent data encoding would mean
+     the map paints one colour and the legend another.
+     Hue angle is the region's own, unchanged from the light block; lightness moves UP here
+     instead of down, because the label sits on a dark surface. Measurements are in the light
+     block's table, `dark` columns — worst case 4.59:1, on the HERO backdrop (tint over tint
+     over --background), which is the binding one in this theme too. */
+  --region-marmara-text: oklch(0.66 0.13 244);
+  --region-ege-text: oklch(0.74 0.155 76.8);
+  --region-akdeniz-text: oklch(0.73 0.115 236.2);
+  --region-ic-anadolu-text: oklch(0.8 0.17 105);
+  --region-karadeniz-text: oklch(0.72 0.115 346.3);
+  --region-dogu-anadolu-text: oklch(0.69 0.125 165.5);
+  --region-guneydogu-anadolu-text: oklch(0.69 0.17 47.5);
+  /* The continent label, lifted for the dark card exactly as `--region-*-text` is above, and
+     for the same reasons: only `-text` flips, because `--continent-*-tint` is translucent and
+     composites over whichever card it lands on, and `--continent-*` itself must not, since the
+     seven fills are a measured categorical set and a theme-dependent data encoding would mean
+     two sets to keep separable instead of one. Hue angle is each continent's own, unchanged
+     from the light block; lightness moves UP here instead of down. The `dark` columns of the
+     HERO/CARD/DECK table above are these values. */
+  --continent-avrupa-text: oklch(0.66 0.13 244);
+  --continent-asya-text: oklch(0.74 0.155 76.8);
+  --continent-afrika-text: oklch(0.69 0.125 165.5);
+  --continent-kuzey-amerika-text: oklch(0.73 0.115 236.2);
+  --continent-guney-amerika-text: oklch(0.69 0.17 47.5);
+  --continent-okyanusya-text: oklch(0.72 0.115 346.3);
+  --continent-antarktika-text: oklch(0.8 0.17 105);
+  /* The basin label, lifted for the dark card exactly as the two sets above are, and for the
+     same reason: only `-text` flips. `--basin-*-tint` is translucent and composites over
+     whichever surface it lands on, and `--basin-*` itself must not flip, because the four fills
+     are a measured categorical set and a theme-dependent data encoding would be two sets to
+     keep separable instead of one. Hue angle is each basin's own, unchanged from the light
+     block; lightness moves UP here instead of down.
+
+     DARK, same five named backdrops as the light block lists:
+             GROUP · DECK · PANEL · LINK(end/mid) · bare --card
+       karadeniz  4.66 · 5.13 · 5.37 · 5.73/5.93 · 6.08
+       marmara    4.67 · 5.12 · 5.40 · 5.75/5.93 · 6.05
+       ege        4.67 · 5.11 · 5.27 · 5.49/5.66 · 5.74
+       akdeniz    4.67 · 5.03 · 5.05 · 5.10/5.25 · 5.15
+     Worst 4.66 (karadeniz on GROUP) against the 4.5 floor. GROUP binds in both themes. */
+  --basin-karadeniz-text: oklch(0.675 0.13 221.723);
+  --basin-marmara-text: oklch(0.695 0.13 58.318);
+  --basin-ege-text: oklch(0.65 0.13 186.391);
+  --basin-akdeniz-text: oklch(0.66 0.13 16.935);
+  /* The SST band label, same treatment, same four row states as the light block:
+             ROW · ROW_HOVER · ROW_SEL · ROW_SEL_HOVER
+       cool   5.46 · 5.13 · 4.91 · 4.61
+       warm   5.48 · 5.19 · 4.92 · 4.66
+       hot    5.70 · 5.38 · 5.01 · 4.63
+     Worst 4.61 (cool, selected AND hovered) against the 4.5 floor. */
+  --sst-band-cool-text: oklch(0.695 0.13 262.881);
+  --sst-band-warm-text: oklch(0.69 0.13 184.704);
+  --sst-band-hot-text: oklch(0.72 0.13 41.116);
+  /* The fault label, lifted for the dark card exactly as the three sets above are, and for the
+     same reason: only `-text` flips. The tints are translucent and composite over whatever
+     surface they land on, and the fills themselves must not flip, because they are the three
+     values the categorical measurement was made on.
+             TILE · BADGE · PANEL · DECK(top/bottom) · CHIP(top/bottom)
+       kaf    4.97 · 4.71 · 4.82 · 4.91/5.17 · 4.73/4.93
+       daf    5.19 · 4.59 · 5.03 · 5.01/5.28 · 4.60/4.84
+       bafs   5.58 · 4.65 · 5.40 · 5.28/5.58 · 4.65/4.95
+     Worst 4.59 (daf on BADGE) against the 4.5 floor. BADGE binds in dark where CHIP binds in
+     light, so both had to be solved for and neither could be inferred from the other. */
+  --fault-kaf-text: oklch(0.65 0.13 27.325);
+  --fault-daf-text: oklch(0.65 0.13 262.881);
+  --fault-bafs-text: oklch(0.65 0.13 163.225);
   /* A bare `<a>`. Light mode's link colour is a Terra token the `.dark` block cannot reach, so
      the base rule reads `--link` and this is the value it gets here. */
   --link: oklch(0.78 0.11 40.65);

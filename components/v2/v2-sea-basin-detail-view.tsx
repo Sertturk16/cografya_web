@@ -109,7 +109,7 @@ export function V2SeaBasinDetailView({
         <BreadcrumbsNav items={breadcrumbItems} />
 
         <div
-          className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.gradientClass} p-6 sm:p-10 shadow-lg`}
+          className={`relative overflow-hidden rounded-3xl border border-border bg-gradient-to-b ${data.identity.heroGradient} p-6 sm:p-10 shadow-lg`}
         >
           <PageHero
             tier="hub"
@@ -144,7 +144,7 @@ export function V2SeaBasinDetailView({
               <span className="text-[10px] text-muted-foreground font-medium block">
                 Maksimum Derinlik
               </span>
-              <span className="font-heading text-lg sm:text-xl font-bold text-cyan-600 block mt-0.5">
+              <span className="font-heading text-lg sm:text-xl font-bold text-info-strong block mt-0.5">
                 {data.metrics.maxDepth}
               </span>
             </div>
@@ -188,7 +188,6 @@ export function V2SeaBasinDetailView({
       <section aria-labelledby="basin-telemetry-heading" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
           <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-cyan-500 animate-pulse" />
             <h2
               id="basin-telemetry-heading"
               className="font-heading text-xl sm:text-2xl font-bold text-foreground"
@@ -239,10 +238,10 @@ export function V2SeaBasinDetailView({
                           <span className="text-muted-foreground">{pt.provinceName}</span>
                         )}
                       </td>
-                      <td className="p-3 sm:p-4 font-mono font-bold text-rose-600 dark:text-rose-400">
+                      <td className="p-3 sm:p-4 font-mono font-bold text-foreground">
                         {pt.sst !== null && pt.sst !== undefined ? `${pt.sst.toFixed(1)} °C` : "—"}
                       </td>
-                      <td className="p-3 sm:p-4 font-mono text-cyan-600 dark:text-cyan-400">
+                      <td className="p-3 sm:p-4 font-mono text-foreground">
                         {pt.waveHeight !== null && pt.waveHeight !== undefined
                           ? `${pt.waveHeight.toFixed(2)} m`
                           : "—"}
@@ -276,9 +275,9 @@ export function V2SeaBasinDetailView({
 
       {/* SUBMARINE FAULT CALLOUT (IF MARMARA OR EGE) */}
       {data.faultLineNotice && (
-        <div className="p-5 sm:p-6 rounded-3xl border border-red-500/30 bg-gradient-to-r from-red-500/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        <div className="p-5 sm:p-6 rounded-3xl border border-destructive/30 bg-gradient-to-r from-destructive/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3.5">
-            <div className="size-11 rounded-2xl bg-red-500/10 text-red-600 flex items-center justify-center shrink-0">
+            <div className="size-11 rounded-2xl bg-destructive/10 text-destructive-strong flex items-center justify-center shrink-0">
               <Layers className="size-6" />
             </div>
             <div>
@@ -356,7 +355,7 @@ export function V2SeaBasinDetailView({
         {/* 3. COASTAL GEOMORPHOLOGY & TYPES */}
         <Card as="article" variant="panel" space="4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-            <div className="flex items-center gap-2 text-teal-600 font-bold text-sm">
+            <div className="flex items-center gap-2 font-bold text-sm">
               <Compass className="size-4.5" />
               <span>Kıyı Tipleri &amp; Yer Şekilleri</span>
             </div>
@@ -379,19 +378,16 @@ export function V2SeaBasinDetailView({
           </p>
           <div className="flex flex-wrap gap-2 pt-2">
             {data.coastalGeomorphology.coastalTypes.map((type, i) => (
-              <span
-                key={i}
-                className="px-3 py-1 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30 text-xs font-semibold"
-              >
+              <Badge key={i} variant="outline">
                 {type}
-              </span>
+              </Badge>
             ))}
           </div>
         </Card>
 
         {/* 4. CURRENTS & WATER MOVEMENT */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 text-cyan-600 font-bold text-sm">
+          <div className="flex items-center gap-2 font-bold text-sm">
             <Waves className="size-4.5" />
             <span>Hidrodinami &amp; Akıntı Rejimi</span>
           </div>
@@ -407,7 +403,7 @@ export function V2SeaBasinDetailView({
                 key={i}
                 className="p-3 rounded-xl bg-muted/40 border border-border/80 text-xs text-muted-foreground flex items-start gap-2"
               >
-                <CheckCircle2 className="size-4 text-cyan-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
                 <span>{kp}</span>
               </div>
             ))}
@@ -416,7 +412,7 @@ export function V2SeaBasinDetailView({
 
         {/* 5. HYDROGRAPHIC BALANCE & RIVERS */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 text-blue-600 font-bold text-sm">
+          <div className="flex items-center gap-2 font-bold text-sm">
             <Droplets className="size-4.5" />
             <span>Beslenme Kaynakları &amp; Akarsular</span>
           </div>
@@ -432,12 +428,9 @@ export function V2SeaBasinDetailView({
             </span>
             <div className="flex flex-wrap gap-2">
               {data.hydrographicBalance.majorRivers.map((riv, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 rounded-xl bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/30 text-xs font-mono"
-                >
+                <Badge key={i} variant="outline" className="font-mono">
                   {riv}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>

@@ -14,7 +14,6 @@ export function V2LearningPaths() {
       title: "AYT Coğrafya Konu Özetli Branş Denemeleri",
       badge: "Video Çözümlü",
       badgeVariant: "primary" as const,
-      color: "from-amber-600 to-amber-800",
       description:
         "20 Adet fasikül branş denemesi, her sorunun karekodlu ayrıntılı video analizi ve ÖSYM tarzı yeni nesil sorular.",
       details: { items: "20 Deneme", solutions: "120 Soru", format: "ÖSYM Formatı" },
@@ -31,7 +30,6 @@ export function V2LearningPaths() {
       title: "Dilsiz Harita & Coğrafi Hafıza Modülü",
       badge: "İnteraktif",
       badgeVariant: "secondary" as const,
-      color: "from-emerald-700 to-emerald-900",
       description:
         "81 ilin konumu, dağ sıraları, tektonik fay hatları, boğazlar ve göllerin dilsiz harita üzerinden uygulamalı tekrarı.",
       details: { items: "81 İl", solutions: "3 Oyun Modu", format: "SVG Vektör" },
@@ -48,7 +46,6 @@ export function V2LearningPaths() {
       title: "CBS & Coğrafi Harita Analiz Araçları",
       badge: "Bilimsel Model",
       badgeVariant: "outline" as const,
-      color: "from-blue-700 to-indigo-900",
       description:
         "WGS84 jeodezik mesafe ölçümü, WGS84 enlem/boylam koordinat dönüşümleri ve poligon jeodezik alan hesaplamaları.",
       details: { items: "3 CBS Aracı", solutions: "WGS84", format: "Jeodezik" },
@@ -92,24 +89,22 @@ export function V2LearningPaths() {
             className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 bg-card overflow-hidden group"
           >
             {/* Header Banner */}
-            <div
-              className={`h-36 bg-gradient-to-br ${item.color} p-4 text-white relative overflow-hidden flex flex-col justify-between`}
-            >
+            <div className="h-36 bg-gradient-to-br from-primary to-primary-strong p-4 text-primary-foreground relative overflow-hidden flex flex-col justify-between">
               <div className="flex items-center justify-between relative z-10">
-                <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-[10px]">
+                <Badge className="bg-primary-foreground text-primary border-transparent text-[10px]">
                   {item.badge}
                 </Badge>
-                <div className="size-8 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-xs group-hover:scale-110 transition-transform">
-                  <PlayCircle className="size-5 text-white" />
+                <div className="size-8 rounded-full bg-primary-foreground/20 flex items-center justify-center backdrop-blur-xs group-hover:scale-110 transition-transform">
+                  <PlayCircle className="size-5" />
                 </div>
               </div>
 
               {/* Decorative Glow */}
-              <div className="absolute right-0 bottom-0 -mr-6 -mb-6 size-24 rounded-full bg-white/10 blur-xl pointer-events-none" />
+              <div className="absolute right-0 bottom-0 -mr-6 -mb-6 size-24 rounded-full bg-primary-foreground/10 blur-xl pointer-events-none" />
 
               <div className="relative z-10">
-                <span className="text-[11px] text-white/80 font-mono block">Resmî Yayın</span>
-                <h3 className="font-heading font-bold text-lg text-white leading-tight">
+                <span className="text-[11px] font-mono block">Resmî Yayın</span>
+                <h3 className="font-heading font-bold text-lg text-primary-foreground leading-tight">
                   {item.title}
                 </h3>
               </div>
@@ -141,7 +136,7 @@ export function V2LearningPaths() {
               <div className="space-y-1.5">
                 {item.features.map((feat, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                    <CheckCircle2 className="size-3.5 text-success-strong shrink-0" />
                     <span>{feat}</span>
                   </div>
                 ))}

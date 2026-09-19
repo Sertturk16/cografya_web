@@ -120,8 +120,8 @@ export function V2FavoriteButton({
         onClick={() => void handleClick()}
         className={`rounded-full transition-all duration-300 ${
           favorited
-            ? "bg-rose-600 hover:bg-rose-700 text-white shadow-sm ring-2 ring-rose-500/30 scale-105"
-            : "text-muted-foreground hover:text-foreground hover:border-rose-400"
+            ? "hover:bg-primary-strong shadow-sm scale-105"
+            : "text-muted-foreground hover:text-foreground"
         } ${className}`}
       >
         {pending ? (
@@ -129,7 +129,7 @@ export function V2FavoriteButton({
         ) : (
           <Heart
             className={`size-4 transition-transform duration-200 ${
-              favorited ? "fill-white text-white scale-110" : "text-muted-foreground"
+              favorited ? "fill-current scale-110" : "text-muted-foreground"
             }`}
           />
         )}
@@ -156,28 +156,26 @@ export function V2FavoriteButton({
         onClick={() => void handleClick()}
         className={`rounded-xl h-9 px-3 text-xs font-semibold gap-2 transition-all duration-300 shadow-2xs ${
           favorited
-            ? "bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-700 hover:to-rose-800 text-white shadow-md ring-2 ring-rose-500/30 scale-[1.02]"
-            : "bg-card/80 hover:bg-card border-border hover:border-rose-400/60 text-foreground"
+            ? "hover:bg-primary-strong shadow-md scale-[1.02]"
+            : "bg-card/80 hover:bg-card border-border text-foreground"
         } ${className}`}
       >
         {pending ? (
           <Spinner size="sm" label="Kaydediliyor" className="text-muted-foreground" />
         ) : favorited ? (
-          <Heart className="size-3.5 fill-white text-white animate-in zoom-in-50 duration-200" />
+          <Heart className="size-3.5 fill-current animate-in zoom-in-50 duration-200" />
         ) : authState === "authenticated" ? (
-          <Heart className="size-3.5 text-rose-500 hover:scale-110 transition-transform" />
+          <Heart className="size-3.5 hover:scale-110 transition-transform" />
         ) : (
           <div className="flex items-center gap-1">
-            <Heart className="size-3.5 text-rose-500" />
+            <Heart className="size-3.5" />
             <Lock className="size-2.5 text-muted-foreground" />
           </div>
         )}
 
         <span>{favorited ? "Favorilerde" : "Favoriye Ekle"}</span>
 
-        {justToggled && favorited && (
-          <Sparkles className="size-3 text-amber-300 animate-spin-slow" />
-        )}
+        {justToggled && favorited && <Sparkles className="size-3 animate-spin-slow" />}
       </Button>
 
       {saveFailed && (

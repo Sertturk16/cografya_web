@@ -295,11 +295,22 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
       {/* HERO BANNER SECTION */}
       <section
-        className={`relative isolate border-b border-border bg-gradient-to-b ${continentTheme.gradient} pt-8 pb-12 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${continentTheme.identity.heroGradient} pt-8 pb-12 overflow-hidden`}
       >
-        {/* Glow backdrop with continent accent */}
+        {/* Glow backdrop with continent accent — DECORATION, bounded away from narrow
+            viewports. `size-96` is 384px and `blur-3xl` spreads it further, so below `md` it is
+            wider than the viewport and lands squarely on the continent badge row below.
+            Unbounded it took the seven `--continent-*-text` members under the 4.5:1 floor the
+            `HERO` column of `app/globals.css` records, which is the same bug
+            `turkiye/bolge/[slug]`'s hero shipped. `hidden md:block` bounds the decoration
+            instead of darkening seven data colours to survive it;
+            `components/v2/continent-identity.test.ts` holds the bound.
+            PAINTED PIXELS at 320px, badge label against its own backdrop, both themes:
+            light 4.80 (Okyanusya) to 4.94 (Avrupa), dark 4.82 (Avrupa) to
+            5.50 (Antarktika). At 768, where the glow IS painted, 4.75-4.91 light and 4.82-5.49
+            dark, so the bound is what the narrow widths needed and nothing more. */}
         <div
-          className={`absolute -z-10 top-0 right-1/4 size-96 ${continentTheme.glowColor} rounded-full blur-3xl pointer-events-none`}
+          className={`hidden md:block absolute -z-10 top-0 right-1/4 size-96 ${continentTheme.identity.glow} rounded-full blur-3xl pointer-events-none`}
         />
 
         <PageContainer space="band">
@@ -352,9 +363,12 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     }}
                     className="hover:opacity-80 transition-opacity"
                   >
+                    {/* BACKDROP: the badge's own 15% tint over the hero gradient's TINT END
+                        over `--background` — the `HERO` column of the table in
+                        `app/globals.css`. */}
                     <Badge
                       variant="outline"
-                      className={`${continentTheme.badgeClass} cursor-pointer`}
+                      className={`${continentTheme.identity.badge} cursor-pointer`}
                     >
                       {continent}
                     </Badge>
@@ -373,34 +387,26 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   </Badge>
                   {country.entityType !== "country" ? (
                     localizedStatusLabel ? (
-                      <Badge
-                        variant="outline"
-                        className="bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30"
-                      >
-                        {localizedStatusLabel}
-                      </Badge>
+                      <Badge variant="outline">{localizedStatusLabel}</Badge>
                     ) : null
                   ) : isSpecialStatus ? (
                     <Badge
                       variant="outline"
-                      className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                      className="bg-warning/15 text-warning-strong border-warning/30"
                     >
                       {t("specialStatusBadge")}
                     </Badge>
                   ) : (
                     <Badge
                       variant="outline"
-                      className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                      className="bg-success/10 text-success-strong border-success/20"
                     >
                       {t("sovereignEntityBadge")}
                     </Badge>
                   )}
                   {country.neighborCount === 0 ? (
                     isSpecialGeography ? null : (
-                      <Badge
-                        variant="outline"
-                        className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                      >
+                      <Badge variant="outline" className="flex items-center gap-1">
                         <Waves className="size-3" /> {t("islandChipLabel")}
                       </Badge>
                     )
@@ -468,7 +474,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">{t("kpiAreaTitle")}</span>
-                <Maximize2 className="size-4 text-teal-600" />
+                <Maximize2 className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {country.areaKm2
@@ -491,7 +497,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">{t("kpiCapitalTitle")}</span>
-                <Building2 className="size-4 text-amber-600" />
+                <Building2 className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground truncate">
                 {capital || "—"}
@@ -510,7 +516,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">{t("kpiGovernmentFormTitle")}</span>
-                <Scroll className="size-4 text-rose-600" />
+                <Scroll className="size-4" />
               </div>
               <div className="font-heading font-bold text-sm sm:text-base text-foreground pt-1 leading-snug truncate">
                 {country.governmentFormTr || "—"}
@@ -619,8 +625,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                      <MapPin className="size-3.5 text-rose-600" />{" "}
-                      {t("quickFactCapitalCoordinates")}
+                      <MapPin className="size-3.5" /> {t("quickFactCapitalCoordinates")}
                     </span>
                     <span className="font-mono font-semibold text-sm text-foreground block">
                       {country.capitalLatitude !== null && country.capitalLongitude !== null
@@ -631,7 +636,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                      <Coins className="size-3.5 text-amber-600" /> {t("quickFactCurrency")}
+                      <Coins className="size-3.5" /> {t("quickFactCurrency")}
                     </span>
                     <span className="font-semibold text-sm text-foreground block">
                       {currencyNameForLocale || country.currencyCode || "—"}
@@ -640,8 +645,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
 
                   <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 font-medium">
-                      <Languages className="size-3.5 text-teal-600" />{" "}
-                      {t("quickFactOfficialLanguages")}
+                      <Languages className="size-3.5" /> {t("quickFactOfficialLanguages")}
                     </span>
                     <span
                       className="font-semibold text-sm text-foreground truncate block"
@@ -658,7 +662,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {independenceNote && (
                   <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-1.5">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                      <Scroll className="size-3.5 text-rose-600" />
+                      <Scroll className="size-3.5" />
                       <span>Tarihsel Kuruluş ve Millî Gün</span>
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -746,12 +750,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
           <section id="iklim-ve-hidrografya" className="scroll-mt-28 space-y-6">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className="bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20"
-                >
-                  {t("climateHydrographyBadge")}
-                </Badge>
+                <Badge variant="outline">{t("climateHydrographyBadge")}</Badge>
               </div>
               <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight">
                 {t("climateHydrographyGroupHeading", { name })}
@@ -769,7 +768,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 <Card variant="panel" space="4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <CloudSun className="size-5 text-amber-500" />
+                      <CloudSun className="size-5" />
                       <h3 className="font-heading text-xl font-bold text-foreground">
                         {sectionHeading("climate")}
                       </h3>
@@ -789,16 +788,12 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 <Card variant="panel" space="4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Waves className="size-5 text-cyan-600" />
+                      <Waves className="size-5" />
                       <h3 className="font-heading text-xl font-bold text-foreground">
                         {sectionHeading("hydrography")}
                       </h3>
                     </div>
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/20"
-                    >
+                    <Badge variant="outline" size="sm">
                       {t("hydrographyResourcesBadge")}
                     </Badge>
                   </div>
@@ -837,12 +832,12 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
               <div className="lg:col-span-7 space-y-6">
                 {/* Sovereignty Note if applicable */}
                 {sovereigntyNote && (
-                  <div className="rounded-3xl border border-amber-500/30 bg-amber-500/5 p-6 sm:p-8 shadow-sm space-y-3">
+                  <div className="rounded-3xl border border-warning/30 bg-warning/5 p-6 sm:p-8 shadow-sm space-y-3">
                     <div className="flex items-center gap-2">
                       <Badge
                         variant="outline"
                         size="sm"
-                        className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                        className="bg-warning/15 text-warning-strong border-warning/30"
                       >
                         <ShieldAlert className="size-3 mr-1" />
                         {t("sovereigntyStatusBadge")}
@@ -924,11 +919,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {economyNote && (
                   <Card variant="panel" space="3">
                     <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        size="sm"
-                        className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
-                      >
+                      <Badge variant="outline" size="sm">
                         {t("economyBadge")}
                       </Badge>
                     </div>
@@ -1147,7 +1138,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                           {nbIsSpecialStatus && (
                             <Badge
                               variant="outline"
-                              className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] px-1.5 py-0"
+                              className="bg-warning/15 text-warning-strong border-warning/30 text-[10px] px-1.5 py-0"
                             >
                               {t("specialStatusBadge")}
                             </Badge>
@@ -1182,7 +1173,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                           {nbIsSpecialStatus && (
                             <Badge
                               variant="outline"
-                              className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 text-[10px] px-1.5 py-0"
+                              className="bg-warning/15 text-warning-strong border-warning/30 text-[10px] px-1.5 py-0"
                             >
                               {t("specialStatusBadge")}
                             </Badge>

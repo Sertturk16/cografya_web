@@ -8,6 +8,7 @@ import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generat
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import type { GeographicRegion } from "@/lib/api/types";
 import { REGION_KEYS } from "@/lib/game/region-slug";
+import { REGION_IDENTITY, type RegionIdentity } from "@/lib/theme/region-identity";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,88 +54,58 @@ export interface ProvinceItem {
   coastal: boolean;
 }
 
+/**
+ * The seven coğrafi bölge as this explorer needs them: how many provinces each holds, and the
+ * one colour it wears.
+ *
+ * `identity` replaces a `color` / `badgeClass` / `headerClass` / `borderClass` / `textClass` set
+ * written in raw Tailwind hues. `color` was the MAP FILL on this page — a raw amber-600 fill
+ * for Marmara — so `/turkiye` painted Marmara amber while `/turkiye/bolge/marmara`, one breadcrumb
+ * click away, painted it blue from `--region-marmara`. The other four fields were the same
+ * invented hue at other strengths. Both halves now come from `lib/theme/region-identity.ts`,
+ * which is the only file that spells a region's colour, and none of them needs a `dark:`
+ * variant any more: a data token carries its own value per theme in `app/globals.css`.
+ */
 export const REGION_DATA: Record<
   GeographicRegion,
   {
     id: string;
     name: string;
     count: number;
-    color: string;
-    badgeClass: string;
-    headerClass: string;
-    borderClass: string;
-    textClass: string;
+    identity: RegionIdentity;
   }
 > = {
   MARMARA: {
     id: "marmara",
     name: "Marmara Bölgesi",
     count: 11,
-    color: "fill-amber-600",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    headerClass: "from-amber-700 to-amber-900",
-    borderClass: "border-amber-500/30",
-    textClass: "text-amber-700 dark:text-amber-300",
+    identity: REGION_IDENTITY.marmara,
   },
-  EGE: {
-    id: "ege",
-    name: "Ege Bölgesi",
-    count: 8,
-    color: "fill-teal-600",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    headerClass: "from-teal-700 to-teal-900",
-    borderClass: "border-teal-500/30",
-    textClass: "text-teal-700 dark:text-teal-300",
-  },
-  AKDENIZ: {
-    id: "akdeniz",
-    name: "Akdeniz Bölgesi",
-    count: 8,
-    color: "fill-emerald-600",
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    headerClass: "from-emerald-700 to-emerald-900",
-    borderClass: "border-emerald-500/30",
-    textClass: "text-emerald-700 dark:text-emerald-300",
-  },
+  EGE: { id: "ege", name: "Ege Bölgesi", count: 8, identity: REGION_IDENTITY.ege },
+  AKDENIZ: { id: "akdeniz", name: "Akdeniz Bölgesi", count: 8, identity: REGION_IDENTITY.akdeniz },
   IC_ANADOLU: {
     id: "ic-anadolu",
     name: "İç Anadolu Bölgesi",
     count: 13,
-    color: "fill-yellow-600",
-    badgeClass: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
-    headerClass: "from-yellow-800 to-amber-950",
-    borderClass: "border-yellow-500/30",
-    textClass: "text-yellow-700 dark:text-yellow-300",
+    identity: REGION_IDENTITY["ic-anadolu"],
   },
   KARADENIZ: {
     id: "karadeniz",
     name: "Karadeniz Bölgesi",
     count: 18,
-    color: "fill-cyan-700",
-    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
-    headerClass: "from-cyan-800 to-slate-900",
-    borderClass: "border-cyan-500/30",
-    textClass: "text-cyan-700 dark:text-cyan-300",
+    identity: REGION_IDENTITY.karadeniz,
   },
   DOGU_ANADOLU: {
     id: "dogu-anadolu",
     name: "Doğu Anadolu Bölgesi",
     count: 14,
-    color: "fill-stone-600",
-    badgeClass: "bg-stone-500/15 text-stone-700 dark:text-stone-300 border-stone-500/30",
-    headerClass: "from-stone-700 to-stone-900",
-    borderClass: "border-stone-500/30",
-    textClass: "text-stone-700 dark:text-stone-300",
+    identity: REGION_IDENTITY["dogu-anadolu"],
   },
   GUNEYDOGU_ANADOLU: {
     id: "guneydogu-anadolu",
     name: "Güneydoğu Anadolu",
     count: 9,
-    color: "fill-orange-600",
-    badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
-    headerClass: "from-orange-800 to-orange-950",
-    borderClass: "border-orange-500/30",
-    textClass: "text-orange-700 dark:text-orange-300",
+    identity: REGION_IDENTITY["guneydogu-anadolu"],
   },
 };
 
@@ -372,8 +343,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
       return {
         ...p,
         regionName: regMeta.name,
-        regionColor: regMeta.color,
-        badgeClass: regMeta.badgeClass,
+        regionColor: regMeta.identity.fill,
+        // The OPAQUE member, not `badge`. This field has exactly one consumer — the province
+        // table's region chip — and that table hovers every row to `bg-muted/50`. A 15% tint over
+        // that over `--card` takes Marmara's dark label to 4.41:1, under the 4.5:1 floor, so the
+        // chip carries no tint of its own and is measured against `--card` alone. See the `ROW`
+        // note beside `--region-*-text` in `app/globals.css`;
+        // `components/v2/region-identity.test.ts` pins this call site.
+        badgeClass: regMeta.identity.badgeOpaque,
       };
     });
 
@@ -436,9 +413,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
     const groups: {
       id: string;
       name: string;
-      headerClass: string;
-      borderClass: string;
-      textClass: string;
+      identity: RegionIdentity;
       items: ProvinceItem[];
       totalPopulation: number;
       totalArea: number;
@@ -454,9 +429,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
         groups.push({
           id: meta.id,
           name: meta.name,
-          headerClass: meta.headerClass,
-          borderClass: meta.borderClass,
-          textClass: meta.textClass,
+          identity: meta.identity,
           items,
           totalPopulation,
           totalArea,
@@ -532,7 +505,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   }}
                   className={`px-3 py-1.5 rounded-xl font-medium transition-all cursor-pointer shrink-0 ${
                     isSelected
-                      ? `bg-card ${reg.textClass} font-bold shadow-xs border ${reg.borderClass}`
+                      ? `bg-card ${reg.identity.label} font-bold shadow-xs border ${reg.identity.edge}`
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
@@ -730,10 +703,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   let fillColor = "fill-card hover:fill-primary/60";
 
                   if (showRegionColors) {
-                    fillColor = `${regMeta.color} opacity-85 hover:opacity-100`;
+                    fillColor = `${regMeta.identity.fill} opacity-85 hover:opacity-100`;
                   } else if (selectedRegion !== "all" || onlyCoastal) {
                     fillColor = isHighlighted
-                      ? `${regMeta.color} opacity-90 hover:opacity-100`
+                      ? `${regMeta.identity.fill} opacity-90 hover:opacity-100`
                       : "fill-card/30 opacity-30";
                   }
 
@@ -1027,11 +1000,30 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
           </div>
         </div>
 
-        {/* Search Restriction Helper Banner */}
+        {/* Search Restriction Helper Banner — a CAUTION, not neutral information: the region
+            filter is suppressing results the reader asked for, and the escape from it is the
+            button on the right. Hence the warning family rather than `info`.
+            Measured with lib/theme/contrast.ts, BACKDROP NAMED: this banner sits in a bare
+            <section>, so the tint composites over `--background`, not over `--card`.
+            `--warning-strong` on `--warning/10` over `--background` measures 5.81:1 light and
+            9.19:1 dark FROM PAINTED PIXELS at 320 and 1280 in both themes; the model
+            (`blendOver`) says 5.86 / 9.10. The gap is +-1 byte per channel from 8-bit ALPHA
+            QUANTISATION — `/10` cannot be expressed exactly in 255ths — and its direction is
+            NOT systematic: here the model flatters by 0.05 in light and is conservative by
+            0.09 in dark. It is not an oklab-versus-sRGB effect; mixing with `transparent` is
+            premultiplied, so the second colour contributes nothing and only alpha scales, in
+            any interpolation space. Measured across 486 painted cases, `color-mix(in oklab, C
+            P%, transparent)` and `rgb(C / P)` agree exactly in 408 and differ by one byte in
+            76. The painted figures are recorded because they are painted, not because the
+            model leans one way. The same pairing over `--card` would be 6.17 / 8.18, but this
+            page never paints it there. The escape button supplies its own `bg-card`, so its
+            label is an OPAQUE PAIR — `--warning-strong` on `--card`, no alpha anywhere, so the
+            analytic figure is exact by construction: 6.81:1 light, 9.64:1 dark (a paint
+            confirmed 6.814). Every figure floored. */}
         {isSearchRestrictedByRegion && (
-          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+          <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Info className="size-4 shrink-0 text-amber-600" />
+              <Info className="size-4 shrink-0 text-warning-strong" />
               <span>
                 <strong>
                   {provinces.find((p) => p.regionId === selectedRegion)?.region
@@ -1045,7 +1037,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             <Button
               variant="outline"
               size="sm"
-              className="text-xs h-7 px-2.5 bg-card border-amber-500/40 text-amber-800 dark:text-amber-200"
+              className="text-xs h-7 px-2.5 bg-card border-warning/40 text-warning-strong"
               onClick={() => setSelectedRegion("all")}
             >
               Tüm İllerde Ara
@@ -1120,21 +1112,28 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             {regionGroupedProvinces.map((group) => (
               <div
                 key={group.id}
-                className={`rounded-3xl border ${group.borderClass} bg-card overflow-hidden shadow-sm transition-all`}
+                className={`rounded-3xl border ${group.identity.edge} bg-card overflow-hidden shadow-sm transition-all`}
               >
                 {/* Region Section Header Banner */}
+                {/* The region's own colour, the one the map above paints it. `[&_h4]:text-inherit`
+                    is load-bearing: `@layer base` sets `h1,h2,h3,h4 { color: var(--foreground) }`,
+                    which beats a merely inherited colour, so without it the heading drops the
+                    region's label member and renders plain foreground.
+                    BACKDROP: one `--region-*-tint` over `--card` — the `BANNER` column of the
+                    table in `app/globals.css`, because this Card is opaque and nothing else
+                    paints over it. Confirmed from painted pixels at 320 and 1280: Marmara's
+                    heading measures 5.97:1 light and 4.82:1 dark, against a recorded 5.97 /
+                    4.77, so the stylesheet's figures are the conservative ones. */}
                 <div
-                  className={`p-4 sm:p-5 bg-gradient-to-r ${group.headerClass} text-white flex flex-wrap items-center justify-between gap-3`}
+                  className={`p-4 sm:p-5 ${group.identity.banner} [&_h4]:text-inherit flex flex-wrap items-center justify-between gap-3`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-xs font-bold text-sm">
+                    <div className="size-9 rounded-xl bg-background text-foreground flex items-center justify-center font-bold text-sm">
                       {group.items.length}
                     </div>
                     <div>
-                      <h4 className="font-heading font-bold text-lg text-white leading-tight">
-                        {group.name}
-                      </h4>
-                      <span className="text-[11px] text-white/80 font-mono">
+                      <h4 className="font-heading font-bold text-lg leading-tight">{group.name}</h4>
+                      <span className="text-[11px] text-muted-foreground font-mono">
                         {group.items.length} İl ·{" "}
                         {group.totalPopulation > 0
                           ? `${group.totalPopulation.toLocaleString("tr-TR")} Nüfus`
@@ -1147,7 +1146,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                     </div>
                   </div>
 
-                  <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-xs">
+                  <Badge variant="outline" className="text-xs">
                     Coğrafi Bölüm
                   </Badge>
                 </div>

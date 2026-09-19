@@ -179,15 +179,20 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * element written `cn("rounded-2xl bg-card", condition && "border-border")` is one card whose
  * spelling is the ordered join of its literal fragments.
  *
- * **358 elements across 60 files, at 235 distinct spellings**, satisfy that predicate today, and
+ * **359 elements across 58 files, at 235 distinct spellings**, satisfy that predicate today, and
  * that single number hides two different design problems, so it is pinned as two:
  *
  * | population                                                      | n       | pinned by |
  * | --------------------------------------------------------------- | ------- | --------- |
- * | {@link HAND_DRAWN_CARDS} — a real `bg-card` surface              | **195** | its own `it` |
- * | {@link HAND_DRAWN_WELLS} — no `bg-card`, qualifying via the edge | **168** | its own `it` |
- * | files holding either                                             | **60**  | the disjointness `it` |
- * | {@link HAND_DRAWN_CARD_SPELLINGS}                                | **238** | its own `it` |
+ * | {@link HAND_DRAWN_CARDS} — a real `bg-card` surface              | **190** | its own `it` |
+ * | {@link HAND_DRAWN_WELLS} — no `bg-card`, qualifying via the edge | **169** | its own `it` |
+ * | files holding either                                             | **58**  | the disjointness `it` |
+ * | {@link HAND_DRAWN_CARD_SPELLINGS}                                | **235** | its own `it` |
+ *
+ * THIS TABLE HAD DRIFTED AGAIN, AND THE MERGE IS WHERE IT WAS CAUGHT. It read 195 / 168 / 60 / 238
+ * above pins of 189 / 169 / 58 / 234 — stale by the whole of Tasks 6 and 8, the exact defect M3
+ * names one paragraph down, re-committed in the same file that forbids it. The figures above are
+ * now the merged tree's measured values, every one of them asserted below.
  *
  * EVERY FIGURE IN THIS TABLE IS ASSERTED. Whole-branch review's M3 caught it reading 409/68/239
  * with `HAND_DRAWN_CARDS` at 241 — a task out of date, three screens above the pin that said 191,
@@ -413,6 +418,80 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *   - a NOVEL SPELLING probe (a card class string occurring nowhere else) — RED on
  *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 232 to be 231` with `HAND_DRAWN_CARDS` RED
  *     at 189 alongside.
+ * T-031c TASK 6 — THE MARINE CLUSTER, +2 WELLS AND +1 SPELLING, AND THE CAUSE IS REAL.
+ *
+ * **166 → 168 wells, 231 → 232 spellings, 354 → 356 total**, cards unmoved at 188.
+ *
+ * `components/v2/v2-marine-map-explorer.tsx`'s telemetry grid drew three panels: the water
+ * temperature one on `bg-primary/10 border border-primary/20`, and one each for wave height and
+ * wind on the same shape in cyan and teal. The palette inventory rules those two `decoration`
+ * — the heading names the measure, and two panels differing only in hue is panel variety, not
+ * an encoding — so they de-tinted to `bg-muted/40 border border-border/60`.
+ *
+ * That is what moved this census: a panel drawn with a PALETTE border was never a hand-drawn
+ * well, and the same panel drawn with `border-border` is. So the two panels did not appear,
+ * they became VISIBLE to a predicate keyed on `border-border`. The count rising is the honest
+ * reading and re-recording it is the right response — the alternative was picking a border
+ * colour to keep a number still, which is the failure mode this file exists to catch.
+ *
+ * RE-CHECKED AT 188 / 168 / 232 / 356, Ruling AZ again — a control proved at 166 proves nothing
+ * at 168. Both probes on `app/[locale]/(site)/hakkimizda/page.tsx`, each reverted:
+ *
+ *   - the `bg-muted/30` well probe — RED on {@link HAND_DRAWN_WELLS} at `expected 169 to be
+ *     168` with {@link HAND_DRAWN_CARDS} unmoved at 188, so the split still splits.
+ *   - a two-element `rounded-2xl bg-card border border-border` card probe — RED on
+ *     {@link HAND_DRAWN_CARDS} at `expected 190 to be 188` and on
+ *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 233 to be 232` (the string occurs nowhere
+ *     else, so it is a novel spelling too), with {@link HAND_DRAWN_WELLS} unmoved at 168 —
+ *     the other half of the same property.
+ *
+ * MOVED AGAIN BY T-031c TASK 8, 188 / 168 / 232 / 356 -> **189 / 169 / 234 / 358**, and for the
+ * same reason Task 6's move had. `turkiye/bolge/[slug]/page.tsx` carried two callouts whose
+ * surface was a mood rather than a scale: an elevation banner and a GDP-contribution figure,
+ * both drawn on a palette tint with a palette border. The inventory rules both `decoration`, so
+ * they take the neutral surfaces the SAME PAGE already uses one section over — a 30% muted well
+ * for the banner that stands beside three of them, and the card surface for the one nested
+ * inside a muted panel.
+ *
+ * Neither element appeared. Both became VISIBLE to predicates keyed on `border-border` and
+ * `bg-card`, which a palette border and a palette tint had hidden them from. One lands in each
+ * bucket, which is the split doing its job.
+ *
+ * THE STAT TRIO MOVES FOR A DIFFERENT REASON, AND ONLY ONE OF THE TWO MOVES IT. An earlier
+ * version of this block said both callouts are tile-shaped "so the stat trio moves with them".
+ * That is wrong about the cause, and the cause is what the next auditor reads against Ruling
+ * AZ. Isolated by reverting one change at a time, on the same tree:
+ *
+ *   - reverting BOTH SURFACES to their palette tints and keeping both eyebrow colours drops
+ *     the four surface pins to 188 / 168 / 232 / 356 and leaves the trio GREEN at
+ *     47 / 111 / 59. So the surfaces move this census and NOT the trio.
+ *   - reverting ONLY the GDP callout's eyebrow from `text-muted-foreground` back to an
+ *     inherited colour, with both surfaces left de-tinted, drops the WHOLE trio to
+ *     46 / 109 / 58 (grids `to have a length of 47 but got 46`,
+ *     {@link STAT_TILES_WITHOUT_STATTILE} `expected 109 to be 111`,
+ *     {@link STAT_GRIDS_TOTAL} `expected 58 to be 59`) while the surface pins hold.
+ *
+ * So the trio's 46 / 109 / 58 -> **47 / 111 / 59** is caused entirely by ONE label taking the
+ * muted text colour, which is what makes that element read as a TILE — a small label over a
+ * sized value — and its container read as a grid. The elevation banner contributes nothing to
+ * the trio at all. `STAT_GRID_FILES` is unmoved at 25 because the file was already on the list.
+ *
+ * The alternative was to drop the border, or to pick a surface that keeps the number still.
+ * That is the failure mode this file exists to catch, so the number rises instead.
+ *
+ * RE-CHECKED AT 189 / 169 / 234 / 358 AND 47 / 25 / 111 / 59, Ruling AZ again. Both probes on
+ * `app/[locale]/(site)/hakkimizda/page.tsx`, which is in no task's edit set, each reverted:
+ *
+ *   - a two-element `rounded-2xl border border-border bg-card` grid — RED on
+ *     {@link HAND_DRAWN_CARDS} at `expected 191 to be 189`, on
+ *     {@link HAND_DRAWN_CARD_SPELLINGS} at `expected 235 to be 234` and on the disjointness
+ *     total at `expected 360 to be 358`, with {@link HAND_DRAWN_WELLS} unmoved at 169.
+ *   - the same grid drawn as `bg-muted/30 border border-border/80` tiles — RED on
+ *     {@link HAND_DRAWN_WELLS} at `expected 171 to be 169` with {@link HAND_DRAWN_CARDS}
+ *     unmoved at 189, so the split still splits, AND red across the whole stat trio at the new
+ *     values: grids `to have a length of 47 but got 48`, {@link STAT_GRID_FILES}
+ *     `expected 26 to be 25`, {@link STAT_TILES_WITHOUT_STATTILE} `expected 113 to be 111`,
+ *     {@link STAT_GRIDS_TOTAL} `expected 60 to be 59`.
  */
 /**
  * T-033: **188 → 189 cards, 231 → 232 spellings, 354 → 355 total**, wells unmoved at 166.
@@ -432,12 +511,34 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * altogether. Both of those spellings were available and both would have kept this counter
  * at 188 while the element existed.
  */
-export const HAND_DRAWN_CARDS = 189;
+/**
+ * MERGED WITH T-033: 189 / 169 / 234 / 358 and 189 / 166 / 232 / 355 -> **190 / 169 / 235 / 359**.
+ *
+ * THE TRAP THIS BLOCK EXISTS TO RECORD. Both branches moved this counter off 188 and both landed
+ * on 189 — for DIFFERENT elements. T-031c's is the `turkiye/bolge/[slug]` elevation banner (the
+ * block two up); T-033's is the marine reference-point block (the block directly above). git saw
+ * two identical `= 189` lines and merged them with NO conflict, which would have shipped a pin
+ * that is wrong by exactly one on a tree where both arrivals exist — a counter silently one
+ * short is precisely the failure every ratchet in this file is built to catch.
+ *
+ * So the figures below come from RE-RUNNING the census on the merged tree, not from either
+ * branch's record. Each printed delta is the sum of two independent moves, and each was checked
+ * against the arithmetic the two branches recorded separately:
+ *
+ *   - cards      188 + 1 (T-031c Task 8) + 1 (T-033) = **190** — the census said
+ *                `1x components/v2/v2-world-continents.tsx: expected 190 to be 189`
+ *   - wells      166 + 3 (T-031c Task 8) + 0 = **169**, unmoved by the merge, which is what
+ *                T-033's own block claims ("wells unmoved at 166") read on this tree
+ *   - spellings  231 + 3 (T-031c) + 1 (T-033) = **235** — `expected 235 to be 234`
+ *   - the disjointness total is DERIVED at the assertion (`HAND_DRAWN_CARDS + HAND_DRAWN_WELLS`),
+ *     never pinned, so 190 + 169 = **359** follows rather than being chosen.
+ */
+export const HAND_DRAWN_CARDS = 190;
 
-export const HAND_DRAWN_WELLS = 166;
+export const HAND_DRAWN_WELLS = 169;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 232;
+export const HAND_DRAWN_CARD_SPELLINGS = 235;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1567,12 +1668,19 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * The tile and file counts are separate `it`s for a reason the first run showed: asserted
  * together, the file count failed first and the tile number — the figure the adoption tasks
  * actually drive — never printed.
+ *
+ * **THE PINS BELOW READ 47 / 25 / 111 / 12.** T-031c Task 8 de-tinted a GDP-contribution
+ * callout on `turkiye/bolge/[slug]/page.tsx`, and its eyebrow label taking the muted text
+ * colour is what makes that element read as a TILE here — a small label over a sized value.
+ * The de-tinted SURFACES move {@link HAND_DRAWN_CARDS} and {@link HAND_DRAWN_WELLS} and do not
+ * move these three; the isolation run that separates the two is in that block above, as is the
+ * Ruling AZ control at these values, on `hakkimizda/page.tsx` and reverted.
  */
-export const STAT_GRIDS_WITHOUT_STATTILE = 46;
+export const STAT_GRIDS_WITHOUT_STATTILE = 47;
 
 export const STAT_GRID_FILES = 25;
 
-export const STAT_TILES_WITHOUT_STATTILE = 109;
+export const STAT_TILES_WITHOUT_STATTILE = 111;
 
 /**
  * The floor that is supposed to RISE. Zero for three tasks; 13 once the metric-strip family
@@ -1594,7 +1702,7 @@ export const SURFACE_FILES_RENDERING_STATTILE = 12;
  * `isGridShell` into it would push a scanner internal out of this 4800-test module, a worse trade.
  * If you are auditing this number, read both.
  */
-export const STAT_GRIDS_TOTAL = 58;
+export const STAT_GRIDS_TOTAL = 59;
 
 const TILE_VALUE_SIZE = /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)/;
 

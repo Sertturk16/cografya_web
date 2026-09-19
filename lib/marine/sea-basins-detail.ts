@@ -1,3 +1,5 @@
+import { BASIN_IDENTITY, type BasinIdentity } from "@/lib/theme/basin-identity";
+
 export interface SeaBasinFAQ {
   question: string;
   answer: string;
@@ -8,9 +10,17 @@ export interface SeaBasinDetailData {
   nameTr: string;
   fullNameTr: string;
   badge: string;
-  themeColor: string;
-  gradientClass: string;
-  borderAccent: string;
+  /**
+   * The basin's colour, read from `lib/theme/basin-identity.ts` by `slug`.
+   *
+   * Three literal class fields used to sit here: `themeColor`, `gradientClass` and
+   * `borderAccent`. Only `gradientClass` was ever rendered (the hero band in
+   * `components/v2/v2-sea-basin-detail-view.tsx`); the other two were DEAD on all four
+   * basins — declared, typed, and read nowhere. They are not bound, they are gone, because
+   * binding a field nothing renders would have kept a second spelling of every basin's hue
+   * alive for no surface at all.
+   */
+  identity: BasinIdentity;
   metrics: {
     area: string;
     maxDepth: string;
@@ -79,9 +89,7 @@ export const SEA_BASINS_DETAIL: Record<
     nameTr: "Karadeniz",
     fullNameTr: "Karadeniz Havzası",
     badge: "Okyanusal Karakterli Kapalı Deniz",
-    themeColor: "text-cyan-700 dark:text-cyan-300",
-    gradientClass: "from-cyan-500/10 via-background to-background",
-    borderAccent: "border-cyan-500/30",
+    identity: BASIN_IDENTITY.karadeniz,
     metrics: {
       area: "436.400 km²",
       maxDepth: "2.212 m",
@@ -241,9 +249,7 @@ export const SEA_BASINS_DETAIL: Record<
     nameTr: "Marmara Denizi",
     fullNameTr: "Marmara Denizi Havzası",
     badge: "Türkiye'nin Jeolojik İç Denizi",
-    themeColor: "text-amber-700 dark:text-amber-300",
-    gradientClass: "from-amber-500/10 via-background to-background",
-    borderAccent: "border-amber-500/30",
+    identity: BASIN_IDENTITY.marmara,
     metrics: {
       area: "11.350 km²",
       maxDepth: "1.370 m (Çınarcık Çukuru)",
@@ -383,9 +389,7 @@ export const SEA_BASINS_DETAIL: Record<
     nameTr: "Ege Denizi",
     fullNameTr: "Ege Denizi (Adalar Denizi) Havzası",
     badge: "Enine Kıyı & Geniş Şelf Denizi",
-    themeColor: "text-teal-700 dark:text-teal-300",
-    gradientClass: "from-teal-500/10 via-background to-background",
-    borderAccent: "border-teal-500/30",
+    identity: BASIN_IDENTITY.ege,
     metrics: {
       area: "214.000 km²",
       maxDepth: "2.561 m",
@@ -521,9 +525,7 @@ export const SEA_BASINS_DETAIL: Record<
     nameTr: "Akdeniz",
     fullNameTr: "Doğu Akdeniz Havzası",
     badge: "En Sıcak & En Tuzlu Denizimiz",
-    themeColor: "text-rose-700 dark:text-rose-300",
-    gradientClass: "from-rose-500/10 via-background to-background",
-    borderAccent: "border-rose-500/30",
+    identity: BASIN_IDENTITY.akdeniz,
     metrics: {
       area: "2.500.000 km² (Tüm Havza)",
       maxDepth: "5.267 m (Calypso Çukuru)",

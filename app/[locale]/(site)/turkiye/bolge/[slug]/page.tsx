@@ -14,6 +14,8 @@ import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getRegionBySlug, getRegionsResilient } from "@/lib/api/regions";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { REGION_IDENTITY } from "@/lib/theme/region-identity";
+import { basinIdentityOfSeaName } from "@/lib/theme/basin-identity";
 import { FaqSection } from "@/components/patterns/faq-section";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import {
@@ -45,79 +47,87 @@ interface PageProps {
   params: Promise<{ locale: Locale; slug: string }>;
 }
 
+/**
+ * One colour per region, and it is the colour the map paints.
+ *
+ * Every value here now derives from that region's own `--region-*` token. It did not used to:
+ * `mapFill` read the token while `badgeClass`, `gradient`, `accentColor` and `borderAccent`
+ * were written in unrelated raw Tailwind hues, so this page told the reader Marmara was amber
+ * and painted it blue two elements away, and Ege was teal beside an orange shape. Six of the
+ * seven disagreed; İç Anadolu agreed only because yellow happened to land near yellow.
+ *
+ * `-tint` is a 15% wash of the fill and `-text` is the label that sits on it, both derived and
+ * measured in `app/globals.css` (worst case 4.60:1 light, 4.59:1 dark). Because `-text` carries
+ * its own value in `.dark`, none of these strings needs a hand-written `dark:` variant — the
+ * pairs that used to be here were the symptom of binding to a hue instead of to a token.
+ *
+ * `badgeClass`'s surface is NOT `--card`. `Badge variant="outline"` supplies `bg-card`, but
+ * tailwind-merge drops it in favour of the tint, so the badge composites onto the hero band
+ * this same table's `gradient` paints — tint over tint over `--background`. That is the
+ * backdrop `-text` is measured against; `app/globals.css` names it beside the figures.
+ *
+ * `accentColor` and `borderAccent` used to live here and are deliberately gone rather than
+ * rebound: nothing read either one. The only fields any JSX reads are `gradient`,
+ * `badgeClass`, `nameTr`, `mapFill` and `mapStroke`. Rebinding a dead field would have left
+ * the next reader believing an accent colour ships.
+ */
 const REGION_THEMES: Record<
   string,
   {
     nameTr: string;
     badgeClass: string;
     gradient: string;
-    accentColor: string;
-    borderAccent: string;
     mapFill: string;
     mapStroke: string;
   }
 > = {
   MARMARA: {
     nameTr: "Marmara Bölgesi",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    gradient: "from-amber-500/10 via-background to-background",
-    accentColor: "text-amber-600 dark:text-amber-400",
-    borderAccent: "border-amber-500/30",
-    mapFill: "var(--region-marmara, #0072b2)",
+    badgeClass: REGION_IDENTITY.marmara.badge,
+    gradient: REGION_IDENTITY.marmara.heroGradient,
+    mapFill: REGION_IDENTITY.marmara.fillValue,
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   EGE: {
     nameTr: "Ege Bölgesi",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    gradient: "from-teal-500/10 via-background to-background",
-    accentColor: "text-teal-600 dark:text-teal-400",
-    borderAccent: "border-teal-500/30",
-    mapFill: "var(--region-ege, #e69f00)",
+    badgeClass: REGION_IDENTITY.ege.badge,
+    gradient: REGION_IDENTITY.ege.heroGradient,
+    mapFill: REGION_IDENTITY.ege.fillValue,
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   AKDENIZ: {
     nameTr: "Akdeniz Bölgesi",
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    gradient: "from-emerald-500/10 via-background to-background",
-    accentColor: "text-emerald-600 dark:text-emerald-400",
-    borderAccent: "border-emerald-500/30",
-    mapFill: "var(--region-akdeniz, #56b4e9)",
+    badgeClass: REGION_IDENTITY.akdeniz.badge,
+    gradient: REGION_IDENTITY.akdeniz.heroGradient,
+    mapFill: REGION_IDENTITY.akdeniz.fillValue,
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   IC_ANADOLU: {
     nameTr: "İç Anadolu Bölgesi",
-    badgeClass: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-500/30",
-    gradient: "from-yellow-500/10 via-background to-background",
-    accentColor: "text-yellow-600 dark:text-yellow-400",
-    borderAccent: "border-yellow-500/30",
-    mapFill: "var(--region-ic-anadolu, #f0e442)",
+    badgeClass: REGION_IDENTITY["ic-anadolu"].badge,
+    gradient: REGION_IDENTITY["ic-anadolu"].heroGradient,
+    mapFill: REGION_IDENTITY["ic-anadolu"].fillValue,
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   KARADENIZ: {
     nameTr: "Karadeniz Bölgesi",
-    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30",
-    gradient: "from-cyan-500/10 via-background to-background",
-    accentColor: "text-cyan-600 dark:text-cyan-400",
-    borderAccent: "border-cyan-500/30",
-    mapFill: "var(--region-karadeniz, #cc79a7)",
+    badgeClass: REGION_IDENTITY.karadeniz.badge,
+    gradient: REGION_IDENTITY.karadeniz.heroGradient,
+    mapFill: REGION_IDENTITY.karadeniz.fillValue,
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   DOGU_ANADOLU: {
     nameTr: "Doğu Anadolu Bölgesi",
-    badgeClass: "bg-stone-500/15 text-stone-700 dark:text-stone-300 border-stone-500/30",
-    gradient: "from-stone-500/10 via-background to-background",
-    accentColor: "text-stone-600 dark:text-stone-400",
-    borderAccent: "border-stone-500/30",
-    mapFill: "var(--region-dogu-anadolu, #009e73)",
+    badgeClass: REGION_IDENTITY["dogu-anadolu"].badge,
+    gradient: REGION_IDENTITY["dogu-anadolu"].heroGradient,
+    mapFill: REGION_IDENTITY["dogu-anadolu"].fillValue,
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
   GUNEYDOGU_ANADOLU: {
     nameTr: "Güneydoğu Anadolu Bölgesi",
-    badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
-    gradient: "from-orange-500/10 via-background to-background",
-    accentColor: "text-orange-600 dark:text-orange-400",
-    borderAccent: "border-orange-500/30",
-    mapFill: "var(--region-guneydogu-anadolu, #d55e00)",
+    badgeClass: REGION_IDENTITY["guneydogu-anadolu"].badge,
+    gradient: REGION_IDENTITY["guneydogu-anadolu"].heroGradient,
+    mapFill: REGION_IDENTITY["guneydogu-anadolu"].fillValue,
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
 };
@@ -387,8 +397,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
     nameTr: region.nameTr,
     badgeClass: "bg-primary/15 text-primary border-primary/30",
     gradient: "from-primary/10 via-background to-background",
-    accentColor: "text-primary",
-    borderAccent: "border-primary/30",
     mapFill: "var(--color-primary, #b0522e)",
     mapStroke: "var(--color-primary-dark, #7e3a1e)",
   };
@@ -422,8 +430,31 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
       <section
         className={`relative isolate border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-12 overflow-hidden`}
       >
-        {/* Glow backdrop */}
-        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        {/* Glow backdrop, desktop only. `size-96` is 384px and `blur-3xl` spreads it further,
+            so below `md` this stops being a glow in the corner and becomes a full-bleed wash
+            across the whole viewport — including the badge row in the left column. Measured at
+            320px it took the region badge to 4.22-4.36 light and 4.27-4.49 dark, i.e. a
+            DECORATIVE `bg-primary/10` was the thing deciding whether the region label cleared
+            4.5:1. Bounding the decoration is the fix; darkening all seven `--region-*-text`
+            members to survive a blur would spend contrast at every width to pay for an effect
+            that only exists below `md`. Bounded here, zero failures across the sweep: 4.71-5.00
+            light and 4.81-5.67 dark.
+            Painted interior minimum of the badge per width, both themes, ROUNDED DOWN — the
+            same rule `app/globals.css` states for its own table, and it applies here for the
+            same reason: 320 4.73/4.81 · 360 4.74/4.81 · 390 4.71/4.81 · 414 4.71/4.82 ·
+            768 4.75/4.81 · 1024 4.78/4.83 · 1280 4.78/4.85 (light/dark) — every one at or
+            above the figure `app/globals.css` records for it.
+            HOW THESE WERE SAMPLED, because the first attempt got it wrong: a column strictly
+            inside the badge's own padding (from `borderLeftWidth + 1` to `paddingLeft - 1`,
+            inset vertically by `borderTopLeftRadius + 1`) and the WORST pixel in it, not the
+            modal one. Guessing a fixed inset instead crosses into the first glyph at `px-2.5`
+            and measures text on text. The sentinel that catches that is the sample's luminance
+            SPREAD; a threshold of ~10 is right. Clean samples here measure 0.2-2.0, clean
+            samples over a wider rectangle reach ~5.5 because the hero gradient varies across
+            the sample height, and a sample that touches a glyph measures 60-200. Do not set it
+            near 3: that fires on clean data at mobile widths.
+            Re-measure this row, not just the token, if this glow ever moves or grows. */}
+        <div className="absolute -z-10 top-0 right-1/4 size-96 bg-primary/10 rounded-full blur-3xl pointer-events-none hidden md:block" />
 
         <PageContainer space="band">
           {/* Breadcrumb Bar */}
@@ -458,10 +489,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                     <Boxes className="size-3 mr-1" /> {region.subregionCount} Bölüm
                   </Badge>
                   {isCoastal ? (
-                    <Badge
-                      variant="outline"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30 flex items-center gap-1"
-                    >
+                    <Badge variant="outline" className="flex items-center gap-1">
                       <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
                     </Badge>
                   ) : (
@@ -507,7 +535,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Yüzölçümü</span>
-                <Maximize2 className="size-4 text-teal-600" />
+                <Maximize2 className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {format.number(region.areaKm2)} km²
@@ -524,7 +552,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">Nüfus Yoğunluğu</span>
-                <Mountain className="size-4 text-amber-600" />
+                <Mountain className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {region.populationDensity} kişi/km²
@@ -539,7 +567,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
                 <span className="text-xs font-medium">GSYH Ağırlığı (2024)</span>
-                <TrendingUp className="size-4 text-rose-600" />
+                <TrendingUp className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {region.gdpShareApproxPercent !== null ? `~%${region.gdpShareApproxPercent}` : "—"}
@@ -724,16 +752,26 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                         Kıyısı Olan Denizler:
                       </span>
                       <div className="flex flex-wrap gap-2">
-                        {region.coastalSeas.map((sea) => (
-                          <Badge
-                            key={sea}
-                            variant="outline"
-                            className="bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border-cyan-500/25 text-xs py-1.5 px-3 flex items-center gap-1.5"
-                          >
-                            <Waves className="size-3.5" />
-                            <span>{sea}</span>
-                          </Badge>
-                        ))}
+                        {/* ONE CHIP PER SEA, EACH IN ITS OWN SEA'S COLOUR. These were all one
+                            cyan while `v2-marine-basin-cards` painted Marmara amber and Ege
+                            teal one click away: four values, one colour. `coastalSeas` is free
+                            text from the contract, so the crossing goes through
+                            `basinIdentityOfSeaName`, which returns null rather than guessing —
+                            a sea this product has no identity for renders neutral, because a
+                            wrong colour on a data chip is worse than no colour. */}
+                        {region.coastalSeas.map((sea) => {
+                          const basin = basinIdentityOfSeaName(sea);
+                          return (
+                            <Badge
+                              key={sea}
+                              variant="outline"
+                              className={`${basin?.chipSoft ?? "bg-muted text-foreground border-border"} text-xs py-1.5 px-3 flex items-center gap-1.5`}
+                            >
+                              <Waves className="size-3.5" />
+                              <span>{sea}</span>
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </div>
                   ) : (
@@ -840,13 +878,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
             {/* Highest Point Highlight Banner (if available) */}
             {region.highestPointName && (
-              <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between gap-4 flex-wrap">
+              <div className="p-4 sm:p-5 rounded-2xl bg-muted/30 border border-border/80 flex items-center justify-between gap-4 flex-wrap">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider block">
+                  <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
                     Bölgenin En Yüksek Zirvesi
                   </span>
                   <div className="font-heading font-extrabold text-lg sm:text-xl text-foreground flex items-center gap-2">
-                    <Mountain className="size-5 text-amber-600 shrink-0" />
+                    <Mountain className="size-5 shrink-0" />
                     <span>{region.highestPointName}</span>
                     {region.highestPointProvince && (
                       <span className="text-xs font-normal text-muted-foreground">
@@ -857,7 +895,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 </div>
                 {region.highestPointElevationM && (
                   <div className="text-right">
-                    <span className="font-mono font-extrabold text-2xl text-amber-700 dark:text-amber-400">
+                    <span className="font-mono font-extrabold text-2xl text-foreground">
                       {format.number(region.highestPointElevationM)} m
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
@@ -874,15 +912,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Jeomorfoloji &amp; Dağlar
                     </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                      <Mountain className="size-5 text-amber-600 shrink-0" />
+                      <Mountain className="size-5 shrink-0" />
                       <span>Yeryüzü Şekilleri ve Ovalar</span>
                     </h3>
                   </div>
@@ -894,15 +928,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Klimatoloji &amp; Vejetasyon
                     </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                      <CloudSun className="size-5 text-teal-600 shrink-0" />
+                      <CloudSun className="size-5 shrink-0" />
                       <span>İklim Tipleri ve Bitki Örtüsü</span>
                     </h3>
                   </div>
@@ -914,15 +944,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Hidrografya &amp; Su Ağı
                     </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
-                      <Droplets className="size-5 text-cyan-600 shrink-0" />
+                      <Droplets className="size-5 shrink-0" />
                       <span>Akarsular, Göller ve Havzalar</span>
                     </h3>
                   </div>
@@ -999,24 +1025,20 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-5 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
-                    >
+                    <Badge variant="outline" size="sm">
                       Bölgesel İktisat &amp; Üretim
                     </Badge>
                     <h3 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
-                      <BarChart3 className="size-5 text-amber-600 shrink-0" />
+                      <BarChart3 className="size-5 shrink-0" />
                       <span>Ekonomik Güç, Sanayi ve Tarım</span>
                     </h3>
                   </div>
 
                   {/* GDP Contribution Callout */}
                   {region.gdpShareApproxPercent !== null && (
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-between">
+                    <div className="p-4 rounded-2xl bg-card border border-border/80 flex items-center justify-between">
                       <div>
-                        <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 block">
+                        <span className="text-[11px] font-bold text-muted-foreground block">
                           Türkiye GSYH Tahmini Katkısı
                         </span>
                         <span className="font-heading font-extrabold text-2xl text-foreground">
@@ -1153,7 +1175,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 space-y-1">
                   <div className="flex items-center justify-between text-muted-foreground">
                     <span className="text-[11px] font-medium">En Geniş İl</span>
-                    <Maximize2 className="size-3.5 text-teal-600" />
+                    <Maximize2 className="size-3.5" />
                   </div>
                   <div className="font-heading font-bold text-base text-foreground">
                     {largestProvince.nameTr}
@@ -1167,7 +1189,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 space-y-1">
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="text-[11px] font-medium">Ortalama İl Nüfusu</span>
-                  <BarChart3 className="size-3.5 text-amber-600" />
+                  <BarChart3 className="size-3.5" />
                 </div>
                 <div className="font-heading font-bold text-base text-foreground">
                   {format.number(avgProvincePop)}
@@ -1263,20 +1285,20 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
         {/* SECTION 6: DOĞAL AFET VE DEPREM RİSKİ */}
         <section id="afet" className="scroll-mt-28" tabIndex={-1}>
-          <div className="rounded-3xl border border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/15 p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
-            <div className="space-y-2 border-b border-rose-500/20 pb-5">
+            <div className="space-y-2 border-b border-destructive/20 pb-5">
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
                   size="sm"
-                  className="bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30"
+                  className="bg-destructive/15 text-destructive-strong border-destructive/30"
                 >
                   Doğal Afet &amp; Depremsellik
                 </Badge>
               </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                <ShieldAlert className="size-6 text-rose-600 shrink-0" />
+                <ShieldAlert className="size-6 text-destructive-strong shrink-0" />
                 <span>Deprem Kuşakları ve Bölgesel Afet Profili</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
@@ -1295,10 +1317,10 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               {/* Right 5 Columns: Seismic & Hazard Profile Card */}
               <div className="lg:col-span-5 space-y-4">
                 {disasterProfile && (
-                  <div className="p-5 rounded-2xl bg-card border border-rose-500/20 shadow-xs space-y-4">
+                  <div className="p-5 rounded-2xl bg-card border border-destructive/20 shadow-xs space-y-4">
                     <div className="flex items-center">
                       <span className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
-                        <ShieldAlert className="size-4 text-rose-600" />
+                        <ShieldAlert className="size-4 text-destructive-strong" />
                         <span>Sismik &amp; Afet Özeti</span>
                       </span>
                     </div>
@@ -1332,7 +1354,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                             key={pr}
                             className="text-xs text-foreground/90 flex items-center gap-2 p-1.5 rounded-lg bg-muted/40"
                           >
-                            <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
+                            <span className="size-1.5 rounded-full bg-destructive shrink-0" />
                             <span>{pr}</span>
                           </div>
                         ))}
@@ -1347,7 +1369,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
                     {/* Emergency Notice */}
                     <div className="p-2.5 rounded-xl bg-muted/60 border border-border text-[10px] text-muted-foreground flex items-center justify-end">
-                      <span className="font-semibold text-rose-600">Acil: 112</span>
+                      <span className="font-semibold text-destructive-strong">Acil: 112</span>
                     </div>
                   </div>
                 )}

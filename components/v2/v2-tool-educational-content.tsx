@@ -203,7 +203,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
             </div>
 
             <div className="p-6 rounded-2xl bg-card border border-border/80 shadow-xs space-y-3">
-              <div className="flex items-center gap-2 text-amber-600 font-bold text-base">
+              <div className="flex items-center gap-2 text-accent font-bold text-base">
                 <Compass className="size-5" />
                 <h4>Kesişen Çokgen Geometrisi</h4>
               </div>
@@ -304,7 +304,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-2">
-            <span className="font-bold text-emerald-600 block text-sm">
+            <span className="font-bold text-secondary block text-sm">
               👨‍🏫 Öğretmenler &amp; Eğitmenler
             </span>
             <p className="text-muted-foreground leading-relaxed">
@@ -314,7 +314,7 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
             </p>
           </div>
           <div className="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-2">
-            <span className="font-bold text-sky-600 block text-sm">
+            <span className="font-bold text-accent block text-sm">
               🧭 CBS Araştırmacıları &amp; Gezginler
             </span>
             <p className="text-muted-foreground leading-relaxed">

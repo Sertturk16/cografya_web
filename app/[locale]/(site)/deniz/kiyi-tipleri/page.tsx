@@ -10,6 +10,7 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
+import { BASIN_IDENTITY } from "@/lib/theme/basin-identity";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -117,20 +118,25 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             </PageHero>
 
             {/* Metric Strip */}
-            {/* `tone="secondary"` was `text-teal-600`, which is FROZEN: measured #009689 in
-                both themes, 3.67:1 on the light card and 4.64:1 on the dark one, while its
-                three siblings move with the theme and hold ~5-6:1 in each. (Large bold text,
-                3:1 floor, so it passed AA; the defect was the freeze, not the ratio.)
-                `secondary` is the tone the sibling strips write in this slot.
+            {/* `tone="secondary"` was a raw teal-600 text class, which is FROZEN: measured
+                #009689 in both themes, 3.67:1 on the light card and 4.64:1 on the dark one,
+                while its three siblings move with the theme and hold ~5-6:1 in each. (Large
+                bold text, 3:1 floor, so it passed AA; the defect was the freeze, not the
+                ratio.) `secondary` is the tone the sibling strips write in this slot.
 
                 CONVERTED BECAUSE OF THE ENTITY, NOT THE PAGE — and this page is the proof that
-                the page-scoped question is the wrong one. Teal IS on this page: the Ege Denizi
-                link card ~180 lines below renders `border-teal-500/30 … text-teal-700
-                dark:text-teal-300`, because teal is the site-wide Aegean encoding. What decides
-                it is that COASTAL TYPES carry no colour anywhere —
-                `lib/marine/coastal-types-detail.ts` has no colour field and the six type articles
-                render `border-border bg-card` — so teal on this tile meant nothing, and sitting
-                it above a teal Ege card was a false signal the conversion removes. */}
+                the page-scoped question is the wrong one. The Aegean encoding IS on this page:
+                the Ege Denizi link card ~180 lines below wears `--basin-ege`, because a basin
+                has one colour site-wide. What decides it is that COASTAL TYPES carry no colour
+                anywhere — `lib/marine/coastal-types-detail.ts` has no colour field and the six
+                type articles render a plain bordered card — so a teal tile here meant nothing,
+                and sitting it above the Ege card was a false signal the conversion removes.
+
+                T-031c NOTE: `--basin-ege` is no longer the same value as the teal this tile
+                used to carry. The shipped basin set failed the categorical floor under
+                tritanopia on cyan/teal, so Ege moved one step down its own family; see the
+                `--basin-*` block in `app/globals.css`. The argument above is unaffected — it
+                was never about which teal, only about whether this tile encodes anything. */}
             <StatGrid gutter="hero">
               <StatTile label="Toplam Kıyı Uzunluğu (HGM)" fact="8.333 km" tone="primary" />
               <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="secondary" />
@@ -313,9 +319,11 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <Link
               href="/deniz/karadeniz"
-              className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 hover:border-cyan-500 transition-all text-xs group block"
+              className={`p-4 rounded-2xl border ${BASIN_IDENTITY.karadeniz.linkCard} transition-all text-xs group block`}
             >
-              <span className="font-bold text-cyan-700 dark:text-cyan-300 block group-hover:underline">
+              <span
+                className={`font-bold ${BASIN_IDENTITY.karadeniz.label} block group-hover:underline`}
+              >
                 Karadeniz
               </span>
               <span className="text-[10px] text-muted-foreground">Boyuna Kıyı &amp; Falez</span>
@@ -323,9 +331,11 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
 
             <Link
               href="/deniz/marmara"
-              className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 hover:border-amber-500 transition-all text-xs group block"
+              className={`p-4 rounded-2xl border ${BASIN_IDENTITY.marmara.linkCard} transition-all text-xs group block`}
             >
-              <span className="font-bold text-amber-700 dark:text-amber-300 block group-hover:underline">
+              <span
+                className={`font-bold ${BASIN_IDENTITY.marmara.label} block group-hover:underline`}
+              >
                 Marmara Denizi
               </span>
               <span className="text-[10px] text-muted-foreground">Ria, Lagün &amp; Tombolo</span>
@@ -333,9 +343,9 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
 
             <Link
               href="/deniz/ege"
-              className="p-4 rounded-2xl border border-teal-500/30 bg-teal-500/5 hover:border-teal-500 transition-all text-xs group block"
+              className={`p-4 rounded-2xl border ${BASIN_IDENTITY.ege.linkCard} transition-all text-xs group block`}
             >
-              <span className="font-bold text-teal-700 dark:text-teal-300 block group-hover:underline">
+              <span className={`font-bold ${BASIN_IDENTITY.ege.label} block group-hover:underline`}>
                 Ege Denizi
               </span>
               <span className="text-[10px] text-muted-foreground">Enine Kıyı &amp; Graben</span>
@@ -343,9 +353,11 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
 
             <Link
               href="/deniz/akdeniz"
-              className="p-4 rounded-2xl border border-rose-500/30 bg-rose-500/5 hover:border-rose-500 transition-all text-xs group block"
+              className={`p-4 rounded-2xl border ${BASIN_IDENTITY.akdeniz.linkCard} transition-all text-xs group block`}
             >
-              <span className="font-bold text-rose-700 dark:text-rose-300 block group-hover:underline">
+              <span
+                className={`font-bold ${BASIN_IDENTITY.akdeniz.label} block group-hover:underline`}
+              >
                 Akdeniz
               </span>
               <span className="text-[10px] text-muted-foreground">Dalmaçya &amp; Kalanklı</span>

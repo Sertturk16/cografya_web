@@ -645,31 +645,19 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                         >
                           {r.nameTr}
                         </Link>
-                        {r.isCoastal === true ? (
-                          <span className="inline-flex items-center gap-1 shrink-0">
-                            <span
-                              aria-hidden="true"
-                              className="inline-flex size-2 rounded-full bg-teal-500 shrink-0"
-                            />
-                            <span className="text-[10px] text-muted-foreground">Kıyı</span>
+                        <span className="inline-flex items-center gap-1 shrink-0">
+                          <span
+                            aria-hidden="true"
+                            className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
+                          />
+                          <span className="text-[10px] text-muted-foreground">
+                            {r.isCoastal === true
+                              ? "Kıyı"
+                              : r.isCoastal === false
+                                ? "İç"
+                                : "Bilinmiyor"}
                           </span>
-                        ) : r.isCoastal === false ? (
-                          <span className="inline-flex items-center gap-1 shrink-0">
-                            <span
-                              aria-hidden="true"
-                              className="inline-flex size-2 rounded-full bg-amber-500 shrink-0"
-                            />
-                            <span className="text-[10px] text-muted-foreground">İç</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 shrink-0">
-                            <span
-                              aria-hidden="true"
-                              className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
-                            />
-                            <span className="text-[10px] text-muted-foreground">Bilinmiyor</span>
-                          </span>
-                        )}
+                        </span>
                       </td>
                       <td className="p-3.5 sm:p-4 text-center text-muted-foreground font-mono">
                         {r.provinceCount} İl / {r.subregionCount} Bölüm

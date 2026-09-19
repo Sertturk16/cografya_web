@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
 
@@ -360,5 +361,378 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
         `${exempt} no longer reads a raw Terra token; drop the exemption`,
       ).toMatch(RAW_TOKEN_READ);
     }
+  });
+});
+
+/**
+ * A `var(--token, #hex)` fallback still equals its token.
+ *
+ * ## The exposure this closes, and why it is not the escape rule above
+ *
+ * The rule above forbids `var(--color-*, #hex)` on the `ui`/`patterns`/`specimens` surface. It
+ * is a NARROWER thing than it looks: it matches `--color-*` and nothing else. Ten live
+ * occurrences in the product tree name `--map-sea`, so that rule never sees them — they were
+ * described once as "already governed by token-binding", and they were governed by nothing.
+ *
+ * Nothing is miscoloured today: `--map-sea` is real (`app/globals.css`) and every fallback
+ * equals it. The exposure is DRIFT — the stylesheet moving while a hex copied into a component
+ * does not — and drift is silent by construction, because the fallback only paints where the
+ * token is missing, which is the one case nobody looks at.
+ *
+ * This is the same defect as the seven `var(--region-*, #hex)` map fills, and it takes the same
+ * fix: pin the fallback to the declaration, in both directions. Widening the escape rule instead
+ * would need its own exemption list beside the one it already has, and double-governing a shape
+ * under two rules with different exemptions is how an exemption goes stale unnoticed.
+ *
+ * COMMENTS ARE STRIPPED, which is load-bearing here for the same reason it is above:
+ * `alert.tsx`'s docblock quotes `var(--color-success,#496f35)` while describing a class that no
+ * longer exists. Pinning prose would force a historical note to be rewritten every time a token
+ * moves.
+ */
+describe("every var() fallback in the product tree still equals its token", () => {
+  const ROOTS = ["../../components", "../../app", "../../lib"] as const;
+
+  function walkAll(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === "node_modules" ? [] : walkAll(full);
+      const source = entry.name.endsWith(".ts") || entry.name.endsWith(".tsx");
+      return source && !entry.name.includes(".test.") ? [full] : [];
+    });
+  }
+
+  /** Every `--token: #hex` declared with a LITERAL hex in app/globals.css. */
+  const declared = new Map<string, string[]>();
+  {
+    const css = stripComments(
+      readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
+    );
+    for (const m of css.matchAll(/(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
+      declared.set(m[1]!, [...(declared.get(m[1]!) ?? []), m[2]!.toLowerCase()]);
+    }
+  }
+
+  /** Every live `var(--token, #hex)` in the product tree, comments stripped. */
+  const fallbacks = ROOTS.flatMap((rel) =>
+    walkAll(fileURLToPath(new URL(rel, import.meta.url))).flatMap((path) => {
+      const source = stripComments(readFileSync(path, "utf8"));
+      return [...source.matchAll(/var\(\s*(--[a-z0-9-]+)\s*,\s*(#[0-9a-fA-F]{3,8})\s*\)/g)].map(
+        (m) => ({ path, token: m[1]!, hex: m[2]!.toLowerCase() }),
+      );
+    }),
+  );
+
+  it("found the fallbacks and the declarations — positive control", () => {
+    // Neither half may be empty: a pin over nothing is green and means nothing, which is the
+    // hollow-pass shape this repo keeps paying for.
+    expect(fallbacks.length).toBeGreaterThan(20);
+    expect(declared.size).toBeGreaterThan(20);
+    // The ten this guard was written for are really in the population.
+    expect(fallbacks.filter((f) => f.token === "--map-sea")).toHaveLength(10);
+  });
+
+  it.each([...new Set(fallbacks.map((f) => `${f.token} ${f.hex}`))])(
+    "%s — the token is declared with exactly that value",
+    (pair) => {
+      const [token, hex] = pair.split(" ") as [string, string];
+      const values = declared.get(token);
+      expect(
+        values,
+        `${token} is not declared with a literal hex in app/globals.css`,
+      ).toBeDefined();
+      // Exactly one literal declaration, so "which one did it mean" can never be the answer.
+      expect(values, `${token} is declared with a literal hex more than once`).toHaveLength(1);
+      expect(
+        values![0],
+        `${token}'s fallback says ${hex}, app/globals.css says ${values![0]}`,
+      ).toBe(hex);
+    },
+  );
+
+  it("names every file carrying one, so a new one cannot arrive unnoticed", () => {
+    // The other direction of the pin. Above asserts each fallback matches its token; this
+    // asserts the POPULATION is the one that was reviewed, so a fallback added to a token that
+    // happens to match today still has to be looked at.
+    const byToken = new Map<string, number>();
+    for (const f of fallbacks) byToken.set(f.token, (byToken.get(f.token) ?? 0) + 1);
+    expect(Object.fromEntries([...byToken].sort())).toEqual({
+      "--color-ink-dark": 7,
+      "--color-primary": 4,
+      "--color-primary-dark": 4,
+      "--map-sea": 10,
+      "--region-akdeniz": 1,
+      "--region-dogu-anadolu": 1,
+      "--region-ege": 1,
+      "--region-guneydogu-anadolu": 1,
+      "--region-ic-anadolu": 1,
+      "--region-karadeniz": 1,
+      "--region-marmara": 1,
+      // The SST ramp's three. `lib/theme/sst-band.ts` paints the map's station pins through an
+      // SVG `fill` ATTRIBUTE, which Tailwind never sees, so the band value has to be a raw CSS
+      // value and carries a literal fallback — the same shape `--region-*`'s `fillValue` has.
+      "--sst-band-cool": 1,
+      "--sst-band-hot": 1,
+      "--sst-band-warm": 1,
+    });
+  });
+});
+
+/**
+ * A CLASS-SHAPED STRING IN A COMMENT IS STILL A CLASS, and an invalid one breaks every page.
+ *
+ * Tailwind v4 scans source TEXT for candidate class names. It does not parse the file, so it
+ * cannot tell a rendered `className` from prose inside a `/* … *\/` block — which means a
+ * comment that documents a family of tokens by wrapping the family name in a background
+ * utility's bracket produces a real rule whose declaration reads that family name verbatim,
+ * wildcard and all.
+ *
+ * A wildcard is not part of a custom property name, so PostCSS fails on the delimiter,
+ * and the failure is not local: `app/globals.css` is imported by `app/[locale]/layout.tsx`, so
+ * the whole stylesheet fails to compile and EVERY route returns 500.
+ *
+ * This is written down because it actually happened, in T-031c Task 6, in a doc comment in
+ * `raw-palette-count.test.ts` describing the legend fix.
+ *
+ * WHAT WAS AND WAS NOT MISSING, stated precisely, because the first telling of this overstated
+ * it. `pnpm typecheck`, `pnpm lint` and 5456 tests were all green while no page would load —
+ * true, and none of those three compiles the stylesheet. But CI is not only those three:
+ * `.github/workflows/ci.yml` has a `build` job running `pnpm build`, which DOES compile it and
+ * WOULD have failed. So this was never "invisible to CI". What is missing is a **local and
+ * pre-push** signal: `deploy.yml` runs only lint and test before handing off to the image
+ * build, so the first report of the breakage would have come from a pipeline rather than from
+ * the machine that wrote the comment.
+ *
+ * THIS GUARD IS AN INTERIM, AND FIX ROUND 1 IS THE THIRD PIECE OF EVIDENCE FOR THAT. It catches
+ * ONE shape, and the shape has now been re-spelled past it twice in two tasks — once by dropping
+ * the wildcard, once by dropping the utility name. Both were found by a person reading the
+ * regex, not by the suite. **T-056 now carries this fourth spelling, the non-fatal negative
+ * results below, and one operational note: the dev server does NOT recover from a CSS parse
+ * failure on the next edit — it keeps serving 500 with a stale trace, which produced four false
+ * positives before the port was freed and `.next` deleted.**
+ *
+ * **T-056** is the real fix — running
+ * `app/globals.css` through the project's own PostCSS/Tailwind pipeline against the real source
+ * set, in seconds, which catches the whole class of stylesheet-breaking source text rather than
+ * this one spelling. **When T-056 lands, this block becomes redundant and should be deleted**
+ * rather than left to accumulate shapes one incident at a time.
+ *
+ * **T-056 HAS LANDED: `components/ui/compiled-stylesheet.test.ts`.** It compiles this project's
+ * real `app/globals.css` with `@tailwindcss/postcss`, whose `optimize` step hands the generated
+ * CSS to Lightning CSS — the same engine Next's pipeline uses — and asserts it produces no
+ * warnings. All four historical spellings are positive controls there, and the arm was verified
+ * by planting the Task 6 shape in `i18n/routing.ts` (a real scanned file, outside this repo's
+ * `components`/`app`/`lib`) and watching it redden. It catches the CLASS rather than the shape:
+ * any source text that compiles to CSS Lightning cannot parse, in any syntax, present or future.
+ *
+ * **THIS BLOCK IS THEREFORE REDUNDANT AND CAN BE DELETED.** It is left standing here only
+ * because deleting it was not in the closing task's scope, and because its four positive
+ * controls are a cheap second reading of the same history. What it must NOT be given is a fifth
+ * spelling: a new incident belongs in the compiled arm, not in this regex.
+ *
+ * ITS PREMISE IS ALSO NOW OUT OF DATE, in the safe direction. `app/globals.css` declares four
+ * `@source not` lines since the T-031c close, so Tailwind no longer scans `docs/`, `scripts/`
+ * or `*.test.ts(x)` at all — a class-shaped string in any of those cannot reach the compiler.
+ * The walk below still covers them, so it over-reports rather than under-reports, which is the
+ * right way round for a guard on its way out.
+ *
+ * IT HAPPENED AGAIN IN TASK 7, IN A DIFFERENT SPELLING, which is why the pattern below is no
+ * longer keyed on the wildcard. That comment described the earthquake ripple's new binding and
+ * wrote the utility out with an ellipsis where the token name goes. No `*` anywhere — and the
+ * emitted declaration still read that ellipsis verbatim, PostCSS still failed on the delimiter,
+ * and every route still 500'd with the whole suite green. The first version of this guard was
+ * silent on it.
+ *
+ * The PATTERN is now the general form of both: a `var()` inside a bracketed arbitrary value
+ * whose FIRST ARGUMENT is not a custom-property name. `--sst-band-*` is not one because of the
+ * wildcard, `...` is not one because it is not a name at all, and anything else somebody
+ * substitutes for the token in prose will not be one either. Legitimate spellings are
+ * unaffected: `w-[calc(100%*2)]` has no `var()`, and every real binding in this repo names a
+ * real token. A wildcard or a placeholder in prose is still fine as long as it is not wrapped
+ * in the class shape — write `--sst-band-*` on its own, or describe the utility in words.
+ *
+ * The WALK is deliberately wide, and must stay that way. **It has to match Tailwind's own source
+ * detection, not a hand-picked subset of it.** `app/globals.css` declares no `@source`, so
+ * Tailwind auto-detects: it walks the whole project from the root, skips `node_modules` and
+ * `.git`, and honours `.gitignore`. Anything narrower is a guard that is green because it did
+ * not look. The first version of this block walked only `components`, `app` and `lib` — which
+ * left `i18n/`, `proxy.ts`, `next.config.ts`, `vitest.config.ts`, `scripts/`, `docs/` and every
+ * future top-level directory able to break the stylesheet without reddening anything. The walk
+ * below therefore derives its exclusions from `git check-ignore` rather than from a list
+ * somebody has to remember to update.
+ */
+describe("no source comment can compile into an invalid Tailwind utility", () => {
+  const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+
+  /** The text extensions Tailwind will read a class candidate out of. */
+  const SCANNABLE = /\.(?:[cm]?[jt]sx?|mdx?|html?|json)$/;
+
+  /**
+   * Only the two directories Tailwind itself never descends into. Everything else that should
+   * be skipped is skipped because `.gitignore` says so, not because this list says so.
+   */
+  const NEVER_WALKED = new Set(["node_modules", ".git"]);
+
+  function walkAll(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return NEVER_WALKED.has(entry.name) ? [] : walkAll(full);
+      return SCANNABLE.test(entry.name) ? [full] : [];
+    });
+  }
+
+  const candidates = walkAll(ROOT).map((f) => relative(ROOT, f));
+  /**
+   * `git check-ignore` IS the rule Tailwind applies, so it is the rule used here. It exits 1
+   * when nothing in its input is ignored, which is a normal outcome and not an error.
+   */
+  const ignored = new Set(
+    (() => {
+      try {
+        return execFileSync("git", ["check-ignore", "--stdin"], {
+          cwd: ROOT,
+          input: candidates.join("\n"),
+          encoding: "utf8",
+        }).split("\n");
+      } catch {
+        return [];
+      }
+    })().filter(Boolean),
+  );
+  const files = candidates.filter((f) => !ignored.has(f)).map((f) => join(ROOT, f));
+  /**
+   * ANY bracket whose `var()` names something that is not a custom property.
+   *
+   * The negative lookahead is the whole rule: a real binding is `var(--token)` or
+   * `var(--token, fallback)`, so anything that does not open with `--name` followed by `,` or
+   * `)` is prose that has been dressed as markup. Keyed on that rather than on the `*` the
+   * first incident happened to contain, because the second incident contained no `*`.
+   *
+   * ANCHORED ON `[`, NOT ON `-[`, AND THAT WAS A REAL HOLE. Tailwind v4 also has an
+   * arbitrary-PROPERTY syntax with no utility name in front of the bracket at all. A comment
+   * spelling one of those around a bad `var()` took `/`, `/deprem` and `/deprem/fay-hatlari` to
+   * 500 with the identical `Parsing CSS source code failed … Unexpected token` while this file
+   * passed 313 of 313 — build-verified in fix round 1, planted in `i18n/routing.ts` against a
+   * fresh `.next`. The Task 6 wildcard shape is missed the same way when it is written in that
+   * syntax. One character of anchor was the whole difference.
+   *
+   * WHAT DOES **NOT** BREAK THE BUILD, recorded because it is what shows the premise is sound
+   * and only the anchor was narrow. All of these emit an odd declaration and the stylesheet
+   * still compiles, because CSS error recovery drops an unparseable declaration VALUE, whereas
+   * a malformed first argument to `var()` is fatal to the parse:
+   *
+   *   a bracketed stroke utility around a bad value, a bracketed hex, a bracketed oklch,
+   *   and a bracket naming a token without the `var()`
+   *
+   * and these emit nothing at all: a parenthesised shorthand token reference, and a bracketed
+   * `var()` that DOES name a real token with a fallback. So this guard is narrow on purpose —
+   * it names the one shape that is fatal rather than every shape that is unusual.
+   *
+   * A TEMPLATE HOLE IS EXCLUDED, and that is a decision rather than an oversight. Four modules
+   * and two tests describe the assembled-class trap by quoting a bracketed utility with an
+   * interpolation where the token name goes. Those have shipped for three tasks and the
+   * stylesheet compiles: Tailwind's candidate extractor stops at the brace, so no rule is
+   * emitted. Excluding them is also what lets the positive controls below assemble their
+   * offenders through an interpolation — the source text stays legal while the runtime string
+   * is the real defect. The exclusion is `${` specifically, not a bare `$`: a lone `$` inside a
+   * bracket is not a hole and must not disarm the guard.
+   *
+   * The token-name class is `[A-Za-z0-9_-]`, not `[a-z0-9-]`. A custom property may carry
+   * uppercase and underscores, so the narrower class reported a legal binding as fatal.
+   *
+   * THE LEADING WHITESPACE IS INSIDE THE LOOKAHEAD, and that placement is the fix for a false
+   * positive rather than a stylistic choice. Written as `var\(\s*(?!--…)`, the engine ate the
+   * space, matched and correctly negated `--ring)`, then BACKTRACKED: `\s*` gave the space back,
+   * the lookahead re-ran against ` --ring`, failed on the space, and the negation succeeded. So
+   * `[color:var( --ring )]` reported as fatal. It is reachable only in prose — a real Tailwind
+   * arbitrary value cannot contain a literal space, `_` stands in for one — which is why the
+   * clean tree never showed it.
+   *
+   * WHICH DIRECTION THE RISK RUNS, because the next person reading this lookahead will want to
+   * know: backtracking only ever ADDS a match. Widening the lookahead can therefore produce a
+   * false positive and can never produce a new MISS, so a change here is checked by re-proving
+   * the offenders still red — never by trusting that nothing slipped through silently.
+   */
+  const NON_TOKEN_VAR_UTILITY = /\[(?![^\]]*\$\{)[^\]]*var\((?!\s*--[A-Za-z0-9_-]+\s*[,)])[^)\]]*/g;
+
+  it("walked the whole scanned project, not a hand-picked subset — positive control", () => {
+    expect(files.length).toBeGreaterThan(400);
+    const seen = new Set(files.map((f) => relative(ROOT, f).split("/")[0]!));
+    // The four the narrow walk missed, named individually so a regression to `components`/
+    // `app`/`lib` fails here with the reason rather than merely counting lower.
+    for (const entry of ["i18n", "proxy.ts", "next.config.ts", "vitest.config.ts"]) {
+      expect(seen.has(entry), `${entry} is not being scanned, but Tailwind scans it`).toBe(true);
+    }
+    // And the exclusions really excluded: a guard that walked node_modules would be useless
+    // rather than merely slow, and one that walked gitignored output would red on stale files.
+    expect([...seen].some((d) => d === "node_modules" || d === ".next")).toBe(false);
+  });
+
+  it("spells no bracketed utility around anything but a real token name", () => {
+    const offenders: string[] = [];
+    for (const path of files) {
+      for (const m of readFileSync(path, "utf8").matchAll(NON_TOKEN_VAR_UTILITY)) {
+        offenders.push(`${path}: ${m[0]}`);
+      }
+    }
+    expect(
+      offenders,
+      `these compile to a CSS declaration whose property name is not a custom property, ` +
+        `which fails the whole stylesheet and 500s every route:\n${offenders.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  it("recognises BOTH shapes that actually broke the build — positive control", () => {
+    // Both offending strings are ASSEMBLED rather than written out, because this file is itself
+    // scanned by Tailwind and by the assertion above: spelling either defect here would BE the
+    // defect. That is not a workaround, it is the guard proving its own premise — the first
+    // run of this test failed on its own doc comment.
+    const star = String.fromCharCode(42);
+    const dot = String.fromCharCode(46);
+    // Task 6: a wildcard where the token name goes.
+    const offender = `now \`bg-[var(--sst-band-${star})]\`. That legend`;
+    expect(offender).toMatch(NON_TOKEN_VAR_UTILITY);
+    // Task 7: an ELLIPSIS where the token name goes. No wildcard anywhere, and the first
+    // version of this guard was green on it while every route returned 500.
+    const second = `the ripple is a \`stroke-[var(${dot.repeat(3)})]\` class now`;
+    expect(second).toMatch(NON_TOKEN_VAR_UTILITY);
+    // Fix round 1: the SAME two payloads in Tailwind's arbitrary-PROPERTY syntax, which has no
+    // utility name before the bracket. Build-verified as fatal, and invisible to the `-[`
+    // anchor this guard used until now.
+    const third = `the ripple is a \`[stroke:var(${dot.repeat(3)})]\` class now`;
+    expect(third).toMatch(NON_TOKEN_VAR_UTILITY);
+    const fourth = `the family is \`[color:var(--fault-${star})]\` here`;
+    expect(fourth).toMatch(NON_TOKEN_VAR_UTILITY);
+    // And the safe spellings stay legal. The first five are what this repo writes; the rest are
+    // the shapes fix round 1 BUILD-VERIFIED as non-fatal, so that widening the anchor did not
+    // quietly turn "unusual" into "forbidden". A guard that reds on things that compile is a
+    // guard people learn to route around.
+    for (const safe of [
+      "bg-[var(--sst-band-cool)]",
+      "fill-[var(--region-marmara)]/80",
+      "bg-[var(--map-sea,#dbe7e8)]",
+      "w-[calc(100%*2)]",
+      `the --sst-band-${String.fromCharCode(42)} family`,
+      // A custom property may carry uppercase and underscores; it is still a custom property.
+      "bg-[var(--Fault-KAF_text)]",
+      // Bad VALUE, good property: CSS error recovery drops the declaration, the sheet compiles.
+      `stroke-[${dot.repeat(3)}]`,
+      "bg-[#ea580c]",
+      "text-[oklch(0.5 0.11 27.325)]",
+      "bg-[--fault-kaf]",
+      // These emit no rule at all.
+      "bg-(--fault-kaf)",
+      "text-[var(--fault-kaf, #e7000b)]",
+      // Both whitespace spellings around a REAL token. The second is the backtracking false
+      // positive this pattern was rewritten to clear; the first is what must not regress with it.
+      "[color:var(--ring)]",
+      "[color:var( --ring )]",
+      // The arbitrary-property twin of this branch's goal state. Legal exactly as the utility
+      // form is — the guard checks SYNTAX, and deliberately does not check that a token exists.
+      "[fill:var(--region-marmara)]",
+    ]) {
+      expect(safe, `${safe} must stay legal`).not.toMatch(NON_TOKEN_VAR_UTILITY);
+    }
+    // A lone `$` inside the bracket is NOT a template hole and must not disarm the guard.
+    expect(`bg-[var(--sst-band-${star})$]`).toMatch(NON_TOKEN_VAR_UTILITY);
   });
 });

@@ -960,13 +960,7 @@ export function V2ToolWorkbench({
                 size="sm"
                 onClick={handleCopy}
                 disabled={points.length === 0}
-                leftIcon={
-                  copied ? (
-                    <Check className="size-3.5 text-emerald-600" />
-                  ) : (
-                    <Copy className="size-3.5" />
-                  )
-                }
+                leftIcon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               >
                 {copied ? "Kopyalandı!" : "Özeti Kopyala"}
               </Button>
@@ -1250,10 +1244,10 @@ export function V2ToolWorkbench({
           {isSelfIntersecting && (
             <div
               role="alert"
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-amber-950/90 backdrop-blur-md text-amber-200 px-3.5 py-1.5 rounded-2xl border border-amber-500/50 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-warning text-warning-foreground px-3.5 py-1.5 rounded-2xl border border-warning-foreground/25 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
             >
               <div className="flex items-center gap-1.5 overflow-hidden">
-                <AlertTriangle className="size-3.5 text-amber-400 shrink-0" />
+                <AlertTriangle className="size-3.5 shrink-0" />
                 <span className="text-[11px] truncate">
                   <strong>Kesişen Çokgen:</strong> Çapraz kenarlar alanı bozar.
                 </span>
@@ -1261,7 +1255,7 @@ export function V2ToolWorkbench({
               <button
                 type="button"
                 onClick={handleSortConvexOrder}
-                className="px-2.5 py-1 rounded-xl bg-amber-500 text-black text-[11px] font-bold hover:bg-amber-400 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                className="px-2.5 py-1 rounded-xl bg-warning-foreground text-warning text-[11px] font-bold hover:bg-warning-foreground/90 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
               >
                 <RefreshCw className="size-3" />
                 <span>Dış Hat Sırasına Diz</span>
@@ -1381,8 +1375,7 @@ export function V2ToolWorkbench({
             {activeTool === "area" && points.length >= 3 && (
               <polygon
                 points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
-                fill="rgba(5, 150, 105, 0.25)"
-                stroke="#059669"
+                className="fill-accent/25 stroke-accent"
                 strokeWidth={2.5 / zoomLevel}
                 strokeDasharray="4 2"
               />
@@ -1554,7 +1547,7 @@ export function V2ToolWorkbench({
                 <p
                   role="status"
                   aria-live="polite"
-                  className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium"
+                  className="text-[11px] text-success-strong font-medium"
                 >
                   Ölçüm bulut arşivine başarıyla kaydedildi.
                 </p>
@@ -1647,13 +1640,7 @@ export function V2ToolWorkbench({
                   size="sm"
                   onClick={handleCopy}
                   disabled={points.length === 0}
-                  leftIcon={
-                    copied ? (
-                      <Check className="size-3.5 text-emerald-600" />
-                    ) : (
-                      <Copy className="size-3.5" />
-                    )
-                  }
+                  leftIcon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                 >
                   {copied ? "Kopyalandı!" : "Özeti Kopyala"}
                 </Button>
@@ -1793,9 +1780,9 @@ export function V2ToolWorkbench({
                 </div>
 
                 {isSelfIntersecting && (
-                  <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2 text-xs text-amber-900 dark:text-amber-200">
+                  <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 flex items-center justify-between gap-2 text-xs text-warning-strong">
                     <div className="flex items-center gap-1.5 overflow-hidden">
-                      <AlertTriangle className="size-4 text-amber-600 shrink-0" />
+                      <AlertTriangle className="size-4 text-warning-strong shrink-0" />
                       <span className="text-[11px]">
                         Kesişen çokgen: Çapraz kenarları düzeltmek için sıralayın.
                       </span>
@@ -1804,7 +1791,7 @@ export function V2ToolWorkbench({
                       variant="outline"
                       size="sm"
                       onClick={handleSortConvexOrder}
-                      leftIcon={<RefreshCw className="size-3 text-amber-600" />}
+                      leftIcon={<RefreshCw className="size-3 text-warning-strong" />}
                       className="shrink-0 text-xs h-7 px-2.5 bg-background"
                     >
                       Sırala

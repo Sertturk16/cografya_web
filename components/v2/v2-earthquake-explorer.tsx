@@ -9,6 +9,11 @@ import { projectToMapPoint } from "@/lib/map/projection";
 import type { EarthquakeEvent, EarthquakeList } from "@/lib/api/types";
 import { buildEarthquakeQuery } from "@/lib/earthquake/query";
 import { bindingSentenceKey } from "@/lib/earthquake/binding-sentence";
+import {
+  MAGNITUDE_BUCKETS,
+  MAGNITUDE_IDENTITY,
+  magnitudeIdentityOf,
+} from "@/lib/theme/magnitude-identity";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -262,35 +267,15 @@ export function V2EarthquakeExplorer({
     )}`;
   };
 
-  const getMagnitudeStyle = (mag: number) => {
-    if (mag >= 5.0)
-      return {
-        bg: "bg-red-600",
-        text: "text-white",
-        border: "border-red-700",
-        ring: "ring-red-500/50",
-      };
-    if (mag >= 4.0)
-      return {
-        bg: "bg-orange-500",
-        text: "text-white",
-        border: "border-orange-600",
-        ring: "ring-orange-500/50",
-      };
-    if (mag >= 3.0)
-      return {
-        bg: "bg-amber-500",
-        text: "text-amber-950",
-        border: "border-amber-600",
-        ring: "ring-amber-500/50",
-      };
-    return {
-      bg: "bg-emerald-600",
-      text: "text-white",
-      border: "border-emerald-700",
-      ring: "ring-emerald-500/50",
-    };
-  };
+  /* THE MAGNITUDE RAMP IS NOT DEFINED HERE ANY MORE (T-031c). `getMagnitudeStyle` used to sit
+     at this point and return a four-step traffic-light scale in the red/orange/amber/emerald
+     families, alongside two fields — a `border` and a `ring` — that no call site ever read.
+     It is replaced by `lib/theme/magnitude-identity.ts`, which reads `--eq-mag-1`…`--eq-mag-5`
+     and classifies through `lib/earthquake/magnitude.ts`, the module `MagnitudeBadge` has been
+     using all along. The five steps are that classifier's, not a fifth hue invented here: this
+     component's own `getIntensityLabel` below already splits at 6.0.
+
+     The ramp's dark-mode contrast is a known failure and is T-031d's, not this file's. */
 
   const getIntensityLabel = (mag: number) => {
     if (mag >= 6.0) return "Şiddetli / Yıkıcı";
@@ -347,7 +332,7 @@ export function V2EarthquakeExplorer({
           <div className="flex items-center gap-2.5 flex-wrap">
             <div className="px-3.5 py-1.5 rounded-xl bg-card border border-border flex items-center gap-2 shadow-2xs">
               <span
-                className={`size-2 rounded-full ${isLoading ? "bg-amber-500 animate-spin" : "bg-emerald-500"}`}
+                className={`size-2 rounded-full ${isLoading ? "bg-warning animate-spin" : "bg-success"}`}
               />
               <span className="text-xs font-semibold text-foreground">
                 {isLoading ? "Güncelleniyor..." : `${filteredEvents.length} Sarsıntı Kayıtlı`}
@@ -468,20 +453,20 @@ export function V2EarthquakeExplorer({
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Magnitude Legend */}
-            <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-full bg-emerald-600" /> M &lt; 3.0
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-full bg-amber-500" /> M 3.0–3.9
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-full bg-orange-500" /> M 4.0–4.9
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-full bg-red-600" /> M &ge; 5.0
-              </span>
+            {/* Magnitude Legend. Rendered FROM the ramp rather than beside it: this key is the
+                reader's only explanation of the marker colours, so a hand-written swatch could
+                go on describing a scale the map no longer draws. It spelled four swatches out
+                independently until T-031c — and the map, at that moment, was drawing none of
+                them. Both the swatch and the printed range come from
+                `lib/theme/magnitude-identity.ts` now, so the legend cannot disagree with the
+                markers or with the classifier. */}
+            <div className="flex items-center gap-2.5 text-xs text-muted-foreground flex-wrap">
+              {MAGNITUDE_BUCKETS.map((bucket) => (
+                <span key={bucket} className="inline-flex items-center gap-1">
+                  <span className={`size-2 rounded-full ${MAGNITUDE_IDENTITY[bucket].swatch}`} />{" "}
+                  {MAGNITUDE_IDENTITY[bucket].legend}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -587,7 +572,7 @@ export function V2EarthquakeExplorer({
               const isTabStop = selectedEvent?.id === eq.id;
               const baseRadius = Math.max(3.5, Math.min(14, (eq.magnitude - 1.2) * 3.2));
               const radius = isSelected ? baseRadius * 1.35 : baseRadius;
-              const style = getMagnitudeStyle(eq.magnitude);
+              const tone = magnitudeIdentityOf(eq.magnitude);
 
               return (
                 <g
@@ -656,16 +641,16 @@ export function V2EarthquakeExplorer({
                       cx={pt.x}
                       cy={pt.y}
                       r={radius}
-                      className="fill-none pointer-events-none"
-                      stroke={
-                        isSelected
-                          ? "#f59e0b"
-                          : eq.magnitude >= 5.0
-                            ? "#dc2626"
-                            : eq.magnitude >= 4.0
-                              ? "#ea580c"
-                              : "#059669"
-                      }
+                      /* The ripple used to carry four RAW HEXES in a `stroke` prop — the
+                         Tailwind v3 values of red/orange/emerald, plus amber for the selected
+                         state — re-classified at three thresholds of its own. A bare hex in a
+                         prop is a class to no scanner, so neither arm of the palette count
+                         could see it and it was free to drift from the badges it sits under.
+                         Selection is `--ring`, the token that exists for it; everything else is
+                         the event's own step. */
+                      className={`fill-none pointer-events-none ${
+                        isSelected ? "stroke-ring" : tone.ripple
+                      }`}
                       strokeWidth={isSelected ? "2" : "1.2"}
                     >
                       <animate
@@ -691,7 +676,7 @@ export function V2EarthquakeExplorer({
                       r={radius + 3.5}
                       className={`fill-none stroke-2 pointer-events-none ${
                         isSelected
-                          ? "stroke-amber-400 dark:stroke-amber-300 stroke-[2.5]"
+                          ? "stroke-ring stroke-[2.5]"
                           : eq.magnitude >= 4.0
                             ? "stroke-destructive/70"
                             : "stroke-primary/50"
@@ -705,7 +690,7 @@ export function V2EarthquakeExplorer({
                     cx={pt.x}
                     cy={pt.y}
                     r={radius}
-                    className={`${style.bg} stroke-white dark:stroke-black stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
+                    className={`${tone.mark} stroke-white dark:stroke-black stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
                     pointerEvents="none"
                   />
 
@@ -903,7 +888,7 @@ export function V2EarthquakeExplorer({
           <div className="space-y-2 flex-1 flex flex-col justify-between">
             {filteredEvents.slice(0, 5).map((eq) => {
               const isSelected = selectedEventId === eq.id;
-              const style = getMagnitudeStyle(eq.magnitude);
+              const tone = magnitudeIdentityOf(eq.magnitude);
               return (
                 <button
                   key={eq.id}
@@ -917,7 +902,7 @@ export function V2EarthquakeExplorer({
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className={`size-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center shrink-0 ${style.bg} ${style.text}`}
+                      className={`size-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center shrink-0 ${tone.badge}`}
                     >
                       {eq.magnitude.toFixed(1)}
                     </span>
@@ -983,7 +968,7 @@ export function V2EarthquakeExplorer({
               <TableBody>
                 {filteredEvents.slice(0, displayCount).map((eq) => {
                   const isSelected = selectedEventId === eq.id;
-                  const style = getMagnitudeStyle(eq.magnitude);
+                  const tone = magnitudeIdentityOf(eq.magnitude);
                   const bindingDesc = getBindingDescription(eq);
 
                   return (
@@ -1008,7 +993,7 @@ export function V2EarthquakeExplorer({
                     >
                       <TableCell>
                         <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold ${style.bg} ${style.text}`}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold ${tone.badge}`}
                         >
                           {eq.magnitude.toFixed(1)} {eq.magnitudeType}
                         </span>

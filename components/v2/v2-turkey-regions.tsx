@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Mountain, ArrowRight } from "lucide-react";
 import { tr } from "@/lib/text/format-number";
+import { REGION_IDENTITY } from "@/lib/theme/region-identity";
 
 export const CANONICAL_REGION_SLUGS: Record<string, string> = {
   marmara: "marmara",
@@ -33,7 +34,11 @@ export interface RegionInfo {
   id: string;
   name: string;
   badgeVariant: "primary" | "secondary" | "info" | "warning" | "default" | "outline";
-  color: string;
+  /** The region's own identity, bound to its `--region-*` token — surface, label and edge.
+   *  Named for the job rather than for the property: the previous `color` held a two-stop
+   *  raw-palette gradient that had nothing to do with the colour this region is painted on
+   *  any map in the product (Marmara amber against a blue fill, Ege teal against orange). */
+  identityClass: string;
   provincesCount: number;
   climate: string;
   description: string;
@@ -45,7 +50,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "marmara",
     name: "Marmara Bölgesi",
     badgeVariant: "primary",
-    color: "from-amber-700 to-amber-900",
+    identityClass: REGION_IDENTITY.marmara.banner,
     provincesCount: 11,
     climate: "Geçiş İklimi (Akdeniz - Karadeniz - Karasal)",
     description:
@@ -62,7 +67,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "ege",
     name: "Ege Bölgesi",
     badgeVariant: "info",
-    color: "from-teal-700 to-teal-900",
+    identityClass: REGION_IDENTITY.ege.banner,
     provincesCount: 8,
     climate: "Tipik Akdeniz İklimi",
     description:
@@ -79,7 +84,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "akdeniz",
     name: "Akdeniz Bölgesi",
     badgeVariant: "secondary",
-    color: "from-emerald-700 to-emerald-900",
+    identityClass: REGION_IDENTITY.akdeniz.banner,
     provincesCount: 8,
     climate: "Sıcak & Kurak Yazlar, Ilık Kışlar",
     description:
@@ -96,7 +101,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "icanadolu",
     name: "İç Anadolu Bölgesi",
     badgeVariant: "warning",
-    color: "from-yellow-800 to-amber-950",
+    identityClass: REGION_IDENTITY["ic-anadolu"].banner,
     provincesCount: 13,
     climate: "Step (Karasal) İklimi",
     description:
@@ -113,7 +118,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "karadeniz",
     name: "Karadeniz Bölgesi",
     badgeVariant: "info",
-    color: "from-cyan-800 to-slate-900",
+    identityClass: REGION_IDENTITY.karadeniz.banner,
     provincesCount: 18,
     climate: "Her Mevsim Yağışlı Ilıman İklim",
     description:
@@ -130,7 +135,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "doguanadolu",
     name: "Doğu Anadolu Bölgesi",
     badgeVariant: "default",
-    color: "from-stone-700 to-stone-900",
+    identityClass: REGION_IDENTITY["dogu-anadolu"].banner,
     provincesCount: 14,
     climate: "Sert Karasal & Uzun Kışlar",
     description:
@@ -147,7 +152,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     id: "guneydogu",
     name: "Güneydoğu Anadolu",
     badgeVariant: "outline",
-    color: "from-orange-800 to-orange-950",
+    identityClass: REGION_IDENTITY["guneydogu-anadolu"].banner,
     provincesCount: 9,
     climate: "Şiddetli Yaz Kuraklığı & Karasal",
     description:
@@ -201,26 +206,48 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
               key={region.id}
               className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-card overflow-hidden group"
             >
-              {/* Header Banner */}
+              {/* Header Banner — the region's colour, the one the map paints it. The wash
+                  carries the identity, the rule under it states the hue at full strength, and
+                  the heading takes the measured `-text` member, which is why nothing here
+                  needs a `dark:` variant or a white override.
+                  The two `text-inherit` escapes are load-bearing, not tidying. TWO base rules
+                  in `app/globals.css` stand between this div's colour and the heading, and
+                  each beats a value that is merely INHERITED: `h1,h2,h3,h4 { color:
+                  var(--foreground) }` at :709 and `a { color: var(--link) }` at :733. With
+                  neither escape the heading renders `--link` terracotta for all seven regions;
+                  with only the `a` one it renders `--foreground` for all seven, because the
+                  anchor then inherits the h3's own base colour rather than this div's. Both
+                  are needed, and `-text` paints nothing without them — which is exactly what
+                  happened when the `text-white` that had been winning was removed. Utilities
+                  outrank `@layer base` whatever the specificity, so these win, and the token
+                  stays single-sourced in `identityClass` instead of being respelled per
+                  region on the anchor.
+                  They also outrank `a:hover { color: var(--primary) }` at `globals.css:752`,
+                  so this heading deliberately keeps its region colour on hover instead of
+                  turning terracotta. That is the point, not a casualty: a hover recolour to
+                  the brand would contradict the one-colour-per-region identity this banner
+                  exists to state. `hover:underline` on the Link carries the affordance. */}
               <div
-                className={`p-4 bg-gradient-to-r ${region.color} text-white flex items-center justify-between`}
+                className={`p-4 ${region.identityClass} [&_h3]:text-inherit [&_a]:text-inherit flex items-center justify-between`}
               >
                 <div>
-                  <span className="text-[10px] text-white/80 font-mono block">Bölge Profili</span>
-                  <h3 className="font-heading font-bold text-lg text-white leading-tight">
+                  <span className="text-[10px] text-muted-foreground font-mono block">
+                    Bölge Profili
+                  </span>
+                  <h3 className="font-heading font-bold text-lg leading-tight">
                     <Link
                       href={
                         `/turkiye/bolge/${CANONICAL_REGION_SLUGS[region.id] ?? region.id}` as unknown as React.ComponentProps<
                           typeof Link
                         >["href"]
                       }
-                      className="hover:underline inline-flex items-center gap-1 text-white"
+                      className="hover:underline inline-flex items-center gap-1"
                     >
                       {region.name}
                     </Link>
                   </h3>
                 </div>
-                <Badge className="bg-white/20 text-white backdrop-blur-xs border-white/30 text-xs">
+                <Badge variant="outline" className="text-xs">
                   {region.provincesCount} İl
                 </Badge>
               </div>

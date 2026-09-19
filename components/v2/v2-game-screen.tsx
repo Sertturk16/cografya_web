@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import type { GeographicRegion } from "@/lib/api/types";
+import { regionIdentityOf } from "@/lib/theme/region-identity";
 import { BreadcrumbsNav, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs-nav";
 import type { GameModeId } from "@/lib/game/config";
 import type { GameShapeEntry, GameShapeTargetEntry } from "@/lib/game/map-shapes";
@@ -97,18 +98,18 @@ export interface V2GameScreenProps {
   readonly currentPath: string;
 }
 
-const REGION_COLOR_CLASSES: Record<GeographicRegion, { fill: string; border: string }> = {
-  MARMARA: { fill: "fill-amber-500/80 hover:fill-amber-400", border: "border-amber-500" },
-  EGE: { fill: "fill-teal-500/80 hover:fill-teal-400", border: "border-teal-500" },
-  AKDENIZ: { fill: "fill-emerald-500/80 hover:fill-emerald-400", border: "border-emerald-500" },
-  IC_ANADOLU: { fill: "fill-yellow-500/80 hover:fill-yellow-400", border: "border-yellow-500" },
-  KARADENIZ: { fill: "fill-cyan-600/80 hover:fill-cyan-500", border: "border-cyan-500" },
-  DOGU_ANADOLU: { fill: "fill-stone-500/80 hover:fill-stone-400", border: "border-stone-500" },
-  GUNEYDOGU_ANADOLU: {
-    fill: "fill-orange-600/80 hover:fill-orange-500",
-    border: "border-orange-500",
-  },
-};
+/**
+ * The three answer states the map paints, from the `--game-*` set in `app/globals.css`.
+ *
+ * They are UI STATE, not a data encoding, and they are the set that already carries a distinct
+ * stroke treatment per state so right / wrong / revealed stay tellable apart with no colour
+ * perception at all. They were raw Tailwind hues here (emerald / amber) and `fill-destructive/80`
+ * for the wrong state — a bridge token doing a data job, which `docs/design.md` rule 1 forbids in
+ * the other direction too. The reveal marker is deliberately the one dark, low-hue value: it has
+ * to read as "look here" over all seven region tints at once.
+ */
+const CORRECT_FILL = "fill-[var(--game-correct)]/80 animate-in fade-in";
+const CORRECT_STROKE = "stroke-[var(--game-correct-edge)] stroke-[1.5]";
 
 export function V2GameScreen({
   mode,
@@ -870,14 +871,14 @@ export function V2GameScreen({
               </div>
 
               <div className="flex items-center gap-2.5">
-                <div className="size-9 rounded-xl bg-orange-500/15 text-orange-600 flex items-center justify-center">
+                <div className="size-9 rounded-xl bg-muted text-muted-foreground flex items-center justify-center">
                   <Flame className="size-4" />
                 </div>
                 <div>
                   <span className="text-[10px] text-muted-foreground uppercase font-bold block">
                     Seri (Streak)
                   </span>
-                  <span className="font-heading text-lg font-bold text-orange-600 font-mono">
+                  <span className="font-heading text-lg font-bold text-foreground font-mono">
                     {streak} 🔥
                   </span>
                 </div>
@@ -922,7 +923,7 @@ export function V2GameScreen({
                     playHintSound(soundEnabled);
                   }}
                   disabled={showHint}
-                  leftIcon={<HelpCircle className="size-3.5 text-amber-500" />}
+                  leftIcon={<HelpCircle className="size-3.5" />}
                 >
                   {showHint ? "İpucu Açık" : "İpucu"}
                 </Button>
@@ -979,9 +980,21 @@ export function V2GameScreen({
                 )}
               </div>
 
+              {/* The hint costs half the question's maximum score, which the sentence itself
+                  says — a caution, not neutral information, so the warning family rather than
+                  `info`. BACKDROP NAMED: this panel is inside the question banner, whose own
+                  `bg-gradient-to-r from-primary/10 via-primary/5 to-card` sits on the play
+                  card. `--warning-strong` on `--warning/15` over the gradient's WORST end
+                  (`--primary/10` over `--card`, the left end the panel starts at) measures
+                  5.19:1 light and 6.52:1 dark; over the `to-card` end 5.87 / 7.36. Confirmed
+                  from painted pixels: the panel's dominant painted tone gives 5.27:1 light at
+                  320px and 5.64:1 at 1280 — 320 is the binding width, because the panel spans
+                  proportionally more of the gradient's tinted end there — and 7.34:1 dark at
+                  both. The 5.19 analytic end is the figure recorded, being the lowest of them.
+                  Floored, never rounded toward the flattering direction. */}
               {showHint && (
-                <div className="w-full p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 animate-in fade-in duration-200">
-                  <Sparkles className="size-4 text-amber-600 shrink-0" />
+                <div className="w-full p-3 rounded-xl bg-warning/15 border border-warning/30 text-warning-strong text-xs flex items-center gap-2 animate-in fade-in duration-200">
+                  <Sparkles className="size-4 text-warning-strong shrink-0" />
                   <span>
                     {getSmartHint()}{" "}
                     <em className="opacity-80">
@@ -993,16 +1006,24 @@ export function V2GameScreen({
             </div>
           )}
 
-          {/* Feedback Alert Bar */}
+          {/* Feedback Alert Bar. Its third branch was already on `destructive`, so the other
+              two are finishing a conversion rather than starting one. BACKDROP: the play card
+              (`bg-card`) — this bar is a direct child of it, not of the question banner above.
+              `--success-strong` on `--success/15` over `--card` measures 6.08:1 light and
+              7.05:1 dark — analytic, and CONSERVATIVE against the paint, which reads 6.126 /
+              7.052. `--warning-strong` on `--warning/15` over the same, 5.87 / 7.36 analytic
+              against a painted 5.87 / 7.46. Model and paint sit within ±1 byte per channel of
+              each other here as everywhere (8-bit alpha quantisation), in neither direction
+              systematically, so the lower of the pair is the one written down. */}
           {lastFeedback && !isFinished && (
             <div
               role="status"
               aria-live="polite"
               className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all animate-in fade-in-50 duration-200 ${
                 lastFeedback.type === "correct"
-                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                  ? "bg-success/15 border-success/30 text-success-strong"
                   : lastFeedback.type === "revealed"
-                    ? "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300"
+                    ? "bg-warning/15 border-warning/30 text-warning-strong"
                     : "bg-destructive/15 border-destructive/30 text-destructive-strong"
               }`}
             >
@@ -1113,30 +1134,34 @@ export function V2GameScreen({
                 let strokeClass = "stroke-border/70 hover:stroke-primary stroke-[0.7]";
 
                 if (mode === "regions") {
-                  // In region finding mode, show beautiful regional colors
-                  const regColor = prov.target?.region
-                    ? REGION_COLOR_CLASSES[prov.target.region]
+                  // In the region round the map is painted BY region, which is the same
+                  // identity `/turkiye` and `/turkiye/bolge/[slug]` paint — one module spells
+                  // it (`lib/theme/region-identity.ts`), so this screen cannot drift from
+                  // them again. It used to keep its own table of raw Tailwind hues and paint
+                  // Marmara amber against those pages' blue.
+                  const regionFill = prov.target?.region
+                    ? regionIdentityOf(prov.target.region).fillSoft
                     : null;
                   if (isCorrectRegion) {
-                    fillClass = "fill-emerald-500/80 animate-in fade-in";
-                    strokeClass = "stroke-emerald-700 stroke-[1.5]";
+                    fillClass = CORRECT_FILL;
+                    strokeClass = CORRECT_STROKE;
                   } else {
-                    fillClass = regColor ? regColor.fill : "fill-card";
+                    fillClass = regionFill ?? "fill-card";
                     strokeClass = "stroke-border/60 stroke-[0.6]";
                   }
                 } else {
                   if (isCorrectProvince) {
-                    fillClass = "fill-emerald-500/80 animate-in fade-in";
-                    strokeClass = "stroke-emerald-700 stroke-[1.5]";
+                    fillClass = CORRECT_FILL;
+                    strokeClass = CORRECT_STROKE;
                   } else if (isRevealed) {
-                    fillClass = "fill-amber-400/80 animate-pulse";
-                    strokeClass = "stroke-amber-700 stroke-[2]";
+                    fillClass = "fill-[var(--game-reveal)]/80 animate-pulse";
+                    strokeClass = "stroke-[var(--game-reveal-edge)] stroke-[2]";
                   }
                 }
 
                 if (isFlashingWrong) {
-                  fillClass = "fill-destructive/80 animate-pulse";
-                  strokeClass = "stroke-destructive stroke-[2]";
+                  fillClass = "fill-[var(--game-wrong)]/80 animate-pulse";
+                  strokeClass = "stroke-[var(--game-wrong-edge)] stroke-[2]";
                 }
 
                 const displayName = prov.target ? prov.target.name : prov.plateCode;
@@ -1270,7 +1295,7 @@ export function V2GameScreen({
                     <span className="text-[10px] text-muted-foreground block font-bold">
                       En İyi Seri
                     </span>
-                    <span className="font-heading text-2xl font-bold text-orange-600 font-mono">
+                    <span className="font-heading text-2xl font-bold text-foreground font-mono">
                       {bestStreak} 🔥
                     </span>
                   </div>
@@ -1279,10 +1304,16 @@ export function V2GameScreen({
                       Derece
                     </span>
                     <div className="flex items-center justify-center gap-0.5 mt-1">
+                      {/* The COUNT of filled stars is the value; the gold is brand accent on an
+                          earned mark, so `--primary` rather than a data token. A solid glyph,
+                          so the 3:1 graphical floor applies. BACKDROP: this tile's own opaque
+                          `bg-card`, NOT the overlay behind it — confirmed from painted pixels
+                          as #ffffff light and #121e21 dark. `--primary` against it measures
+                          5.13:1 light and 4.98:1 dark. */}
                       {Array.from({ length: 3 }).map((_, i) => (
                         <Star
                           key={i}
-                          className={`size-4 ${i < starCount ? "text-amber-500 fill-amber-500" : "text-muted/40"}`}
+                          className={`size-4 ${i < starCount ? "text-primary fill-primary" : "text-muted/40"}`}
                         />
                       ))}
                     </div>
@@ -1328,8 +1359,18 @@ export function V2GameScreen({
                       <span>Skorunuz profilinize kaydediliyor...</span>
                     </div>
                   )}
+                  {/* BACKDROP: the finish overlay, `bg-background/95 backdrop-blur-md` over the
+                      play card. Its painted surface is #fbf8f4 light and #0b1417 dark, READ OFF
+                      THE RENDERED OVERLAY at 320 and 1280 rather than modelled, because
+                      `backdrop-blur-md` is not a blend any analytic model expresses. The model
+                      said #0b1517 in dark, one byte out in green — the same ±1 byte the 8-bit
+                      alpha step costs everywhere, so at 95% opacity the blur itself is not
+                      measurably moving this surface; the read is what establishes that rather
+                      than an assumption either way. `--success-strong` on `--success/15` over
+                      the PAINTED surface measures 5.76:1 light and 7.81:1 dark. Its `failed`
+                      sibling below is already on `destructive`. */}
                   {saveStatus === "saved" && (
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-success/15 border border-success/30 text-success-strong text-xs font-semibold">
                       <CheckCircle2 className="size-3.5" />
                       <span>Skor profilinize kaydedildi</span>
                     </div>

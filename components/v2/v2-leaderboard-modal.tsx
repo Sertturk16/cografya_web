@@ -81,11 +81,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
       <DialogContent size="xl" className="max-h-[90vh] flex flex-col p-6 overflow-hidden">
         <DialogHeader className="pb-4">
           <div className="flex items-center gap-2 mb-1">
-            <Badge
-              variant="outline"
-              size="sm"
-              className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1.5"
-            >
+            <Badge variant="default" size="sm" className="gap-1.5">
               <Trophy className="size-3.5" />
               Lider Tablosu
             </Badge>
@@ -189,17 +185,9 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                         >
                           {/* Rank */}
                           <td className="py-2.5 px-3 text-center">
-                            {entry.rank === 1 ? (
-                              <span className="inline-flex items-center justify-center size-6 rounded-full bg-amber-400/20 text-amber-700 dark:text-amber-300 font-bold font-mono">
-                                🥇
-                              </span>
-                            ) : entry.rank === 2 ? (
-                              <span className="inline-flex items-center justify-center size-6 rounded-full bg-slate-400/20 text-slate-700 dark:text-slate-300 font-bold font-mono">
-                                🥈
-                              </span>
-                            ) : entry.rank === 3 ? (
-                              <span className="inline-flex items-center justify-center size-6 rounded-full bg-amber-700/20 text-amber-800 dark:text-amber-400 font-bold font-mono">
-                                🥉
+                            {entry.rank <= 3 ? (
+                              <span className="inline-flex items-center justify-center size-6 rounded-full font-bold font-mono">
+                                {entry.rank === 1 ? "🥇" : entry.rank === 2 ? "🥈" : "🥉"}
                               </span>
                             ) : (
                               <span className="font-mono text-muted-foreground font-medium">
@@ -330,7 +318,7 @@ export function V2LeaderboardButton({
         className={`gap-1.5 text-xs font-semibold ${className}`}
         aria-label="Lider tablosunu görüntüle"
       >
-        <Trophy className="size-3.5 text-amber-500" />
+        <Trophy className="size-3.5" />
         <span>Lider Tablosu</span>
       </Button>
       <V2LeaderboardModal mode={mode} isOpen={open} onOpenChange={setOpen} />

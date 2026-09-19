@@ -22,7 +22,7 @@ export function V2GisMethodologyGuide() {
     {
       title: "4. Harita Ölçeği ve Bozulmalar (Distortion)",
       desc: "3 Boyutlu yerküreyi 2 boyutlu ekrana aktarırken açı, alan veya uzunluk özelliklerinden en az biri bozulur. Türkiye haritamız 38.96°K referans enlemiyle ölçeklenmiştir.",
-      icon: <Compass className="size-5 text-purple-600" />,
+      icon: <Compass className="size-5 text-primary" />,
     },
   ];
 

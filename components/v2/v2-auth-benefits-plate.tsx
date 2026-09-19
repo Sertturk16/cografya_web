@@ -11,13 +11,13 @@ interface V2AuthBenefitsPlateProps {
 export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlateProps) {
   const benefits = [
     {
-      icon: <Star className="size-4 text-amber-500" />,
+      icon: <Star className="size-4 text-primary" />,
       title: "Kişisel Favoriler & Hızlı Erişim",
       desc: "İlgi duyduğun 81 il ve 199 ülkeyi favorilerine ekle, güncel hava, iklim ve deniz telemetrilerini anında takip et.",
       badge: "Özelleştirilmiş",
     },
     {
-      icon: <Trophy className="size-4 text-emerald-500" />,
+      icon: <Trophy className="size-4 text-primary" />,
       title: "Harita Oyunları & Başarı Rozetleri",
       desc: "81 İl ve Bölge bulma sınavlarında skorlarını kaydet, '81 İl Fatihi' rozetini kazan ve lider tablosuna adını yazdır.",
       badge: "Oyunlaştırma",
@@ -29,7 +29,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
       badge: "CBS Arşivi",
     },
     {
-      icon: <Video className="size-4 text-rose-500" />,
+      icon: <Video className="size-4 text-primary" />,
       title: "Video Çözüm İlerleme Takibi",
       desc: "AYT Coğrafya branş denemelerinde hangi soruları çözüp izlediğini soru soru işaretle, eksik konularını tespit et.",
       badge: "Soru Analitiği",
@@ -87,7 +87,7 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
       {/* Trust & Verification Footer */}
       <div className="pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
         <div className="flex items-center gap-1.5 font-medium text-foreground">
-          <ShieldCheck className="size-4 text-emerald-500" />
+          <ShieldCheck className="size-4" />
           <span>KVKK ve GDPR Uyumlu Güvenli Altyapı</span>
         </div>
         <span className="font-mono text-[11px]">81 İl &bull; 199 Ülke &bull; 30 İstasyon</span>

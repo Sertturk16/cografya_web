@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
+import { FAULT_IDENTITY } from "@/lib/theme/fault-identity";
 import { Flame, Home, Layers, ShieldCheck, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
@@ -194,10 +195,12 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            <div className="p-4 rounded-2xl border border-red-500/30 bg-red-500/5 space-y-1.5">
+            <div className={`p-4 rounded-2xl border ${FAULT_IDENTITY.kaf.card} space-y-1.5`}>
               <div className="flex items-center justify-between">
-                <span className="font-bold text-red-700 dark:text-red-300">KAF</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-red-500/10 text-red-700 dark:text-red-300">
+                <span className={`font-bold ${FAULT_IDENTITY.kaf.label}`}>KAF</span>
+                <span
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded ${FAULT_IDENTITY.kaf.chip}`}
+                >
                   Sağ Yanal Atımlı
                 </span>
               </div>
@@ -206,10 +209,12 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 km&apos;lik ana kırık hattı.
               </p>
             </div>
-            <div className="p-4 rounded-2xl border border-blue-500/30 bg-blue-500/5 space-y-1.5">
+            <div className={`p-4 rounded-2xl border ${FAULT_IDENTITY.daf.card} space-y-1.5`}>
               <div className="flex items-center justify-between">
-                <span className="font-bold text-blue-700 dark:text-blue-300">DAF</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-700 dark:text-blue-300">
+                <span className={`font-bold ${FAULT_IDENTITY.daf.label}`}>DAF</span>
+                <span
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded ${FAULT_IDENTITY.daf.chip}`}
+                >
                   Sol Yanal Atımlı
                 </span>
               </div>
@@ -218,10 +223,12 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 ulaşan hat.
               </p>
             </div>
-            <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 space-y-1.5">
+            <div className={`p-4 rounded-2xl border ${FAULT_IDENTITY.bafs.card} space-y-1.5`}>
               <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-700 dark:text-emerald-300">BAFS</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                <span className={`font-bold ${FAULT_IDENTITY.bafs.label}`}>BAFS</span>
+                <span
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded ${FAULT_IDENTITY.bafs.chip}`}
+                >
                   Graben Açılması
                 </span>
               </div>

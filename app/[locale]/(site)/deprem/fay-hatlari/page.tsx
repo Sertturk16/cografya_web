@@ -13,6 +13,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { FAULT_LINES_DATA } from "@/lib/earthquake/fault-lines-data";
+import { FAULT_IDENTITY } from "@/lib/theme/fault-identity";
 import {
   Layers,
   Home,
@@ -115,37 +116,34 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             </PageHero>
 
             {/* Quick Metrics */}
-            {/* DELIBERATELY NOT MIGRATED — RULING BG. The other twelve metric strips render
-                `StatGrid` + `StatTile`; this one stays hand-rolled, for a reason of the same kind
-                that keeps `kitaplar/[slug]` out: it is not the same thing as the other strips.
+            {/* STILL HAND-ROLLED, AND THE FROZEN COLOUR IS NOW GONE (Ruling BG, closed by
+                T-031c). The other twelve metric strips render `StatGrid` + `StatTile`; this one
+                stays hand-rolled for a reason of the same kind that keeps `kitaplar/[slug]` out:
+                it is not the same thing as the other strips. Its first three values are coloured
+                per FAULT, and the colour says WHICH FAULT — it is data, not decoration, and it
+                has to agree with that fault's own card a few screens below.
 
-                Its first three values are coloured `text-red-600`, `text-blue-600` and
-                `text-emerald-600`, and those hues are FAULT IDENTIFIERS, not decoration. The same
-                page renders each fault's own card a few screens below from
-                `lib/earthquake/fault-lines-data.ts` — `borderClass` `border-red-500/40`,
-                `badgeClass` `bg-red-500/15 text-red-700 dark:text-red-300`, `accentColor`
-                `text-red-600 dark:text-red-400`, and the blue and emerald equivalents. The tile
-                colour says WHICH FAULT, and it has to agree with the card below it.
+                What it used to say, and why it could not stay: the three figures carried raw
+                red, blue and emerald text classes, and `lib/earthquake/fault-lines-data.ts`
+                carried the matching raw border, badge and accent classes for the cards. Two
+                files, six literal hues, agreeing by inspection. An earlier round re-toned the
+                tiles onto the danger/accent/secondary families and justified it with "nothing
+                else on this page or its map draws KAF, DAF or BAFS in those hues" — which
+                `grep borderClass` falsifies in one command, and which shipped a teal DAF tile
+                above a blue-bordered DAF card.
 
-                An earlier round of this task re-toned these three onto `destructive` / `accent` /
-                `secondary` and justified it with the sentence "nothing else on this page or its map
-                draws KAF, DAF or BAFS in those hues". `grep borderClass` falsifies that in one
-                command. The result shipped a teal DAF tile above a blue-bordered DAF card.
-
-                Apply Ruling BD's own test and it decides the other way: the cards key off the tint
-                and DO carry `dark:` pairs, so these tiles are the frozen half of a categorical
-                pair. The correct fix is to give the tile hues their `dark:` counterparts alongside
-                the family in `fault-lines-data.ts` — one change, both halves, still categorical —
-                and that belongs to T-031c with the rest of the categorical palette, exactly like
-                `/deprem`'s KAF/DAF/BAFS legend. Re-toning these onto brand tokens would push three
-                data categories onto three brand hues, which is the data-viz rule running backwards.
-
-                So: the frozen colour here is real and is NOT fixed by this PR. Do not carry it
-                through `StatTile.tone` either — `components/ui/token-binding.test.ts` forbids raw
-                palette in `components/patterns` and is right to. */}
+                Both halves now read `lib/theme/fault-identity.ts`, so agreeing is a property of
+                the code rather than of somebody comparing two files. Re-toning these onto brand
+                tokens is still wrong and still for the same reason: it would push three data
+                categories onto three brand hues, the data-viz rule running backwards. Do not
+                carry them through `StatTile.tone` either — `components/ui/token-binding.test.ts`
+                forbids raw palette in `components/patterns` and is right to, and the fault
+                tokens are not a `tone`. */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-8">
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-red-600 block">
+                <span
+                  className={`font-heading text-2xl sm:text-3xl font-bold block ${FAULT_IDENTITY.kaf.label}`}
+                >
                   1.200 km
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
@@ -153,7 +151,9 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-blue-600 block">
+                <span
+                  className={`font-heading text-2xl sm:text-3xl font-bold block ${FAULT_IDENTITY.daf.label}`}
+                >
                   550 km
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
@@ -161,7 +161,9 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-                <span className="font-heading text-2xl sm:text-3xl font-bold text-emerald-600 block">
+                <span
+                  className={`font-heading text-2xl sm:text-3xl font-bold block ${FAULT_IDENTITY.bafs.label}`}
+                >
                   8 Graben
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
@@ -320,8 +322,8 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
               </div>
 
               {/* Seismic Gap & Risk Alert */}
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs space-y-1">
-                <span className="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+              <div className="p-4 rounded-2xl bg-warning/10 border border-warning/30 text-xs space-y-1">
+                <span className="font-bold text-warning-strong flex items-center gap-1.5">
                   <Info className="size-4" />
                   <span>Sismik Boşluk &amp; Gelecek Tehlike Değerlendirmesi</span>
                 </span>
@@ -332,8 +334,8 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
 
               {/* Marine Connection Box (if any) */}
               {fault.marineConnection && (
-                <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 text-cyan-800 dark:text-cyan-300">
+                <div className="p-4 rounded-2xl border border-info/30 bg-info/5 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-info-strong">
                     <Waves className="size-4 shrink-0" />
                     <span>
                       <strong>Denizaltı Fayı Bağlantısı:</strong>{" "}

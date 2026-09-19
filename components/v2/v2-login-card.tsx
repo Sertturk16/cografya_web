@@ -118,7 +118,7 @@ export function V2LoginCard({
   if (isAlreadyLoggedIn) {
     return (
       <div className="space-y-6 text-center py-4">
-        <div className="size-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-600 shadow-sm">
+        <div className="size-16 rounded-2xl bg-success/10 border border-success/30 flex items-center justify-center mx-auto text-success-strong shadow-sm">
           <ShieldCheck className="size-8" />
         </div>
         <div className="space-y-1.5">
@@ -190,7 +190,7 @@ export function V2LoginCard({
 
       {/* Success Alert */}
       {successMsg && (
-        <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300 animate-in fade-in-50 duration-200">
+        <div className="p-3.5 rounded-2xl bg-success/10 border border-success/25 flex items-start gap-2.5 text-xs text-success-strong animate-in fade-in-50 duration-200">
           <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">{successMsg}</span>
         </div>

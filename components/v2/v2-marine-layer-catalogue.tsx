@@ -15,11 +15,11 @@ interface V2MarineLayerCatalogueProps {
 }
 
 const LAYER_ICONS: Record<string, React.ReactNode> = {
-  sea_surface_temperature: <Thermometer className="size-4 text-rose-500" />,
-  wave_height: <Waves className="size-4 text-cyan-600" />,
-  wave_direction: <Compass className="size-4 text-indigo-500" />,
-  wind_speed_10m: <Wind className="size-4 text-teal-600" />,
-  wind_direction_10m: <Compass className="size-4 text-teal-500" />,
+  sea_surface_temperature: <Thermometer className="size-4" />,
+  wave_height: <Waves className="size-4" />,
+  wave_direction: <Compass className="size-4" />,
+  wind_speed_10m: <Wind className="size-4" />,
+  wind_direction_10m: <Compass className="size-4" />,
 };
 
 const LAYER_TITLES_TR: Record<string, string> = {
@@ -89,9 +89,14 @@ export function V2MarineLayerCatalogue({ layers: _layers }: V2MarineLayerCatalog
             <Badge variant="primary" size="sm" icon={<Layers className="size-3.5" />}>
               Oşinografi Ölçüm Kataloğu
             </Badge>
-            <span className="text-xs text-muted-foreground font-medium">Model Parametreleri &amp; Künye</span>
+            <span className="text-xs text-muted-foreground font-medium">
+              Model Parametreleri &amp; Künye
+            </span>
           </div>
-          <h2 id="v2-marine-catalogue-heading" className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
+          <h2
+            id="v2-marine-catalogue-heading"
+            className="font-heading text-2xl sm:text-3xl font-bold text-foreground"
+          >
             Ölçülen Büyüklükler, Birimler ve Model Çevrimleri
           </h2>
         </div>
@@ -108,7 +113,9 @@ export function V2MarineLayerCatalogue({ layers: _layers }: V2MarineLayerCatalog
               <TableHead className="font-heading font-bold text-xs">Birim</TableHead>
               <TableHead className="font-heading font-bold text-xs">Sakin Eşiği</TableHead>
               <TableHead className="font-heading font-bold text-xs">Veri Kaynağı</TableHead>
-              <TableHead className="font-heading font-bold text-xs">Model Çevrimi &amp; Ufuk</TableHead>
+              <TableHead className="font-heading font-bold text-xs">
+                Model Çevrimi &amp; Ufuk
+              </TableHead>
               <TableHead className="font-heading font-bold text-xs text-right">Durum</TableHead>
             </TableRow>
           </TableHeader>
@@ -137,12 +144,14 @@ export function V2MarineLayerCatalogue({ layers: _layers }: V2MarineLayerCatalog
                 <TableCell className="text-[11px] text-muted-foreground">
                   <div>
                     <span className="text-foreground font-medium">{layer.cycle}</span>
-                    <span className="block text-[10px] text-muted-foreground/80">{layer.horizon}</span>
+                    <span className="block text-[10px] text-muted-foreground/80">
+                      {layer.horizon}
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Badge variant="outline" size="sm" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-semibold">
-                    <CheckCircle2 className="size-2.5 mr-1 text-emerald-600" />
+                  <Badge variant="success" size="sm" className="text-[10px] font-semibold">
+                    <CheckCircle2 className="size-2.5 mr-1" />
                     Yayında
                   </Badge>
                 </TableCell>

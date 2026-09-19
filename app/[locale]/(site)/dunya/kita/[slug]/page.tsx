@@ -105,11 +105,21 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
 
       {/* HERO SECTION */}
       <section
-        className={`relative isolate border-b border-border bg-gradient-to-b ${theme.gradient} pt-8 pb-14 overflow-hidden`}
+        className={`relative isolate border-b border-border bg-gradient-to-b ${theme.identity.heroGradient} pt-8 pb-14 overflow-hidden`}
       >
-        {/* Accent glow backdrop */}
+        {/* Accent glow backdrop — DECORATION, bounded away from narrow viewports.
+            `size-96` is 384px and `blur-3xl` spreads it further, so below `md` it is wider than
+            the viewport and lands squarely on the continent badge row below. Unbounded it took
+            the seven `--continent-*-text` members under the 4.5:1 floor the `HERO` column of
+            `app/globals.css` records, which is the same bug `turkiye/bolge/[slug]`'s hero shipped.
+            `hidden md:block` bounds the decoration instead of darkening seven data colours to
+            survive it; `components/v2/continent-identity.test.ts` holds the bound.
+            PAINTED PIXELS at 320px, badge label against its own backdrop, both themes:
+            light 4.80 (Okyanusya) to 4.95 (Avrupa), dark 4.82 (Avrupa)
+            to 5.50 (Antarktika). At 768, where the glow IS painted, 4.80-5.00 light and
+            4.88-5.49 dark, so the bound is what the narrow widths needed and nothing more. */}
         <div
-          className={`absolute -z-10 top-0 right-1/4 size-96 ${theme.glowColor} rounded-full blur-3xl pointer-events-none`}
+          className={`hidden md:block absolute -z-10 top-0 right-1/4 size-96 ${theme.identity.glow} rounded-full blur-3xl pointer-events-none`}
         />
 
         <PageContainer space="band">
@@ -128,9 +138,11 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
           {/* Title & Badges */}
           <div className="space-y-3 max-w-3xl">
             <div className="flex items-center gap-2 flex-wrap">
+              {/* BACKDROP: the badge's own 15% tint over the hero gradient's TINT END over
+                  `--background` — the `HERO` column of the table in `app/globals.css`. */}
               <Badge
                 variant="outline"
-                className={`${theme.badgeClass} font-bold text-xs py-0.5 px-2.5`}
+                className={`${theme.identity.badge} font-bold text-xs py-0.5 px-2.5`}
               >
                 <Globe2 className="size-3.5 mr-1" />
                 {continent.nameTr} Kıtası
@@ -203,7 +215,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
 
             <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
-                <Mountain className="size-3.5 text-amber-600" />
+                <Mountain className="size-3.5" />
                 <span>En Yüksek Nokta</span>
               </div>
               <div className="font-heading font-bold text-sm sm:text-base text-foreground truncate">
@@ -216,7 +228,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
 
             <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
-                <MapPin className="size-3.5 text-rose-600" />
+                <MapPin className="size-3.5" />
                 <span>En Alçak Nokta</span>
               </div>
               <div className="font-heading font-bold text-sm sm:text-base text-foreground truncate">
@@ -229,7 +241,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
 
             <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-3.5 shadow-2xs">
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs mb-1">
-                <Waves className="size-3.5 text-sky-600" />
+                <Waves className="size-3.5" />
                 <span>En Uzun Akarsu</span>
               </div>
               <div className="font-heading font-bold text-sm sm:text-base text-foreground truncate">

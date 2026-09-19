@@ -263,22 +263,42 @@ describe("the literal extractor's hole semantics", () => {
  * two EXTRACTORS. Both call {@link literalsIn} with `balanceHoles: true`, so the 22-row
  * disagreement PR4's guard measured is 0.
  *
- * The number 22 did not disappear with it: the population it named — `<div>`s whose className
- * carries a template hole — was still there and still 22, so it is pinned directly rather than as
- * a difference between two rules. A new hole-bearing `<div>` moves it exactly as it moved the
- * disagreement count before. **21** since T-033 task 4: `climate-section.tsx`'s detail row was
- * `` `${styles.detailRow} ${styles.d2Rails}` `` — two CSS-Module lookups joined by a hole — and
- * the conversion made it one constant.
+ * The number did not disappear with it: the population it named — `<div>`s whose className
+ * carries a template hole — is still there, so it is pinned directly rather than as a
+ * difference between two rules. A new hole-bearing `<div>` moves it exactly as it moved the
+ * disagreement count before.
  *
- * **18** since T-033 task 7, which took the same shape three at a time: `deneme-video.tsx`
- * built the stage's cover and player boxes as two CSS-Module lookups joined by a hole (the
- * cover's spelling renders twice, in the external and the rich branch), so three `<div>`s
- * carried one. They are the hoisted `PLAYER_BOX` and `THUMB_BOX` now — still compositions, but
- * of constants rather than of `styles.x` lookups, and `components/book/bench.structure.test.ts`
- * asserts the composed strings still carry `FRAME`'s cap, its ratio and its 200px floor rather
- * than overriding them.
+ * 22 -> 25, T-031c Task 7. `/deprem`'s three KAF/DAF/BAFS cards each spelled their border and
+ * wash as literal hue classes and are now `border ${FAULT_IDENTITY.<id>.card}`. The population
+ * grew because the markup changed shape, not only colour — which is the honest reading, and the
+ * alternative would have been to keep a literal class alive to hold a number still.
+ *
+ * 25 -> 24, T-031c Task 10, and this one FELL. `components/v2/v2-learning-paths.tsx` interpolated
+ * a per-card gradient into its header `<div>`; the three cards now share one brand wash, so the
+ * className is a static string and that `<div>` leaves the population.
+ *
+ * ISOLATED, AND PROVED IN BOTH DIRECTIONS, because a ratchet stepped to make a suite green is
+ * the defect this branch exists to undo. Forward: the failure listed all 24 survivors and the
+ * learning-paths header was the only row missing from them; every other row is character for
+ * character what it was. Reverse: putting a hole back into THAT `<div>` and nothing else
+ * restores the count to 25 against the unchanged constant. One file, one element, one step.
+ *
+ * T-033 MOVED THE SAME COUNTER, ON ITS OWN TREE, DOWNWARDS BY FOUR. 22 -> 21 at its Task 4:
+ * `climate-section.tsx`'s detail row was `` `${styles.detailRow} ${styles.d2Rails}` `` — two
+ * CSS-Module lookups joined by a hole — and the conversion made it one constant. 21 -> 18 at its
+ * Task 7, the same shape three at a time: `deneme-video.tsx` built the stage's cover and player
+ * boxes as two module lookups joined by a hole (the cover's spelling renders twice, in the
+ * external and the rich branch), so three `<div>`s carried one. They are the hoisted `PLAYER_BOX`
+ * and `THUMB_BOX` now.
+ *
+ * MERGED: **20**, which is NEITHER branch's figure. From the shared base of 22, T-031c added
+ * three and removed one; T-033 removed one and then three. 22 + 3 − 1 − 1 − 3 = 20, and the
+ * census printed exactly that against T-031c's constant (`expected 20 to be 24`). The number
+ * below is what the re-run on the merged tree reports, not a side taken from the conflict: each
+ * branch's figure is correct for its own tree and wrong for this one, so picking either would
+ * have been a pin stepped to make a suite green.
  */
-const TEMPLATE_HOLE_DIVS = 18;
+const TEMPLATE_HOLE_DIVS = 20;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {
@@ -317,7 +337,7 @@ describe("the two entry points read every element the same way", () => {
   });
 
   it("the template-hole population is exactly the recorded number", () => {
-    // The 22 that USED to be the disagreement, measured directly now that nothing disagrees.
+    // The rows that USED to be the disagreement, measured directly now that nothing disagrees.
     // Pinned so a new template-hole className is still a visible diff rather than a silent one.
     const holed: string[] = [];
     for (const file of walkCardSurface()) {

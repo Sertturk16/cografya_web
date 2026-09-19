@@ -1,10 +1,10 @@
 # T-031c — Decorative Palette to the Token Bridge Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
-**Goal:** Drive 825 raw Tailwind palette classes to zero — each one decided case by case as data, semantic or pure decoration — and close the correctness bug underneath them: a region's badge and its map fill are currently unrelated colours.
+**Goal:** Drive 939 raw Tailwind palette classes to zero — each one decided case by case as data, semantic or pure decoration — and close the correctness bug underneath them: a region's badge and its map fill are currently unrelated colours.
 
-**Architecture:** An inventory lands first as a reviewable document, so 825 scattered judgements become one artefact a reviewer can disagree with in a single pass. A counter test is pinned red beside it. Then the inventory is applied in batches, each batch driving the counter down, ending at zero with named exemptions.
+**Architecture:** An inventory lands first as a reviewable document, so 939 scattered judgements become one artefact a reviewer can disagree with in a single pass. A counter test is pinned red beside it. Then the inventory is applied in batches, each batch driving the counter down, ending at zero with named exemptions.
 
 **Tech Stack:** Tailwind v4 (CSS-first), bridge tokens in `app/globals.css`, vitest (node env), Playwright MCP for the visual round.
 
@@ -14,7 +14,7 @@
 
 - Branch off `dev`: `feature/t031c-decorative`. Never push to `main`.
 - **Requires PR0 merged** — every contrast figure quoted must come from `lib/theme/contrast.ts`, and every categorical-separation figure from `lib/theme/delta-e.ts`.
-- May run in parallel with T-048 and T-033. **This branch must not touch `app/[locale]/(site)/turkiye/[slug]/page.tsx`** — T-033 owns it and rewrites its climate markup wholesale. Its 32 occurrences are out of scope here and T-033 clears them.
+- May run in parallel with T-048 and T-033. **This branch must not touch `app/[locale]/(site)/turkiye/[slug]/page.tsx`** — T-033 owns it and rewrites its climate markup wholesale. Its 65 occurrences are out of scope here and T-033 clears them.
 - This branch **owns `app/globals.css`**. T-033 and T-048 do not edit it.
 - A component that needs a hand-written `dark:` is bound to the wrong token. Removing a `dark:` pair is the normal outcome of binding correctly, not a regression.
 - Brand chrome never encodes data (`docs/design.md` rule 1). Data token sets — `--region-*`, `--eq-mag-1..5`, `--game-*`, `--map-1..6`, `--chart-*` — are **not** bridge tokens and are never replaced by one.
@@ -24,26 +24,30 @@
 
 ## The measurements this plan is built on
 
-Measured 2026-09-19: **865 occurrences across 43 files**. Of those, 4 are test files (8 occurrences) and one is T-033's file (32 occurrences), leaving **825 in 38 product files** for this branch.
+Measured 2026-09-19 with `scripts/palette-inventory.mjs` over `components/**`, `app/**` and `lib/**`: **1017 occurrences across 46 files**. Of those, 4 are test files (13 occurrences) and one is T-033's file (65 occurrences), leaving **939 in 41 product files** for this branch.
 
-By hue: amber 219, emerald 150, cyan 107, teal 99, rose 57, orange 45, red 33, sky 30, yellow 29, stone 29, blue 24, slate 18.
+`lib/` is in the roots as of fix round 1. Three modules there hold the DEFINITIONS of hues the product files merely spend — `lib/map/continent-theme.ts` (112), `lib/earthquake/fault-lines-data.ts` (24), `lib/marine/sea-basins-detail.ts` (16), 152 in all. Scanning only call sites would have let the count reach zero while the definition still held the raw class, and recording them in an annex instead would have put the number back in a document, which is the defect this branch exists to remove.
 
-By line: of the 455 source lines carrying them, 137 also carry a hand-written `dark:` and 318 do not — so roughly two thirds have no dark-mode treatment at all.
+By hue: amber 223, emerald 167, teal 106, cyan 95, rose 76, sky 45, orange 40, red 39, blue 32, purple 30, indigo 24, yellow 23, stone 23, slate 14, green 1, violet 1.
 
-The ten heaviest files carry 278 of the 825:
+By line: of the 499 source lines carrying them, 161 also carry a hand-written `dark:` and 338 do not — so roughly two thirds have no dark-mode treatment at all. Measured against the full source line; the collector's `context` field truncates at 120 characters and a first cut measured off it reported 117/298 where the truth was 123/292 on the same scope.
+
+The ten heaviest files carry 636 of the 939:
 
 | File                                                | Count |
 | --------------------------------------------------- | ----- |
-| `app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx` | 57    |
-| `components/v2/v2-turkey-map-explorer.tsx`          | 38    |
-| `components/v2/v2-tools-hub.tsx`                    | 30    |
-| `components/v2/v2-marine-map-explorer.tsx`          | 30    |
-| `components/v2/v2-world-continents.tsx`             | 24    |
-| `components/v2/v2-game-screen.tsx`                  | 24    |
-| `app/[locale]/(site)/dunya/[slug]/page.tsx`         | 20    |
-| `components/v2/v2-earthquake-explorer.tsx`          | 19    |
-| `components/v2/v2-sea-basin-detail-view.tsx`        | 12    |
-| `app/[locale]/(site)/deprem/fay-hatlari/page.tsx`   | 12    |
+| `app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx` | 113   |
+| `lib/map/continent-theme.ts`                        | 112   |
+| `components/v2/v2-turkey-map-explorer.tsx`          | 78    |
+| `components/v2/v2-marine-map-explorer.tsx`          | 61    |
+| `components/v2/v2-world-continents.tsx`             | 55    |
+| `components/v2/v2-game-screen.tsx`                  | 51    |
+| `app/[locale]/(site)/dunya/[slug]/page.tsx`         | 51    |
+| `components/v2/v2-tools-hub.tsx`                    | 42    |
+| `components/v2/v2-world-map-explorer.tsx`           | 27    |
+| `app/[locale]/(site)/deniz/kiyi-tipleri/page.tsx`   | 24    |
+
+Task 1's inventory classifies all 939: **500 `data`, 170 `semantic`, 269 `decoration`** — see `docs/superpowers/t031c-palette-inventory.md`. It also names four data token sets that do not exist yet and that `data` rows depend on: `--continent-*` (7 members, 161 rows), `--basin-*` (4 members, 80 rows), `--fault-*` (3 members, 48 rows) and `--sst-band-*` (3 members, 12 rows) — each figure the sum of the inventory rows naming that set, re-derived rather than carried forward. Three of the four have their definition in `lib/`. They are data sets, not bridge tokens, and none may be satisfied by one.
 
 **Nothing holds this number.** `components/ui/token-binding.test.ts` enforces only the escape rule; the count lives in a comment. It moved 749 → 895 → 865 without any test noticing.
 
@@ -67,7 +71,7 @@ Six of seven disagree, and one (İç Anadolu) agrees by coincidence. The page te
 
 ### Task 1: The inventory
 
-825 individual judgements are not reviewable as 825 diffs. They are reviewable as one table.
+939 individual judgements are not reviewable as 939 diffs. They are reviewable as one table.
 
 **Files:**
 
@@ -79,7 +83,7 @@ Six of seven disagree, and one (İç Anadolu) agrees by coincidence. The page te
 - Consumes: nothing.
 - Produces: `collectPaletteOccurrences(roots: string[]): { file: string; line: number; cls: string; context: string }[]` from `scripts/palette-inventory.mjs`, reused by Task 2's counter so the branch has **one** reader of this pattern, not two. Two readers of one notation that nothing compares is the failure T-045 was split to fix.
 
-- [ ] **Step 1: Write the collector**
+- [x] **Step 1: Write the collector**
 
 Create `scripts/palette-inventory.mjs`:
 
@@ -91,6 +95,16 @@ Create `scripts/palette-inventory.mjs`:
  * that one stays; this is the reader for the COUNT, and Task 2's counter imports it rather
  * than writing a second pattern. Two scanners of one notation that nothing compares is
  * exactly the shape T-045 was created to remove.
+ *
+ * LINE-BASED, and knowingly so: it matches literal class text one source line at a time, so a
+ * class split across two lines by the formatter, or assembled at runtime (a `text-${hue}-600`
+ * template literal), is invisible to it. Today's exposure is zero outside test files. The nearest
+ * thing to it is `v2-tools-hub.tsx`'s `variant="emerald"` / `variant="sky"`, which are benign:
+ * they resolve to `bg-secondary` / `bg-info` in `components/ui/button.tsx`, not to raw classes.
+ *
+ * `lib/` is in the default roots because the definitions live there. `lib/map/continent-theme.ts`
+ * alone holds 112 occurrences and is imported by five product files; scanning only the call sites
+ * would have let the source of the hues sit outside the count.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -108,7 +122,7 @@ export const RAW_PALETTE = new RegExp(
 
 /** Files this branch does not own, and files that are not product code. */
 export const EXCLUDED = [
-  // T-033 rewrites this file's climate markup wholesale and clears its 32 occurrences.
+  // T-033 rewrites this file's climate markup wholesale and clears its 65 occurrences.
   "app/[locale]/(site)/turkiye/[slug]/page.tsx",
 ];
 
@@ -124,7 +138,7 @@ function walk(dir) {
 }
 
 /** @returns {{ file: string, line: number, cls: string, context: string }[]} */
-export function collectPaletteOccurrences(roots = ["components", "app"]) {
+export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) {
   return roots
     .flatMap(walk)
     .filter((file) => !EXCLUDED.some((e) => file.endsWith(e)))
@@ -143,7 +157,7 @@ export function collectPaletteOccurrences(roots = ["components", "app"]) {
 }
 ```
 
-- [ ] **Step 2: Generate the raw list**
+- [x] **Step 2: Generate the raw list**
 
 ```bash
 node --input-type=module -e "
@@ -156,10 +170,10 @@ for (const [f, n] of Object.entries(byFile).sort((a,b)=>b[1]-a[1])) console.log(
 "
 ```
 
-Expected: `total 825` across 38 files. If it disagrees, find out why before writing the
+Expected: `total 939` across 41 files. If it disagrees, find out why before writing the
 inventory — the number is the thing this branch is accountable to.
 
-- [ ] **Step 3: Classify every occurrence**
+- [x] **Step 3: Classify every occurrence**
 
 Write `docs/superpowers/t031c-palette-inventory.md`. One row per occurrence, grouped by file,
 with a verdict from exactly three:
@@ -194,19 +208,19 @@ Rules while classifying:
   note. If nothing else carries it, the row is `semantic`, not `decoration`.
 - Never guess at a bridge token's contrast. Quote the figure from `lib/theme/contrast.ts`.
 
-- [ ] **Step 4: Commit the inventory alone**
+- [x] **Step 4: Commit the inventory alone**
 
 ```bash
 git add docs/superpowers/t031c-palette-inventory.md scripts/palette-inventory.mjs
-git commit -m "docs(t031c): classify all 825 raw palette occurrences
+git commit -m "docs(t031c): classify all 939 raw palette occurrences
 
-One reviewable table instead of 825 diffs to re-litigate. Three verdicts:
+One reviewable table instead of 939 diffs to re-litigate. Three verdicts:
 data binds to a data token set, semantic to a bridge token, decoration is
 removed. One collector, reused by the counter, so the branch has a single
 reader of this notation."
 ```
 
-- [ ] **Step 5: Get the inventory reviewed before any code changes**
+- [x] **Step 5: Get the inventory reviewed before any code changes**
 
 Stop here and ask for review of the table. This is the gate the whole design rests on: after
 this, the edits are mechanical, and a wrong verdict discovered at Task 6 costs a rewrite.
@@ -224,7 +238,7 @@ this, the edits are mechanical, and a wrong verdict discovered at Task 6 costs a
 - Consumes: `collectPaletteOccurrences`, `EXCLUDED` from `scripts/palette-inventory.mjs`.
 - Produces: `RAW_PALETTE_BUDGET` — the number each later task steps down.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 Create `components/ui/raw-palette-count.test.ts`:
 
@@ -247,7 +261,7 @@ import { collectPaletteOccurrences, EXCLUDED } from "../../scripts/palette-inven
  * Listing it here rather than silently skipping it is deliberate: when T-033 merges, this
  * test fails on the exclusion being stale, which is the reminder to delete it.
  */
-const RAW_PALETTE_BUDGET = 825;
+const RAW_PALETTE_BUDGET = 939;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
@@ -281,18 +295,18 @@ describe("the raw palette is being retired, and the number is held", () => {
 });
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `pnpm vitest run components/ui/raw-palette-count.test.ts`
 
-Expected: PASS at 825 — the budget starts where reality is. It goes red only if someone adds
+Expected: PASS at 939 — the budget starts where reality is. It goes red only if someone adds
 a raw class, and it is stepped down by every task below.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/ui/raw-palette-count.test.ts
-git commit -m "test(ui): hold the raw palette count at 825
+git commit -m "test(ui): hold the raw palette count at 939
 
 The number moved 749 -> 895 -> 865 while living only in a comment."
 ```
@@ -315,7 +329,7 @@ The one place where the raw palette is not a theming wart but a page contradicti
 - Consumes: `deltaE00`, `CATEGORICAL_MIN` from `lib/theme/delta-e.ts`; `simulate`, `VISIONS` from `lib/theme/cvd.ts`; `REGION_TINTS` from `lib/theme/region-palette.test.ts` (all PR0).
 - Produces: `--region-*-tint` and `--region-*-text` in `app/globals.css`, seven of each, consumed by T-031d.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `components/v2/region-identity.test.ts`:
 
@@ -343,14 +357,14 @@ describe("a region wears one colour, not two", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `pnpm vitest run components/v2/region-identity.test.ts`
 
 Expected: FAIL — all 14 cases. Marmara's block matches `bg-amber-500/15`, and no
 `--region-marmara-tint` exists.
 
-- [ ] **Step 3: Add the two derived members per region**
+- [x] **Step 3: Add the two derived members per region**
 
 In `app/globals.css`, beside the seven `--region-*` hues, add a tint and a text member for
 each, and **record the measured figures in a comment the way every other token block here
@@ -358,25 +372,25 @@ does**. Each `-text` member must clear 4.5:1 on `--card` in both themes; produce
 with `lib/theme/contrast.ts` and `blendOver` — a tinted chip's real contrast is against the
 blend, not against the token.
 
-- [ ] **Step 4: Rewrite the descriptor table**
+- [x] **Step 4: Rewrite the descriptor table**
 
 Replace `badgeClass`, `accentColor`, `gradient` and `borderAccent` for all seven regions so
 each is expressed through that region's own token. Marmara's badge becomes blue because
 Marmara **is** blue on the map; that is the fix, not a side effect.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pnpm vitest run components/v2/region-identity.test.ts components/ui/raw-palette-count.test.ts`
 
 Expected: both PASS. Step `RAW_PALETTE_BUDGET` down by what this task actually removed — read
 the number from the failure message, do not estimate it.
 
-- [ ] **Step 6: Verify the set is still CVD-safe after the derived members land**
+- [x] **Step 6: Verify the set is still CVD-safe after the derived members land**
 
 The seven hues do not move in this task, so `lib/theme/region-palette.test.ts` must still be
 green and its four worst-case figures unchanged. If any moved, a hue was edited — revert it.
 
-- [ ] **Step 7: Visual round and commit**
+- [x] **Step 7: Visual round and commit**
 
 Screenshot `/tr/turkiye/bolge/marmara` and two more regions at 320, 360, 390 and desktop in
 both themes, then:
@@ -396,27 +410,28 @@ derive from the region's own token."
 
 ### Tasks 4-N: Apply the inventory, file by file
 
-Work the 38 files heaviest-first, in the order of the table in "The measurements this plan is
+Work the 41 files heaviest-first, in the order of the table in "The measurements this plan is
 built on". Group them into commits of one file each for the ten heaviest, and into thematic
 batches for the long tail.
 
 Every one of these tasks has the same five steps. What changes is the file and its verdict
 rows from Task 1's inventory.
 
-- [ ] **Step 1** — Re-read that file's section of `docs/superpowers/t031c-palette-inventory.md`. The inventory is the decision; this step is not where classification happens.
-- [ ] **Step 2** — Apply the rows. `semantic` binds to its bridge token and its hand-written `dark:` pair is deleted in the same edit. `decoration` is removed. `data` binds to its data token set, never to a bridge token.
-- [ ] **Step 3** — `pnpm typecheck && pnpm lint && pnpm vitest run` and step `RAW_PALETTE_BUDGET` by the exact number removed.
-- [ ] **Step 4** — For any file with a visible surface: `pnpm sweep:overflow -- --filter=<its route>` and screenshots at the four widths in both themes. Measure the changed text against its surface with `lib/theme/contrast.ts` and record the worst figure in the commit body.
-- [ ] **Step 5** — Commit, naming the file and the count removed.
+- [x] **Step 1** — Re-read that file's section of `docs/superpowers/t031c-palette-inventory.md`. The inventory is the decision; this step is not where classification happens.
+- [x] **Step 2** — Apply the rows. `semantic` binds to its bridge token and its hand-written `dark:` pair is deleted in the same edit. `decoration` is removed. `data` binds to its data token set, never to a bridge token.
+- [x] **Step 3** — `pnpm typecheck && pnpm lint && pnpm vitest run` and step `RAW_PALETTE_BUDGET` by the exact number removed. **[done, mechanism changed at close: `RAW_PALETTE_BUDGET` no longer exists. The arm is a named exemption table (`RAW_EXEMPT`), so a step is now a row edit or a row deletion, asserted `toBe` in both directions.]**
+- [x] **Step 4** — For any file with a visible surface: `pnpm sweep:overflow -- --filter=<its route>` and screenshots at the four widths in both themes. Measure the changed text against its surface with `lib/theme/contrast.ts` and record the worst figure in the commit body.
+- [x] **Step 5** — Commit, naming the file and the count removed.
 
 Files needing particular care, with the reason:
 
-- **`v2-turkey-map-explorer.tsx` (38)** and **`v2-world-map-explorer.tsx` (11)** — mostly `data`. The province and country fills belong to map token sets, and T-031d is about to redesign the dark map surface. Bind them; do not invent new hues here.
-- **`v2-game-screen.tsx` (24)** — the land/sea fills measure **1.17:1** against each other in dark, against a 3:1 floor. They are `data` (game state, `--game-*`), and the dark fix belongs to T-031d. Bind the chrome in this branch and leave a note in the inventory row saying the dark land/sea separation is T-031d's.
-- **`v2-earthquake-explorer.tsx` (19)** — carries a traffic-light magnitude scale that must become the `--eq-mag-1..5` purple ramp. That ramp already exists and is already the owner's decision; this is a binding, not a redesign. Public-safety scale: do not restyle it to Terra.
-- **`v2-sea-basin-detail-view.tsx` (12)** — the sixth frozen colour from T-044(3). Seven raw classes, **six without a `dark:` pair** (lines 147, 281, 359, 394, 410, 419).
-- **`v2-marine-map-explorer.tsx` (30)** and **`v2-marine-basin-cards.tsx` (9)** — SST and similar geophysical ramps stay standard.
-- **`v2-header.tsx` (9)** — every page. Screenshot `/tr` and one deep route.
+- **`v2-turkey-map-explorer.tsx` (78)** and **`v2-world-map-explorer.tsx` (27)** — mostly `data`. The province and country fills belong to map token sets, and T-031d is about to redesign the dark map surface. Bind them; do not invent new hues here.
+- **`v2-game-screen.tsx` (51)** — the land/sea fills measure **1.17:1** against each other in dark, against a 3:1 floor. They are `data` (game state, `--game-*`), and the dark fix belongs to T-031d. Bind the chrome in this branch and leave a note in the inventory row saying the dark land/sea separation is T-031d's.
+- **`v2-earthquake-explorer.tsx` (21)** — carries a traffic-light magnitude scale that must become the `--eq-mag-1..5` purple ramp. That ramp already exists and is already the owner's decision; this is a binding, not a redesign. Public-safety scale: do not restyle it to Terra.
+- **`v2-sea-basin-detail-view.tsx` (22)** — the sixth frozen colour from T-044(3). 22 occurrences on 12 lines, **10 of them on the eight lines with no `dark:` pair** (147, 191, 279, 281, 359, 394, 410, 419).
+- **`v2-marine-map-explorer.tsx` (61)** and **`v2-marine-basin-cards.tsx` (21)** — SST and similar geophysical ramps stay standard.
+- **`v2-header.tsx` (19)** — every page. Screenshot `/tr` and one deep route.
+- **`lib/map/continent-theme.ts` (112)**, **`lib/earthquake/fault-lines-data.ts` (24)** and **`lib/marine/sea-basins-detail.ts` (16)** — all `data`, and all DEFINITIONS. Each must land in the same commit as the call sites that spend it (`v2-world-continents` 49, `deprem/page` 21 + `deprem/fay-hatlari` 3, and the four basin consumers), or the two spellings of one identity will disagree mid-branch. No visual round of their own: they render nothing; screenshot the consumers.
 
 ---
 
@@ -428,7 +443,7 @@ Files needing particular care, with the reason:
 - Modify: `components/ui/token-binding.test.ts`
 - Modify: `docs/design.md`
 
-- [ ] **Step 1: Take the budget to zero**
+- [x] **Step 1: Take the budget to zero** **[done as a named row, not a literal zero: 15 occurrences in `v2-world-map-explorer.tsx` are deferred to T-031d with a measured reason, pinned as one row and asserted `toBe(15)`, with `toBe(0)` for every other file. Deleting that row is how T-031d ends the arm.]**
 
 `RAW_PALETTE_BUDGET = 0`, and change the assertion from `toBeLessThanOrEqual` to `toBe(0)` —
 a budget of zero checked with `<=` passes on a negative count and reads as a floor when it is
@@ -438,44 +453,44 @@ If any occurrence genuinely must survive, it is an **exemption listed by file an
 its reason**, and a further assertion fails if an exemption goes stale. `token-binding.test.ts`
 already carries exactly that pattern for its two achromatic exemptions — follow it.
 
-- [ ] **Step 2: Fold the count into the existing rule**
+- [x] **Step 2: Fold the count into the existing rule**
 
 `token-binding.test.ts`'s docblock says _"Raw palette classes (749) and hand-written `dark:`
 pairs are counted in a comment"_. Replace that sentence with a pointer to the counter, so
 there is one place the number lives and it is executable.
 
-- [ ] **Step 3: Correct `docs/design.md`**
+- [x] **Step 3: Correct `docs/design.md`**
 
 The dark-mode section says _"Not yet themed, and known: the categorical accent system (T-031c)
 and map surfaces (T-031d). Measured 2026-09-17: 895 raw palette classes across 42 files."_
 Replace with the finished state, leaving T-031d named as still open.
 
-- [ ] **Step 4: Full verification**
+- [x] **Step 4: Full verification**
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 pnpm sweep:overflow
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
 git commit -m "test(ui): the raw palette count is zero and held
 
-825 occurrences across 38 files, each classified before it was touched."
+939 occurrences across 41 files, each classified before it was touched."
 ```
 
 ---
 
 ## Branch close
 
-- [ ] `pnpm typecheck && pnpm lint && pnpm test && pnpm build` green.
-- [ ] `pnpm sweep:overflow` green across all 22 URLs, five widths, both themes.
-- [ ] `lib/theme/region-palette.test.ts` still green with its four worst-case figures unchanged.
-- [ ] Every region's badge, accent, gradient and border derive from that region's own token; screenshots of three regions in both themes in the PR body.
-- [ ] The inventory in `docs/superpowers/t031c-palette-inventory.md` matches what shipped — no row applied differently from its verdict without the row being edited and the change explained.
-- [ ] Open the PR to `dev` (squash), titled `T-031c: bind or delete every raw palette class`.
+- [x] `pnpm typecheck && pnpm lint && pnpm test && pnpm build` green.
+- [x] `pnpm sweep:overflow` green across all 22 URLs, five widths, both themes. **[re-run at close against the production build: PASS, 230 checks across 23 URLs.]**
+- [x] `lib/theme/region-palette.test.ts` still green with its four worst-case figures unchanged.
+- [ ] Every region's badge, accent, gradient and border derive from that region's own token; screenshots of three regions in both themes in the PR body. ← still open: belongs to the PR step, not to the branch.
+- [x] The inventory in `docs/superpowers/t031c-palette-inventory.md` matches what shipped — no row applied differently from its verdict without the row being edited and the change explained.
+- [ ] Open the PR to `dev` (squash), titled `T-031c: bind or delete every raw palette class`. ← still open: belongs to the PR step, not to the branch.
 
 ## After this branch: T-031d
 

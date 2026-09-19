@@ -79,11 +79,24 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 - Semantic families have two members. The base is the FILL; the `-strong` member is text on a
   tint of that fill. They are not interchangeable — the base measures 2.62:1 as text on its
   own 15% tint for warning, and 3.98-4.17:1 for the others.
-- Not yet themed, and known: the categorical accent system (T-031c) and map surfaces (T-031d).
-  Measured 2026-09-17: **895 raw palette classes across 42 files**, not the 34 recorded earlier —
-  and nothing holds that number, so it moved without anyone noticing. `--chart-*` and
-  `--sidebar-*` remain shadcn's achromatic stock (chroma exactly 0, unlike the rest of the dark
-  palette) and nothing reads them.
+- **The categorical accent system is done (T-031c, closed 2026-09-19).** The raw palette went
+  939 → **15**, and all 15 are the dark map surfaces in `components/v2/v2-world-map-explorer.tsx`
+  — the graticule, the recede fill and the map highlight — deferred to **T-031d**, which still
+  owns map surfaces. They are listed by line in
+  `docs/superpowers/t031c-palette-inventory.md`'s world-map table and pinned as one named row in
+  `scripts/palette-inventory.mjs`'s `RAW_EXEMPT`. `app/[locale]/(site)/turkiye/[slug]/page.tsx`
+  is excluded from the count and belongs to T-033. The reason they could not simply be rebound is
+  measured: all 17 `--map-*` / `--province-*` / `--land-*` tokens are declared in `:root` and
+  `.dark` redefines none of them, and this map's basemap is a fixed navy in both themes.
+- **The count is held by four arms, none of them a budget** (`components/ui/raw-palette-count.test.ts`,
+  `components/ui/compiled-stylesheet.test.ts`). Raw classes, bracketed colour values and colours
+  inlined outside a class are each a table of named files with exact counts and a reason, zero
+  everywhere else; the fourth compiles `app/globals.css` and asserts the SHIPPED stylesheet
+  carries palette rules only for the two deferred files. That fourth arm exists because the tree
+  reached zero in source while 125 palette rules were still shipping — Tailwind was scanning
+  `docs/`. `app/globals.css` now declares `@source not` for `docs/`, `scripts/` and test files.
+- `--chart-*` and `--sidebar-*` remain shadcn's achromatic stock (chroma exactly 0, unlike the
+  rest of the dark palette) and nothing reads them.
 - The showcase at `/design-system` shows every component in both themes side by side. A
   component is not done until its specimen renders there, and
   `components/showcase/registry.test.ts` fails if one is missing.
@@ -152,9 +165,12 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   where, because it is not uniform: `components/ui/token-binding.test.ts` applies **all four**
   to `components/ui`, `components/patterns` and `components/showcase/specimens`, but across
   `components/v2` and the pages it checks **only the escape rule**. Raw palette classes and
-  hand-written `dark:` on that surface are the categorical accent system, which T-034 scoped out
-  and T-031c owns. Its exemption lists are named in the file with a reason each, and every one is
-  paired with an assertion that the exemption is still needed.
+  hand-written `dark:` on that surface were the categorical accent system, which T-034 scoped out
+  and T-031c closed: the raw-palette count on that surface is now zero outside the one file
+  T-031d owns, held by `components/ui/raw-palette-count.test.ts` and
+  `components/ui/compiled-stylesheet.test.ts` rather than by `token-binding.test.ts`. Its
+  exemption lists are named in the file with a reason each, and every one is paired with an
+  assertion that the exemption is still needed.
 - A semantic family has two members: the base is the FILL, the `-strong` member is text on a
   tint of that fill. Not interchangeable — the base measures 2.62:1 as text on its own 15%
   tint for warning, 3.98–4.17:1 for the others.
@@ -220,7 +236,7 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   and a teal "6 Kıyı Tipi" tile was sitting 180 lines above a teal "Ege Denizi" card on its own
   page. The conversion removed that collision. It **deliberately did not convert** `/deprem`'s
   KAF/DAF/BAFS legend or `/deprem/fay-hatlari`'s strip, whose values name faults that _are_ in a
-  data module. Both belong to T-031c.
+  data module. Both belonged to T-031c and were applied there.
   **An earlier round did convert the fay-hatlari strip**, justified by "nothing else on this page
   draws those hues" — which `grep borderClass` falsifies in one command — and shipped a teal DAF
   tile above a blue-bordered DAF card. A later round then defended the two correct conversions with

@@ -16,16 +16,24 @@ import {
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { CONTINENT_KEY_TO_SLUG } from "@/lib/geo/continents";
+import { continentIdentityOf } from "@/lib/theme/continent-identity";
 import type { Continent } from "@/lib/api/types";
 
+/**
+ * A continent card's DATA. Not its colour.
+ *
+ * This table used to carry `color`, `badgeClass` and `borderClass` — the same seven identities
+ * `lib/map/continent-theme.ts`'s `CONTINENT_META` held, in the same hue families at different
+ * stops, 49 raw palette occurrences that nothing compared against the map's. The colour now
+ * comes from `continentIdentityOf(continent.id)` at render time, so the card cannot wear a
+ * colour its own `id` does not name and there is nothing here left to mis-assign. `color` was
+ * additionally DEAD — declared on every entry and rendered nowhere.
+ */
 export interface ContinentData {
   id: Continent;
   nameTr: string;
   nameEn: string;
   code: string;
-  color: string;
-  badgeClass: string;
-  borderClass: string;
   countryCount: number;
   population: string;
   areaKm2: string;
@@ -42,9 +50,6 @@ export const CONTINENTS_DATA: ContinentData[] = [
     nameTr: "Avrupa",
     nameEn: "Europe",
     code: "EU",
-    color: "from-indigo-600 to-blue-700",
-    badgeClass: "bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30",
-    borderClass: "hover:border-indigo-500/50",
     countryCount: 44,
     population: "745 Milyon",
     areaKm2: "10.180.000 km²",
@@ -63,9 +68,6 @@ export const CONTINENTS_DATA: ContinentData[] = [
     nameTr: "Asya",
     nameEn: "Asia",
     code: "AS",
-    color: "from-amber-600 to-orange-700",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-    borderClass: "hover:border-amber-500/50",
     countryCount: 48,
     population: "4.75 Milyar",
     areaKm2: "44.579.000 km²",
@@ -84,9 +86,6 @@ export const CONTINENTS_DATA: ContinentData[] = [
     nameTr: "Afrika",
     nameEn: "Africa",
     code: "AF",
-    color: "from-emerald-600 to-green-700",
-    badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    borderClass: "hover:border-emerald-500/50",
     countryCount: 54,
     population: "1.46 Milyar",
     areaKm2: "30.370.000 km²",
@@ -105,9 +104,6 @@ export const CONTINENTS_DATA: ContinentData[] = [
     nameTr: "Kuzey Amerika",
     nameEn: "North America",
     code: "NA",
-    color: "from-sky-600 to-cyan-700",
-    badgeClass: "bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30",
-    borderClass: "hover:border-sky-500/50",
     countryCount: 23,
     population: "600 Milyon",
     areaKm2: "24.709.000 km²",
@@ -126,9 +122,6 @@ export const CONTINENTS_DATA: ContinentData[] = [
     nameTr: "Güney Amerika",
     nameEn: "South America",
     code: "SA",
-    color: "from-rose-600 to-red-700",
-    badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
-    borderClass: "hover:border-rose-500/50",
     countryCount: 12,
     population: "435 Milyon",
     areaKm2: "17.840.000 km²",
@@ -147,9 +140,6 @@ export const CONTINENTS_DATA: ContinentData[] = [
     nameTr: "Okyanusya & Avustralya",
     nameEn: "Oceania",
     code: "OC",
-    color: "from-purple-600 to-violet-700",
-    badgeClass: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30",
-    borderClass: "hover:border-purple-500/50",
     countryCount: 14,
     population: "45 Milyon",
     areaKm2: "8.525.000 km²",
@@ -168,9 +158,6 @@ export const CONTINENTS_DATA: ContinentData[] = [
     nameTr: "Antarktika",
     nameEn: "Antarctica",
     code: "AN",
-    color: "from-teal-600 to-cyan-800",
-    badgeClass: "bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30",
-    borderClass: "hover:border-teal-500/50",
     countryCount: 0,
     population: "~1.000-5.000 (Bilim İnsanı)",
     areaKm2: "14.200.000 km²",
@@ -226,14 +213,18 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
           const dynamicCount = countryCounts
             ? (countryCounts[continent.id] ?? continent.countryCount)
             : continent.countryCount;
+          const identity = continentIdentityOf(continent.id);
           return (
             <Card
               key={continent.id}
-              className={`border border-border bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-lg ${continent.borderClass} group flex flex-col justify-between`}
+              className={`border border-border bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:shadow-lg ${identity.edgeHover} group flex flex-col justify-between`}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <Badge variant="outline" className={continent.badgeClass}>
+                  {/* BACKDROP: one `--continent-*-tint` over `bg-card/80` over
+                      `--background` — the `DECK` column of the table in `app/globals.css`, its
+                      own column because this Card is NOT opaque. */}
+                  <Badge variant="outline" className={identity.badge}>
                     {dynamicCount > 0 ? `${dynamicCount} Ülke` : "Özel Statü"}
                   </Badge>
                   <span className="text-[11px] font-mono text-muted-foreground uppercase">
@@ -261,7 +252,7 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
                 <div className="space-y-2 rounded-xl bg-muted/40 p-3 border border-border/60">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                      <Mountain className="size-3.5 text-amber-600 dark:text-amber-400" /> Zirve:
+                      <Mountain className="size-3.5" /> Zirve:
                     </span>
                     <span className="font-semibold text-right text-foreground">
                       {continent.highestPoint.name} ({continent.highestPoint.elevation})
@@ -270,7 +261,7 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
 
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                      <Waves className="size-3.5 text-cyan-600 dark:text-cyan-400" /> Nehir:
+                      <Waves className="size-3.5" /> Nehir:
                     </span>
                     <span className="font-semibold text-right text-foreground">
                       {continent.longestRiver.name} ({continent.longestRiver.length})
@@ -279,8 +270,7 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
 
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-muted-foreground flex items-center gap-1.5 shrink-0">
-                      <TreePine className="size-3.5 text-emerald-600 dark:text-emerald-400" />{" "}
-                      İklim:
+                      <TreePine className="size-3.5" /> İklim:
                     </span>
                     <span className="font-medium text-right text-muted-foreground text-[11px]">
                       {continent.dominantClimate}
@@ -306,7 +296,7 @@ export function V2WorldContinents({ onSelectContinent, countryCounts }: V2WorldC
                   <Link
                     href={{
                       pathname: "/dunya/kita/[slug]",
-                      params: { slug: CONTINENT_KEY_TO_SLUG[continent.id] ?? "afrika" },
+                      params: { slug: CONTINENT_KEY_TO_SLUG[continent.id] },
                     }}
                     className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity shadow-2xs"
                   >
