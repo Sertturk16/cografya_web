@@ -29,6 +29,13 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  *    "an interactive sibling exists" by static scan would mean guessing which `<path>` in a
  *    1400-line component is a sibling of which `<g>`, and a guard that guesses is worse than the
  *    narrower one it replaces.
+ *  - It finds a site by the literal call `INLAND_WATER_SHAPES.map(`, so it discovers only that
+ *    idiom. A site rendering the same array through `.forEach`, `Array.from`, a wrapper
+ *    component or a renamed intermediate would never become a SITE, and so would never be
+ *    checked — and the anti-vacuity floor below would not notice, because the seven known
+ *    sites already clear it. The floor proves the walk still finds files, not that it finds
+ *    every renderer. Widening the pattern is cheap the day a second idiom appears; inventing
+ *    one now would be guarding a shape nobody writes.
  *  - It does NOT check the OTHER layers. A future decorative overlay painted last with handlers
  *    underneath is the same defect and this file will not see it.
  *  - It is a SOURCE scan. A `pointer-events-none` that arrives through a variable, a `clsx` call
