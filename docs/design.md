@@ -101,6 +101,48 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
   component is not done until its specimen renders there, and
   `components/showcase/registry.test.ts` fails if one is missing.
 
+### Map surfaces (T-031d)
+
+- Eleven `--map-*` tokens carry every painted map surface — plate, sea, water, water-line, land,
+  context-land, context-line, label, ocean, graticule, unknown-land — in **both** themes. Before
+  this, `.dark` redefined none of them and nine components each spelled their own dark sea, in
+  four different spellings. `lib/theme/map-surface.test.ts` holds the floors and
+  `test/fixtures/theme/map-surfaces.ts` holds the table; that table lives under `test/` on
+  purpose, since a shared table inside a `.test.ts` re-registers its suite in every importer, and
+  one under `lib/` is read by the palette scanners as product paint.
+- **Land and sea are told apart by HUE, not by fill contrast.** Light mode's own land/sea pair is
+  1.26:1 and that is correct: the stroke floor leaves the palette roughly 1.29:1 of luminance to
+  spend, so warm land against cool water — the standard atlas convention, and one that survives
+  red-green colour blindness — is what carries it. What must hold is the boundary:
+  `--province-stroke` measures 4.38:1 on the dark land and 4.21:1 on the dark sea and is
+  deliberately **not** redefined in `.dark`, with a test asserting its absence there. A surface
+  that paints a cool land on a cool sea has lost the distinction even at a passing ratio — that
+  was the play board, at 1.01:1.
+- **`/dunya` is dark in both themes**, so `--map-ocean`, `--map-graticule`, `--map-unknown-land`
+  and `--map-hover` take ONE value, declared identically in `:root` and `.dark`. A theme-aware
+  token resolves to its dark value in light mode, which is how a first attempt at the hover
+  highlight shipped a colour that cleared its floor and still read as _disabled_: it sat inside
+  the continent fills' own contrast range instead of above it. Clearing 3:1 is necessary and not
+  sufficient for a highlight.
+- **`--map-artifact-sea` is frozen and must stay out of `.dark`.** It grounds a locator frame
+  whose `<img>` is an isolated SVG with its ink baked in, so a theme-aware ground there puts a
+  near-black frame under a pale artifact. A test asserts its absence from the dark block.
+- **An opacity utility is part of the rendered colour**, and on a map it is usually where the
+  failure is. Measured raw, a sea-label group read 3.59:1; at the `opacity-60` it actually ships
+  with, 2.03:1. A sub-pixel stroke composites at roughly its device-pixel coverage, so a 0.5px
+  line scores about half its full-alpha figure. Measure the blend, name the opacity in the row.
+- **An ordered ramp inverts in dark.** `--eq-mag-*` runs light→dark as magnitude rises, which is
+  right on a pale map and backwards on a dark one — a darker mark on a dark ground is a quieter
+  mark, and the shipped ramp measured 1.01:1 at the largest earthquake. The dark half runs the
+  other way, with `--eq-mag-fg` flipping white→ink so one label serves all five steps. Assert a
+  ramp against every ground it lands on, including composited ones: discs sit on `--map-plate`,
+  not only on `--card`.
+- **Inland water paints AFTER the opaque province layer.** SVG paints in document order, and
+  three of the five explorers that draw water had it underneath — invisible since those files
+  were written, in both themes, independent of colour. `lib/map/tr-inland-water.generated.ts`
+  records the convention. Any layer that takes a click needs `pointer-events-none` on whatever
+  paints above it; `components/v2/inland-water-hit-testing.test.ts` holds that for the water.
+
 ## Accessibility floor (WCAG 2.1 AA)
 
 - Focus visible everywhere: `:focus-visible` = 3px `var(--ring)` outline, 2px offset.
