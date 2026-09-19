@@ -82,20 +82,28 @@ wrong split leaves strays behind.
 Four sets are named by `data` rows below and have to be created before those rows can be applied.
 None of them is a bridge token, and none may be satisfied by one:
 
-| Set             | Members                                                                   | Rows | Definition lives in                       | Also spent by                                                                           |
-| --------------- | ------------------------------------------------------------------------- | ---- | ----------------------------------------- | --------------------------------------------------------------------------------------- |
-| `--continent-*` | avrupa, asya, afrika, kuzey-amerika, guney-amerika, okyanusya, antarktika | 161  | `lib/map/continent-theme.ts` (112)        | `v2-world-continents` (49), and five files read `CONTINENT_META` without re-spelling it |
-| `--basin-*`     | karadeniz, marmara, ege, akdeniz                                          | 65   | `lib/marine/sea-basins-detail.ts` (16)    | `v2-marine-basin-cards`, `v2-marine-map-explorer`, `deniz/kiyi-tipleri`, `bolge/[slug]` |
-| `--fault-*`     | kaf, daf, bafs                                                            | 48   | `lib/earthquake/fault-lines-data.ts` (24) | `deprem/page` (21), `deprem/fay-hatlari` (3)                                            |
-| `--sst-band-*`  | cool (<25 °C), warm (25-28 °C), hot (≥28 °C)                              | 12   | nowhere — inline in the component         | `v2-marine-map-explorer`                                                                |
+Every `Rows` figure below is the sum of the `#` column of every row whose `Becomes` names that
+set — derived from the table, never carried forward from a previous draft. `--basin-*` is the
+reason the rule is written down: it was 49 in the first cut against a real 64, and the fix round
+added 16 new `lib/` rows to the wrong base and produced 65 instead of 80. Re-derive on every
+re-pin.
+
+| Set             | Members                                                                   | Rows | Definition lives in                       | Derivation (`#` sums)                                                                                                          |
+| --------------- | ------------------------------------------------------------------------- | ---- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `--continent-*` | avrupa, asya, afrika, kuzey-amerika, guney-amerika, okyanusya, antarktika | 161  | `lib/map/continent-theme.ts` (112)        | `continent-theme` 112 + `v2-world-continents` 49. Five further files read `CONTINENT_META` without re-spelling a hue.          |
+| `--basin-*`     | karadeniz, marmara, ege, akdeniz                                          | 80   | `lib/marine/sea-basins-detail.ts` (16)    | `v2-marine-map-explorer` 20 + `deniz/kiyi-tipleri` 20 + `v2-marine-basin-cards` 20 + `sea-basins-detail` 16 + `bolge/[slug]` 4 |
+| `--fault-*`     | kaf, daf, bafs                                                            | 48   | `lib/earthquake/fault-lines-data.ts` (24) | `fault-lines-data` 24 + `deprem/page` 21 + `deprem/fay-hatlari` 3                                                              |
+| `--sst-band-*`  | cool (<25 °C), warm (25-28 °C), hot (≥28 °C)                              | 12   | nowhere — inline in the component         | `v2-marine-map-explorer` 12                                                                                                    |
 
 Three of the four have their definition in `lib/`, which is why widening the roots mattered:
 each set had a source file spelling the hue and a call site re-spelling it, and a count that saw
 only the call site would have gone to zero while the definition still held the raw class.
+`--basin-*` is the largest of the four by call sites and the one whose four spellings already
+agree, so it is the cheapest to author and the easiest to get wrong by undercounting.
 
 `--region-*-tint` and `--region-*-text` are the fifth and are already Task 3's; 161 rows below
-depend on them (`bolge/[slug]` 56, `v2-turkey-map-explorer` 70, `v2-game-screen` 21,
-`v2-turkey-regions` 14). The region set is the one whose definition is **already** a token —
+depend on them, by the same derivation (`v2-turkey-map-explorer` 70 + `bolge/[slug]` 56 +
+`v2-game-screen` 21 + `v2-turkey-regions` 14). The region set is the one whose definition is **already** a token —
 `--region-*` is in `app/globals.css` — which is exactly why its four call sites contradict it and
 the continent set does not.
 
@@ -222,15 +230,41 @@ Nine fields per continent, 16 occurrences each, identical in shape across all se
 | `gradient`    | the `/dunya/[slug]` hero wash                  | 1    |
 | `glowColor`   | the hero glow backdrop                         | 1    |
 
-`gradient` and `glowColor` are `data` rather than `decoration` on the file's own evidence: its type
-comments say both are "derived from the hue above", so they are the continent's identity at low
-alpha, not ornament. They bind to a `--continent-*` tint; deleting them would leave the hero with
-no continent signal but the badge.
+`gradient` and `glowColor` are `data` rather than `decoration`, and the argument is **not** that
+the file's type comments call them "derived from the hue above". That is an appeal to a comment,
+in a branch whose founding sentence is that a comment is not a guard; it stops being true the
+moment someone deletes the comment. Two things hold without it:
 
-Five of the nine fields carry a hand-written `dark:` (31 of the 112 occurrences are the dark half
-of a pair). Those pairs do not survive the binding: a data token is redefined per theme in
-`app/globals.css`, which is where the light/dark decision belongs. Removing them is the normal
-outcome of binding correctly.
+- **The brief's tiebreaker, applied directly.** Seven continents want seven different colours in
+  that exact spot, and the field is interpolated per continent at `dunya/[slug]:298,302` and
+  `dunya/kita/[slug]:108,112` (`bg-gradient-to-b ${theme.gradient}` and the glow `<div>`). Two
+  values that could want two colours in one spot is `data`, without exception.
+- **The set has a genuine data surface.** `color: "fill-indigo-600/85"` paints the country on
+  `/dunya`'s world map, where the hue is the only thing saying "Europe" — no label, no glyph. The
+  wash is the same identity at low alpha on a page that surface leads to. That is precisely what
+  `v2-tools-hub` lacked: there the set had brand members and no data surface anywhere, so the same
+  shape decided the other way.
+
+The brief does name "a gradient wash" as a `decoration` archetype, and that is not a contradiction:
+the archetype is a **constant** wash. One that changes with a categorical value is not a wash, it
+is the value. They bind to a `--continent-*` tint; deleting them would leave the hero with no
+continent signal but the badge.
+
+**Four** of the nine fields carry a hand-written `dark:` — `color`, `hoverColor`, `badgeClass` and
+`textClass`, seven occurrences each, so **28 of the 112** are the dark half of a pair.
+`strokeColor`, `headerClass`, `borderClass`, `gradient` and `glowColor` carry none. Across all
+three `lib/` files it is 38 of 152 (continent-theme 28, fault-lines-data 6, sea-basins-detail 4).
+
+**Count the variant chain, not the prefix.** `hoverColor`'s dark half is
+`dark:hover:fill-indigo-400` — `dark:` is not adjacent to the property. A count that looks for
+`dark:` immediately before the class misses all seven of them and reports 21 where the answer is
+28; an earlier cut of this document reported 31 by attributing the whole-`lib/` figure to this one
+file. An applier walking these rows has to match `dark:` anywhere in the chain, or it will leave
+the hover pairs behind after deleting the rest.
+
+Those pairs do not survive the binding: a data token is redefined per theme in `app/globals.css`,
+which is where the light/dark decision belongs. Removing them is the normal outcome of binding
+correctly.
 
 | Line    | Class(es)                    | #   | Verdict | Becomes                          | Note                                                                                                                                                                                                                              |
 | ------- | ---------------------------- | --- | ------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

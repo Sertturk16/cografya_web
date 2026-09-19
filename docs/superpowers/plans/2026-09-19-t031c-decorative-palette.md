@@ -47,7 +47,7 @@ The ten heaviest files carry 636 of the 939:
 | `components/v2/v2-world-map-explorer.tsx`           | 27    |
 | `app/[locale]/(site)/deniz/kiyi-tipleri/page.tsx`   | 24    |
 
-Task 1's inventory classifies all 939: **500 `data`, 170 `semantic`, 269 `decoration`** — see `docs/superpowers/t031c-palette-inventory.md`. It also names four data token sets that do not exist yet and that `data` rows depend on: `--continent-*` (7 members, 161 rows), `--basin-*` (4 members, 65 rows), `--fault-*` (3 members, 48 rows) and `--sst-band-*` (3 members, 12 rows). Three of the four have their definition in `lib/`. They are data sets, not bridge tokens, and none may be satisfied by one.
+Task 1's inventory classifies all 939: **500 `data`, 170 `semantic`, 269 `decoration`** — see `docs/superpowers/t031c-palette-inventory.md`. It also names four data token sets that do not exist yet and that `data` rows depend on: `--continent-*` (7 members, 161 rows), `--basin-*` (4 members, 80 rows), `--fault-*` (3 members, 48 rows) and `--sst-band-*` (3 members, 12 rows) — each figure the sum of the inventory rows naming that set, re-derived rather than carried forward. Three of the four have their definition in `lib/`. They are data sets, not bridge tokens, and none may be satisfied by one.
 
 **Nothing holds this number.** `components/ui/token-binding.test.ts` enforces only the escape rule; the count lives in a comment. It moved 749 → 895 → 865 without any test noticing.
 
