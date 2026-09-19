@@ -398,7 +398,13 @@ read as a reason to leave it a Tailwind palette literal. `#f59e0b` IS amber-500,
 both counters because a bare hex in a ternary is neither a class nor a bracketed value, and it
 measured **1.70:1 against the light sea** — under WCAG 1.4.11's 3:1 graphical floor, i.e. the
 selected pin was the hardest one on the map to see in light mode. It now reads `var(--primary)`,
-4.06 light and 4.77 dark, still no band (ΔE00 13.6 to the nearest, over `CATEGORICAL_MIN`).
+4.06 light and 4.77 dark, still no band — but the DARK figure is the tight one and belongs in
+the record. `--sst-band-cool/warm/hot` are `:root`-only (`.dark` redefines only their `-text`
+variants), so the pin moves per theme while the bands do not: against the nearest band
+(`--sst-band-hot`) it measures ΔE00 **13.6 light and 10.3 dark**, 0.3 above `CATEGORICAL_MIN`.
+It passes with almost no room, so retuning either `--primary` or `--sst-band-hot` means re-running
+this pair. amber-500 scored 25.3, and 11.7 points of that headroom is what clearing WCAG 1.4.11's
+3:1 graphical floor cost — a pin that cannot be seen cannot be distinguished either.
 `#ffffff` on its stroke stays — white is not a palette value. The `marine-pulse` gradient is
 DELETED with both of its stops: nothing in the tree references it, so `#0284c7` (sky-600) and
 `#06b6d4` (cyan-500) were painting nothing at all. The third arm in

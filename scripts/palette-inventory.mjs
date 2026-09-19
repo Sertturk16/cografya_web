@@ -296,9 +296,22 @@ export const INLINE_EXEMPT = [
   },
 ];
 
-/** Is this file one of the no-stylesheet contexts? */
+/**
+ * Is this file one of the no-stylesheet contexts?
+ *
+ * AN EXACT COMPARE, NOT `endsWith`, and that is a deliberate difference from `EXCLUDED` above.
+ * `endsWith` reads as harmless on a path list and is not: a file at `lib/app/manifest.ts` ends
+ * with `app/manifest.ts`, so it would have been exempted by an entry written for a different
+ * file. The count assertion in `raw-palette-count.test.ts` catches that at the test level --
+ * the exempt file's own total no longer matches -- but a guard whose first line of defence is
+ * a second guard is one edit away from being neither. `collect` builds every path by joining
+ * the root it was given, so for the default roots these strings are exactly what it produces.
+ *
+ * `EXCLUDED` keeps `endsWith` because its own staleness test re-reads the named file from disk
+ * by that same relative path, so a near-miss there fails loudly rather than widening silently.
+ */
 export function isInlineExempt(file) {
-  return INLINE_EXEMPT.some((e) => file.endsWith(e.file));
+  return INLINE_EXEMPT.some((e) => file === e.file);
 }
 
 /**

@@ -649,6 +649,12 @@ describe("the palette cannot be laundered into brackets", () => {
  * gives 4.77. The raw amber-500 it replaces measured 1.70:1 on the LIGHT sea, under the 3:1
  * graphical floor, so this closes a contrast failure as well as a laundering.
  *
+ * THE COST, WITH ITS TIGHT FIGURE WRITTEN DOWN. `--sst-band-cool/warm/hot` are `:root`-only --
+ * `.dark` redefines only their `-text` variants -- so the pin moves per theme while the bands do
+ * not. Against the nearest band it measures deltaE00 13.6 in light and **10.3 in dark**, 0.3
+ * above `CATEGORICAL_MIN` 10, where amber-500 scored 25.3. It passes with almost no room, and
+ * retuning either `--primary` or `--sst-band-hot` means re-running that pair.
+ *
  * A FALL here with a rise in either other arm would be the failure this trio exists to catch.
  * Neither moved: the raw-palette budget is unchanged at 126 and the arbitrary budget at 72.
  */
@@ -676,6 +682,17 @@ describe("a colour cannot hide outside a class either", () => {
     expect(collectInlineColorOccurrences(["components"]).length).toBeGreaterThan(0);
     // Not a third number nobody reconciles: the exempt half plus the live half IS the whole.
     expect(live.length + found.filter((o) => isInlineExempt(o.file)).length).toBe(found.length);
+  });
+
+  it("exempts a named file and nothing that merely ends like one", () => {
+    // `endsWith` was the first spelling and it is a trap: `lib/app/manifest.ts` ends with
+    // `app/manifest.ts`. The count assertion below catches it, but a guard whose first line of
+    // defence is a second guard is one edit away from being neither.
+    expect(isInlineExempt("app/manifest.ts")).toBe(true);
+    expect(isInlineExempt("lib/app/manifest.ts")).toBe(false);
+    expect(isInlineExempt("components/v2/manifest.ts")).toBe(false);
+    expect(isInlineExempt("app/global-error.tsx")).toBe(true);
+    expect(isInlineExempt("vendor/app/global-error.tsx")).toBe(false);
   });
 
   it("still has a reason for every exemption, and the reason is still the right size", () => {

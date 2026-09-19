@@ -448,9 +448,17 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                  `--color-primary` because only the bridge token is emitted per theme --
                  `@theme inline` does not emit its own, so `var(--color-primary)` resolves to
                  the light #b0522e in BOTH themes and drops this pin to 3.17 on the dark sea.
-                 Verified in the browser, not assumed. The pin is still nothing like a band:
-                 deltaE00 13.6 to the nearest one, over CATEGORICAL_MIN 10 -- narrower than
-                 amber-500's 25.3, which is the price paid for clearing the floor. */
+                 Verified in the browser, not assumed: a forced click on this group selects the
+                 station and these circles resolve to rgb(176, 82, 46) light and
+                 lab(58.4339 36.172 36.7992) dark.
+                 THE PIN IS STILL NOT A BAND, AND THE DARK FIGURE IS THE TIGHT ONE.
+                 `--sst-band-cool/warm/hot` are :root-only -- `.dark` redefines only their
+                 `-text` variants -- so the pin moves per theme while the bands do not. Against
+                 the nearest band (`--sst-band-hot`) it measures deltaE00 13.6 in light and
+                 **10.3 in dark**, i.e. 0.3 above CATEGORICAL_MIN 10. It passes, and there is
+                 almost no room in it: anyone retuning either `--primary` or `--sst-band-hot`
+                 has to re-run this pair. amber-500 scored 25.3, and 11.7 points of that
+                 headroom is what clearing the graphical floor cost. */
               const sst = point.sst ?? 25;
               const strokeCol = "#ffffff";
               const pinFill = isSelected ? "var(--primary)" : sstBandStyleOf(sst).fillValue;
