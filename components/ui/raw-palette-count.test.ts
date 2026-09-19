@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  ARBITRARY_COLOR,
   collectArbitraryColorOccurrences,
+  inlinesAColor,
   collectPaletteOccurrences,
   EXCLUDED,
   hexOf,
@@ -135,20 +135,39 @@ const LAUNDERING_SPELLINGS: readonly string[] = [
   "ring-[1px_solid_#ea580c]",
   "[color:#ea580c]",
   "[--tw-x:#ea580c]",
+  // A `var()` beside the payload, not instead of it. These escaped the first TWO versions of
+  // this arm: the second excluded a bracket whenever `var(` appeared anywhere inside it, so one
+  // decorative `var(--ring)` immunised the whole utility and the palette value next to it.
+  "bg-[color-mix(in_oklab,var(--x),#ea580c)]",
+  "bg-[color-mix(in_oklab,#ea580c,var(--x))]",
+  "bg-[rgb(var(--y)_88_12)]",
+  "bg-[color-mix(in_srgb,var(--a)_50%,oklch(0.646_0.222_41.116))]",
+  "shadow-[0_0_0_2px_#ea580c,0_0_0_4px_var(--ring)]",
+  "[color:#ea580c;--x:var(--y)]",
+  "bg-[linear-gradient(var(--a),#ea580c)]",
 ];
 
 /**
  * Spellings that must NOT match, and every one of them is a deliberate decision rather than a
  * limitation. `[var(--x)]` is the GOAL state — `lib/theme/region-identity.ts` binds all seven
- * regions that way — and `var(--x, #hex)` is a token reference carrying a defensive fallback,
- * a shape `components/ui/token-binding.test.ts` already governs with its own exemptions. The
- * rest are ordinary bracketed values that are not colours at all.
+ * regions that way — and `var(--x, #hex)` is a token reference whose hex sits INSIDE the
+ * `var()` as that token's own fallback, not beside it.
+ *
+ * Those fallbacks are not governed by `token-binding.test.ts`'s escape rule, whatever an earlier
+ * version of this comment claimed: that rule is `var\(--color-[a-z-]+,\s*#hex\)` and all ten
+ * live occurrences name `--map-sea`, so it never matches them. Their real exposure is DRIFT, and
+ * it is pinned to `app/globals.css` by "every var() fallback still equals its token" in that same
+ * file — the same fix `fillValue` gets in `region-identity.test.ts`.
+ *
+ * The rest are ordinary bracketed values that are not colours at all.
  */
 const NOT_A_LAUNDERED_COLOUR: readonly string[] = [
   "bg-[var(--region-marmara)]",
   "fill-[var(--region-marmara)]/80",
   "bg-[var(--map-sea,#dbe7e8)]",
   "text-[var(--color-success,#496f35)]",
+  // Nested, to prove the strip loops rather than running once.
+  "bg-[var(--a,var(--b,#fff))]",
   "min-h-[380px]",
   "aspect-[2.33/1]",
   "text-[10px]",
@@ -176,13 +195,11 @@ describe("the palette cannot be laundered into brackets", () => {
   const found = collectArbitraryColorOccurrences();
 
   it.each(LAUNDERING_SPELLINGS)("%s is seen", (cls) => {
-    ARBITRARY_COLOR.lastIndex = 0;
-    expect(ARBITRARY_COLOR.test(cls)).toBe(true);
+    expect(inlinesAColor(cls)).toBe(true);
   });
 
   it.each(NOT_A_LAUNDERED_COLOUR)("%s is deliberately not seen", (cls) => {
-    ARBITRARY_COLOR.lastIndex = 0;
-    expect(ARBITRARY_COLOR.test(cls)).toBe(false);
+    expect(inlinesAColor(cls)).toBe(false);
   });
 
   it("finds no more than the pinned number of bracketed colour values", () => {

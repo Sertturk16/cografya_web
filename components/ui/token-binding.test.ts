@@ -210,3 +210,110 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
     }
   });
 });
+
+/**
+ * A `var(--token, #hex)` fallback still equals its token.
+ *
+ * ## The exposure this closes, and why it is not the escape rule above
+ *
+ * The rule above forbids `var(--color-*, #hex)` on the `ui`/`patterns`/`specimens` surface. It
+ * is a NARROWER thing than it looks: it matches `--color-*` and nothing else. Ten live
+ * occurrences in the product tree name `--map-sea`, so that rule never sees them — they were
+ * described once as "already governed by token-binding", and they were governed by nothing.
+ *
+ * Nothing is miscoloured today: `--map-sea` is real (`app/globals.css`) and every fallback
+ * equals it. The exposure is DRIFT — the stylesheet moving while a hex copied into a component
+ * does not — and drift is silent by construction, because the fallback only paints where the
+ * token is missing, which is the one case nobody looks at.
+ *
+ * This is the same defect as the seven `var(--region-*, #hex)` map fills, and it takes the same
+ * fix: pin the fallback to the declaration, in both directions. Widening the escape rule instead
+ * would need its own exemption list beside the one it already has, and double-governing a shape
+ * under two rules with different exemptions is how an exemption goes stale unnoticed.
+ *
+ * COMMENTS ARE STRIPPED, which is load-bearing here for the same reason it is above:
+ * `alert.tsx`'s docblock quotes `var(--color-success,#496f35)` while describing a class that no
+ * longer exists. Pinning prose would force a historical note to be rewritten every time a token
+ * moves.
+ */
+describe("every var() fallback in the product tree still equals its token", () => {
+  const ROOTS = ["../../components", "../../app", "../../lib"] as const;
+
+  function walkAll(dir: string): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) return entry.name === "node_modules" ? [] : walkAll(full);
+      const source = entry.name.endsWith(".ts") || entry.name.endsWith(".tsx");
+      return source && !entry.name.includes(".test.") ? [full] : [];
+    });
+  }
+
+  /** Every `--token: #hex` declared with a LITERAL hex in app/globals.css. */
+  const declared = new Map<string, string[]>();
+  {
+    const css = stripComments(
+      readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
+    );
+    for (const m of css.matchAll(/(--[a-z0-9-]+):\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
+      declared.set(m[1]!, [...(declared.get(m[1]!) ?? []), m[2]!.toLowerCase()]);
+    }
+  }
+
+  /** Every live `var(--token, #hex)` in the product tree, comments stripped. */
+  const fallbacks = ROOTS.flatMap((rel) =>
+    walkAll(fileURLToPath(new URL(rel, import.meta.url))).flatMap((path) => {
+      const source = stripComments(readFileSync(path, "utf8"));
+      return [...source.matchAll(/var\(\s*(--[a-z0-9-]+)\s*,\s*(#[0-9a-fA-F]{3,8})\s*\)/g)].map(
+        (m) => ({ path, token: m[1]!, hex: m[2]!.toLowerCase() }),
+      );
+    }),
+  );
+
+  it("found the fallbacks and the declarations — positive control", () => {
+    // Neither half may be empty: a pin over nothing is green and means nothing, which is the
+    // hollow-pass shape this repo keeps paying for.
+    expect(fallbacks.length).toBeGreaterThan(20);
+    expect(declared.size).toBeGreaterThan(20);
+    // The ten this guard was written for are really in the population.
+    expect(fallbacks.filter((f) => f.token === "--map-sea")).toHaveLength(10);
+  });
+
+  it.each([...new Set(fallbacks.map((f) => `${f.token} ${f.hex}`))])(
+    "%s — the token is declared with exactly that value",
+    (pair) => {
+      const [token, hex] = pair.split(" ") as [string, string];
+      const values = declared.get(token);
+      expect(
+        values,
+        `${token} is not declared with a literal hex in app/globals.css`,
+      ).toBeDefined();
+      // Exactly one literal declaration, so "which one did it mean" can never be the answer.
+      expect(values, `${token} is declared with a literal hex more than once`).toHaveLength(1);
+      expect(
+        values![0],
+        `${token}'s fallback says ${hex}, app/globals.css says ${values![0]}`,
+      ).toBe(hex);
+    },
+  );
+
+  it("names every file carrying one, so a new one cannot arrive unnoticed", () => {
+    // The other direction of the pin. Above asserts each fallback matches its token; this
+    // asserts the POPULATION is the one that was reviewed, so a fallback added to a token that
+    // happens to match today still has to be looked at.
+    const byToken = new Map<string, number>();
+    for (const f of fallbacks) byToken.set(f.token, (byToken.get(f.token) ?? 0) + 1);
+    expect(Object.fromEntries([...byToken].sort())).toEqual({
+      "--color-ink-dark": 7,
+      "--color-primary": 4,
+      "--color-primary-dark": 4,
+      "--map-sea": 10,
+      "--region-akdeniz": 1,
+      "--region-dogu-anadolu": 1,
+      "--region-ege": 1,
+      "--region-guneydogu-anadolu": 1,
+      "--region-ic-anadolu": 1,
+      "--region-karadeniz": 1,
+      "--region-marmara": 1,
+    });
+  });
+});

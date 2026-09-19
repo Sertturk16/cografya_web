@@ -62,15 +62,17 @@ export const RAW_PALETTE = new RegExp(
  * reference names a token; a hex or a colour function inlines a value. Only the second is the
  * thing this arm is for.
  *
- * `var(` is excluded ANYWHERE in the brackets, not merely at the start, and that is load-bearing:
- * `bg-[var(--map-sea,#dbe7e8)]` carries a literal hex as a FALLBACK while still naming a token.
- * Eleven of those exist across five map components. They are a token reference, and the escape
- * they represent is already governed — `components/ui/token-binding.test.ts` forbids
- * `var(--color-*, #hex)` outright and keeps its own named exemption list for the map surfaces.
- * Counting them here would double-govern one shape under two rules with different exemptions.
- * The residual this leaves is `bg-[var(--not-a-real-token, #ea580c)]`, which neither rule sees;
- * it is recorded rather than papered over, and it is a strictly stranger thing to write than
- * simply inlining the hex.
+ * A `var()` is SUBTRACTED before the payload is looked for, not used as a veto — see
+ * `stripVars`. `bg-[var(--map-sea,#dbe7e8)]` carries a literal hex, but it is that token's own
+ * FALLBACK, inside the `var()`; ten of those exist across five map components and they are
+ * token references, which is the state this branch is driving towards.
+ *
+ * DO NOT say they are governed elsewhere. They are not: `token-binding.test.ts`'s escape rule is
+ * `var\(--color-[a-z-]+,\s*#hex\)` and every one of the ten names `--map-sea`, so that rule
+ * never matches them. What they are exposed to is FALLBACK DRIFT — the fallback silently ceasing
+ * to equal the token — and that is closed where it belongs, by pinning each fallback to
+ * `app/globals.css` in `components/ui/token-binding.test.ts`, the same fix
+ * `lib/theme/region-identity.ts`'s `fillValue` gets from `region-identity.test.ts`.
  *
  * Counted SEPARATELY, not folded into `RAW_PALETTE`'s total: most of these 75 are legitimate map
  * surfaces (sea, neighbour land, inland water) whose values were measured against fixed
@@ -79,13 +81,48 @@ export const RAW_PALETTE = new RegExp(
  */
 const COLOR_PAYLOAD = "#[0-9a-fA-F]{3,8}|\\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\\(";
 
-/** Bracket content, with `var(` excluded anywhere in it — see the docblock above. */
-const NOT_VAR = "(?:(?!var\\()[^\\]])*";
+/** Any bracketed utility value, colour or not. The payload test happens after `stripVars`. */
+export const BRACKETED = /(?:\b[a-z][a-z0-9-]*-)?\[[^\]]*\]/g;
 
-export const ARBITRARY_COLOR = new RegExp(
-  `(?:\\b[a-z][a-z0-9-]*-)?\\[${NOT_VAR}(?:${COLOR_PAYLOAD})${NOT_VAR}\\]`,
-  "g",
-);
+const PAYLOAD = new RegExp(COLOR_PAYLOAD);
+
+/**
+ * Remove every `var(--token)` / `var(--token, fallback)` from a bracket's contents.
+ *
+ * SUBTRACTION, NOT VETO, and the difference is a laundering route. The first version of this
+ * arm excluded a bracket if `var(` appeared ANYWHERE inside it, which means one decorative
+ * `var(--ring)` immunised the whole utility and everything beside it:
+ *
+ *   bg-[color-mix(in_oklab,var(--x),#ea580c)]                 orange-600, beside a var
+ *   bg-[rgb(var(--y)_88_12)]                                  a var INSIDE the colour function
+ *   bg-[color-mix(in_srgb,var(--a)_50%,oklch(0.646 0.222 41.116))]
+ *   shadow-[0_0_0_2px_#ea580c,0_0_0_4px_var(--ring)]          two shadows, one laundered
+ *   [color:#ea580c;--x:var(--y)]                              two declarations
+ *   bg-[linear-gradient(var(--a),#ea580c)]                    a gradient stop
+ *
+ * Stripping the `var()` WITH ITS FALLBACK and then looking at what is left keeps every one of
+ * those and still ignores the shapes that must be ignored: `fill-[var(--region-marmara)]`
+ * leaves nothing, and `bg-[var(--map-sea,#dbe7e8)]` leaves nothing because the hex was the
+ * token's own fallback, inside the `var()` — not a value sitting next to it.
+ *
+ * Looped because `var()` nests: `var(--a, var(--b, #fff))` needs two passes, the inner match
+ * first (the fallback group excludes parentheses so it cannot swallow the outer call).
+ */
+export function stripVars(value) {
+  let previous;
+  let out = value;
+  do {
+    previous = out;
+    out = out.replace(/var\((--[a-z0-9-]+)(?:\s*,[^()]*)?\)/g, "");
+  } while (out !== previous);
+  return out;
+}
+
+/** Does this bracketed utility inline a colour VALUE, once token references are removed? */
+export function inlinesAColor(cls) {
+  const inner = /\[([^\]]*)\]/.exec(cls);
+  return inner === null ? false : PAYLOAD.test(stripVars(inner[1]));
+}
 
 /** Files this branch does not own, and files that are not product code. */
 export const EXCLUDED = [
@@ -140,7 +177,7 @@ export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) 
  * @returns {{ file: string, line: number, cls: string, context: string }[]}
  */
 export function collectArbitraryColorOccurrences(roots = ["components", "app", "lib"]) {
-  return collect(ARBITRARY_COLOR, roots);
+  return collect(BRACKETED, roots).filter((o) => inlinesAColor(o.cls));
 }
 
 /**
