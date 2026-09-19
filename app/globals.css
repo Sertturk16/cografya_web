@@ -386,6 +386,19 @@
                both themes.
        BANNER  `components/v2/v2-turkey-regions.tsx`'s card header. One 15% tint over --card,
                because a Card is opaque.
+     AND ONE SURFACE THAT IS DELIBERATELY NOT IN THE TABLE, because the fix was to stop painting
+     onto it:
+       ROW   `v2-turkey-map-explorer.tsx`'s province table gives every row `hover:bg-muted/50`.
+             The tinted badge over THAT over --card measures 4.80-5.50 light but 4.41-5.73 dark,
+             and marmara's 4.41 is under the floor with guneydogu-anadolu at 4.57 — a data label
+             failing only while the pointer is over its own row, which is the one state nobody
+             screenshots. That chip wears `identity.badgeOpaque` instead: `bg-card` + the label +
+             the edge, no tint of its own, so its backdrop is --card whatever the row is doing
+             (5.42-7.36 light, 5.50-9.21 dark). A moving backdrop is not a column to measure, it
+             is a surface not to composite onto. Found in T-031c Task 5's fix round while
+             measuring the identical shape on `/dunya`'s country table; `--continent-*` carries
+             the same note and the same member, and both call sites are pinned by their identity
+             tests.
      EVERY FIGURE BELOW IS ROUNDED DOWN, not to nearest, so no number here can overstate what
      was measured. Dark marmara is the case that makes the rule worth stating: it measures
      4.5962 and is recorded 4.59, because rounding to 4.60 in the direction that flatters the
@@ -455,13 +468,13 @@
      it needs a legend for each, not a second palette — a reader who cannot tell "Ege" from
      "Asya" by hue alone on such a screen could not tell them apart under any assignment.
 
-     WHICH CONTINENT GETS WHICH HUE — by measurement, not taste. Each continent keeps the
-     Okabe–Ito member NEAREST the map fill it already wore (`CONTINENT_META.color`, the -600
-     shade), under CIEDE2000, minimising total distance over all 7! assignments. The winner
-     scores 151.2 total and is the only assignment below 160; it holds every continent inside
-     its previous hue family except Antarktika, whose teal-600 has no Okabe–Ito neighbour left
-     once the other six are placed (42.7, its nearest free member). So this is a re-spelling of
-     the shipped identity rather than a re-colouring of the world map.
+     WHICH CONTINENT GETS WHICH HUE. With the seven VALUES fixed by PR0, every assignment of them
+     is identically accessible — the pairwise ΔE00 matrix is permutation-invariant, so the four
+     worst-case figures below are the same whichever continent gets which. The only free variable
+     left is RECOGNITION CONTINUITY, so that is what the assignment optimises: each continent
+     keeps the Okabe–Ito member NEAREST the map fill it already wore (`CONTINENT_META.color`, the
+     -600 shade), under CIEDE2000, minimising total distance over all 7! = 5040 assignments. The
+     winner scores 151.200 and is the UNIQUE minimum, 2.1 clear of the next (153.3).
        avrupa         #0072b2  blue            was indigo-600   ΔE00 22.2
        asya           #e69f00  orange          was amber-600    ΔE00 16.4
        afrika         #009e73  bluish green    was emerald-600  ΔE00  2.9
@@ -469,6 +482,19 @@
        guney-amerika  #d55e00  vermillion      was rose-600     ΔE00 23.4
        okyanusya      #cc79a7  reddish purple  was purple-600   ΔE00 28.0
        antarktika     #f0e442  yellow          was teal-600     ΔE00 42.7
+     HOW MUCH CONTINUITY THAT ACTUALLY BUYS, stated honestly rather than generously. Six of the
+     seven land in a neighbouring hue family, but "a re-spelling rather than a re-colouring" would
+     overstate it: THREE moved further than 21.7, which is this set's own worst-pair separation
+     under normal vision — guney-amerika 23.4, okyanusya 28.0, antarktika 42.7. For those three a
+     returning reader sees a different colour, and the minimum is the floor of that change, not
+     the absence of it. What the objective buys is that no cheaper assignment exists.
+     AND ONE PART OF IT IS A JUDGEMENT, not a measurement. Antarktika took the yellow while the
+     sky blue went to kuzey-amerika; a SEMANTIC objective would have swapped them, since ice reads
+     blue and nothing about Antarctica reads yellow. Continuity was preferred because sky-600 was
+     already Kuzey Amerika's own fill (15.6 away) and Antarktika is `count: 1` — the least-painted
+     shape on the map, and the one carrying a label wherever it is named. If that trade is ever
+     revisited, swapping those two costs 37.7 continuity (42.7+15.6 = 58.3 against 26.0+70.0 =
+     96.0) and changes no accessibility figure in this file.
      Pairwise separation is pinned — floor, worst figure AND worst pair, per vision — by
      `lib/theme/continent-palette.test.ts`, which also compares this block against its own
      table in both directions. Worst pairs: 21.7 asya/antarktika normal, 12.3 avrupa/okyanusya

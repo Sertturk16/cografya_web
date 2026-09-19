@@ -68,6 +68,21 @@ export interface RegionIdentity {
   readonly rule: string;
   /** `surface` + `label` + `edge`: the region badge, on any opaque card. */
   readonly badge: string;
+  /**
+   * The OPAQUE badge: `bg-card` + `label` + `edge`, with no tint of its own.
+   *
+   * For a badge whose backdrop MOVES. `v2-turkey-map-explorer.tsx`'s province table gives every
+   * row `hover:bg-muted/50`, and `badge`'s 15% tint over THAT over `--card` takes Marmara's dark
+   * label to 4.41:1 and Güneydoğu Anadolu's to 4.57 — a data label dropping under the floor only
+   * while the pointer is over its own row, which is the one state nobody screenshots. This
+   * member's backdrop is `--card` whatever the row is doing, and it measures 5.42-7.36 light and
+   * 5.50-9.21 dark there.
+   *
+   * A moving backdrop is not a surface to measure, it is a surface not to composite onto. Found
+   * while measuring the same shape on `/dunya`'s country table in T-031c Task 5;
+   * `lib/theme/continent-identity.ts` carries the identical member for the identical reason.
+   */
+  readonly badgeOpaque: string;
   /** `surface` + `label` + a full-strength bottom rule: the region section/card header banner. */
   readonly banner: string;
   /** The tint end of a hero band that fades to `--background`. */
@@ -91,6 +106,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     rule: "border-[var(--region-marmara)]",
     badge:
       "bg-[var(--region-marmara-tint)] text-[var(--region-marmara-text)] border-[var(--region-marmara)]/30",
+    badgeOpaque: "bg-card text-[var(--region-marmara-text)] border-[var(--region-marmara)]/30",
     banner:
       "bg-[var(--region-marmara-tint)] text-[var(--region-marmara-text)] border-b-2 border-[var(--region-marmara)]",
     heroGradient: "from-[var(--region-marmara-tint)] via-background to-background",
@@ -106,6 +122,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     rule: "border-[var(--region-ege)]",
     badge:
       "bg-[var(--region-ege-tint)] text-[var(--region-ege-text)] border-[var(--region-ege)]/30",
+    badgeOpaque: "bg-card text-[var(--region-ege-text)] border-[var(--region-ege)]/30",
     banner:
       "bg-[var(--region-ege-tint)] text-[var(--region-ege-text)] border-b-2 border-[var(--region-ege)]",
     heroGradient: "from-[var(--region-ege-tint)] via-background to-background",
@@ -121,6 +138,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     rule: "border-[var(--region-akdeniz)]",
     badge:
       "bg-[var(--region-akdeniz-tint)] text-[var(--region-akdeniz-text)] border-[var(--region-akdeniz)]/30",
+    badgeOpaque: "bg-card text-[var(--region-akdeniz-text)] border-[var(--region-akdeniz)]/30",
     banner:
       "bg-[var(--region-akdeniz-tint)] text-[var(--region-akdeniz-text)] border-b-2 border-[var(--region-akdeniz)]",
     heroGradient: "from-[var(--region-akdeniz-tint)] via-background to-background",
@@ -136,6 +154,8 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     rule: "border-[var(--region-ic-anadolu)]",
     badge:
       "bg-[var(--region-ic-anadolu-tint)] text-[var(--region-ic-anadolu-text)] border-[var(--region-ic-anadolu)]/30",
+    badgeOpaque:
+      "bg-card text-[var(--region-ic-anadolu-text)] border-[var(--region-ic-anadolu)]/30",
     banner:
       "bg-[var(--region-ic-anadolu-tint)] text-[var(--region-ic-anadolu-text)] border-b-2 border-[var(--region-ic-anadolu)]",
     heroGradient: "from-[var(--region-ic-anadolu-tint)] via-background to-background",
@@ -151,6 +171,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     rule: "border-[var(--region-karadeniz)]",
     badge:
       "bg-[var(--region-karadeniz-tint)] text-[var(--region-karadeniz-text)] border-[var(--region-karadeniz)]/30",
+    badgeOpaque: "bg-card text-[var(--region-karadeniz-text)] border-[var(--region-karadeniz)]/30",
     banner:
       "bg-[var(--region-karadeniz-tint)] text-[var(--region-karadeniz-text)] border-b-2 border-[var(--region-karadeniz)]",
     heroGradient: "from-[var(--region-karadeniz-tint)] via-background to-background",
@@ -166,6 +187,8 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     rule: "border-[var(--region-dogu-anadolu)]",
     badge:
       "bg-[var(--region-dogu-anadolu-tint)] text-[var(--region-dogu-anadolu-text)] border-[var(--region-dogu-anadolu)]/30",
+    badgeOpaque:
+      "bg-card text-[var(--region-dogu-anadolu-text)] border-[var(--region-dogu-anadolu)]/30",
     banner:
       "bg-[var(--region-dogu-anadolu-tint)] text-[var(--region-dogu-anadolu-text)] border-b-2 border-[var(--region-dogu-anadolu)]",
     heroGradient: "from-[var(--region-dogu-anadolu-tint)] via-background to-background",
@@ -182,6 +205,8 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     rule: "border-[var(--region-guneydogu-anadolu)]",
     badge:
       "bg-[var(--region-guneydogu-anadolu-tint)] text-[var(--region-guneydogu-anadolu-text)] border-[var(--region-guneydogu-anadolu)]/30",
+    badgeOpaque:
+      "bg-card text-[var(--region-guneydogu-anadolu-text)] border-[var(--region-guneydogu-anadolu)]/30",
     banner:
       "bg-[var(--region-guneydogu-anadolu-tint)] text-[var(--region-guneydogu-anadolu-text)] border-b-2 border-[var(--region-guneydogu-anadolu)]",
     heroGradient: "from-[var(--region-guneydogu-anadolu-tint)] via-background to-background",

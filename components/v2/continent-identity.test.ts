@@ -265,6 +265,45 @@ describe("a continent wears one colour, not two", () => {
     expect(deck).toContain("continentIdentityOf(continent.id)");
   });
 
+  /**
+   * The member exists BECAUSE a measured AA failure needed it, and until this test it was the one
+   * thing here that nothing could fail: mutating the call site from `badgeOpaque` back to `badge`
+   * left the whole suite green, because the only thing guarding it was a code comment.
+   *
+   * `/dunya`'s country table hovers every row to `bg-muted/50`. The tinted `badge` over that over
+   * `--card` takes Avrupa's dark label to 4.41:1, under the 4.5:1 floor. The opaque member has no
+   * tint of its own, so its backdrop is `--card` whatever the row is doing.
+   *
+   * The assertion is on the ROW, not on the file: `toContain("badgeOpaque")` anywhere in a
+   * 1200-line component would be satisfied by an import, a comment, or a second badge somewhere
+   * else entirely. The `<TableRow>` that carries the hover is located, its block is brace-matched,
+   * and the badge inside THAT is what has to be opaque.
+   */
+  it("the hovered country row's badge is the opaque member, not the tinted one", () => {
+    const explorer = read("./v2-world-map-explorer.tsx");
+    const at = explorer.indexOf('className="hover:bg-muted/50 transition-colors"');
+    // Positive control on the premise: the row really does carry a hover that moves its
+    // background. If that hover is ever removed, this guard is measuring the wrong thing and
+    // should be revisited rather than left quietly green.
+    expect(at, "no <TableRow> with hover:bg-muted/50 — re-anchor this guard").toBeGreaterThan(0);
+    const rowStart = explorer.lastIndexOf("<TableRow", at);
+    const rowEnd = explorer.indexOf("</TableRow>", at);
+    expect(rowEnd, "the hovered row is not closed — re-anchor this guard").toBeGreaterThan(
+      rowStart,
+    );
+    const row = explorer.slice(rowStart, rowEnd);
+
+    // Second positive control: the row really does carry a continent badge at all.
+    expect(row).toMatch(/<Badge[\s\S]*?continentMeta\?\.identity\./);
+    expect(
+      row.includes("identity.badgeOpaque"),
+      "the badge on the hovered country row wears a tinted member. `badge` over hover:bg-muted/50 " +
+        "over --card measures 4.41:1 for Avrupa in dark, under the 4.5:1 floor. Use badgeOpaque, " +
+        "or re-measure every continent on the hovered row and re-record app/globals.css.",
+    ).toBe(true);
+    expect(row.includes("identity.badge}"), "the tinted member is back on this row").toBe(false);
+  });
+
   it("the world map paints countries from the module, not from a table of its own", () => {
     const explorer = read("./v2-world-map-explorer.tsx");
     expect(explorer).toContain("continentMeta.identity.fillSoft");

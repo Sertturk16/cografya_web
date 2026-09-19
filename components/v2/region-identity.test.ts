@@ -484,6 +484,55 @@ describe("the /turkiye map and the game map wear the same colour as the pages th
     expect(source.match(new RegExp(RAW_HUE.source, "g"))).toBeNull();
   });
 
+  /**
+   * The province table's region chip, and the backdrop that MOVES underneath it.
+   *
+   * `v2-turkey-map-explorer.tsx` gives every `<TableRow>` `hover:bg-muted/50`. With the tinted
+   * `badge` member the chip composited onto that over `--card`, and Marmara's dark label measured
+   * 4.41:1 with Güneydoğu Anadolu at 4.57 — under the 4.5:1 floor, in the one state nobody
+   * screenshots. The chip now wears `badgeOpaque`, whose backdrop is `--card` whatever the row is
+   * doing (5.42-7.36 light, 5.50-9.21 dark).
+   *
+   * Found while measuring the identical shape on `/dunya`'s country table in T-031c Task 5, and
+   * pinned here the same way: on the FIELD that feeds the chip rather than file-wide, because a
+   * `toContain` anywhere in a 1300-line component is satisfied by a comment.
+   */
+  it("the province table's region chip is the opaque member, not the tinted one", () => {
+    const table = tableOf(explorer, "export const REGION_DATA");
+    // Positive control on the premise: the row that consumes this field really does carry a hover
+    // that moves its background. If that hover goes, this guard is measuring the wrong thing.
+    expect(
+      explorer.includes('className="hover:bg-muted/50 transition-colors"'),
+      "no <TableRow> with hover:bg-muted/50 — re-anchor this guard",
+    ).toBe(true);
+    // And the field really is what the chip reads.
+    expect(explorer).toContain("className={province.badgeClass}");
+
+    const field = /badgeClass:\s*regMeta\.identity\.(\w+)/.exec(explorer);
+    expect(
+      field,
+      "badgeClass is no longer fed from the region identity — re-anchor this guard",
+    ).not.toBeNull();
+    expect(
+      field![1],
+      "the province table's chip wears a tinted member. `badge` over hover:bg-muted/50 over " +
+        "--card measures 4.41:1 for Marmara in dark, under the 4.5:1 floor. Use badgeOpaque, or " +
+        "re-measure every region on the hovered row and re-record app/globals.css.",
+    ).toBe("badgeOpaque");
+    // Anti-vacuity on the table itself, so a REGION_DATA that had been emptied could not pass the
+    // no-raw-hue assertions above by containing nothing.
+    expect(table).toContain("identity:");
+  });
+
+  it.each(SLUGS)("%s's opaque badge draws its own label and edge, and no tint", (slug) => {
+    const opaque = REGION_IDENTITY[slug].badgeOpaque;
+    expect(opaque).toContain("bg-card");
+    expect(opaque).toContain(`--region-${slug}-text`);
+    expect(opaque).toContain(`--region-${slug}`);
+    // The whole point of the member: it must NOT carry the tint.
+    expect(opaque).not.toContain("-tint");
+  });
+
   it("the game map paints regions from the module, not from a table of its own", () => {
     expect(
       game.includes("REGION_COLOR_CLASSES"),

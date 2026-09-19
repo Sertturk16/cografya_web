@@ -344,7 +344,13 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
         ...p,
         regionName: regMeta.name,
         regionColor: regMeta.identity.fill,
-        badgeClass: regMeta.identity.badge,
+        // The OPAQUE member, not `badge`. This field has exactly one consumer — the province
+        // table's region chip — and that table hovers every row to `bg-muted/50`. A 15% tint over
+        // that over `--card` takes Marmara's dark label to 4.41:1, under the 4.5:1 floor, so the
+        // chip carries no tint of its own and is measured against `--card` alone. See the `ROW`
+        // note beside `--region-*-text` in `app/globals.css`;
+        // `components/v2/region-identity.test.ts` pins this call site.
+        badgeClass: regMeta.identity.badgeOpaque,
       };
     });
 
