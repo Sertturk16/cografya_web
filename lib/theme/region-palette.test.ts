@@ -165,12 +165,13 @@ describe("the identifying line is one tone, and this file transcribes it correct
   /**
    * ONE `it`, deliberately, where `map-surface.test.ts`'s twin block uses four.
    *
-   * This file is imported by six other test files for `REGION_TINTS`, and an import EXECUTES a
-   * test module, so every case declared here is registered seven times over. That is the
+   * This file is imported by seven other test files for `REGION_TINTS`, and an import EXECUTES
+   * a test module, so every case declared here is registered eight times over — counted with
+   * `vitest run -t`, not from the import list, because the closure is transitive. That is the
    * multiplier `test/fixtures/theme/map-surfaces.ts`'s docblock records an incident about. The
    * assertions below are one indivisible claim — "the hover edge is the `:root` value, in both
    * themes" — so folding them into a single case costs no signal (each `expect` carries its own
-   * message) and costs the suite 7 registrations instead of 28.
+   * message) and costs the suite 8 registrations instead of 32.
    */
   it("--game-hover-edge is #211c19 in :root and .dark overrides neither it nor --color-ink-dark", () => {
     const CSS = readFileSync(
