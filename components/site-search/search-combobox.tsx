@@ -637,7 +637,11 @@ export function SearchCombobox({
                 <input
                   ref={inputRef}
                   id={inputId}
-                  className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground outline-none border-none"
+                  /* No `outline-none`, unlike the `INPUT` constant above: that one sits in a row
+                     that owns the ring (`has-[input:focus]:outline-3`), this one's row does not,
+                     so suppressing here would leave the command dialog's only control with no
+                     visible focus once T-053 made suppression work. Site default applies. */
+                  className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
                   type="text"
                   role="combobox"
                   autoComplete="off"
