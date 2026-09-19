@@ -884,7 +884,8 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * aspect ratio and in nothing else.
  *
  * NO NEW HAND-DRAWN CARD, measured the same way as the four notes above. The one surface-ish
- * constant is the frame, `rounded-[var(--radius-lg)] border border-border bg-[var(--map-sea)]`,
+ * constant is the frame,
+ * `rounded-[var(--radius-lg)] border border-border bg-[var(--map-artifact-sea)]`,
  * and it is outside {@link CARD_ROUNDING} on both counts: the radius is the retired stylesheet's
  * own `var(--radius-lg)` rather than a card radius, and the fill is the map's frozen sea rather
  * than a themed surface. A map figure is an illustration, not a panel. The `ternary` and `call`

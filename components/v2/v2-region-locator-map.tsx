@@ -63,7 +63,7 @@ export function V2RegionLocatorMap({
       </div>
 
       {/* SVG Map Container */}
-      <div className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#152228] border border-border overflow-hidden select-none shadow-xs">
+      <div className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-sea)] dark:bg-[#152228] border border-border overflow-hidden select-none shadow-xs">
         {/* Floating Tooltip Pill */}
         <div className="absolute top-3 left-3 z-10 pointer-events-none transition-all duration-200">
           {hoveredProvince ? (
@@ -117,7 +117,7 @@ export function V2RegionLocatorMap({
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}

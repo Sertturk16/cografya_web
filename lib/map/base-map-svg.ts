@@ -54,7 +54,16 @@ import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "./world-countries.generated";
  * unchanged and every dimension the figure CSS depends on still holds.
  */
 
-/* ── Pinned palette (source of truth: app/globals.css) ─────────────────────────────── */
+/* ── Pinned palette (source of truth: the `:root` block of app/globals.css) ─────────────
+ *
+ * THE BLOCK IS NAMED, not just the file, and that is a correction: `app/globals.css` now
+ * declares some tokens TWICE — once in `:root` and once in `.dark` — so "the stylesheet" is no
+ * longer an address a hex can be transcribed from. Every pin below is a `:root` value and every
+ * one of them is a token `.dark` does not redefine, which is what makes a single frozen hex an
+ * honest transcription at all. `base-map-svg.test.ts` reads the `:root` block specifically for
+ * the same reason: a file-wide regex returns whichever declaration comes first and would be
+ * ambiguous the moment a pinned token gained a dark half.
+ */
 
 /** `--color-border` — the flat silhouette tone of locator variant V-A. */
 const COLOR_BORDER = "#ddd5cc";
@@ -62,7 +71,15 @@ const COLOR_BORDER = "#ddd5cc";
 const PROVINCE_FILL = "#ffffff";
 /** `--color-taupe` (= `--province-stroke`) — the hairline boundary tone. */
 const COLOR_TAUPE = "#8a8078";
-/** `--map-sea` — the flat, cool sea of the world map. */
+/**
+ * `--map-artifact-sea` — the flat, cool sea this file PAINTS INTO the world silhouette.
+ *
+ * It named `--map-sea` until T-031d PR1 gave that token a dark value, at which point the frame
+ * `components/map/locator-map.tsx` draws under this artifact went near-black beneath this
+ * still-#dbe7e8 ink. `--map-artifact-sea` is declared in `:root` and deliberately never in
+ * `.dark`, so the artifact and the page ground under it name ONE frozen token rather than two
+ * things that happen to agree.
+ */
 const MAP_SEA = "#dbe7e8";
 /** `--color-slate` — secondary text; carries the drawn credit line. */
 const COLOR_SLATE = "#57504a";
@@ -72,7 +89,7 @@ export const BASE_MAP_TOKEN_PINS = {
   "--color-border": COLOR_BORDER,
   "--province-fill": PROVINCE_FILL,
   "--color-taupe": COLOR_TAUPE,
-  "--map-sea": MAP_SEA,
+  "--map-artifact-sea": MAP_SEA,
   "--color-slate": COLOR_SLATE,
 } as const;
 

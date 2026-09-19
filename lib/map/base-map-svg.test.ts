@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { tokensIn } from "@/lib/test-support/css-tokens";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
 import {
@@ -32,18 +33,40 @@ import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "./world-countries.generated";
 
 const globalsCss = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
+/**
+ * READ THE `:root` BLOCK, NEVER THE WHOLE FILE.
+ *
+ * This assertion used to run its regex over `globalsCss` entire and take `String.match`'s FIRST
+ * hit. That is ambiguous for any token `app/globals.css` declares twice — which is now most of
+ * the map palette, since T-031d gave `.dark` a map half — and "first hit" is a source-order
+ * accident, not a theme. It is the same file-wide-parse defect `lib/test-support/css-tokens.ts`
+ * was written to eliminate everywhere else, left standing in this one spot.
+ *
+ * `tokensIn(…, ":root")` reads one block by brace counting, with comments stripped first, so a
+ * pin can only ever be compared against the light value it actually transcribes. The two
+ * properties the old regex carried are kept explicitly below: the declaration must exist, and it
+ * must be a LITERAL hex rather than a `var()` alias (an alias would mean the pin is chasing a
+ * value this file cannot see).
+ */
 describe("base-map token pins", () => {
-  it("matches app/globals.css byte for byte", () => {
+  const root = tokensIn(globalsCss, ":root");
+
+  it("positive control — the :root block parsed and is not empty", () => {
+    expect(Object.keys(root).length).toBeGreaterThan(0);
+    expect(root["--map-sea"], ":root declares --map-sea").toBe("#dbe7e8");
+  });
+
+  it("matches the :root block of app/globals.css byte for byte", () => {
     for (const [token, hex] of Object.entries(BASE_MAP_TOKEN_PINS)) {
-      // Matches both a literal declaration (`--color-border: #ddd5cc;`) and nothing else —
-      // an alias token would fail loudly here rather than silently pinning the wrong colour.
-      const declaration = new RegExp(`${token}:\\s*(#[0-9a-f]{3,8})\\s*;`, "i");
-      const match = globalsCss.match(declaration);
+      const declared = root[token];
       expect(
-        match,
-        `${token} must be declared with a literal hex in app/globals.css`,
-      ).not.toBeNull();
-      expect(match?.[1]?.toLowerCase(), token).toBe(hex.toLowerCase());
+        declared,
+        `${token} must be declared in the :root block of app/globals.css`,
+      ).toBeDefined();
+      expect(declared, `${token} must be a literal hex, not an alias`).toMatch(
+        /^#[0-9a-fA-F]{3,8}$/,
+      );
+      expect(declared?.toLowerCase(), token).toBe(hex.toLowerCase());
     }
   });
 });

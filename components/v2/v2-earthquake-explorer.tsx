@@ -478,7 +478,7 @@ export function V2EarthquakeExplorer({
             setHoveredEventId(null);
             setMousePos(null);
           }}
-          className="relative w-full aspect-[1270/580] bg-[var(--map-sea,#dbe7e8)] dark:bg-[#152228] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
+          className="relative w-full aspect-[1270/580] bg-[var(--map-sea)] dark:bg-[#152228] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
         >
           <svg
             viewBox={TR_CONTEXT_VIEWBOX}
@@ -514,7 +514,7 @@ export function V2EarthquakeExplorer({
             </g>
 
             {/* Inland Lakes & Waters */}
-            <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-[#8bb7cf] dark:stroke-[#0e2230] stroke-[0.5] pointer-events-none">
+            <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-[#8bb7cf] dark:stroke-[#0e2230] stroke-[0.5] pointer-events-none">
               {INLAND_WATER_SHAPES.map((water) => (
                 <path key={water.id} d={water.d} />
               ))}

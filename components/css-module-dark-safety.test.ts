@@ -157,9 +157,11 @@ const SURVIVING_MODULES: readonly string[] = [
  * highlight's fill and stroke and the locator ring's stroke are painted onto the artifact's own
  * white land (8.36:1) and its own painted sea (6.61:1), neither of which follows the theme, and a
  * lifted primary measures **2.08** and **1.64** on those same two backdrops in dark. The frame's
- * ground is frozen to `--map-sea` for the same reason — a theme-aware ground under that frozen
- * ink reads 2.23 against the highlight's seaward edge and 2.15 against the credit drawn inside
- * the Türkiye file. A dark-adapted ARTIFACT is the fix and it is T-031d's, with the other map
+ * ground is frozen for the same reason — a theme-aware ground under that frozen ink reads 2.23
+ * against the highlight's seaward edge and 2.15 against the credit drawn inside the Türkiye
+ * file. It was frozen to `--map-sea`, which held only while that token was theme-invariant;
+ * T-031d gave it a dark value, so the ground now names `--map-artifact-sea` — declared in
+ * `:root` and deliberately never in `.dark`. A dark-adapted ARTIFACT is the fix and it is T-031d's, with the other map
  * surfaces `components/ui/token-binding.test.ts` exempts.
  *
  * `LocatorMap` also has ONE call site — the country detail page, `kind="country"`. The plan named

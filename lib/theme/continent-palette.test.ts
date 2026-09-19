@@ -5,6 +5,12 @@ import { stripCssComments } from "@/lib/test-support/strip-comments";
 import { CATEGORICAL_MIN, deltaE00 } from "./delta-e";
 import { simulate, VISIONS, type Vision } from "./cvd";
 import { REGION_TINTS } from "./region-palette.test";
+import { GRAPHICAL_MIN, blendOver, ratio } from "./contrast";
+// From test/fixtures, not `./map-surface.test` and not a plain lib/theme module either — see
+// test/fixtures/theme/map-surfaces.ts's docblock for both incidents this avoids (a test-file
+// import re-registers its suites; a lib/ module gets read as a painted colour by the palette
+// scanner).
+import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
 
 /**
  * The seven `--continent-*` fills exactly as `app/globals.css` defines them.
@@ -150,5 +156,79 @@ describe("the continent set is the region set, re-assigned", () => {
     for (const slug of Object.keys(CONTINENT_TINTS)) {
       expect(regionSlugs.has(slug), `${slug} names both a region and a continent`).toBe(false);
     }
+  });
+});
+
+/**
+ * WHY THE FILL-VS-GROUND ASSERTION IS RIGHT HERE, WHEN IT IS WRONG FOR REGIONS.
+ *
+ * `region-palette.test.ts` argues at length that "the tint clears 3:1 against its map surface"
+ * is the WRONG criterion for a province: 1.4.11 governs the LINE that identifies a shape, and
+ * a province is bounded by `--province-stroke` and sits among six other tinted neighbours, so
+ * the line carries the identification, not the fill's contrast against the sea underneath it.
+ *
+ * A continent has no such line. It is painted with `fill`/`fillSoft` alone — no per-continent
+ * stroke of its own carries it the way `--province-stroke` carries a province — and it sits on
+ * exactly ONE ground, `--map-ocean` (the continents are painted nowhere else: not on land, not
+ * on a second sea, not beside each other the way provinces sit beside provinces of a different
+ * tint). With no line and one ground, the fill IS the identifying feature, so its contrast
+ * against that ground is exactly what 1.4.11 is asking about. That is the reverse of the
+ * region case, not a relaxation of it: the criterion tracks what carries the identification,
+ * and here that is the fill.
+ *
+ * This also explains why `fillSoft` — the `/85` opacity `CONTINENT_IDENTITY` renders resting
+ * continents at (`lib/theme/continent-identity.ts`) — cannot stay. Measured with `blendOver`
+ * at the SHIPPED 0.85 alpha, worst case Avrupa: 2.78:1 light / 3.01:1 dark, both under
+ * `GRAPHICAL_MIN`. (An earlier note for this task recorded 2.62:1, which is what the SAME
+ * blend measures at 0.8 alpha, not the 0.85 `fillSoft` actually ships — corrected here after
+ * re-deriving it with `blendOver` rather than copying the earlier figure forward, which is the
+ * whole discipline this task is about.) At full strength the same fill clears the floor with
+ * margin: 3.35:1 light / 3.74:1 dark. Task 10 is where `fillSoft` is dropped from the world
+ * map for this reason — the same fix Task 6 applies to the province map's own softening, so
+ * the two map families stop carrying separate rules that both undercut the same edge case.
+ * This suite only asserts the token-level floor at full strength, which is green now; the
+ * consumer change (dropping `fillSoft`) is Task 10's, not this test's.
+ */
+describe("the fill that identifies a continent clears 1.4.11 against its only ground", () => {
+  it.each(["light", "dark"] as const)(
+    "every continent fill clears 3:1 against --map-ocean in %s, at full strength",
+    (theme) => {
+      for (const [continent, fill] of Object.entries(CONTINENT_TINTS)) {
+        const rendered = blendOver(fill, 1, MAP_SURFACES[theme]["--map-ocean"]);
+        expect(
+          ratio(rendered, MAP_SURFACES[theme]["--map-ocean"]),
+          `${continent} on --map-ocean in ${theme}`,
+        ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+      }
+    },
+  );
+
+  /**
+   * THE NEGATIVE CONTROL, so the block above cannot be read as a guarantee it does not make.
+   *
+   * Everything above measures FULL STRENGTH. What ships today is `fillSoft`, the `/85` opacity
+   * `CONTINENT_IDENTITY` renders resting continents at (`lib/theme/continent-identity.ts`), and
+   * at that alpha Avrupa measures 2.78:1 on the light ocean — under `GRAPHICAL_MIN`. Without
+   * this case the suite reads like "the continents clear 3:1", which is not true of the pixels
+   * the site actually paints; with it, the gap between the token floor and the shipped render is
+   * a fact the suite states rather than a fact its docblock discloses while its assertions imply
+   * the opposite. Same shape as `region-palette.test.ts`'s "would MISS the floor if the fills
+   * were softened again in dark".
+   *
+   * A GREEN HERE IS THE REGRESSION, NOT A RED. It means either that `fillSoft` was dropped from
+   * the world map (Task 10, the later task that owns the consumer change — in which case delete
+   * this case deliberately, in that commit, and say so) or that the palette or the ocean moved
+   * (in which case re-derive every figure in this file before touching anything). Do not "fix" a
+   * red by lowering `GRAPHICAL_MIN` or by moving the 0.85 to an alpha that passes: that is
+   * rebuilding the defect. Do not delete it in passing.
+   *
+   * LIGHT ONLY, and the asymmetry is measured rather than an oversight: the same blend on the
+   * DARK ocean (#070e17) lands at 3.01:1, which clears the floor by 0.01, so dark cannot serve
+   * as a control in either direction. The shipped softening fails in exactly one theme, and this
+   * is that theme.
+   */
+  it("would MISS the floor at the /85 opacity the world map still renders at, in light", () => {
+    const softened = blendOver(CONTINENT_TINTS.avrupa!, 0.85, MAP_SURFACES.light["--map-ocean"]);
+    expect(ratio(softened, MAP_SURFACES.light["--map-ocean"])).toBeLessThan(GRAPHICAL_MIN);
   });
 });

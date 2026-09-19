@@ -341,7 +341,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           setHoveredSlug(null);
           setMousePos(null);
         }}
-        className="relative rounded-2xl bg-[var(--map-sea,#dbe7e8)] dark:bg-[#152228] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
+        className="relative rounded-2xl bg-[var(--map-sea)] dark:bg-[#152228] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
       >
         {/* Floating Top-Left Mode Indicator */}
         <div className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none">
@@ -382,7 +382,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           </g>
 
           {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea,#dbe7e8)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
+          <g className="fill-[var(--map-sea)] dark:fill-[#152228] stroke-accent/40 stroke-[0.5] pointer-events-none">
             {INLAND_WATER_SHAPES.map((lake) => (
               <path key={lake.id} d={lake.d} />
             ))}

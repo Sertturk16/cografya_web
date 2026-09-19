@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import { WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
 import { classConstant, renderSites } from "@/lib/test-support/converted-floor";
+import { tokensIn } from "@/lib/test-support/css-tokens";
 import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
@@ -51,6 +52,9 @@ const SOURCE = stripComments(
 const PAGE = stripComments(
   readFileSync(new URL("../../app/[locale]/(site)/dunya/[slug]/page.tsx", import.meta.url), "utf8"),
 );
+
+/** Raw, because `tokensIn` strips CSS comments itself before it parses a block. */
+const GLOBALS = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
 /** The declaration, with `not.toBeNull()` already discharged. */
 function required(name: string): string {
@@ -326,7 +330,48 @@ describe("colour splits between the frozen artifact and the themed page, and is 
     }
     // The ground under the artifact is frozen to the same token the world file paints itself, so
     // the rounded corners are sea rather than a strip of another palette while the image loads.
-    expect(rows("FRAME").country).toContain("bg-[var(--map-sea)]");
+    //
+    // THE TOKEN, NOT JUST THE STRING. This assertion used to read `bg-[var(--map-sea)]` and it
+    // stayed green through T-031d PR1, which gave `--map-sea` a dark value (#152228) — the one
+    // change that breaks what this line is FOR. A class-string match cannot see a token's
+    // contract change, so the frame went near-black under the artifact's frozen #dbe7e8 (12.86:1,
+    // measured) with the suite green. The ground now names `--map-artifact-sea`, whose contract
+    // is its theme-invariance, and the case below asserts that contract directly rather than
+    // trusting the name.
+    expect(rows("FRAME").country).toContain("bg-[var(--map-artifact-sea)]");
+    expect(rows("FRAME").province).toContain("bg-[var(--map-artifact-sea)]");
+  });
+
+  /**
+   * THE GUARD THAT THE STRING MATCH ABOVE CANNOT BE: `--map-artifact-sea` must stay declared in
+   * `:root` and ABSENT from `.dark`.
+   *
+   * The artifact under this frame is an isolated `<img>` SVG document — `lib/map/base-map-svg.ts`
+   * paints its sea as literal `#dbe7e8` in both themes, because that file never sees page CSS.
+   * A `.dark` value for this token would put a dark ground under light ink again, which is the
+   * exact regression PR1 shipped on `--map-sea` and this test exists to make impossible to ship
+   * silently a second time. A dark-adapted ARTIFACT is the real fix and it is a separate task;
+   * when it lands, this token and the `base-map-svg.ts` pin move together, and this assertion is
+   * rewritten deliberately rather than deleted in passing.
+   *
+   * `".dark {"` and not `".dark"`: `app/globals.css:45` carries
+   * `@custom-variant dark (&:is(.dark *));`, real uncommented code whose literal `.dark` a bare
+   * selector lookup finds first — and then returns `:root`'s body under the name `.dark`,
+   * without throwing. A bare `".dark"` here would therefore read `:root`, find the token, and
+   * report the invariant broken when it is not (or, once inverted, pass on nothing).
+   */
+  it("keeps --map-artifact-sea out of .dark, which is the whole reason it exists", () => {
+    const light = tokensIn(GLOBALS, ":root");
+    const dark = tokensIn(GLOBALS, ".dark {");
+    // Positive control: both blocks really parsed, so the absence below is a fact about the
+    // stylesheet rather than about an empty object.
+    expect(light["--map-sea"], ":root declares --map-sea").toBeDefined();
+    expect(dark["--map-sea"], ".dark declares --map-sea").toBeDefined();
+    expect(light["--map-artifact-sea"]).toBe("#dbe7e8");
+    expect(
+      Object.keys(dark),
+      "--map-artifact-sea must not be redefined in .dark — see this test's docblock",
+    ).not.toContain("--map-artifact-sea");
   });
 
   it("keeps BOTH signals on the highlight, so colour is not carrying it alone", () => {

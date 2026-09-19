@@ -93,6 +93,15 @@ export type LocatorKind = "province" | "country";
  * ARTIFACT is the fix, and it is T-031d's, with the other map surfaces
  * `components/ui/token-binding.test.ts` exempts for this exact reason.
  *
+ * THAT GROUND'S TOKEN IS `--map-artifact-sea`, NOT `--map-sea`, and the difference is the whole
+ * point. Until T-031d PR1 the two were the same token, because `--map-sea` was theme-invariant;
+ * PR1 gave it a dark value (#152228), which turned this frame near-black under the artifact's
+ * frozen #dbe7e8 — 12.86:1, measured with `lib/theme/contrast.ts`. So the artifact's ground now
+ * has a token whose contract IS its invariance: `--map-artifact-sea` is declared in `:root` and
+ * deliberately not in `.dark`, `lib/map/base-map-svg.ts` pins the artifact's own painted sea to
+ * that same name, and `locator-map-floors.test.ts` asserts both the binding here and the token's
+ * absence from `.dark`, so the invariant cannot be broken silently a second time.
+ *
  * Everything OUTSIDE the artifact is ordinary page chrome and takes a bridge token: the
  * frame's hairline and the visible credit below it.
  */
@@ -151,9 +160,9 @@ const FIGURE = {
  */
 const FRAME = {
   province:
-    "relative block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[var(--map-sea)] aspect-[1000/429]",
+    "relative block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[var(--map-artifact-sea)] aspect-[1000/429]",
   country:
-    "relative block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[var(--map-sea)] aspect-[1000/521]",
+    "relative block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[var(--map-artifact-sea)] aspect-[1000/521]",
 } as const;
 
 /** The shared base silhouette. */
