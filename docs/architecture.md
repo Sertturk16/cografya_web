@@ -150,6 +150,18 @@ Details and the open dark-mode bugs: `docs/design.md`.
 
 ## Known gaps (recorded, not fixed)
 
+- **The dev server on `:3000` is the `cografya-web-dev` container, bind-mounting this tree at
+  `/app`; its `.next` is a named volume, and it hot-reloads host edits.** Two consequences a
+  host `pnpm dev` does not announce: it silently takes `:3002` because `:3000` is held, so
+  anything you point at `:3000` is still the container; and the tree then has two Turbopack
+  watchers. Under load — `pnpm sweep:overflow` drives 183 page loads — the container has been
+  observed writing `/app/.next/dev/prerender-manifest.json` twice without truncating, leaving a
+  valid document followed by the tail of a second one. Next parses that manifest on every
+  request, so **every route 500s with a `JSON.parse` "unexpected non-whitespace character"
+  error that names no file of yours.** `docker restart cografya-web-dev` regenerates it. The
+  signature to recognise: every route fails, including ones your change cannot reach, and the
+  same byte offset repeats in each error.
+
 - **`V2LiveTicker` publishes AFAD and CMEMS/ECMWF values on 33 pages with no attribution.**
   It fetches `/api/earthquakes` and `/api/marine/overview` itself and renders a magnitude with
   a place name plus per-basin SST and wave height. Its only provenance is a

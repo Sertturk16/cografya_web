@@ -8,6 +8,7 @@ import { fraunces, nunitoSans } from "@/lib/fonts";
 import { getSiteUrl, siteConfig } from "@/lib/seo/site";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { V2AuthDialog } from "@/components/v2/v2-auth-dialog";
 import "../globals.css";
 
 interface LocaleLayoutProps {
@@ -81,6 +82,17 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
               sibling group rather than by omitting an import somebody has to remember. */}
             {children}
             <Toaster />
+            {/* T-057: mounted HERE, beside the other always-on singleton, and not in a route
+              group. `requestAuth()` only commits to a module store; this is the one component
+              that subscribes to it and renders anything, so a gated control whose tree omits
+              it fails silently — the button works, the call lands nowhere. `(site)` owned the
+              only mount and justified it with "the play screens have no auth affordances to
+              open it from", which was already false when written: `v2-game-screen.tsx`,
+              `v2-leaderboard-modal.tsx` and the `V2Header` the game screens render themselves
+              add up to six dead calls across the three `(play)` routes. One mount cannot be
+              forgotten by a route group that does not exist yet; two would be.
+              `components/v2/auth-dialog-reachability.test.ts` holds the invariant. */}
+            <V2AuthDialog />
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

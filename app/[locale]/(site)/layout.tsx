@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2Footer } from "@/components/v2/v2-footer";
-import { V2AuthDialog } from "@/components/v2/v2-auth-dialog";
 
 // No `readonly` and no local `Locale`: Next.js 16 generates a global `LayoutProps<"/route">`
 // whose `children` is mutable and whose `locale` is a plain `string`. A stricter local shape
@@ -49,10 +48,6 @@ export default async function SiteLayout({ children, params }: SiteLayoutProps) 
         </main>
       </div>
       <V2Footer />
-      {/* Mounted once for the whole reading surface; renders nothing until a gated action
-          opens it. It does not belong in the root layout, because the play screens have no
-          auth affordances to open it from. */}
-      <V2AuthDialog />
     </div>
   );
 }
