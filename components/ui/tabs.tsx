@@ -65,7 +65,13 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-150 outline-none cursor-pointer hover:text-foreground disabled:pointer-events-none disabled:opacity-50",
+        // No `outline-none`: neither triggerVariant carries a focus style — both only style
+        // `aria-selected:` — so suppressing the outline would leave a tab with NO visible focus
+        // once T-053 moved `:focus-visible` into `@layer base` and the suppression started
+        // working. It was inert before that, which is the only reason this ever looked fine.
+        // The site's documented indicator (docs/design.md: 3px `var(--ring)`, 2px offset) is the
+        // right one here; a tab strip has no ring of its own for it to compete with.
+        "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-150 cursor-pointer hover:text-foreground disabled:pointer-events-none disabled:opacity-50",
         triggerVariants[React.useContext(TabsVariantContext)],
         className,
       )}

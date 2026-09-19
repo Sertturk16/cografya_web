@@ -161,6 +161,13 @@ Details and the open dark-mode bugs: `docs/design.md`.
   error that names no file of yours.** `docker restart cografya-web-dev` regenerates it. The
   signature to recognise: every route fails, including ones your change cannot reach, and the
   same byte offset repeats in each error.
+  **The restart is not the whole repair.** Pages rendered during the broken window are written
+  to the ISR route cache and then served from it for their full `revalidate` window — so
+  `turkiye/bolge/[slug]` and `dunya/kita/[slug]`, both `revalidate = 86400`, kept returning 404
+  for a day after the server itself was healthy, while `turkiye/[slug]` (`revalidate = 120`)
+  had already healed itself. The tell is a 404 in ~30 ms with no API call, on a route whose
+  endpoint answers 200 from inside the container. `rm -rf /app/.next/cache` before the restart;
+  clearing only `fetch-cache` is not enough, because the poisoned artefact is the rendered page.
 
 - **`V2LiveTicker` publishes AFAD and CMEMS/ECMWF values on 33 pages with no attribution.**
   It fetches `/api/earthquakes` and `/api/marine/overview` itself and renders a magnitude with

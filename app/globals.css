@@ -1390,41 +1390,52 @@
   ::selection {
     background-color: color-mix(in srgb, var(--primary) 20%, transparent);
   }
-}
 
-/* Visible keyboard focus everywhere (a11y).
+  /* Visible keyboard focus everywhere (a11y).
 
-   `--ring`, not `--color-accent`: the raw Terra token is a light-mode value the `.dark` block
-   never redefines, so the ring was the same #276b70 in both themes — 5.79:1 in light but
-   3.04:1 in dark, clearing 1.4.11 by 0.04. `--ring` IS redefined in `.dark`, and was lifted
-   there for exactly this purpose. Verified by sampling rendered pixels, not computed style:
-   `@layer base`'s `outline-ring/50` makes the computed value misleading here. */
-:focus-visible {
-  outline: 3px solid var(--ring);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
+     `--ring`, not `--color-accent`: the raw Terra token is a light-mode value the `.dark` block
+     never redefines, so the ring was the same #276b70 in both themes — 5.79:1 in light but
+     3.04:1 in dark, clearing 1.4.11 by 0.04. `--ring` IS redefined in `.dark`, and was lifted
+     there for exactly this purpose. Verified by sampling rendered pixels, not computed style:
+     `@layer base`'s `outline-ring/50` makes the computed value misleading here.
 
-/* PROGRAMMATIC-ONLY focus targets (`tabindex="-1"`) draw no ring.
-   `tabindex="-1"` removes an element from the sequential focus order entirely: Tab never
-   lands here, so the ring can never tell a keyboard user "you are here". What it does
-   instead is draw a box around whatever the code just moved focus to — and these targets are
-   page-sized regions, not controls. Measured on this PR's before-audit (1440×900):
-   `<main id="main-content">` after the skip link = a 1440×3249 ring around the whole page;
-   `#iller` after a fragment jump = 1080×2543; the `/deniz` error `<h1>` = a full-width
-   1080×48 box (the owner's live-tour screenshot 20). The elements are still focused and
-   still announced — only the decoration is dropped, so WCAG 2.4.7 (which governs the
-   keyboard-OPERABLE interface) and 2.4.3 are both untouched. This is the one sanctioned
-   exception to DESIGN.md §5 "never remove focus without a compliant replacement"
-   (→ Atlas ruling 2026-08-05, Q1; noted in DESIGN.md §5).
+     T-053: this rule lives in `@layer base` so `outline-none` means what it says. Unlayered, it
+     beat every `@layer utilities` rule regardless of specificity, which made all 26 of this
+     repo's `outline-none` class strings inert — a component that asked for its own ring got both
+     rings concentrically, and the `border-radius: 4px` below travelled to every focused element
+     (site-search's trigger measured `rounded-lg` 10px unfocused and 4px focused). T-041 exempted
+     this rule from `components/globals-unlayered-css.test.ts` reasoning that a layer "would let
+     ANY component utility silently defeat the site's one guaranteed keyboard-focus ring". The
+     risk was real; the remedy is `components/ui/focus-suppression.test.ts`, which refuses a
+     suppression with no replacement — a guarantee the cascade could only buy by rendering the
+     wrong thing. */
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 
-   `:where()` contributes ZERO specificity, so this rule sits at (0,1,0) — the same weight as
-   the base `:focus-visible` above and BELOW any module rule that deliberately asks for a ring
-   on such a target (`game-ui.module.css` `.question` / `.dialogHeading` / `.reviewSummary`,
-   all (0,2,0)). Those keep their rings; the game moves focus as a game mechanic and shows it
-   on purpose. */
-:where([tabindex="-1"]):focus-visible {
-  outline: none;
+  /* PROGRAMMATIC-ONLY focus targets (`tabindex="-1"`) draw no ring.
+     `tabindex="-1"` removes an element from the sequential focus order entirely: Tab never
+     lands here, so the ring can never tell a keyboard user "you are here". What it does
+     instead is draw a box around whatever the code just moved focus to — and these targets are
+     page-sized regions, not controls. Measured on this PR's before-audit (1440×900):
+     `<main id="main-content">` after the skip link = a 1440×3249 ring around the whole page;
+     `#iller` after a fragment jump = 1080×2543; the `/deniz` error `<h1>` = a full-width
+     1080×48 box (the owner's live-tour screenshot 20). The elements are still focused and
+     still announced — only the decoration is dropped, so WCAG 2.4.7 (which governs the
+     keyboard-OPERABLE interface) and 2.4.3 are both untouched. This is the one sanctioned
+     exception to DESIGN.md §5 "never remove focus without a compliant replacement"
+     (→ Atlas ruling 2026-08-05, Q1; noted in DESIGN.md §5).
+
+     `:where()` contributes ZERO specificity, so this rule sits at (0,1,0) — the same weight as
+     the base `:focus-visible` above and BELOW any module rule that deliberately asks for a ring
+     on such a target (`game-ui.module.css` `.question` / `.dialogHeading` / `.reviewSummary`,
+     all (0,2,0)). Those keep their rings; the game moves focus as a game mechanic and shows it
+     on purpose. */
+  :where([tabindex="-1"]):focus-visible {
+    outline: none;
+  }
 }
 
 /* T-041 removed the unlayered "shared layout utilities"/"Buttons" region that used to sit here
