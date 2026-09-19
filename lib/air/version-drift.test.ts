@@ -19,6 +19,10 @@ import trMessages from "@/messages/tr.json";
  * The pattern is deliberately GENERIC (`V<digits>.GL.<anything>`) rather than the literal
  * current version: pinning `V6.GL.03` would go quiet the day someone hardcodes `V7.GL.01`,
  * which is precisely the day it matters.
+ *
+ * The list lost `air-pollution.module.css` when T-033 deleted it; the three components it
+ * styled are all still scanned, and a stylesheet is no longer one of the places a version
+ * literal could hide in this section.
  */
 
 const VERSION_PATTERN = /V\d+\.GL\./;
@@ -27,7 +31,6 @@ const SOURCES = [
   "../../components/air/air-pollution-section.tsx",
   "../../components/air/pm25-chart.tsx",
   "../../components/air/pm25-table.tsx",
-  "../../components/air/air-pollution.module.css",
   "./pm25-scale.ts",
   "./pm25-display.ts",
   "./notice-keys.ts",

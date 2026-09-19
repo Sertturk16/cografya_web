@@ -32,12 +32,10 @@ const code = stripComments;
 const section = read("./air-pollution-section.tsx");
 const chart = read("./pm25-chart.tsx");
 const table = read("./pm25-table.tsx");
-const css = read("./air-pollution.module.css");
 const page = read("../../app/[locale]/(site)/turkiye/[slug]/page.tsx");
 const sectionCode = code(section);
 const chartCode = code(chart);
 const tableCode = code(table);
-const cssCode = code(css);
 const pageCode = code(page);
 
 describe("the licence block travels with the values", () => {
@@ -244,13 +242,25 @@ describe("the chart carries no reference line and no index colouring", () => {
     // numeric threshold to place it at. Both are checked structurally.
     const lineElements = chartCode.match(/<line\b/g) ?? [];
     expect(lineElements).toHaveLength(2);
-    // No constant concentration anywhere in the chart's code — the AQG level or any of the
-    // four interim targets would appear as one. Coordinates come from the scale module and
-    // the marker radius is the only literal the chart owns.
-    const numericLiterals = (chartCode.match(/(?<![\w.-])\d+(?:\.\d+)?(?![\w.])/g) ?? []).filter(
+    // No constant concentration anywhere in the chart's GEOMETRY — the AQG level or any of
+    // the four interim targets would appear as one. Coordinates come from the scale module
+    // and the marker radius is the only literal the chart owns.
+    //
+    // Scanned with string literals removed, and that is a SHARPENING rather than a let-off.
+    // Until T-033 every presentation constant lived in `air-pollution.module.css`, so the
+    // only numbers in this file were geometry and the scan could read the file whole. The
+    // conversion moved stroke widths, alphas and font sizes into Tailwind class strings, and
+    // counting those would have forced the allow-list open to `15`, `1` and `0.6` — `15`
+    // being a plausible PM2.5 interim target, i.e. exactly the value this test exists to
+    // stop. A number inside a class string cannot place a line; `y={15}` can, and still trips.
+    const geometry = chartCode.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '""');
+    const numericLiterals = (geometry.match(/(?<![\w.-])\d+(?:\.\d+)?(?![\w.])/g) ?? []).filter(
       (n) => !["2.8", "4", "6", "20", "0"].includes(n),
     );
     expect(numericLiterals).toEqual([]);
+    // POSITIVE CONTROL — a threshold written as a coordinate is still visible after the strip.
+    const poisoned = 'const GUIDE = "stroke-ink/15";\n<line y1={15} y2={15} />';
+    expect(poisoned.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '""')).toMatch(/\{15\}/);
     expect(chartCode).not.toMatch(/whoGuideline/);
   });
 
@@ -260,19 +270,40 @@ describe("the chart carries no reference line and no index colouring", () => {
     expect(section.indexOf("<Pm25Chart")).toBeLessThan(section.indexOf('t("whoGuideline")'));
   });
 
-  it("uses the dedicated data token, with no raw colour but the shared white plot", () => {
-    expect(cssCode).toContain("var(--chart-pm25-line)");
+  it("uses the dedicated data token, with NO colour literal at all", () => {
+    // T-033 deleted `air-pollution.module.css`, so this moved from the stylesheet to the
+    // chart component. It got STRICTER on the way: the stylesheet was allowed exactly one
+    // literal (`#fff`, the plot background), and the component is allowed none — the plot is
+    // `bg-white`, a theme key, so a hex anywhere in this file is now a defect.
+    expect(chartCode).toContain("var(--chart-pm25-line)");
     // An annual mean has no index membership, so a green→maroon AQI band would claim a
     // standing the number does not have (DESIGN §6.2, violated from the other direction).
-    // The ONE permitted literal is the plot background the climate chart already uses; every
-    // other colour must come from the token layer.
-    const hexes = cssCode.match(/#[0-9a-f]{3,8}/gi) ?? [];
-    expect(hexes).toEqual(["#fff"]);
+    expect(chartCode.match(/#[0-9a-f]{3,8}/gi) ?? []).toEqual([]);
   });
 
   it("keeps Terra chrome tokens out of the data marks (DESIGN §6.1 rule 1)", () => {
-    const dataRules = cssCode.slice(cssCode.indexOf(".line {"), cssCode.indexOf(".axisLabelLeft,"));
-    expect(dataRules).not.toMatch(/--color-primary|--color-secondary|--color-accent/);
+    // The marks are the polyline and the markers — the two things that carry the series.
+    // Scoped to the constants that draw them, so the scaffolding around them (gridlines and
+    // axis numbers, which encode nothing) is not what this measures.
+    const marks = chartCode.slice(
+      chartCode.indexOf("const LINE ="),
+      chartCode.indexOf("const AXIS ="),
+    );
+    expect(marks).toContain("--chart-pm25-line");
+    expect(marks).not.toMatch(/--color-primary|--color-secondary|--color-accent|primary|accent/);
+  });
+
+  it("keeps the plot LIGHT, because the series token has no dark value", () => {
+    // The one rule in this section that is deliberately NOT bound to the theme, and the
+    // reason is measured: `--chart-pm25-line` is 9.86:1 on the white plot and 1.73:1 on
+    // `--card`, so painting the frame with a bridge token would take the only mark the
+    // figure exists to show below WCAG 1.4.11's 3:1 floor. If a dark-adapted PM2.5 token is
+    // ever added, this assertion is the one to come back to.
+    expect(chartCode).toMatch(/bg-white/);
+    expect(chartCode).not.toMatch(/bg-card|bg-background|bg-muted/);
+    // …and the scaffolding inside it stays on the same frozen ground, never on a bridge
+    // token that moves out from under it (`--foreground` is 1.10:1 on this plot in dark).
+    expect(chartCode).not.toMatch(/fill-foreground|fill-muted-foreground|stroke-border/);
   });
 });
 
@@ -306,11 +337,14 @@ describe("accessibility contract", () => {
 
   it("makes the fragment target programmatically focusable and clear of the sticky header", () => {
     expect(section).toMatch(/<h2 id=\{headingId\} tabIndex=\{-1\}/);
-    expect(css).toMatch(/\.heading\s*\{[^}]*scroll-margin-top/);
+    // `scroll-margin-top` moved from `.heading` into the component when T-033 deleted the
+    // stylesheet. Without it a followed fragment scrolls the h2 flush to the top and under
+    // the opaque sticky header, which is the whole reason the rule exists.
+    expect(sectionCode).toMatch(/scroll-mt-\[calc\(var\(--header-height\)\+1rem\)\]/);
   });
 
   it("gives the collapsed table a real label and real table semantics", () => {
-    expect(table).toMatch(/<summary className=\{styles\.summary\}>\{t\("tableSummary"/);
+    expect(table).toMatch(/<summary className=\{SUMMARY\}>\{t\("tableSummary"/);
     expect(table).toMatch(/<caption/);
     expect(table).toMatch(/<th scope="col"/);
     expect(table).toMatch(/<th scope="row"/);
@@ -325,19 +359,33 @@ describe("accessibility contract", () => {
     }
   });
 
-  it("uses --color-slate and never --color-taupe for text (the PR#2 trap)", () => {
-    expect(cssCode).toContain("var(--color-slate)");
-    expect(cssCode).not.toContain("--color-taupe");
+  it("reads no frozen Terra token for text, in any of the three files (T-033)", () => {
+    // This used to say "uses --color-slate and never --color-taupe" — the PR#2 trap, which
+    // was about picking the RIGHT frozen neutral. T-033 made the whole question obsolete in
+    // this section: `.dark` redefines neither, so on a `--card` panel `--color-slate` was
+    // 2.15:1 and `--color-ink` 1.14:1. The quiet voice is `text-muted-foreground` (7.79:1 in
+    // dark, 7.92:1 in light — slate's own light figure) and the loud one `text-foreground`.
+    for (const source of [sectionCode, tableCode]) {
+      expect(source).not.toMatch(/var\(--color-[a-z-]+\)/);
+      expect(source).toContain("text-muted-foreground");
+    }
+    expect(sectionCode).toContain("text-foreground");
+    // The chart is the documented exception and reads exactly one token family: its own.
+    expect(chartCode.match(/var\(--color-[a-z-]+\)/g) ?? []).toEqual([]);
   });
 
-  it("declares every class the components look up, so no lookup renders `undefined`", () => {
-    const used = new Set(
-      [...`${sectionCode}${chartCode}${tableCode}`.matchAll(/styles\.([A-Za-z0-9_]+)/g)].map(
-        (m) => m[1],
-      ),
-    );
-    const declared = new Set([...cssCode.matchAll(/^\.([A-Za-z0-9_]+)/gm)].map((m) => m[1]));
-    expect([...used].filter((name) => name !== undefined && !declared.has(name))).toEqual([]);
+  it("looks up no CSS Module class at all, so no lookup can render `undefined`", () => {
+    // The original form of this compared `styles.x` lookups against the classes
+    // `air-pollution.module.css` declared. With the stylesheet gone that comparison is two
+    // empty sets and passes for free — the vacuous green this repo keeps getting bitten by.
+    // Restated as the property that replaced it: these three files import no stylesheet and
+    // perform no `styles.` lookup, so there is nothing left that CAN resolve to `undefined`.
+    for (const source of [sectionCode, chartCode, tableCode]) {
+      expect(source).not.toMatch(/\.module\.css/);
+      expect(source).not.toMatch(/styles\./);
+    }
+    // POSITIVE CONTROL — the same scan reports a lookup that is written down.
+    expect("const x = styles.heading;").toMatch(/styles\./);
   });
 });
 

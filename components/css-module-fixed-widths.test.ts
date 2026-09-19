@@ -116,7 +116,6 @@ const EXPECTED: Record<string, string[]> = {
     "grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr))",
     "width: 1px",
   ],
-  "components/air/air-pollution.module.css": ["max-width: 720px", "max-width: 420px"],
   "components/book/book-video.module.css": [
     "max-width: 560px",
     "max-width: 560px",
@@ -155,7 +154,7 @@ const EXPECTED: Record<string, string[]> = {
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(7);
+    expect(stylesheets.length).toBe(6);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -169,19 +168,23 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * deleted `home.module.css` — seven of its own, the largest single block in the census —
    * 34 after T-033 deleted `marine.module.css`'s 42 classes with no call site (the `/deniz`
    * hub's `.basinGrid` and `.valuesTable` floors and the explainer chevron's `width: 9px`),
-   * and 31 across SEVEN once that file went too. Every step down is a DELETION of rules no
-   * route reached, not a narrowing that was fixed; the population is what it measures, so it
-   * is re-measured rather than carried.
+   * 31 across SEVEN once that file went too, and 29 across SIX once T-033 converted
+   * `air-pollution.module.css` (the chart frame's `max-width: 720px` and the year table's
+   * `max-width: 420px`). Every step down is a DELETION of rules no route reached, or a
+   * conversion that moved the floor out of a stylesheet, not a narrowing that was fixed; the
+   * population is what it measures, so it is re-measured rather than carried.
    *
    * The three that left with the file are NOT gone from the product: the `11ch 1fr` value
    * grid and the `minmax(min(280px, 100%), 520px)` block track are now Tailwind arbitrary
-   * values in `province-marine-section.tsx`, where this census cannot see them. That is the
+   * values in `province-marine-section.tsx`, where this census cannot see them. Air
+   * pollution's two are the same case — `max-w-[720px]` on the chart frame and
+   * `max-w-[420px]` on the disclosure, in `pm25-chart.tsx` and `pm25-table.tsx`. That is the
    * coverage note below, restated: a Tailwind class in JSX is not in a CSS Module at all, and
    * `pnpm sweep:overflow` is what still covers it.
    */
-  it("counts 31 declarations in total", () => {
+  it("counts 29 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(31);
+    expect(total).toBe(29);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

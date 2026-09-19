@@ -96,16 +96,17 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     pathname: "/turkiye/[slug]",
     params: { slug: "istanbul" },
     locales: ["tr", "en"],
-    modules: ["climate.module.css", "air-pollution.module.css", "locator-map.module.css"],
+    modules: ["climate.module.css", "locator-map.module.css"],
     why:
       "The detail page with the climate table, and the recorded scene of two of the three " +
       "defects this sweep exists for (T-038's licence notice, T-046's `.chartFrame` " +
-      "`min-width`). It renders THREE of the seven surviving CSS Modules. It rendered a " +
-      "fourth, `marine.module.css`, through `ProvinceMarineSection` — the only place that " +
-      "stylesheet ever reached a swept route — until T-033 converted that section to Tailwind " +
-      "and deleted it. The section itself is still swept here, and this is still the route " +
-      "that measures its `11ch 1fr` value grid at 320px. Both locales: the EN column headers " +
-      "of the climate table are materially longer than the TR ones.",
+      "`min-width`). It renders TWO of the six surviving CSS Modules. It rendered two more, " +
+      "`marine.module.css` through `ProvinceMarineSection` — the only place that stylesheet " +
+      "ever reached a swept route — and `air-pollution.module.css` through " +
+      "`AirPollutionSection`, until T-033 converted both sections to Tailwind and deleted " +
+      "them. Both sections are still swept here, and this is still the route that measures " +
+      "the marine `11ch 1fr` value grid and the PM2.5 chart frame at 320px. Both locales: the " +
+      "EN column headers of the climate table are materially longer than the TR ones.",
   },
   {
     id: "region-index",

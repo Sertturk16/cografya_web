@@ -646,8 +646,27 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * scanner. It is now inline at `rounded-2xl` and counted. Hoist the quiet vocabulary —
  * `TERM`, `DESC`, `ROW` — freely; hoisting is what this counter is FOR noticing, and it
  * notices it. Never hoist the surface.
+ *
+ * T-033 task 3: **44 → 76**, `member` 164 → 130. This one IS equal and opposite, and it was
+ * checked rather than assumed: 34 `className={styles.x}` elements left the `member` bucket
+ * across `components/air/{air-pollution-section,pm25-chart,pm25-table}.tsx` (17 + 9 + 8), and
+ * 32 came back here as bare identifiers (18 + 7 + 7). The two that did not are the notices
+ * wrapper and the attribution wrapper, which became literal strings this scanner reads in
+ * full. No element gained a `className` it did not have — the deleted stylesheet used no
+ * descendant selector, so marine's six new carriers have no counterpart here.
+ *
+ * The chart's `point.labelled ? GRID : GRID_YEAR` stays in the `ternary` bucket it was
+ * already in, which is why that figure does not move.
+ *
+ * NO NEW HAND-DRAWN CARD, and that is a measurement too. The chart frame is a card-shaped
+ * element (`rounded-lg`, a border, a fill) that this counter does NOT see, because `rounded-lg`
+ * is outside {@link CARD_ROUNDING} and the fill is `bg-white` rather than `bg-card`. Both are
+ * deliberate and neither is the hiding move the rule above forbids: the frame is a data
+ * surface whose radius is the module's own `--radius` and whose fill cannot follow the theme
+ * without taking `--chart-pm25-line` below WCAG 1.4.11 (`components/air/pm25-chart.tsx` carries
+ * the figures). It is not a card wearing a disguise; it is a plot.
  */
-export const COMPUTED_CARD_CLASSNAMES = 44;
+export const COMPUTED_CARD_CLASSNAMES = 76;
 
 /** The whole unreadable-className population by expression shape — the 188 the counter above
  * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
@@ -655,8 +674,8 @@ export const COMPUTED_CARD_CLASSNAMES = 44;
  * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
  * shape rather than as a moved number. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 44],
-  ["member", 164],
+  ["identifier", 76],
+  ["member", 130],
   ["ternary", 2],
 ];
 

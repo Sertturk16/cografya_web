@@ -156,7 +156,8 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
   /**
    * GROWS ONE DIRECTORY PER T-033 TASK, AND DELIBERATELY NOT FASTER.
    *
-   * `components/marine` is here because T-033 task 2 converted it. The rule that put it here:
+   * `components/marine` is here because T-033 task 2 converted it, `components/air` because
+   * task 3 converted it. The rule that put them here:
    * **the task that retires a module adds that module's directory to this list, in the same
    * commit as the conversion.** Nothing would otherwise have caught a `var(--color-*, #hex)`
    * escape in the four files that conversion rewrote — the constraint was complied with by
@@ -172,16 +173,25 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * no bare `white`/`black` utility and no brand hex either. When T-031c lands, the stricter
    * rules arrive for this directory with everything else.
    *
-   * The tempting move is to widen this to every feature directory at once. Do NOT. The seven
+   * `components/air` is the first directory added here that carries a DELIBERATE bare `white`
+   * utility, and it is not an oversight: `pm25-chart.tsx` paints the plot `bg-white` because
+   * `--chart-pm25-line`, the section's one data token, measures 9.86:1 on that plot and
+   * 1.73:1 on `--card`, and no dark-adapted PM2.5 token exists. That file's own docblock and
+   * `air-pollution.structure.test.ts` carry the measurement and assert the shape; it is a data
+   * surface, not chrome, so it is outside what this `describe` is about. It still carries no
+   * `dark:`, no raw palette class and no brand hex.
+   *
+   * The tempting move is to widen this to every feature directory at once. Do NOT. The six
    * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a
    * blanket widening reds immediately and the only way back to green is an exemption list —
-   * a list that then has to be pruned seven times, by seven tasks, each of which could
+   * a list that then has to be pruned six times, by six tasks, each of which could
    * silently prune one row too many. Growing the scan in step with the conversion needs no
    * bookkeeping and cannot go stale: a directory is either converted and scanned, or neither.
    */
   const V2_DIRS = [
     fileURLToPath(new URL("../v2", import.meta.url)),
     fileURLToPath(new URL("../marine", import.meta.url)),
+    fileURLToPath(new URL("../air", import.meta.url)),
     fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 
