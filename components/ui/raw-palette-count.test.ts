@@ -1125,9 +1125,9 @@ describe("the palette cannot be laundered into brackets", () => {
  * the other two arms had, in the arm that had already solved it once.
  *
  * The global budget is gone. Every occurrence is now either a no-stylesheet row
- * (`INLINE_EXEMPT`, **22**) or a painted-surface row (`INLINE_PINNED`, **11**) — 33 in total,
- * unchanged; the split is 22/11 and not the 17/16 it was, because `base-map-svg.ts`'s five
- * moved from the live half into the exempt one where they belonged. Each row carries a file, an
+ * (`INLINE_EXEMPT`, **22**) or a painted-surface row (`INLINE_PINNED`, **11**) — 33 in total;
+ * the split was 22/11 and not the 17/16 it started as, because `base-map-svg.ts`'s five moved
+ * from the live half into the exempt one where they belonged. Each row carries a file, an
  * exact count and a reason; anything else is a failure. The LIVE count is therefore **0 by
  * construction** rather than 16 by allowance, and it is asserted as a literal zero below.
  *
@@ -1136,6 +1136,10 @@ describe("the palette cannot be laundered into brackets", () => {
  * through `<img src>`, which cannot see the page's CSS — the same reason `lib/brand/glyph.ts`
  * was already exempt — and `base-map-svg.test.ts` pins each of its five hexes byte-for-byte to
  * the globals.css token it transcribes.
+ *
+ * T-031d Task 10 dropped `INLINE_PINNED`'s three-count `v2-world-map-explorer.tsx` row — the
+ * dead ocean gradient's stops, deleted along with the gradient — so the live split is 22/8,
+ * 30 in total, not 22/11/33 any more.
  */
 
 describe("a colour cannot hide outside a class either", () => {

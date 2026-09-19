@@ -150,14 +150,13 @@ export function inlinesAColor(cls) {
  * A named row with an exact count fails in both directions and names the file. T-031d ends
  * the arm by DELETING this entry rather than editing a digit, and the arm's end state is a
  * literal, checkable zero rather than a number somebody has to believe.
+ *
+ * Task 10 deleted the one row this table ever held: `components/v2/v2-world-map-explorer.tsx`
+ * bound its graticule, its neighbour-land tones and its hover/selected highlight to
+ * `--map-graticule`, `--map-unknown-land` and `--map-context-line`, so nothing in the tree
+ * carries a raw palette class any more. `RAW_EXEMPT` is now `[]`.
  */
-export const RAW_EXEMPT = [
-  {
-    file: "components/v2/v2-world-map-explorer.tsx",
-    count: 15,
-    why: "the dark map surface T-031d owns: the graticule, the sphere shadow and the neighbour-land tones, all measured against the `--map-*` set that task introduces rather than against any page background",
-  },
-];
+export const RAW_EXEMPT = [];
 
 /** Is this file one of the named raw-palette deferrals? An exact compare, like `isInlineExempt`. */
 export function isRawExempt(file) {
@@ -179,11 +178,6 @@ export function isRawExempt(file) {
  * recorded as a finding rather than folded in with the maps.
  */
 export const ARBITRARY_PINNED = [
-  {
-    file: "components/v2/v2-world-map-explorer.tsx",
-    count: 2,
-    why: "the world map's two-stop dark ocean plate, deferred to T-031d with that file's raw-palette rows",
-  },
   {
     file: "components/v2/v2-header.tsx",
     count: 1,
@@ -379,11 +373,6 @@ export const INLINE_PINNED = [
     file: "components/v2/v2-marine-map-explorer.tsx",
     count: 4,
     why: "the station pins drawn on the basin map: the white pin stroke, the white core, the white label mark and the 30% white halo around the selected one, all measured against the sea plate they sit on rather than against `--background`",
-  },
-  {
-    file: "components/v2/v2-world-map-explorer.tsx",
-    count: 3,
-    why: "the three stops of the dark ocean gradient, deferred to T-031d with that file's raw-palette and bracketed rows",
   },
   {
     file: "components/v2/v2-tool-workbench.tsx",

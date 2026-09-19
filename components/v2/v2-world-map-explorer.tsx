@@ -525,7 +525,7 @@ export function V2WorldMapExplorer({
               setHoveredIso(null);
             }
           }}
-          className={`relative rounded-2xl bg-[#0d1b2a] dark:bg-[#070e17] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none ${
+          className={`relative rounded-2xl bg-[var(--map-ocean)] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none ${
             zoom > 1
               ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
               : "cursor-crosshair"
@@ -651,29 +651,24 @@ export function V2WorldMapExplorer({
                     floodOpacity="0.8"
                   />
                 </filter>
-                <linearGradient id="ocean-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#0b192c" />
-                  <stop offset="50%" stopColor="#1e3e62" />
-                  <stop offset="100%" stopColor="#000000" />
-                </linearGradient>
               </defs>
 
               {/* Background Ocean Layer */}
               <rect
                 width="1008"
                 height="520"
-                fill="url(#ocean-gradient)"
+                className="fill-[var(--map-ocean)]"
                 onMouseEnter={() => setHoveredIso(null)}
               />
 
               {/* Graticules / Latitude-Longitude Grid */}
-              <g className="stroke-sky-500/15 stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
+              <g className="stroke-[var(--map-graticule)]/60 stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
                 <line
                   x1="0"
                   y1="260"
                   x2="1008"
                   y2="260"
-                  className="stroke-sky-400/40 stroke-[0.8]"
+                  className="stroke-[var(--map-graticule)] stroke-[0.8]"
                 />
                 <line x1="0" y1="195" x2="1008" y2="195" />
                 <line x1="0" y1="325" x2="1008" y2="325" />
@@ -682,12 +677,12 @@ export function V2WorldMapExplorer({
                   y1="0"
                   x2="504"
                   y2="520"
-                  className="stroke-sky-400/30 stroke-[0.8]"
+                  className="stroke-[var(--map-graticule)] stroke-[0.8]"
                 />
               </g>
 
               {/* Graticule Text Labels */}
-              <g className="fill-sky-400/50 text-[7.5px] font-mono select-none pointer-events-none">
+              <g className="fill-[var(--map-graticule)] text-[7.5px] font-mono select-none pointer-events-none">
                 <text x="8" y="257">
                   EKVATOR (0°)
                 </text>
@@ -713,21 +708,22 @@ export function V2WorldMapExplorer({
                     selectedContinent === "ALL" || item?.continent === selectedContinent;
 
                   let fillClass =
-                    "fill-slate-600/65 dark:fill-slate-700/70 stroke-slate-400/45 dark:stroke-slate-500/40 stroke-[0.5]";
+                    "fill-[var(--map-unknown-land)] stroke-[var(--map-context-line)] stroke-[0.5]";
 
                   if (item && continentMeta) {
                     if (selectedContinent === "ALL") {
-                      fillClass = `${continentMeta.identity.fillSoft} ${continentMeta.identity.stroke} stroke-[0.4]`;
+                      fillClass = `${continentMeta.identity.fill} ${continentMeta.identity.stroke} stroke-[0.4]`;
                     } else if (isMatchingContinent) {
-                      fillClass = `${continentMeta.identity.fillSoft} stroke-white/80 stroke-[0.8] shadow-lg`;
+                      fillClass = `${continentMeta.identity.fill} stroke-white/80 stroke-[0.8] shadow-lg`;
                     } else {
                       fillClass =
-                        "fill-slate-600/65 dark:fill-slate-700/70 hover:fill-slate-500/75 stroke-slate-400/45 dark:stroke-slate-500/40 stroke-[0.5] transition-colors";
+                        "fill-[var(--map-unknown-land)] hover:fill-[var(--map-unknown-land)]/80 stroke-[var(--map-context-line)] stroke-[0.5] transition-colors";
                     }
                   }
 
                   if (isHovered || isSelected) {
-                    fillClass = "stroke-yellow-400 stroke-[1.8] fill-yellow-500/90 opacity-100";
+                    fillClass =
+                      "stroke-[var(--map-graticule)] stroke-[1.8] fill-[var(--map-graticule)]/90 opacity-100";
                   }
 
                   const cItem = countryMap.get(shape.iso);

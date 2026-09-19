@@ -78,13 +78,20 @@ describe("V2 Map Pan & Hover Contracts", () => {
     });
 
     it("clears hoveredIso on the background ocean layer", () => {
-      expect(worldFile).toContain('fill="url(#ocean-gradient)"');
+      // T-031d Task 10 flattened the ocean: no gradient, no `fill` presentation attribute — a
+      // `className="fill-[var(--map-ocean)]"` instead, since a presentation attribute beats a
+      // class and would have silently kept painting the deleted gradient's reference.
+      expect(worldFile).not.toContain("ocean-gradient");
+      expect(worldFile).toContain('className="fill-[var(--map-ocean)]"');
       expect(worldFile).toContain("onMouseEnter={() => setHoveredIso(null)}");
     });
 
     it("renders unselected continent countries with visible muted land and subtle borders", () => {
-      expect(worldFile).toContain("fill-slate-600/65");
-      expect(worldFile).toContain("stroke-slate-400/45");
+      // T-031d Task 10 bound these to --map-unknown-land / --map-context-line: the raw
+      // slate-600/65 measured 1.67:1 on the flat ocean, invisible on exactly the shapes a
+      // reader is hunting for.
+      expect(worldFile).toContain("fill-[var(--map-unknown-land)]");
+      expect(worldFile).toContain("stroke-[var(--map-context-line)]");
       expect(worldFile).not.toContain("fill-slate-700/20 stroke-slate-600/10 opacity-30");
     });
   });
