@@ -1,8 +1,9 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  ARBITRARY_PINNED,
   collectArbitraryColorOccurrences,
   collectInlineColorOccurrences,
   inlinesAColor,
@@ -10,7 +11,11 @@ import {
   EXCLUDED,
   hexOf,
   INLINE_EXEMPT,
+  INLINE_PINNED,
   isInlineExempt,
+  isInlinePinned,
+  isRawExempt,
+  RAW_EXEMPT,
   RAW_PALETTE,
 } from "../../scripts/palette-inventory.mjs";
 
@@ -657,20 +662,59 @@ import {
  *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 15;
+/**
+ * THE END STATE OF THIS ARM, AND WHY THE NUMBER IS GONE.
+ *
+ * `toBeLessThanOrEqual(15)` was the shape this arm carried for its whole life, and at 15 it
+ * stops being a guard. It cannot fail when the count FALLS, and it cannot say WHICH 15 are
+ * allowed — a new `text-rose-500` in a new component satisfied it as long as somebody deleted
+ * a graticule stroke in the same commit. A budget only trips on growth, and growth is the one
+ * thing that is not going to happen now that every file but one reads 0.
+ *
+ * So the arm now says what it means, in the shape the inline arm already used: a NAMED
+ * exemption list — `RAW_EXEMPT`, one entry — asserted with `toBe` for that file and `toBe(0)`
+ * for every other file in the tree. T-031d ends this arm by deleting the entry rather than by
+ * editing a digit, and what is left behind is a literal zero.
+ *
+ * Four ways it fails, and all four are things that should fail:
+ *   - a raw palette class appears in any file that is not named        -> the zero assertion
+ *   - the named file's count moves in EITHER direction                 -> the `toBe` assertion
+ *   - the named file stops existing (renamed, split, deleted)          -> the staleness assertion
+ *   - `EXCLUDED`'s T-033 file stops carrying raw palette classes       -> the exclusion assertion
+ */
+describe("the raw palette is retired everywhere but one named file", () => {
+  const found = collectPaletteOccurrences();
+  const byFile = new Map<string, number>();
+  for (const o of found) byFile.set(o.file, (byFile.get(o.file) ?? 0) + 1);
 
-describe("the raw palette is being retired, and the number is held", () => {
-  it("finds no more than the budget", () => {
-    const found = collectPaletteOccurrences();
-    const byFile = new Map<string, number>();
-    for (const o of found) byFile.set(o.file, (byFile.get(o.file) ?? 0) + 1);
-    const worst = [...byFile.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  it("has none at all outside the named deferrals", () => {
+    const stray = [...byFile.entries()].filter(([file]) => !isRawExempt(file));
     expect(
-      found.length,
-      `budget ${RAW_PALETTE_BUDGET}, found ${found.length}. Heaviest: ${worst
+      stray,
+      `every file outside \`RAW_EXEMPT\` must read 0. Found: ${stray
         .map(([f, n]) => `${f} (${n})`)
         .join(", ")}`,
-    ).toBeLessThanOrEqual(RAW_PALETTE_BUDGET);
+    ).toEqual([]);
+  });
+
+  it.each(RAW_EXEMPT)("$file is deferred for exactly $count", (entry) => {
+    // BOTH DIRECTIONS. A rise is new work sneaking in under a deferral; a FALL means T-031d
+    // has partly landed and the row is stale, which is the reminder to re-record or delete it.
+    expect(
+      byFile.get(entry.file) ?? 0,
+      `${entry.file} is deferred for ${entry.count} (${entry.why}) but carries ${
+        byFile.get(entry.file) ?? 0
+      }`,
+    ).toBe(entry.count);
+    expect(entry.why.length, `${entry.file} is deferred without a reason`).toBeGreaterThan(20);
+  });
+
+  it("names only files that still exist — staleness", () => {
+    // A deferral pointing at a path the tree no longer has is a row nobody will ever delete.
+    // `toBe(0)` above would also fire, but it would blame the wrong thing.
+    for (const entry of RAW_EXEMPT) {
+      expect(existsSync(entry.file), `${entry.file} is deferred but is not in the tree`).toBe(true);
+    }
   });
 
   it("collects something at all — positive control", () => {
@@ -736,7 +780,17 @@ describe("the raw palette is being retired, and the number is held", () => {
  * T-031d's `--map-*` / `--province-*` work; one number mixing them would be a number nobody
  * could act on.
  */
-const ARBITRARY_COLOR_BUDGET = 72;
+/**
+ * THE END STATE OF THIS ARM. `ARBITRARY_COLOR_BUDGET = 72` had not moved for twelve commits,
+ * so a `<=` on it was a tripwire armed against the least likely failure this repo has. And
+ * 72 is not going to zero: these are painted map surfaces, and a sea plate measured against a
+ * fixed backdrop is not a decoration anybody is retiring.
+ *
+ * What changes is WHAT IT COUNTS. `ARBITRARY_PINNED` names every file that legitimately holds
+ * a bracketed colour and the exact number it holds; every other file must read 0. A new
+ * `bg-[#ea580c]` in a component now fails by name, where before it was absorbed by a 72-wide
+ * allowance that also covered eight map files.
+ */
 
 /**
  * Every spelling of one colour that must not slip past both arms, with orange-600 as the
@@ -838,19 +892,28 @@ describe("the palette cannot be laundered into brackets", () => {
     expect(inlinesAColor(cls)).toBe(false);
   });
 
-  it("finds no more than the pinned number of bracketed colour values", () => {
-    const byFile = new Map<string, number>();
-    for (const o of found) byFile.set(o.file, (byFile.get(o.file) ?? 0) + 1);
+  const byFile = new Map<string, number>();
+  for (const o of found) byFile.set(o.file, (byFile.get(o.file) ?? 0) + 1);
+  const pinned = new Set(ARBITRARY_PINNED.map((e) => e.file));
+
+  it("has no bracketed colour value in any file that is not a named surface", () => {
+    const stray = [...byFile.entries()].filter(([file]) => !pinned.has(file));
     expect(
-      found.length,
-      `pinned ${ARBITRARY_COLOR_BUDGET}, found ${found.length}. A RISE here with a fall in the ` +
-        `raw-palette budget is a palette class rewritten as a literal value, not progress. By file: ${[
-          ...byFile.entries(),
-        ]
-          .sort((a, b) => b[1] - a[1])
-          .map(([f, n]) => `${f} (${n})`)
-          .join(", ")}`,
-    ).toBeLessThanOrEqual(ARBITRARY_COLOR_BUDGET);
+      stray,
+      `a bracketed colour outside \`ARBITRARY_PINNED\` is a palette class rewritten as a ` +
+        `literal value, not progress. Found: ${stray.map(([f, n]) => `${f} (${n})`).join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it.each(ARBITRARY_PINNED)("$file holds exactly $count", (entry) => {
+    expect(
+      byFile.get(entry.file) ?? 0,
+      `${entry.file} is pinned at ${entry.count} (${entry.why}) but carries ${
+        byFile.get(entry.file) ?? 0
+      }`,
+    ).toBe(entry.count);
+    expect(entry.why.length, `${entry.file} is pinned without a reason`).toBeGreaterThan(20);
+    expect(existsSync(entry.file), `${entry.file} is pinned but is not in the tree`).toBe(true);
   });
 
   it("collects something at all — positive control", () => {
@@ -945,30 +1008,68 @@ describe("the palette cannot be laundered into brackets", () => {
  * A FALL here with a rise in either other arm would be the failure this trio exists to catch.
  * Neither moved: the raw-palette budget is unchanged at 126 and the arbitrary budget at 72.
  */
-const INLINE_COLOR_BUDGET = 16;
+/**
+ * THE END STATE OF THIS ARM, and it was already half-built: `INLINE_EXEMPT` pinned each
+ * no-stylesheet file's count with `toBe`, and then a separate `<=` budget of 16 covered
+ * everything else as one number. That number was the sum over six files, so a new `fillStyle`
+ * in a seventh passed as long as a dead gradient stop went in the same commit — the same hole
+ * the other two arms had, in the arm that had already solved it once.
+ *
+ * The global budget is gone. Every occurrence is now either a no-stylesheet row
+ * (`INLINE_EXEMPT`, 17) or a painted-surface row (`INLINE_PINNED`, 16), each with a file, an
+ * exact count and a reason; anything else is a failure. The LIVE count is therefore **0 by
+ * construction** rather than 16 by allowance, and it is asserted as a literal zero below.
+ *
+ * `lib/map/base-map-svg.ts` moved from the live half into `INLINE_EXEMPT` while this was
+ * written, and it belonged there from the start: it builds standalone SVG documents served
+ * through `<img src>`, which cannot see the page's CSS — the same reason `lib/brand/glyph.ts`
+ * was already exempt — and `base-map-svg.test.ts` pins each of its five hexes byte-for-byte to
+ * the globals.css token it transcribes.
+ */
 
 describe("a colour cannot hide outside a class either", () => {
   const found = collectInlineColorOccurrences();
-  const live = found.filter((o) => !isInlineExempt(o.file));
+  const named = (o: { file: string }) => isInlineExempt(o.file) || isInlinePinned(o.file);
+  const live = found.filter((o) => !named(o));
+  const byFile = new Map<string, number>();
+  for (const o of found) byFile.set(o.file, (byFile.get(o.file) ?? 0) + 1);
 
-  it("finds no more than the pinned number of inlined colour values", () => {
-    const byFile = new Map<string, number>();
-    for (const o of live) byFile.set(o.file, (byFile.get(o.file) ?? 0) + 1);
+  it("leaves nothing unnamed — the live count is zero, not a budget", () => {
+    const stray = new Map<string, number>();
+    for (const o of live) stray.set(o.file, (stray.get(o.file) ?? 0) + 1);
     expect(
-      live.length,
-      `pinned ${INLINE_COLOR_BUDGET}, found ${live.length}. A colour written into an SVG ` +
-        `attribute, a prop, a canvas call or a module constant is still a colour, and neither ` +
-        `other arm can see it. By file: ${[...byFile.entries()]
-          .sort((a, b) => b[1] - a[1])
+      [...stray.entries()],
+      `a colour written into an SVG attribute, a prop, a canvas call or a module constant is ` +
+        `still a colour, and neither other arm can see it. Give it a row in \`INLINE_EXEMPT\` ` +
+        `(no stylesheet can reach it) or \`INLINE_PINNED\` (a painted surface, with the figure ` +
+        `it was measured at), or remove it. Found: ${[...stray.entries()]
           .map(([f, n]) => `${f} (${n})`)
           .join(", ")}`,
-    ).toBeLessThanOrEqual(INLINE_COLOR_BUDGET);
+    ).toEqual([]);
   });
 
-  it("collects something at all, and the two halves add up — positive control", () => {
+  it.each(INLINE_PINNED)("$file is pinned at exactly $count", (entry) => {
+    expect(
+      byFile.get(entry.file) ?? 0,
+      `${entry.file} is pinned for ${entry.count} (${entry.why}) but carries ${
+        byFile.get(entry.file) ?? 0
+      }`,
+    ).toBe(entry.count);
+    expect(entry.why.length, `${entry.file} is pinned without a reason`).toBeGreaterThan(20);
+    expect(existsSync(entry.file), `${entry.file} is pinned but is not in the tree`).toBe(true);
+  });
+
+  it("collects something at all, and the halves add up — positive control", () => {
     expect(collectInlineColorOccurrences(["components"]).length).toBeGreaterThan(0);
-    // Not a third number nobody reconciles: the exempt half plus the live half IS the whole.
-    expect(live.length + found.filter((o) => isInlineExempt(o.file)).length).toBe(found.length);
+    // Not three numbers nobody reconciles: exempt + pinned + live IS the whole, and live is 0.
+    const exempt = found.filter((o) => isInlineExempt(o.file)).length;
+    const pinnedCount = found.filter((o) => isInlinePinned(o.file)).length;
+    expect(exempt + pinnedCount + live.length).toBe(found.length);
+    expect(exempt).toBe(INLINE_EXEMPT.reduce((n, e) => n + e.count, 0));
+    expect(pinnedCount).toBe(INLINE_PINNED.reduce((n, e) => n + e.count, 0));
+    // No file may sit in both tables: the two reasons are mutually exclusive, and a file in
+    // both would be counted twice by the reconciliation above and hide a real occurrence.
+    expect(INLINE_EXEMPT.filter((e) => isInlinePinned(e.file))).toEqual([]);
   });
 
   it("exempts a named file and nothing that merely ends like one", () => {

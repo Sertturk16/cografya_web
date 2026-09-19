@@ -136,6 +136,96 @@ export function inlinesAColor(cls) {
   return inner === null ? false : PAYLOAD.test(stripVars(inner[1]));
 }
 
+/**
+ * The raw-palette occurrences that are allowed to remain, BY FILE AND BY COUNT.
+ *
+ * ## Why this replaced a budget
+ *
+ * The arm ended T-031c reading `expect(found.length).toBeLessThanOrEqual(15)`. A `<=` on a
+ * number cannot fail when the count FALLS, and it cannot say which 15 are allowed: a new
+ * `text-rose-500` in a new component passed that assertion as long as somebody deleted a
+ * graticule stroke in the same commit. The budget only ever tripped on growth, which is the
+ * least likely way this number moves now that the application work is done.
+ *
+ * A named row with an exact count fails in both directions and names the file. T-031d ends
+ * the arm by DELETING this entry rather than editing a digit, and the arm's end state is a
+ * literal, checkable zero rather than a number somebody has to believe.
+ */
+export const RAW_EXEMPT = [
+  {
+    file: "components/v2/v2-world-map-explorer.tsx",
+    count: 15,
+    why: "the dark map surface T-031d owns: the graticule, the sphere shadow and the neighbour-land tones, all measured against the `--map-*` set that task introduces rather than against any page background",
+  },
+];
+
+/** Is this file one of the named raw-palette deferrals? An exact compare, like `isInlineExempt`. */
+export function isRawExempt(file) {
+  return RAW_EXEMPT.some((e) => file === e.file);
+}
+
+/**
+ * The bracketed colour VALUES that are allowed to remain, by file and by count.
+ *
+ * Same replacement, same reason. `ARBITRARY_COLOR_BUDGET = 72` had not moved for twelve
+ * commits, so a `<=` on it was a tripwire armed against the one thing that was not going to
+ * happen. What these 72 actually are is narrow and nameable: painted map surfaces — sea,
+ * land, borders, inland water, the graticule — plus the workbench's canvas, on six explorer
+ * components and two locator mini-maps. Pinning them per file makes a new `bg-[#ea580c]` in
+ * a component fail BY NAME instead of being absorbed by a 72-wide allowance.
+ *
+ * `v2-header.tsx` is in the table and is NOT a map surface, which is the point of naming
+ * rather than counting: it is one literal, `dark:text-[#e2896a]`, on the wordmark, and it is
+ * recorded as a finding rather than folded in with the maps.
+ */
+export const ARBITRARY_PINNED = [
+  {
+    file: "components/v2/v2-earthquake-explorer.tsx",
+    count: 12,
+    why: "the fault-map surfaces: sea plate, land and its hairline in both themes, neighbour land, and the two tectonic-context tones",
+  },
+  {
+    file: "components/v2/v2-marine-map-explorer.tsx",
+    count: 11,
+    why: "the basin-map surfaces: sea plate, land and hairline in both themes, two inland-water tones, the sea fill and the two neighbour-land tones",
+  },
+  {
+    file: "components/v2/v2-game-screen.tsx",
+    count: 10,
+    why: "the play-screen map surfaces: the board plate in both themes, land and hairline, and the sea pair",
+  },
+  {
+    file: "components/v2/v2-tool-workbench.tsx",
+    count: 10,
+    why: "the workbench canvas plate in both themes, plus the same land/hairline/sea set the play screen draws",
+  },
+  {
+    file: "components/v2/v2-turkey-map-explorer.tsx",
+    count: 10,
+    why: "the Türkiye map surfaces: plate, land and hairline, inland water, the highlighted province tone and the two neighbour-land tones",
+  },
+  {
+    file: "components/v2/v2-province-locator-map.tsx",
+    count: 8,
+    why: "the province locator mini-map: plate, land and hairline, two inland-water tones and the sea",
+  },
+  {
+    file: "components/v2/v2-region-locator-map.tsx",
+    count: 8,
+    why: "the region locator mini-map, the same surface set as the province one",
+  },
+  {
+    file: "components/v2/v2-world-map-explorer.tsx",
+    count: 2,
+    why: "the world map's two-stop dark ocean plate, deferred to T-031d with that file's raw-palette rows",
+  },
+  {
+    file: "components/v2/v2-header.tsx",
+    count: 1,
+    why: "NOT A MAP SURFACE and recorded as such: `dark:text-[#e2896a]` lightens the wordmark over the dark `--primary`, which resolves to oklch(0.65 0.13 40.65). Rebinding it changes a painted brand mark in one theme and needs its own measurement, so it is named here rather than absorbed",
+  },
+];
+
 /** Files this branch does not own, and files that are not product code. */
 export const EXCLUDED = [
   // T-033 rewrites this file's climate markup wholesale and clears its 65 occurrences.
@@ -294,7 +384,62 @@ export const INLINE_EXEMPT = [
     count: 2,
     why: "builds a standalone SVG string for the favicon and apple-icon, served without the stylesheet",
   },
+  {
+    file: "lib/map/base-map-svg.ts",
+    count: 5,
+    why: "builds the shared locator silhouettes as standalone SVG documents served through `<img src>`, which cannot see the page's CSS; its own docblock says so and `base-map-svg.test.ts` asserts each hex is byte-identical to the globals.css token it transcribes, so a retune fails CI rather than splitting the palette",
+  },
 ];
+
+/**
+ * The inlined colour values that are allowed to remain in a file that DOES have a stylesheet.
+ *
+ * ## Why this table exists, and why the budget it replaces does not
+ *
+ * `INLINE_COLOR_BUDGET = 16` was the last `<=` in the counter. Its failure message described
+ * exactly the right defect and the assertion could not detect it: the number was the sum over
+ * six files, so a new `fillStyle` in a seventh passed as long as a dead gradient stop went in
+ * the same commit. Splitting it per file with `toBe` makes the live population **0 by
+ * construction** — an occurrence is either a named row here, a no-stylesheet row in
+ * `INLINE_EXEMPT`, or a failure — and every surviving colour carries a reason.
+ *
+ * These eleven are not the same thing as the five above. A token WOULD resolve in each of
+ * them; they are pinned because they are painted map/canvas values owned by T-031d, or a
+ * white mark drawn on top of a map surface whose own contrast was measured against that
+ * surface rather than against any page background.
+ */
+export const INLINE_PINNED = [
+  {
+    file: "components/v2/v2-marine-map-explorer.tsx",
+    count: 4,
+    why: "the station pins drawn on the basin map: the white pin stroke, the white core, the white label mark and the 30% white halo around the selected one, all measured against the sea plate they sit on rather than against `--background`",
+  },
+  {
+    file: "components/v2/v2-world-map-explorer.tsx",
+    count: 3,
+    why: "the three stops of the dark ocean gradient, deferred to T-031d with that file's raw-palette and bracketed rows",
+  },
+  {
+    file: "components/v2/v2-tool-workbench.tsx",
+    count: 2,
+    why: "two `ctx.fillStyle` calls on the measurement canvas — a white label and its 60% black plate. Canvas takes a colour VALUE and cannot read a custom property without a `getComputedStyle` round trip per frame",
+  },
+  {
+    file: "components/v2/v2-earthquake-explorer.tsx",
+    count: 1,
+    why: "the white epicentre mark drawn inside the magnitude disc, measured against that disc rather than against the page",
+  },
+  {
+    file: "components/v2/v2-region-locator-map.tsx",
+    count: 1,
+    why: "the white hover stroke on a region silhouette, one arm of a ternary whose other arm is the bound stroke colour",
+  },
+];
+
+/** Is this file one of the named painted-surface pins? An exact compare, like `isInlineExempt`. */
+export function isInlinePinned(file) {
+  return INLINE_PINNED.some((e) => file === e.file);
+}
 
 /**
  * Is this file one of the no-stylesheet contexts?
