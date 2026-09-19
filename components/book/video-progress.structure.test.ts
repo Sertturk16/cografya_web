@@ -288,10 +288,19 @@ describe("the watched toggle (§5.6)", () => {
       "WATCHED_TOGGLE_CHECKED",
       "video-progress-controls.tsx",
     );
+    // The alternation is what the prose above actually means. A BARE `hover:bg-secondary` would
+    // satisfy "the fill is restated" and still be a hover that changes nothing visible — the
+    // resting fill, painted again — so the token has to carry an alpha modifier or resolve to
+    // the `-strong` member. The group is tried before the bare form.
+    const hoverFill = /hover:bg-secondary(?:\/\d{1,3}|-strong)?\b/.exec(checked)?.[0];
     expect(
-      checked,
+      hoverFill,
       "the checked hover fill is unstated and the outline variant's will win",
-    ).toMatch(/hover:bg-secondary\b/);
+    ).toBeDefined();
+    expect(
+      hoverFill,
+      "the checked hover fill IS the resting fill — hovering would change nothing",
+    ).not.toBe("hover:bg-secondary");
     // NOT `brightness-*`. The stylesheet used `filter: brightness(0.88)`, which scales the fill
     // AND the ink: over the frozen white-on-#4f6d30 pair that measured 5.36:1, but over the
     // bridge pair dark mode's `--secondary-foreground` is `--color-ink-dark`, and darkening both

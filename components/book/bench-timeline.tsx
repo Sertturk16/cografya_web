@@ -35,17 +35,29 @@ const TIMELINE =
  * measure identically; `bench.structure.test.ts` pins both, because losing either turns the
  * card's reserved height back into a number that can drift.
  *
- * MEASURED, AND IT IS A KNOWN GAP RATHER THAN A SILENT ONE. The rail is a graphical object in
- * WCAG 1.4.11's sense — the tick positions are read against its extent — and `bg-muted` on the
- * card it sits in measures **1.20:1 light / 1.16:1 dark**, under the 3:1 floor. That is not a
- * regression this conversion introduces: the stylesheet painted `--color-surface` on a literal
- * `#fff` card, which is the SAME 1.20:1 pair in both themes because both values were frozen.
- * The rail is `--color-surface`'s faithful bridge (`bg-muted`, the substitution
- * `earthquake-list.tsx` and `pm25-table.tsx` already make where `bg-card` IS the surface
- * underneath). Re-colouring a signature element is a design change and is not this task's to
- * make; the reading is recorded here rather than left unmeasured. The information itself is
- * not lost at 1.16:1 — each tick's dot carries a 2px `border-primary` boundary at **5.13:1
- * light / 4.99:1 dark** against the same card, and the time under it is a text label.
+ * MEASURED, AND T-055 OWNS WHAT TO DO ABOUT IT. `bg-muted` on the card this rail sits in
+ * measures **1.20:1 light / 1.16:1 dark**, under WCAG 1.4.11's 3:1. That ticket carries both
+ * alternatives with their readings (`bg-input` 3.86:1 light / 4.02:1 dark, `bg-border` 1.45 /
+ * 1.53) and the reason it is a design decision rather than a defect to fix in passing.
+ *
+ * THIS IS NOT A PROGRESS BAR, and the distinction is what decides the 1.4.11 question. Nothing
+ * here is filled: this component receives `orderNo`, `tags` and `durationSeconds` and nothing
+ * else, playback position never reaches it, the saved position is a TEXT line in
+ * `video-progress-controls.tsx`, and the scrubber the reader actually drags is YouTube's own,
+ * inside the iframe. So there is no filled-vs-unfilled boundary to carry a ratio, and no
+ * "extent of the media" being communicated — this is a question-POSITION strip. The nearest
+ * real 1.4.11 boundary is the tick dot's 2px `border-primary` where it crosses the rail:
+ * **4.26:1 light / 4.29:1 dark**, clearing 3:1. Every tick's information is redundantly
+ * textual besides (the number in the dot, the timestamp under it).
+ *
+ * NOR IS IT THE DEFECT T-033 EXISTS TO REMOVE, and the two are a different class. A frozen raw
+ * token is theme-ASYMMETRIC — the same declaration read 18.65:1 on this card in dark and 1.06:1
+ * in light — which is how a stage ends up as a white box on a night page. This pair is
+ * symmetric by construction: 1.20 light, 1.16 dark, because `--muted` and `--card` move
+ * together. The stylesheet's own reading was the same 1.20:1 in BOTH themes (it painted
+ * `--color-surface` on a literal `#fff`), so `bg-muted` — `--color-surface`'s faithful bridge,
+ * the substitution `earthquake-list.tsx` and `pm25-table.tsx` already make where `bg-card` IS
+ * the surface underneath — carries it across unchanged rather than introducing it.
  */
 const TIMELINE_BAR = "relative mb-[38px] h-1.5 rounded-full bg-muted";
 
