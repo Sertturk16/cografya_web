@@ -65,7 +65,6 @@ export function V2GameHistoryStats() {
       icon: <Award className="size-5" />,
       // IRIS A10: requires at least one round with score > 0 (abandoned zero-score rounds do not unlock)
       unlocked: Boolean(records && records.some((r) => r.score > 0)),
-      color: "bg-primary/10 text-primary border-primary/30",
     },
     {
       id: "pro-explorer",
@@ -73,7 +72,6 @@ export function V2GameHistoryStats() {
       desc: "Herhangi bir sınav turunda %85 ve üzeri başarı skoru elde et.",
       icon: <Zap className="size-5" />,
       unlocked: bestScore >= 85,
-      color: "bg-amber-500/10 text-amber-600 border-amber-500/30",
     },
     {
       id: "map-veteran",
@@ -81,7 +79,6 @@ export function V2GameHistoryStats() {
       desc: "Toplam 5 veya daha fazla sınav turu bitirerek profilini güçlendir.",
       icon: <ShieldCheck className="size-5" />,
       unlocked: totalRounds >= 5,
-      color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30",
     },
     {
       id: "perfect-streak",
@@ -89,7 +86,6 @@ export function V2GameHistoryStats() {
       desc: "Tek bir sınavda %100 tam puan alarak coğrafya şampiyonu ol.",
       icon: <Flame className="size-5" />,
       unlocked: bestScore === 100,
-      color: "bg-orange-500/10 text-orange-600 border-orange-500/30",
     },
   ];
 
@@ -155,7 +151,7 @@ export function V2GameHistoryStats() {
             key={item.id}
             className={`p-4 rounded-2xl border transition-all duration-300 ${
               item.unlocked
-                ? `${item.color} shadow-xs hover:-translate-y-0.5`
+                ? "bg-primary/10 text-primary border-primary/30 shadow-xs hover:-translate-y-0.5"
                 : "border-dashed border-border bg-muted/20 text-muted-foreground opacity-60"
             }`}
           >

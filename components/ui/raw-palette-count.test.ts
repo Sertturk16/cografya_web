@@ -451,9 +451,28 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 90 -> 81 is Task 10's fourth file: `components/v2/v2-game-history-stats.tsx` 9 -> 0, all
+ * nine decoration. Four achievement tiles, three of them amber, emerald and orange and the
+ * fourth ALREADY the brand tint -- which is the tell, because a set of four where one member is
+ * chrome is not encoding anything. Unlocked versus locked is carried three other ways on the
+ * same tile: a text badge reading "Kazanildi" or "Kilitli", a dashed border and a 60% opacity.
+ *
+ * "REMOVED" HERE MEANS THE HUE, NOT THE TILE, and the inventory row now says so. With the three
+ * hues gone the colour field is one constant repeated four times, so it leaves the data
+ * altogether and the unlocked branch names its treatment once.
+ *
+ * The glyph's backdrop is not the tile: it is an 80% `--background` plate over the tile, which
+ * is itself a 10% tint over the card's own muted gradient end. Measured there the three raw
+ * glyphs were 2.99, 3.39 and 3.35 in light -- one under the 3:1 graphical floor and all three
+ * under 4.5 -- against 4.74 light and 5.26 dark for the brand glyph already shipping beside
+ * them. The tile edge moves from 1.91 to 4.33 light, which is the difference between a tint
+ * with no edge and a tile.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 90;
+const RAW_PALETTE_BUDGET = 81;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
