@@ -21,7 +21,7 @@ import {
  * Listing it here rather than silently skipping it is deliberate: when T-033 merges, this
  * test fails on the exclusion being stale, which is the reminder to delete it.
  */
-const RAW_PALETTE_BUDGET = 772;
+const RAW_PALETTE_BUDGET = 764;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

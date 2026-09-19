@@ -994,11 +994,20 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
           </div>
         </div>
 
-        {/* Search Restriction Helper Banner */}
+        {/* Search Restriction Helper Banner — a CAUTION, not neutral information: the region
+            filter is suppressing results the reader asked for, and the escape from it is the
+            button on the right. Hence the warning family rather than `info`.
+            Measured with lib/theme/contrast.ts, BACKDROP NAMED: this banner sits in a bare
+            <section>, so the tint composites over `--background`, not over `--card`.
+            `--warning-strong` on `--warning/10` over `--background` measures 5.86:1 light and
+            9.10:1 dark (the same pairing over `--card` would be 6.17 / 8.18 — close, but this
+            page never paints it there). The escape button supplies its own `bg-card`, so its
+            label is `--warning-strong` on bare `--card`: 6.81:1 light, 9.64:1 dark. Every
+            figure floored, never rounded toward the flattering direction. */}
         {isSearchRestrictedByRegion && (
-          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+          <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Info className="size-4 shrink-0 text-amber-600" />
+              <Info className="size-4 shrink-0 text-warning-strong" />
               <span>
                 <strong>
                   {provinces.find((p) => p.regionId === selectedRegion)?.region
@@ -1012,7 +1021,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             <Button
               variant="outline"
               size="sm"
-              className="text-xs h-7 px-2.5 bg-card border-amber-500/40 text-amber-800 dark:text-amber-200"
+              className="text-xs h-7 px-2.5 bg-card border-warning/40 text-warning-strong"
               onClick={() => setSelectedRegion("all")}
             >
               Tüm İllerde Ara
