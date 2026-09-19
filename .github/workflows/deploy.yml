@@ -93,11 +93,19 @@ jobs:
             #    the deploy wedges until a human intervenes. It is a no-op whenever the running
             #    api already matches the file; when it does not, it briefly restarts the API
             #    (seconds, and only on the one deploy that applies the change).
-            # 2. `--no-build`: a WEB deploy must never build or ship an API image. A missing api
-            #    image is the api repo's deploy to fix, and this fails loudly instead of quietly
-            #    compiling whatever happens to be in /opt/cografya/cografya_api.
+            # 2. `--build`/`--deps` are both refused. `--no-build`: a WEB deploy must never build
+            #    or ship an API image — a missing api image is the api repo's deploy to fix, and
+            #    this fails loudly instead of quietly compiling whatever happens to be in
+            #    /opt/cografya/cografya_api. `--no-deps` is equally deliberate: without it,
+            #    `up api` also converges api's `depends_on`, so a web deploy could recreate the
+            #    production postgres container if the hand-edited compose file ever drifted on
+            #    it. It gives up the `service_healthy` wait on postgres/redis, and that trade is
+            #    right: an api recreated while postgres is down crash-loops, publishes no port,
+            #    and lands loudly on the 3001 check below — whereas recreating the production
+            #    database from a web deploy has no loud failure mode at all. Matches
+            #    `up -d --no-deps web` further down.
             echo "==> Ensuring the API is up and published for the web build..."
-            docker compose -f docker-compose.prod.yml up -d --no-build api
+            docker compose -f docker-compose.prod.yml up -d --no-build --no-deps api
 
             # The one way the host's compose file can be wrong that otherwise fails SILENTLY:
             # `- "3001:3001"` instead of `- "127.0.0.1:3001:3001"`. The build succeeds and the
@@ -116,6 +124,9 @@ jobs:
               echo "       docker-compose.prod.yml's api service needs:" >&2
               echo "         ports:" >&2
               echo "           - \"127.0.0.1:3001:3001\"" >&2
+              echo "       'docker compose ps' prints nothing and exits 0 for an unknown service, so" >&2
+              echo "       this also fires if the api service is missing, renamed or misspelled in the" >&2
+              echo "       compose file, or if the container is crash-looping and publishing nothing." >&2
               echo "       The web build prerenders ~980 routes and cannot reach the API without it." >&2
               exit 1
             fi
