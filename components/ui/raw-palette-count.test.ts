@@ -249,9 +249,55 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after.
  *
+ * 180 -> 168 is T-031c Task 9's fifth file: `components/v2/v2-world-map-explorer.tsx` 27 -> 15,
+ * and it is the first file on this branch that does NOT reach zero. The 12 that go are the
+ * file's whole semantic half; the 15 that stay are its whole data half, and they are the dark
+ * map surface T-031d owns.
+ *
+ * The 12: `SpecialStatusBadge`, which this file exports and renders in five places, and the
+ * continent-filter banner that is `v2-turkey-map-explorer:1024` character for character. The
+ * badge has FIVE different backdrops and every one is named and measured, because it is the
+ * same chip on a card, on a table row that hovers, on a mini-card, and twice on a translucent
+ * panel floating over a navy map: `--card` 5.87 light / 7.36 dark; a 40% muted wash 5.48 /
+ * 6.96; the 50% wash this table's rows actually use 5.42 / 6.78; a 20% wash 5.67 / 7.17;
+ * `--card/95` over the ocean gradient's mid stop 5.41 / 7.27 and over its black bottom stop
+ * 5.31 / 7.48. All six are computed. PAINTED on `/dunya`, where seven of these badges render,
+ * the first one measures 5.62 rest / 5.13 hovered in light and 8.41 / 7.06 in dark, and its
+ * painted hovered backdrop (#ecdec4) is darker than any of the six modelled ones -- so 5.13
+ * light is the figure of record, not 5.31. The hovered trap did not bite here, and the reason
+ * is worth recording: `--warning-strong` is a strong member with roughly a point of headroom,
+ * where the sets that failed hovered at ~4.4 were tuned to the floor.
+ *
+ * WHY 15 STAY, isolated and quantified rather than asserted.
+ *
+ * All 17 `--map-*` / `--province-*` / `--land-*` tokens are declared in `:root` and `.dark`
+ * redefines ZERO of them -- they are the light parchment map's values. This map is not that
+ * map: its container is a bracketed navy in BOTH themes and its ocean is a three-stop gradient
+ * from #0b192c through #1e3e62 to black, so a theme-aware light token painted on it is wrong in
+ * light mode by construction. Today's not-published country fill reads 1.27 to 1.75 against
+ * those three stops, which is a deliberate recede; `--land-inert`, the token the inventory
+ * names, is an alias of `--province-fill` (#ffffff) and at the same 65% would read 5.62 to
+ * 8.63, making the countries with no page the most prominent objects on the map.
+ * `--province-inert` in its dark value reads 1.12 to 1.21, i.e. invisible. Neither is an
+ * application of a token; both are a redesign of the surface.
+ *
+ * None of the 17 is a graticule line either, and the hover/selected row carries a worse
+ * problem: the highlight has a SECOND spelling that neither arm counts. `floodColor="#f59e0b"`
+ * at :650 -- Tailwind amber-500 exactly -- is the glow drawn around the same hovered country.
+ * Binding the class and leaving the flood is the two-spellings bug this branch exists to close,
+ * and fixing both is the map-surface work.
+ *
+ * So these 15 are recorded rather than bound, the way `v2-turkey-map-explorer`'s eleven
+ * bracketed map hexes and `v2-game-screen`'s land/sea pair already are in the inventory. They
+ * are visible in this count instead of invisible only because they are spelled as classes
+ * rather than as brackets. Task N+1's exemption list is where they belong if T-031d has not
+ * landed by then.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 180;
+const RAW_PALETTE_BUDGET = 168;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

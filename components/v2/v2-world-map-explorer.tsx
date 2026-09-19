@@ -55,7 +55,7 @@ export function SpecialStatusBadge({ isEn, className }: { isEn: boolean; classNa
   return (
     <span
       className={cn(
-        "text-[9px] py-0 px-1.5 rounded font-medium bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/30 shrink-0 select-none inline-flex items-center",
+        "text-[9px] py-0 px-1.5 rounded font-medium bg-warning/15 text-warning-strong border border-warning/30 shrink-0 select-none inline-flex items-center",
         className,
       )}
     >
@@ -976,9 +976,9 @@ export function V2WorldMapExplorer({
 
         {/* Search Restriction Helper Banner */}
         {isSearchRestrictedByContinent && (
-          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between gap-3">
+          <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Info className="size-4 shrink-0 text-amber-600" />
+              <Info className="size-4 shrink-0 text-warning-strong" />
               <span>
                 <strong>{CONTINENT_META[selectedContinent]?.name ?? selectedContinent}</strong>{" "}
                 {isEn ? "filter is active, but no results found for" : "filtresi etkinken"} &quot;
@@ -988,7 +988,7 @@ export function V2WorldMapExplorer({
             <Button
               variant="outline"
               size="sm"
-              className="text-xs h-7 px-2.5 bg-card border-amber-500/40 text-amber-800 dark:text-amber-200"
+              className="text-xs h-7 px-2.5 bg-card border-warning/40 text-warning-strong"
               onClick={() => setSelectedContinent("ALL")}
             >
               {isEn ? "Search All Countries" : "Tüm Dünyada Ara"}

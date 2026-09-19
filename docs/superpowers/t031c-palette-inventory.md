@@ -523,6 +523,48 @@ same treatment together, which is what keeps them agreeing.
 
 **Totals:** data 15, semantic 12, decoration 0.
 
+**APPLIED, Task 9 — the 12 semantic only. THE 15 DATA ROWS ARE LEFT FOR T-031d.**
+
+The 12 went as written. `SpecialStatusBadge` has FIVE call sites in this file and therefore five
+backdrops, each named and measured for `--warning-strong` on a 15% warning tint: `--card` 5.87
+light / 7.36 dark, a 40% muted wash 5.48 / 6.96, the 50% wash this file's table rows actually
+carry 5.42 / 6.78, a 20% wash 5.67 / 7.17, and `--card/95` over the ocean gradient's mid stop
+5.41 / 7.27 and over its black bottom stop 5.31 / 7.48 — all six computed. Painted on `/dunya`,
+where seven of these badges render, the first measures 5.62 rest / 5.13 hovered light and 8.41 /
+7.06 dark; its painted hovered backdrop (#ecdec4) is darker than any modelled one, so **5.13
+light is the figure of record**. The banner is
+`v2-turkey-map-explorer:1024` character for character and takes the same treatment: 5.86 light /
+9.11 dark over `--background`, with the escape button an opaque `bg-card` pair at 6.81 / 9.64.
+
+**The 15 data rows cannot be applied as written, and the reason is measured rather than
+asserted.** All 17 `--map-*` / `--province-*` / `--land-*` tokens are declared in `:root`; `.dark`
+redefines **zero** of them. They are the light parchment map's values. This map is not that map —
+its container is `bg-[#0d1b2a] dark:bg-[#070e17]` and its ocean is a three-stop gradient from
+`#0b192c` through `#1e3e62` to black, i.e. a fixed navy basemap in BOTH themes — so a theme-aware
+light token painted on it is wrong in light mode by construction:
+
+| Fill at 65% over the ocean's three stops   | vs the ocean       |
+| ------------------------------------------ | ------------------ |
+| today's `slate-600` / `slate-700` (recede) | 1.68 / 1.27 / 1.75 |
+| `--land-inert` (= `--province-fill`, #fff) | 5.62 / 7.99 / 8.63 |
+| `--province-inert`, dark value (#1b2b2f)   | 1.12 / 1.21 / 1.21 |
+
+Binding `--land-inert` would make the countries with no page the most prominent objects on the
+map; `--province-inert`'s dark value would make them invisible. Neither is an application of a
+token, both are a redesign of the surface, and the figures they would have to be judged against
+are the ones T-031d is about to redo.
+
+None of the 17 is a graticule line either. And row 733 carries a worse problem than a missing
+token: the hover/selected highlight has a **second spelling neither arm counts** —
+`floodColor="#f59e0b"` at `:650`, Tailwind amber-500 exactly, is the glow drawn around the same
+hovered country. Binding the class and leaving the flood reproduces the two-spellings bug this
+branch exists to close; reconciling both is the map-surface work.
+
+These 15 therefore sit where `v2-turkey-map-explorer`'s eleven bracketed map hexes and
+`v2-game-screen`'s land/sea pair already sit — recorded, not fixed. The only difference is that
+these are spelled as classes rather than as brackets, so the counter can see them. Task N+1's
+exemption list is where they belong if T-031d has not landed by then.
+
 ### app/[locale]/(site)/deniz/kiyi-tipleri/page.tsx (24)
 
 | Line        | Class(es)                                                                                    | #   | Verdict    | Becomes                         | Note                                                                                                                                                                                                                       |
