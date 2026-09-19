@@ -37,11 +37,7 @@ export function V2GameHub() {
             </h2>
           </div>
 
-          <Badge
-            variant="secondary"
-            size="sm"
-            icon={<Sparkles className="size-3 text-amber-500" />}
-          >
+          <Badge variant="secondary" size="sm" icon={<Sparkles className="size-3" />}>
             3 Özel Sınav Modu
           </Badge>
         </div>
@@ -71,11 +67,11 @@ export function V2GameHub() {
 
               <div className="space-y-1.5 pt-2 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  <CheckCircle2 className="size-3.5 text-primary" />
                   <span>Eksiksiz 81 il soru havuzu</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-emerald-600" />
+                  <CheckCircle2 className="size-3.5 text-primary" />
                   <span>Seri çarpanı ve zamanlı mod</span>
                 </div>
               </div>
@@ -119,11 +115,11 @@ export function V2GameHub() {
 
               <div className="space-y-1.5 pt-2 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-teal-600" />
+                  <CheckCircle2 className="size-3.5 text-secondary" />
                   <span>7 bölge vektör harita sınırları</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-teal-600" />
+                  <CheckCircle2 className="size-3.5 text-secondary" />
                   <span>Bölgesel coğrafya kavrama</span>
                 </div>
               </div>
@@ -167,11 +163,11 @@ export function V2GameHub() {
 
               <div className="space-y-1.5 pt-2 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-cyan-600" />
+                  <CheckCircle2 className="size-3.5 text-accent" />
                   <span>Bölgeye özel otomatik zoom</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="size-3.5 text-cyan-600" />
+                  <CheckCircle2 className="size-3.5 text-accent" />
                   <span>Küçük illeri rahat tıklama</span>
                 </div>
               </div>
@@ -202,7 +198,7 @@ export function V2GameHub() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Brain className="size-4 text-purple-600" />
+            <Brain className="size-4 text-primary" />
             <span className="text-muted-foreground">
               Aktif Geri Çağırma (Active Recall) uyumlu MEB müfredatı.
             </span>

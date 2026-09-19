@@ -500,9 +500,31 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 56 -> 48 is Task 10's sixth file: `components/v2/v2-game-hub.tsx` 8 -> 0, all decoration,
+ * and it is the file the inventory used to WRITE its second ruling -- a hue that varies per
+ * card is card identity, not meaning. That ruling stands. What the file shows on contact is the
+ * same thing `v2-tools-hub` showed: each of the three mode cards ALREADY carries a per-card
+ * bridge identity in three declared places -- its icon plate, its badge variant and its hover
+ * edge are `--primary`, `--secondary` and `--accent` respectively -- and the emerald, teal and
+ * cyan ticks were a fourth, raw spelling of exactly that. Deleting them leaves grey ticks in
+ * three cards whose chrome is coloured; they join the identity the card already declares.
+ *
+ * On the card, which is an 80% card wash over the panel at rest and opaque `--card` hovered:
+ * 5.08 / 5.13 light and 4.94 / 4.99 dark for card 1, 5.84 / 5.89 and 5.36 / 5.42 for card 2,
+ * 6.08 / 6.13 and 5.38 / 5.44 for card 3 -- against 3.62, 3.64 and 3.59 in light for the three
+ * raw hues, every one of them failing 4.5 and two of them within 0.6 of the graphical floor.
+ *
+ * The other two are a `Sparkles` inside a filled secondary badge, whose backdrop is that fill:
+ * amber-500 measured 2.76 light and **1.47** dark on it, and it inherits the badge's own
+ * foreground at 5.89 / 5.37. And a `Brain` in a two-item strip whose other glyph is already
+ * `--primary`: 4.61 light, down from purple-600's 4.98 but far above the 3:1 a glyph is held
+ * to, and 4.57 dark, up from 2.82, which was below it.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 56;
+const RAW_PALETTE_BUDGET = 48;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
