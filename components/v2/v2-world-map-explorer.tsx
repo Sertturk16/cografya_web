@@ -722,21 +722,21 @@ export function V2WorldMapExplorer({
                   }
 
                   if (isHovered || isSelected) {
-                    // --map-graticule sits INSIDE the continent fills' own contrast range
-                    // against --map-ocean (3.35-13.15 light, 3.74-14.65 dark; graticule is
-                    // 4.03/4.49) and its hue (~208°) sits 6° from Avrupa/Kuzey Amerika's blue —
-                    // it read as a de-emphasised, switched-off country rather than a picked-out
-                    // one (T-031d Task 10 fix round 1). --primary-strong clears every continent
-                    // but Antarktika in dark (9.33 vs the 3.74-14.65 range) and its warm hue
-                    // (~16°) is not a Okabe-Ito continent hue, so dark now uses it. It is NOT
-                    // used in light: --primary-strong resolves to the dark "ink on paper" value
-                    // there (#7e3a1e, calibrated as TEXT on a light surface), which measures only
-                    // 2.08:1 against the light ocean -- worse than --map-graticule's 4.03:1, not
-                    // better. Every other checked UI-state "-strong" token shares that same
-                    // light-mode shape (dark-toned by design), so light keeps --map-graticule
-                    // pending a dedicated always-bright token; see the Task 10 fix-round-1 report.
+                    // ONE token, not a light/dark pair: /dunya is dark in both themes, so the
+                    // highlight has only ever one ground (--map-ocean) to be measured against.
+                    // Fix round 1 tried a theme-aware split (--map-graticule light /
+                    // --primary-strong dark) because --primary-strong's dark value cleared
+                    // 9.33:1 against the dark ocean; but its LIGHT value is #7e3a1e, ink
+                    // calibrated for a light surface, which measured only 2.08:1 against the
+                    // light ocean -- worse than --map-graticule's 4.03:1, not better. --map-hover
+                    // pins that same dark-mode value (#f49f80) as a literal in BOTH `:root` and
+                    // `.dark`, which is what makes it work in light too: 8.38:1 light / 9.33:1
+                    // dark full strength, 7.00:1 / 7.71:1 at the /90 this fill renders at --
+                    // above every continent's own contrast against --map-ocean except
+                    // Antarktika's outlier (see app/globals.css and map-surface.test.ts for the
+                    // full measurement, including where it does NOT clear the top two).
                     fillClass =
-                      "stroke-[var(--map-graticule)] dark:stroke-[var(--primary-strong)] stroke-[1.8] fill-[var(--map-graticule)]/90 dark:fill-[var(--primary-strong)]/90 opacity-100";
+                      "stroke-[var(--map-hover)] stroke-[1.8] fill-[var(--map-hover)]/90 opacity-100";
                   }
 
                   const cItem = countryMap.get(shape.iso);

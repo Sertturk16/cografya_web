@@ -23,6 +23,11 @@
  * It resolves to the sea in both themes, so its value here is the same as `--map-sea`'s, per
  * theme.
  *
+ * TWELVE AGAIN, this time for real, as of T-031d Task 10 fix round 2: `--map-hover` joins the
+ * table. Declared identically in both themes in `app/globals.css` for the reason
+ * `--map-graticule` and `--map-unknown-land` already are — the world map's ocean does not
+ * change between themes, so neither does anything measured only against it.
+ *
  * TWELVE, THEN BACK TO ELEVEN, as of review round 2: `--map-tectonic` lived here for one
  * round and was removed again. It was meant to cover the earthquake explorer's
  * `fill-[#537b93] dark:fill-[#5a86a0]` sea-basin fill as "a real third surface, neither land
@@ -108,6 +113,7 @@ export const MAP_SURFACES = {
     "--map-ocean": "#0d1b2a",
     "--map-graticule": "#4d7ea8",
     "--map-unknown-land": "#64748b",
+    "--map-hover": "#f49f80",
   },
   dark: {
     "--map-plate": "#152228",
@@ -121,5 +127,6 @@ export const MAP_SURFACES = {
     "--map-ocean": "#070e17",
     "--map-graticule": "#4d7ea8",
     "--map-unknown-land": "#64748b",
+    "--map-hover": "#f49f80",
   },
 } as const;
