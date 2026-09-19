@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { join, relative } from "node:path";
+import { execFileSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
 
@@ -338,32 +339,90 @@ describe("every var() fallback in the product tree still equals its token", () =
  * the whole stylesheet fails to compile and EVERY route returns 500.
  *
  * This is written down because it actually happened, in T-031c Task 6, in a doc comment in
- * `raw-palette-count.test.ts` describing the legend fix — and the full suite stayed green
- * through it. Typecheck, lint and 5456 tests all passed while no page would load, because
- * nothing in the suite compiles the stylesheet. The only signal was opening a route.
+ * `raw-palette-count.test.ts` describing the legend fix.
  *
- * The guard is deliberately narrow: a `var()` inside a bracketed arbitrary value whose token
+ * WHAT WAS AND WAS NOT MISSING, stated precisely, because the first telling of this overstated
+ * it. `pnpm typecheck`, `pnpm lint` and 5456 tests were all green while no page would load —
+ * true, and none of those three compiles the stylesheet. But CI is not only those three:
+ * `.github/workflows/ci.yml` has a `build` job running `pnpm build`, which DOES compile it and
+ * WOULD have failed. So this was never "invisible to CI". What is missing is a **local and
+ * pre-push** signal: `deploy.yml` runs only lint and test before handing off to the image
+ * build, so the first report of the breakage would have come from a pipeline rather than from
+ * the machine that wrote the comment.
+ *
+ * THIS GUARD IS AN INTERIM. It catches ONE shape. **T-056** is the real fix — running
+ * `app/globals.css` through the project's own PostCSS/Tailwind pipeline against the real source
+ * set, in seconds, which catches the whole class of stylesheet-breaking source text rather than
+ * this one spelling. **When T-056 lands, this block becomes redundant and should be deleted**
+ * rather than left to accumulate shapes one incident at a time.
+ *
+ * The PATTERN is deliberately narrow: a `var()` inside a bracketed arbitrary value whose token
  * name contains `*`. A `*` elsewhere in a bracket is legitimate (`w-[calc(100%*2)]`), and a
  * wildcard in prose is fine as long as it is not wrapped in the class shape — write
  * `--sst-band-*` on its own, or describe the utility without spelling it.
+ *
+ * The WALK is deliberately wide, and must stay that way. **It has to match Tailwind's own source
+ * detection, not a hand-picked subset of it.** `app/globals.css` declares no `@source`, so
+ * Tailwind auto-detects: it walks the whole project from the root, skips `node_modules` and
+ * `.git`, and honours `.gitignore`. Anything narrower is a guard that is green because it did
+ * not look. The first version of this block walked only `components`, `app` and `lib` — which
+ * left `i18n/`, `proxy.ts`, `next.config.ts`, `vitest.config.ts`, `scripts/`, `docs/` and every
+ * future top-level directory able to break the stylesheet without reddening anything. The walk
+ * below therefore derives its exclusions from `git check-ignore` rather than from a list
+ * somebody has to remember to update.
  */
 describe("no source comment can compile into an invalid Tailwind utility", () => {
-  const ROOTS = ["../../components", "../../app", "../../lib"] as const;
+  const ROOT = fileURLToPath(new URL("../..", import.meta.url));
+
+  /** The text extensions Tailwind will read a class candidate out of. */
+  const SCANNABLE = /\.(?:[cm]?[jt]sx?|mdx?|html?|json)$/;
+
+  /**
+   * Only the two directories Tailwind itself never descends into. Everything else that should
+   * be skipped is skipped because `.gitignore` says so, not because this list says so.
+   */
+  const NEVER_WALKED = new Set(["node_modules", ".git"]);
 
   function walkAll(dir: string): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
       const full = join(dir, entry.name);
-      if (entry.isDirectory()) return entry.name === "node_modules" ? [] : walkAll(full);
-      return entry.name.endsWith(".ts") || entry.name.endsWith(".tsx") ? [full] : [];
+      if (entry.isDirectory()) return NEVER_WALKED.has(entry.name) ? [] : walkAll(full);
+      return SCANNABLE.test(entry.name) ? [full] : [];
     });
   }
 
-  /** Read RAW — not comment-stripped. The comments are the whole point of this guard. */
-  const files = ROOTS.flatMap((rel) => walkAll(fileURLToPath(new URL(rel, import.meta.url))));
+  const candidates = walkAll(ROOT).map((f) => relative(ROOT, f));
+  /**
+   * `git check-ignore` IS the rule Tailwind applies, so it is the rule used here. It exits 1
+   * when nothing in its input is ignored, which is a normal outcome and not an error.
+   */
+  const ignored = new Set(
+    (() => {
+      try {
+        return execFileSync("git", ["check-ignore", "--stdin"], {
+          cwd: ROOT,
+          input: candidates.join("\n"),
+          encoding: "utf8",
+        }).split("\n");
+      } catch {
+        return [];
+      }
+    })().filter(Boolean),
+  );
+  const files = candidates.filter((f) => !ignored.has(f)).map((f) => join(ROOT, f));
   const WILDCARD_TOKEN_UTILITY = /-\[[^\]]*var\(\s*--[a-z0-9-]*\*/g;
 
-  it("walked the tree — positive control", () => {
-    expect(files.length).toBeGreaterThan(100);
+  it("walked the whole scanned project, not a hand-picked subset — positive control", () => {
+    expect(files.length).toBeGreaterThan(400);
+    const seen = new Set(files.map((f) => relative(ROOT, f).split("/")[0]!));
+    // The four the narrow walk missed, named individually so a regression to `components`/
+    // `app`/`lib` fails here with the reason rather than merely counting lower.
+    for (const entry of ["i18n", "proxy.ts", "next.config.ts", "vitest.config.ts"]) {
+      expect(seen.has(entry), `${entry} is not being scanned, but Tailwind scans it`).toBe(true);
+    }
+    // And the exclusions really excluded: a guard that walked node_modules would be useless
+    // rather than merely slow, and one that walked gitignored output would red on stale files.
+    expect([...seen].some((d) => d === "node_modules" || d === ".next")).toBe(false);
   });
 
   it("spells no bracketed utility around a wildcard token name", () => {
