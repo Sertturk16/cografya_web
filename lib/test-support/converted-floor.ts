@@ -29,6 +29,11 @@
  *
  * Non-greedy to the first `;`, which is correct for a class-string constant (a Tailwind class
  * string contains no semicolon) and is why this is not offered for anything else.
+ *
+ * PRECONDITION, and it is the one that bites: the value has to be HOISTED. A floor left inline on
+ * a JSX `className` is not a top-level `const`, so this returns `null` and the pin built on it has
+ * nothing to assert — quietly. Hoist as part of the conversion, then pin; a consumer that cannot
+ * rule out a `null` should assert `not.toBeNull()` first, as both worked examples do.
  */
 export function classConstant(source: string, name: string): string | null {
   const match = new RegExp(`const ${name} =[\\s\\S]*?;`).exec(source);
@@ -40,6 +45,12 @@ export function classConstant(source: string, name: string): string | null {
  * the one the component actually renders. A pin that only reads the declaration stays green on a
  * constant nothing uses any more, which is the same green-copy-of-itself failure the census was
  * built to avoid.
+ *
+ * The match is LITERAL, so a legitimate composition — `className={cn(FRAME, extra)}`,
+ * `` className={`${FRAME} …`} `` — counts as zero sites and reds the pin. That is the safe
+ * direction and it is deliberate: the composed spelling can drop or override the floor, so it owes
+ * a fresh reading rather than the old one's assurance. Widen this function only together with the
+ * assertion that proves the composed result still carries the value.
  */
 export function renderSites(source: string, name: string): number {
   return (source.match(new RegExp(`className=\\{${name}\\}`, "g")) ?? []).length;
