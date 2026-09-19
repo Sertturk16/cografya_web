@@ -364,6 +364,25 @@ describe("every var() fallback in the product tree still equals its token", () =
  * this one spelling. **When T-056 lands, this block becomes redundant and should be deleted**
  * rather than left to accumulate shapes one incident at a time.
  *
+ * **T-056 HAS LANDED: `components/ui/compiled-stylesheet.test.ts`.** It compiles this project's
+ * real `app/globals.css` with `@tailwindcss/postcss`, whose `optimize` step hands the generated
+ * CSS to Lightning CSS — the same engine Next's pipeline uses — and asserts it produces no
+ * warnings. All four historical spellings are positive controls there, and the arm was verified
+ * by planting the Task 6 shape in `i18n/routing.ts` (a real scanned file, outside this repo's
+ * `components`/`app`/`lib`) and watching it redden. It catches the CLASS rather than the shape:
+ * any source text that compiles to CSS Lightning cannot parse, in any syntax, present or future.
+ *
+ * **THIS BLOCK IS THEREFORE REDUNDANT AND CAN BE DELETED.** It is left standing here only
+ * because deleting it was not in the closing task's scope, and because its four positive
+ * controls are a cheap second reading of the same history. What it must NOT be given is a fifth
+ * spelling: a new incident belongs in the compiled arm, not in this regex.
+ *
+ * ITS PREMISE IS ALSO NOW OUT OF DATE, in the safe direction. `app/globals.css` declares four
+ * `@source not` lines since the T-031c close, so Tailwind no longer scans `docs/`, `scripts/`
+ * or `*.test.ts(x)` at all — a class-shaped string in any of those cannot reach the compiler.
+ * The walk below still covers them, so it over-reports rather than under-reports, which is the
+ * right way round for a guard on its way out.
+ *
  * IT HAPPENED AGAIN IN TASK 7, IN A DIFFERENT SPELLING, which is why the pattern below is no
  * longer keyed on the wildcard. That comment described the earthquake ripple's new binding and
  * wrote the utility out with an ellipsis where the token name goes. No `*` anywhere — and the
