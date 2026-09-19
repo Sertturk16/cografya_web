@@ -213,10 +213,24 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
               className="flex flex-col justify-between hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 bg-card overflow-hidden group"
             >
               {/* Header Banner — the region's colour, the one the map paints it. The wash
-                  carries the identity and the rule under it states it at full strength; the
-                  heading takes the measured `-text` member, which is why nothing here needs a
-                  `dark:` variant or a white override. */}
-              <div className={`p-4 ${region.identityClass} flex items-center justify-between`}>
+                  carries the identity, the rule under it states the hue at full strength, and
+                  the heading takes the measured `-text` member, which is why nothing here
+                  needs a `dark:` variant or a white override.
+                  The two `text-inherit` escapes are load-bearing, not tidying. TWO base rules
+                  in `app/globals.css` stand between this div's colour and the heading, and
+                  each beats a value that is merely INHERITED: `h1,h2,h3,h4 { color:
+                  var(--foreground) }` at :709 and `a { color: var(--link) }` at :733. With
+                  neither escape the heading renders `--link` terracotta for all seven regions;
+                  with only the `a` one it renders `--foreground` for all seven, because the
+                  anchor then inherits the h3's own base colour rather than this div's. Both
+                  are needed, and `-text` paints nothing without them — which is exactly what
+                  happened when the `text-white` that had been winning was removed. Utilities
+                  outrank `@layer base` whatever the specificity, so these win, and the token
+                  stays single-sourced in `identityClass` instead of being respelled per
+                  region on the anchor. */}
+              <div
+                className={`p-4 ${region.identityClass} [&_h3]:text-inherit [&_a]:text-inherit flex items-center justify-between`}
+              >
                 <div>
                   <span className="text-[10px] text-muted-foreground font-mono block">
                     Bölge Profili

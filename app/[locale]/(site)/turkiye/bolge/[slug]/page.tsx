@@ -55,9 +55,19 @@ interface PageProps {
  * seven disagreed; İç Anadolu agreed only because yellow happened to land near yellow.
  *
  * `-tint` is a 15% wash of the fill and `-text` is the label that sits on it, both derived and
- * measured in `app/globals.css` (worst case 4.61:1 in either theme). Because `-text` carries
+ * measured in `app/globals.css` (worst case 4.60:1 in either theme). Because `-text` carries
  * its own value in `.dark`, none of these strings needs a hand-written `dark:` variant — the
  * pairs that used to be here were the symptom of binding to a hue instead of to a token.
+ *
+ * `badgeClass`'s surface is NOT `--card`. `Badge variant="outline"` supplies `bg-card`, but
+ * tailwind-merge drops it in favour of the tint, so the badge composites onto the hero band
+ * this same table's `gradient` paints — tint over tint over `--background`. That is the
+ * backdrop `-text` is measured against; `app/globals.css` names it beside the figures.
+ *
+ * `accentColor` and `borderAccent` used to live here and are deliberately gone rather than
+ * rebound: nothing read either one. The only fields any JSX reads are `gradient`,
+ * `badgeClass`, `nameTr`, `mapFill` and `mapStroke`. Rebinding a dead field would have left
+ * the next reader believing an accent colour ships.
  */
 const REGION_THEMES: Record<
   string,
@@ -65,8 +75,6 @@ const REGION_THEMES: Record<
     nameTr: string;
     badgeClass: string;
     gradient: string;
-    accentColor: string;
-    borderAccent: string;
     mapFill: string;
     mapStroke: string;
   }
@@ -76,8 +84,6 @@ const REGION_THEMES: Record<
     badgeClass:
       "bg-[var(--region-marmara-tint)] text-[var(--region-marmara-text)] border-[var(--region-marmara)]/30",
     gradient: "from-[var(--region-marmara-tint)] via-background to-background",
-    accentColor: "text-[var(--region-marmara-text)]",
-    borderAccent: "border-[var(--region-marmara)]/30",
     mapFill: "var(--region-marmara, #0072b2)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
@@ -86,8 +92,6 @@ const REGION_THEMES: Record<
     badgeClass:
       "bg-[var(--region-ege-tint)] text-[var(--region-ege-text)] border-[var(--region-ege)]/30",
     gradient: "from-[var(--region-ege-tint)] via-background to-background",
-    accentColor: "text-[var(--region-ege-text)]",
-    borderAccent: "border-[var(--region-ege)]/30",
     mapFill: "var(--region-ege, #e69f00)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
@@ -96,8 +100,6 @@ const REGION_THEMES: Record<
     badgeClass:
       "bg-[var(--region-akdeniz-tint)] text-[var(--region-akdeniz-text)] border-[var(--region-akdeniz)]/30",
     gradient: "from-[var(--region-akdeniz-tint)] via-background to-background",
-    accentColor: "text-[var(--region-akdeniz-text)]",
-    borderAccent: "border-[var(--region-akdeniz)]/30",
     mapFill: "var(--region-akdeniz, #56b4e9)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
@@ -106,8 +108,6 @@ const REGION_THEMES: Record<
     badgeClass:
       "bg-[var(--region-ic-anadolu-tint)] text-[var(--region-ic-anadolu-text)] border-[var(--region-ic-anadolu)]/30",
     gradient: "from-[var(--region-ic-anadolu-tint)] via-background to-background",
-    accentColor: "text-[var(--region-ic-anadolu-text)]",
-    borderAccent: "border-[var(--region-ic-anadolu)]/30",
     mapFill: "var(--region-ic-anadolu, #f0e442)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
@@ -116,8 +116,6 @@ const REGION_THEMES: Record<
     badgeClass:
       "bg-[var(--region-karadeniz-tint)] text-[var(--region-karadeniz-text)] border-[var(--region-karadeniz)]/30",
     gradient: "from-[var(--region-karadeniz-tint)] via-background to-background",
-    accentColor: "text-[var(--region-karadeniz-text)]",
-    borderAccent: "border-[var(--region-karadeniz)]/30",
     mapFill: "var(--region-karadeniz, #cc79a7)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
@@ -126,8 +124,6 @@ const REGION_THEMES: Record<
     badgeClass:
       "bg-[var(--region-dogu-anadolu-tint)] text-[var(--region-dogu-anadolu-text)] border-[var(--region-dogu-anadolu)]/30",
     gradient: "from-[var(--region-dogu-anadolu-tint)] via-background to-background",
-    accentColor: "text-[var(--region-dogu-anadolu-text)]",
-    borderAccent: "border-[var(--region-dogu-anadolu)]/30",
     mapFill: "var(--region-dogu-anadolu, #009e73)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
@@ -136,8 +132,6 @@ const REGION_THEMES: Record<
     badgeClass:
       "bg-[var(--region-guneydogu-anadolu-tint)] text-[var(--region-guneydogu-anadolu-text)] border-[var(--region-guneydogu-anadolu)]/30",
     gradient: "from-[var(--region-guneydogu-anadolu-tint)] via-background to-background",
-    accentColor: "text-[var(--region-guneydogu-anadolu-text)]",
-    borderAccent: "border-[var(--region-guneydogu-anadolu)]/30",
     mapFill: "var(--region-guneydogu-anadolu, #d55e00)",
     mapStroke: "var(--color-ink-dark, #211c19)",
   },
@@ -408,8 +402,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
     nameTr: region.nameTr,
     badgeClass: "bg-primary/15 text-primary border-primary/30",
     gradient: "from-primary/10 via-background to-background",
-    accentColor: "text-primary",
-    borderAccent: "border-primary/30",
     mapFill: "var(--color-primary, #b0522e)",
     mapStroke: "var(--color-primary-dark, #7e3a1e)",
   };

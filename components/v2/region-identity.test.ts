@@ -49,22 +49,46 @@ const RAW_HUE =
   /\b(?:text|bg|border|from|to|via|ring|fill|stroke|decoration|outline|shadow|accent|caret|divide)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|100|200|300|400|500|600|700|800|900|950)\b/;
 
 /**
- * Brace-match forward from the `{` at `open`, ignoring braces inside string literals.
+ * Brace-match forward from the `{` at `open`, ignoring braces inside string literals and
+ * inside `//` and slash-star comments.
  *
- * Quote-awareness is not decoration: a descriptor value is a class string, and a class string
- * is exactly where a stray brace would otherwise desynchronise the depth counter.
+ * Neither exclusion is decoration. A descriptor value is a class string, and a class string is
+ * exactly where a stray brace would otherwise desynchronise the depth counter. A comment is
+ * the other place: a `}` inside a `// …` mid-block would end the block early and TRUNCATE it,
+ * which is the one shape that could hide a raw hue from the assertion below.
+ *
+ * An unbalanced or unterminated construct throws rather than returning a short block, so this
+ * fails closed — no caller can mistake a truncated block for a complete one.
  */
 function matchBraces(source: string, open: number): string {
   let depth = 0;
   let quote: string | null = null;
+  let comment: "line" | "block" | null = null;
   for (let i = open; i < source.length; i++) {
     const c = source[i]!;
+    if (comment === "line") {
+      if (c === "\n") comment = null;
+      continue;
+    }
+    if (comment === "block") {
+      if (c === "*" && source[i + 1] === "/") {
+        comment = null;
+        i++;
+      }
+      continue;
+    }
     if (quote !== null) {
       if (c === "\\") i++;
       else if (c === quote) quote = null;
       continue;
     }
-    if (c === '"' || c === "'" || c === "`") quote = c;
+    if (c === "/" && source[i + 1] === "/") {
+      comment = "line";
+      i++;
+    } else if (c === "/" && source[i + 1] === "*") {
+      comment = "block";
+      i++;
+    } else if (c === '"' || c === "'" || c === "`") quote = c;
     else if (c === "{") depth++;
     else if (c === "}" && --depth === 0) return source.slice(open, i + 1);
   }
@@ -95,8 +119,9 @@ export function locateRegionBlocks(source: string): Map<string, string> {
   let cursor = 0;
   for (let m = entry.exec(table); m !== null; m = entry.exec(table)) {
     if (m.index < cursor) continue; // a nested object inside the block we just consumed
-    const block = matchBraces(table, m.index + m[0].length - 1);
-    cursor = m.index + block.length;
+    const start = m.index + m[0].length - 1; // the `{` the match ends on
+    const block = matchBraces(table, start);
+    cursor = start + block.length; // one past the block's closing `}`, not `m.index` + length
     const fill = /mapFill:\s*"var\(\s*--region-([a-z-]+)\s*[,)]/.exec(block);
     if (fill !== null) blocks.set(fill[1]!, block);
   }
@@ -180,5 +205,39 @@ describe("the region card deck wears the same colour", () => {
   it.each(SLUGS)("%s's card header is bound to its own region token", (slug) => {
     expect(deck).toContain(`--region-${slug}-tint`);
     expect(deck).toContain(`--region-${slug}-text`);
+  });
+
+  /**
+   * The assertion above is necessary and NOT sufficient, and the difference is a bug this file
+   * shipped once: both token names were in the source, on the banner `<div>`, while the heading
+   * they were meant to colour took a base rule instead. The grep stayed green throughout,
+   * because the tokens really were in the file — they just painted nothing.
+   *
+   * TWO base rules in `app/globals.css` sit between the div and the text, and each beats a
+   * merely inherited colour: `h1,h2,h3,h4 { color: var(--foreground) }` and
+   * `a { color: var(--link) }`. The first shipped version had neither escape and rendered
+   * `--link` terracotta for all seven; adding only the `a` escape rendered `--foreground` for
+   * all seven, because the anchor then inherits the h3's own base colour rather than the div's.
+   * Both `[&_h3]:text-inherit` and `[&_a]:text-inherit` are required, and Tailwind emits both
+   * into the utilities layer, which outranks `@layer base` whatever the specificity.
+   *
+   * Deleting either one reintroduces the bug, and deleting either one reds this test.
+   */
+  it("routes that token through to the heading's anchor, which two base rules would win", () => {
+    const banner = /<div\s+className=\{`p-4 \$\{region\.identityClass\}([^`]*)`\}/.exec(deck);
+    expect(
+      banner,
+      "the header banner div is no longer recognisable — re-anchor this test",
+    ).not.toBeNull();
+    expect(banner![1]).toContain("[&_h3]:text-inherit");
+    expect(banner![1]).toContain("[&_a]:text-inherit");
+
+    // Positive control on the premise: there really is an anchor inside this banner, and it
+    // really does not respell the colour itself. If the markup ever stops rendering a Link
+    // here, or starts carrying its own `text-…`, this assertion is measuring the wrong thing
+    // and should be revisited rather than left quietly green.
+    const bannerBlock = deck.slice(banner!.index, deck.indexOf("</div>", banner!.index));
+    expect(bannerBlock).toContain("<Link");
+    expect(bannerBlock.match(/<Link[\s\S]*?className="([^"]*)"/)![1]).not.toMatch(/\btext-/);
   });
 });

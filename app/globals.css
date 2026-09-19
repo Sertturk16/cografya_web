@@ -371,22 +371,35 @@
               are a CATEGORICAL set, and flattening them to a common lightness is exactly
               what would blur two of them together.
 
-     MEASURED (lib/theme/contrast.ts, `ratio` + `blendOver`; the tint column is the real
-     one — a label sits on the blend, not on the token). `.dark` carries its own `-text`
-     values and its own half of this table.
-                          light               dark
-                        --card  on tint    --card  on tint
-       marmara            5.72    4.63       5.31    4.61
-       ege                5.36    4.77       6.01    4.66
-       akdeniz            5.19    4.62       6.28    4.75
-       ic-anadolu         4.82    4.61       6.97    4.74
-       karadeniz          5.38    4.64       5.79    4.67
-       dogu-anadolu       5.68    4.76       5.60    4.61
-       guneydogu-anadolu  5.58    4.64       5.56    4.76
-     Worst case 4.61:1 in each theme, against the 4.5:1 floor of WCAG 1.4.3.
-     The tint also carries body text where the region hero gradient fades into
-     --background: --foreground on that blend measures 11.48-13.60 light and 11.33-14.21
-     dark, so the hero is not a second case to watch. */
+     MEASURED (lib/theme/contrast.ts, `ratio` + `blendOver`), AGAINST THE TWO SURFACES THESE
+     LABELS ARE ACTUALLY PAINTED ON. Naming the backdrop is not bookkeeping: the first version
+     of this table recorded ratios against `--card`, and `--card` is a surface the hero badge
+     never touches — its `variant="outline"` supplies `bg-card`, but `badgeClass` overrides it
+     with the tint, so the badge composites straight onto the hero band. Seven of seven were
+     recorded passing and were in fact 3.92-4.32. A ratio without its surface is how that
+     happened; every figure below says what it is a ratio TO.
+
+       HERO    `turkiye/bolge/[slug]`'s region badge. The badge's own 15% tint over the hero
+               gradient's tint end over --background — tint over tint over --background. The
+               gradient is `from-<tint> via-background to-background`, so its TINT END is the
+               worst case, not its middle, and the badge row sits in that end. Binding in
+               both themes.
+       BANNER  `components/v2/v2-turkey-regions.tsx`'s card header. One 15% tint over --card,
+               because a Card is opaque.
+                          light             dark
+                         hero   banner    hero   banner
+       marmara            4.69    5.97     4.60    4.78
+       ege                4.70    5.43     4.66    5.59
+       akdeniz            4.71    5.49     4.66    5.47
+       ic-anadolu         4.77    5.18     4.73    6.26
+       karadeniz          4.64    5.53     4.67    5.24
+       dogu-anadolu       4.68    5.70     4.76    5.33
+       guneydogu-anadolu  4.60    5.72     4.60    4.95
+     Worst case 4.60:1 in each theme, against the 4.5:1 floor of WCAG 1.4.3. On the bare
+     surfaces, which nothing paints these labels on but which bound nothing anyway, every
+     member measures higher still: 5.42-7.37 on light --card and 5.51-9.22 on dark --card.
+     The hero band also carries ordinary body text, and that is not a second case to watch:
+     --foreground on the gradient's tint end measures 11.48-13.60 light, 11.33-14.21 dark. */
   --region-marmara-tint: color-mix(in srgb, var(--region-marmara) 15%, transparent);
   --region-ege-tint: color-mix(in srgb, var(--region-ege) 15%, transparent);
   --region-akdeniz-tint: color-mix(in srgb, var(--region-akdeniz) 15%, transparent);
@@ -398,13 +411,13 @@
     var(--region-guneydogu-anadolu) 15%,
     transparent
   );
-  --region-marmara-text: oklch(0.51 0.125 244);
-  --region-ege-text: oklch(0.53 0.11 76.8);
-  --region-akdeniz-text: oklch(0.53 0.11 236.2);
-  --region-ic-anadolu-text: oklch(0.55 0.115 105);
-  --region-karadeniz-text: oklch(0.54 0.115 346.3);
-  --region-dogu-anadolu-text: oklch(0.5 0.1 165.5);
-  --region-guneydogu-anadolu-text: oklch(0.53 0.145 47.5);
+  --region-marmara-text: oklch(0.45 0.11 244);
+  --region-ege-text: oklch(0.5 0.105 76.8);
+  --region-akdeniz-text: oklch(0.49 0.105 236.2);
+  --region-ic-anadolu-text: oklch(0.52 0.11 105);
+  --region-karadeniz-text: oklch(0.5 0.115 346.3);
+  --region-dogu-anadolu-text: oklch(0.46 0.095 165.5);
+  --region-guneydogu-anadolu-text: oklch(0.48 0.13 47.5);
 
   /* ---- Map-game answer states (UI STATE, not a data scale) ----
      These mark what the PLAYER just did, so they are semantic UI colours (the
@@ -1036,14 +1049,15 @@
      the map paints one colour and the legend another.
      Hue angle is the region's own, unchanged from the light block; lightness moves UP here
      instead of down, because the label sits on a dark surface. Measurements are in the light
-     block's table, `dark` columns — worst case 4.61:1 on the 15% tint over --card. */
-  --region-marmara-text: oklch(0.65 0.13 244);
-  --region-ege-text: oklch(0.69 0.14 76.8);
-  --region-akdeniz-text: oklch(0.69 0.115 236.2);
-  --region-ic-anadolu-text: oklch(0.72 0.15 105);
-  --region-karadeniz-text: oklch(0.69 0.115 346.3);
-  --region-dogu-anadolu-text: oklch(0.65 0.125 165.5);
-  --region-guneydogu-anadolu-text: oklch(0.68 0.17 47.5);
+     block's table, `dark` columns — worst case 4.60:1, on the HERO backdrop (tint over tint
+     over --background), which is the binding one in this theme too. */
+  --region-marmara-text: oklch(0.66 0.13 244);
+  --region-ege-text: oklch(0.74 0.155 76.8);
+  --region-akdeniz-text: oklch(0.73 0.115 236.2);
+  --region-ic-anadolu-text: oklch(0.8 0.17 105);
+  --region-karadeniz-text: oklch(0.72 0.115 346.3);
+  --region-dogu-anadolu-text: oklch(0.69 0.125 165.5);
+  --region-guneydogu-anadolu-text: oklch(0.69 0.17 47.5);
   /* A bare `<a>`. Light mode's link colour is a Terra token the `.dark` block cannot reach, so
      the base rule reads `--link` and this is the value it gets here. */
   --link: oklch(0.78 0.11 40.65);
