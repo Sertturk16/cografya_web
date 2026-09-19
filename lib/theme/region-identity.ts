@@ -56,7 +56,13 @@ export interface RegionIdentity {
    * with an `opacity-*` utility rather than a second, lighter hue — the region has one colour.
    */
   readonly fill: string;
-  /** The map fill at 80%, lifting to full strength on hover. The game map's resting region tint. */
+  /**
+   * Identical to `fill`. T-031d Task 6 dropped the `/80` resting opacity this member used to
+   * carry — the `--game-hover-edge` identifying line missed WCAG 1.4.11's 3:1 against Marmara
+   * at that softened strength over the dark `--map-land` (see `lib/theme/region-palette.test.ts`).
+   * The member survives, rather than folding into `fill`, only because `v2-game-screen.tsx`'s
+   * play screen still names it and that file is a later task's to touch.
+   */
   readonly fillSoft: string;
   /** The 15% wash of the fill, as a surface. Translucent, so one value serves both themes. */
   readonly surface: string;
@@ -99,7 +105,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     slug: "marmara",
     fillValue: "var(--region-marmara, #0072b2)",
     fill: "fill-[var(--region-marmara)]",
-    fillSoft: "fill-[var(--region-marmara)]/80 hover:fill-[var(--region-marmara)]",
+    fillSoft: "fill-[var(--region-marmara)]",
     surface: "bg-[var(--region-marmara-tint)]",
     label: "text-[var(--region-marmara-text)]",
     edge: "border-[var(--region-marmara)]/30",
@@ -115,7 +121,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     slug: "ege",
     fillValue: "var(--region-ege, #e69f00)",
     fill: "fill-[var(--region-ege)]",
-    fillSoft: "fill-[var(--region-ege)]/80 hover:fill-[var(--region-ege)]",
+    fillSoft: "fill-[var(--region-ege)]",
     surface: "bg-[var(--region-ege-tint)]",
     label: "text-[var(--region-ege-text)]",
     edge: "border-[var(--region-ege)]/30",
@@ -131,7 +137,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     slug: "akdeniz",
     fillValue: "var(--region-akdeniz, #56b4e9)",
     fill: "fill-[var(--region-akdeniz)]",
-    fillSoft: "fill-[var(--region-akdeniz)]/80 hover:fill-[var(--region-akdeniz)]",
+    fillSoft: "fill-[var(--region-akdeniz)]",
     surface: "bg-[var(--region-akdeniz-tint)]",
     label: "text-[var(--region-akdeniz-text)]",
     edge: "border-[var(--region-akdeniz)]/30",
@@ -147,7 +153,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     slug: "ic-anadolu",
     fillValue: "var(--region-ic-anadolu, #f0e442)",
     fill: "fill-[var(--region-ic-anadolu)]",
-    fillSoft: "fill-[var(--region-ic-anadolu)]/80 hover:fill-[var(--region-ic-anadolu)]",
+    fillSoft: "fill-[var(--region-ic-anadolu)]",
     surface: "bg-[var(--region-ic-anadolu-tint)]",
     label: "text-[var(--region-ic-anadolu-text)]",
     edge: "border-[var(--region-ic-anadolu)]/30",
@@ -164,7 +170,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     slug: "karadeniz",
     fillValue: "var(--region-karadeniz, #cc79a7)",
     fill: "fill-[var(--region-karadeniz)]",
-    fillSoft: "fill-[var(--region-karadeniz)]/80 hover:fill-[var(--region-karadeniz)]",
+    fillSoft: "fill-[var(--region-karadeniz)]",
     surface: "bg-[var(--region-karadeniz-tint)]",
     label: "text-[var(--region-karadeniz-text)]",
     edge: "border-[var(--region-karadeniz)]/30",
@@ -180,7 +186,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     slug: "dogu-anadolu",
     fillValue: "var(--region-dogu-anadolu, #009e73)",
     fill: "fill-[var(--region-dogu-anadolu)]",
-    fillSoft: "fill-[var(--region-dogu-anadolu)]/80 hover:fill-[var(--region-dogu-anadolu)]",
+    fillSoft: "fill-[var(--region-dogu-anadolu)]",
     surface: "bg-[var(--region-dogu-anadolu-tint)]",
     label: "text-[var(--region-dogu-anadolu-text)]",
     edge: "border-[var(--region-dogu-anadolu)]/30",
@@ -197,8 +203,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
     slug: "guneydogu-anadolu",
     fillValue: "var(--region-guneydogu-anadolu, #d55e00)",
     fill: "fill-[var(--region-guneydogu-anadolu)]",
-    fillSoft:
-      "fill-[var(--region-guneydogu-anadolu)]/80 hover:fill-[var(--region-guneydogu-anadolu)]",
+    fillSoft: "fill-[var(--region-guneydogu-anadolu)]",
     surface: "bg-[var(--region-guneydogu-anadolu-tint)]",
     label: "text-[var(--region-guneydogu-anadolu-text)]",
     edge: "border-[var(--region-guneydogu-anadolu)]/30",

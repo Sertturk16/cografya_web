@@ -200,11 +200,6 @@ export const ARBITRARY_PINNED = [
     why: "the workbench canvas plate in both themes, plus the same land/hairline/sea set the play screen draws",
   },
   {
-    file: "components/v2/v2-turkey-map-explorer.tsx",
-    count: 10,
-    why: "the Türkiye map surfaces: plate, land and hairline, inland water, the highlighted province tone and the two neighbour-land tones",
-  },
-  {
     file: "components/v2/v2-province-locator-map.tsx",
     count: 8,
     why: "the province locator mini-map: plate, land and hairline, two inland-water tones and the sea",
