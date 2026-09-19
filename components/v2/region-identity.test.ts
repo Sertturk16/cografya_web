@@ -118,12 +118,26 @@ function matchBraces(source: string, open: number): string {
 }
 
 /**
- * Every `REGION_THEMES` entry, keyed by the slug its own `mapFill` names.
+ * The `GeographicRegion` enum key each table entry is written under, to the slug it means —
+ * straight out of `lib/game/region-slug.ts`, so this test cannot hold its own idea of which
+ * enum member is which region.
+ */
+const ENUM_TO_SLUG = new Map<string, RegionSlug>(
+  REGION_KEYS.map((region) => [region, regionSlug(region)]),
+);
+
+/**
+ * Every `REGION_THEMES` entry, keyed by the region its own ENUM NAME declares.
  *
  * Keying on the entry's own content rather than on its position is the whole point: the
- * table's declaration order, the number of entries and the number of `mapFill:` occurrences
- * elsewhere in the file are all free to change without this test quietly reading the wrong
- * text.
+ * table's declaration order and the number of entries are free to change without this test
+ * quietly reading the wrong text.
+ *
+ * It used to key on the slug inside each entry's `mapFill`. That stopped working when `mapFill`
+ * moved to `REGION_IDENTITY[slug].fillValue`, and it was the wrong key anyway: keying a block by
+ * one of the COLOUR references inside it makes the block's colour definitionally correct, so a
+ * block naming two different regions could never be caught. The enum name is the one property of
+ * an entry that is not a colour, which is exactly what a key has to be here.
  */
 function tableOf(source: string, declaration: string): string {
   const at = source.indexOf(declaration);
@@ -146,8 +160,8 @@ export function locateRegionBlocks(source: string): Map<string, string> {
     const start = m.index + m[0].length - 1; // the `{` the match ends on
     const block = matchBraces(table, start);
     cursor = start + block.length; // one past the block's closing `}`, not `m.index` + length
-    const fill = /mapFill:\s*"var\(\s*--region-([a-z-]+)\s*[,)]/.exec(block);
-    if (fill !== null) blocks.set(fill[1]!, block);
+    const slug = ENUM_TO_SLUG.get(m[1]!);
+    if (slug !== undefined) blocks.set(slug, block);
   }
   return blocks;
 }
@@ -165,8 +179,8 @@ describe("the region block locator", () => {
     // was fully present — that is precisely how the first draft of this file failed.
     const fixture = [
       "const REGION_THEMES: Record<string, { mapFill: string }> = {",
-      '  MARMARA: { badgeClass: "bg-amber-500/15", mapFill: "var(--region-marmara, #0072b2)" },',
-      '  EGE: { badgeClass: "bg-[var(--region-ege-tint)]", mapFill: "var(--region-ege, #e69f00)" },',
+      '  MARMARA: { badgeClass: "bg-amber-500/15", mapFill: REGION_IDENTITY.marmara.fillValue },',
+      "  EGE: { badgeClass: REGION_IDENTITY.ege.badge, mapFill: REGION_IDENTITY.ege.fillValue },",
       "};",
     ].join("\n");
     const found = locateRegionBlocks(fixture);
@@ -185,22 +199,42 @@ describe("a region wears one colour, not two", () => {
     // Positive control, inline: assert we are holding a real descriptor block before
     // asserting what is absent from it. `not.toMatch` on "" or on undefined is a green run
     // that means nothing.
-    expect(block, `no REGION_THEMES block names --region-${slug}`).toBeDefined();
+    expect(block, `no REGION_THEMES entry is declared for ${slug}`).toBeDefined();
     expect(block).toContain("badgeClass:");
-    expect(block).toContain(`--region-${slug},`);
+    // The token and its literal fallback now live on the identity, which the page's `mapFill`
+    // reads. Asserted there rather than dropped.
+    expect(REGION_IDENTITY[slug].fillValue).toContain(`--region-${slug},`);
 
     expect(block).not.toMatch(RAW_HUE);
   });
 
   it.each(SLUGS)("%s draws its badge from its own region token", (slug) => {
     const block = blocks.get(slug)!;
-    // The page no longer spells the token; it names the identity, and the identity is what
-    // spells the token. Both halves are asserted, because either one alone is satisfiable
-    // while the bug is present: a block could name the WRONG region's identity, and an
-    // identity could be bound to the wrong region's tokens.
-    expect(block).toContain(identityReference(slug));
+    // THREE assertions, and the first draft of this test after the refactor had only the
+    // weakest of them. `toContain(identityReference(slug))` alone is satisfied by the
+    // NEIGHBOURING `gradient:` line, so `badgeClass: REGION_IDENTITY.ege.badge` inside the
+    // MARMARA entry — Marmara badged Ege's colour, the original bug verbatim — passed it.
+    // Naming the member kills a badge pointed at the wrong member of the right region; the
+    // exclusion below kills a badge pointed at another region entirely.
+    expect(block).toContain(`${identityReference(slug)}.badge`);
+    for (const other of SLUGS) {
+      if (other === slug) continue;
+      expect(
+        block.includes(identityReference(other)),
+        `the ${slug} entry names ${other}'s identity — a region is wearing another's colour`,
+      ).toBe(false);
+    }
     expect(REGION_IDENTITY[slug].badge).toContain(`--region-${slug}-tint`);
     expect(REGION_IDENTITY[slug].badge).toContain(`--region-${slug}-text`);
+  });
+
+  it.each(SLUGS)("%s's map fill carries a fallback that still matches globals.css", (slug) => {
+    // The one place the module spells a hue twice. `REGION_TINTS` is checked against
+    // `app/globals.css` in both directions by lib/theme/region-palette.test.ts, so pinning the
+    // fallback to it pins it to the stylesheet. Before this, seven `var(--region-*, #hex)`
+    // fallbacks sat in the page with nothing checking they still agreed with the token.
+    expect(REGION_IDENTITY[slug].fillValue).toBe(`var(--region-${slug}, ${REGION_TINTS[slug]})`);
+    expect(blocks.get(slug)!).toContain(`${identityReference(slug)}.fillValue`);
   });
 
   it.each(SLUGS)("%s declares both derived members in app/globals.css", (slug) => {
@@ -283,7 +317,7 @@ describe("the region card deck wears the same colour", () => {
   });
 
   it.each(SLUGS)("%s's card header is bound to its own region token", (slug) => {
-    expect(deck).toContain(identityReference(slug));
+    expect(deck).toContain(`${identityReference(slug)}.banner`);
     expect(REGION_IDENTITY[slug].banner).toContain(`--region-${slug}-tint`);
     expect(REGION_IDENTITY[slug].banner).toContain(`--region-${slug}-text`);
   });

@@ -287,18 +287,18 @@ deeper, and it is the reason a count that saw only call sites would have been mi
 
 ### components/v2/v2-turkey-map-explorer.tsx (78)
 
-| Line    | Class(es)                                                                | #   | Verdict  | Becomes                                               | Note                                                                                                                                                                |
-| ------- | ------------------------------------------------------------------------ | --- | -------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 73-77   | `fill-amber-600`, badge/header/border/text amber set                     | 10  | data     | `--region-marmara` + its tint/text                    | `color` here **is** the map fill. It and the badge beside it are one region identity and must be one token. Same bug as `bolge/[slug]`, same fix.                   |
-| 83-87   | the teal set                                                             | 10  | data     | `--region-ege` + tint/text                            |                                                                                                                                                                     |
-| 93-97   | the emerald set                                                          | 10  | data     | `--region-akdeniz` + tint/text                        |                                                                                                                                                                     |
-| 103-107 | the yellow set (`from-yellow-800 to-amber-950`)                          | 10  | data     | `--region-ic-anadolu` + tint/text                     | the header gradient crosses two families, which is how far the raw set had drifted                                                                                  |
-| 113-117 | the cyan set (`from-cyan-800 to-slate-900`)                              | 10  | data     | `--region-karadeniz` + tint/text                      |                                                                                                                                                                     |
-| 123-127 | the stone set                                                            | 10  | data     | `--region-dogu-anadolu` + tint/text                   |                                                                                                                                                                     |
-| 133-137 | the orange set                                                           | 10  | data     | `--region-guneydogu-anadolu` + tint/text              |                                                                                                                                                                     |
-| 1032    | `bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300` | 4   | semantic | `bg-warning/10 border-warning/30 text-warning-strong` | "…filtresi etkinken X bulunamadı" — a caution that a filter is suppressing results, not neutral information. `warning-strong` on a /10 tint: 6.18 light, 8.18 dark. |
-| 1034    | `text-amber-600`                                                         | 1   | semantic | `text-warning-strong`                                 | the `Info` glyph in that banner                                                                                                                                     |
-| 1048    | `border-amber-500/40 text-amber-800 dark:text-amber-200`                 | 3   | semantic | `border-warning/40 text-warning-strong`               | the "Tüm İllerde Ara" escape button inside it                                                                                                                       |
+| Line    | Class(es)                                                                | #   | Verdict  | Becomes                                               | Note                                                                                                                                                                                                                                                                              |
+| ------- | ------------------------------------------------------------------------ | --- | -------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 73-77   | `fill-amber-600`, badge/header/border/text amber set                     | 10  | data     | `--region-marmara` + its tint/text                    | `color` here **is** the map fill. It and the badge beside it are one region identity and must be one token. Same bug as `bolge/[slug]`, same fix.                                                                                                                                 |
+| 83-87   | the teal set                                                             | 10  | data     | `--region-ege` + tint/text                            |                                                                                                                                                                                                                                                                                   |
+| 93-97   | the emerald set                                                          | 10  | data     | `--region-akdeniz` + tint/text                        |                                                                                                                                                                                                                                                                                   |
+| 103-107 | the yellow set (`from-yellow-800 to-amber-950`)                          | 10  | data     | `--region-ic-anadolu` + tint/text                     | the header gradient crosses two families, which is how far the raw set had drifted                                                                                                                                                                                                |
+| 113-117 | the cyan set (`from-cyan-800 to-slate-900`)                              | 10  | data     | `--region-karadeniz` + tint/text                      |                                                                                                                                                                                                                                                                                   |
+| 123-127 | the stone set                                                            | 10  | data     | `--region-dogu-anadolu` + tint/text                   |                                                                                                                                                                                                                                                                                   |
+| 133-137 | the orange set                                                           | 10  | data     | `--region-guneydogu-anadolu` + tint/text              |                                                                                                                                                                                                                                                                                   |
+| 1032    | `bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-300` | 4   | semantic | `bg-warning/10 border-warning/30 text-warning-strong` | **[backdrop corrected — see "APPLIED, Task 4" note 1 below]** "…filtresi etkinken X bulunamadı" — a caution that a filter is suppressing results, not neutral information. The 6.18 light / 8.18 dark here is the figure over `--card`; the page paints this over `--background`. |
+| 1034    | `text-amber-600`                                                         | 1   | semantic | `text-warning-strong`                                 | the `Info` glyph in that banner. **[backdrop corrected — see note 1 below]**                                                                                                                                                                                                      |
+| 1048    | `border-amber-500/40 text-amber-800 dark:text-amber-200`                 | 3   | semantic | `border-warning/40 text-warning-strong`               | the "Tüm İllerde Ara" escape button inside it — an **opaque pair** on its own `bg-card`. **[see note 1 below]**                                                                                                                                                                   |
 
 **Totals:** data 70, semantic 8, decoration 0.
 
@@ -308,11 +308,25 @@ deeper, and it is the reason a count that saw only call sites would have been mi
    figures 6.18 light / 8.18 dark are correct for `--card` — but this banner is a child of a bare
    `<section>`, so its tint composites over `--background`. Over the surface the page actually
    paints, `--warning-strong` on `--warning/10` measures **5.81:1 light and 9.19:1 dark** from
-   painted pixels at 320 and 1280 (5.86 / 9.10 analytically; Tailwind's `/10` is a
-   `color-mix(in oklab, …)`, not an sRGB alpha blend, which is the 0.05 the two differ by, and
-   the painted figure is the one recorded because it is the lower of the two in light). The
-   escape button supplies its own `bg-card`, so its label is `--warning-strong` on bare `--card`:
-   6.81 light, 9.64 dark.
+   painted pixels at 320 and 1280; the model (`blendOver`) says 5.86 / 9.10.
+
+   **The cause of that gap, corrected.** An earlier version of this note and of the comment in
+   the component blamed `color-mix(in oklab, …)`. That is wrong and the correction matters more
+   than the row: mixing with `transparent` is PREMULTIPLIED, so the second colour contributes
+   nothing and only alpha scales — in any interpolation space. Across 486 painted cases
+   (9 fills x 6 backdrops x 9 alphas) `color-mix(in oklab, C P%, transparent)` and `rgb(C / P)`
+   paint identically in 408 and differ by one byte in 76. The real gap is **±1 byte per channel
+   from 8-bit alpha quantisation**, and its direction is **not systematic**: in the 2.5-8 band
+   that decides pass/fail, 126 cases where the model flatters and 123 where it is harsher, max
+   |Δratio| 0.113. Here it flatters by 0.05 in light and is conservative by 0.09 in dark.
+   `blendOver` does not systematically flatter and **every analytic figure recorded in this
+   branch stands**; painted figures are recorded where they exist because they are painted, not
+   because the model leans.
+
+   The escape button supplies its own `bg-card`, so its label is an **opaque pair** —
+   `--warning-strong` on `--card`, no alpha anywhere, so the analytic 6.81 light / 9.64 dark is
+   exact by construction (a paint confirmed 6.814).
+
 2. **Rows 73-137 are single-sourced, not merely re-tokenised.** The verdict `--region-* + tint/text`
    is applied through `lib/theme/region-identity.ts`, which is now the ONE module that turns a
    `--region-*` token into a class; `bolge/[slug]`, `v2-turkey-regions` and `v2-game-screen` were

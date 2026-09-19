@@ -1010,7 +1010,11 @@ export function V2GameScreen({
               two are finishing a conversion rather than starting one. BACKDROP: the play card
               (`bg-card`) — this bar is a direct child of it, not of the question banner above.
               `--success-strong` on `--success/15` over `--card` measures 6.08:1 light and
-              7.05:1 dark; `--warning-strong` on `--warning/15` over the same, 5.87 / 7.36. */}
+              7.05:1 dark — analytic, and CONSERVATIVE against the paint, which reads 6.126 /
+              7.052. `--warning-strong` on `--warning/15` over the same, 5.87 / 7.36 analytic
+              against a painted 5.87 / 7.46. Model and paint sit within ±1 byte per channel of
+              each other here as everywhere (8-bit alpha quantisation), in neither direction
+              systematically, so the lower of the pair is the one written down. */}
           {lastFeedback && !isFinished && (
             <div
               role="status"
@@ -1358,10 +1362,12 @@ export function V2GameScreen({
                   {/* BACKDROP: the finish overlay, `bg-background/95 backdrop-blur-md` over the
                       play card. Its painted surface is #fbf8f4 light and #0b1417 dark, READ OFF
                       THE RENDERED OVERLAY at 320 and 1280 rather than modelled, because
-                      `backdrop-blur-md` is not a blend any analytic model expresses — the model
-                      said #0b1517 in dark, one byte out in green, which is how far the blur
-                      moves it at 95% opacity. `--success-strong` on `--success/15` over the
-                      PAINTED surface measures 5.76:1 light and 7.81:1 dark. Its `failed`
+                      `backdrop-blur-md` is not a blend any analytic model expresses. The model
+                      said #0b1517 in dark, one byte out in green — the same ±1 byte the 8-bit
+                      alpha step costs everywhere, so at 95% opacity the blur itself is not
+                      measurably moving this surface; the read is what establishes that rather
+                      than an assumption either way. `--success-strong` on `--success/15` over
+                      the PAINTED surface measures 5.76:1 light and 7.81:1 dark. Its `failed`
                       sibling below is already on `destructive`. */}
                   {saveStatus === "saved" && (
                     <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-success/15 border border-success/30 text-success-strong text-xs font-semibold">

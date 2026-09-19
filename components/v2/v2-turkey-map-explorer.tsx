@@ -1000,13 +1000,20 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             Measured with lib/theme/contrast.ts, BACKDROP NAMED: this banner sits in a bare
             <section>, so the tint composites over `--background`, not over `--card`.
             `--warning-strong` on `--warning/10` over `--background` measures 5.81:1 light and
-            9.19:1 dark FROM PAINTED PIXELS at 320 and 1280 in both themes; analytically the
-            same pairing is 5.86 / 9.10, and the 0.05 gap in light is real — Tailwind's `/10`
-            is `color-mix(in oklab, …)`, not an sRGB alpha blend, so the analytic figure is the
-            flattering one and the painted figure is what is recorded. The same pairing over
-            `--card` would be 6.17 / 8.18, but this page never paints it there. The escape
-            button supplies its own `bg-card`, so its label is `--warning-strong` on bare
-            `--card`: 6.81:1 light, 9.64:1 dark. Every figure floored. */}
+            9.19:1 dark FROM PAINTED PIXELS at 320 and 1280 in both themes; the model
+            (`blendOver`) says 5.86 / 9.10. The gap is +-1 byte per channel from 8-bit ALPHA
+            QUANTISATION — `/10` cannot be expressed exactly in 255ths — and its direction is
+            NOT systematic: here the model flatters by 0.05 in light and is conservative by
+            0.09 in dark. It is not an oklab-versus-sRGB effect; mixing with `transparent` is
+            premultiplied, so the second colour contributes nothing and only alpha scales, in
+            any interpolation space. Measured across 486 painted cases, `color-mix(in oklab, C
+            P%, transparent)` and `rgb(C / P)` agree exactly in 408 and differ by one byte in
+            76. The painted figures are recorded because they are painted, not because the
+            model leans one way. The same pairing over `--card` would be 6.17 / 8.18, but this
+            page never paints it there. The escape button supplies its own `bg-card`, so its
+            label is an OPAQUE PAIR — `--warning-strong` on `--card`, no alpha anywhere, so the
+            analytic figure is exact by construction: 6.81:1 light, 9.64:1 dark (a paint
+            confirmed 6.814). Every figure floored. */}
         {isSearchRestrictedByRegion && (
           <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">

@@ -43,6 +43,15 @@ export interface RegionIdentity {
   /** The region's slug, i.e. the `--region-*` token's own name. */
   readonly slug: RegionSlug;
   /**
+   * The fill as a raw CSS VALUE, for an attribute rather than a class — an SVG `fill`, an
+   * inline style, anything Tailwind never sees. Carries the hue a second time as a literal
+   * fallback, which is the one place in this module where a colour is spelled twice; the
+   * fallback is checked against `REGION_TINTS` (and so against `app/globals.css`) by
+   * `components/v2/region-identity.test.ts`, because a stale fallback would paint a region the
+   * wrong colour on exactly the browsers that needed the fallback.
+   */
+  readonly fillValue: string;
+  /**
    * The map fill, at full strength. Resting states that want the shape to recede compose this
    * with an `opacity-*` utility rather than a second, lighter hue — the region has one colour.
    */
@@ -73,6 +82,7 @@ export interface RegionIdentity {
 export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
   marmara: {
     slug: "marmara",
+    fillValue: "var(--region-marmara, #0072b2)",
     fill: "fill-[var(--region-marmara)]",
     fillSoft: "fill-[var(--region-marmara)]/80 hover:fill-[var(--region-marmara)]",
     surface: "bg-[var(--region-marmara-tint)]",
@@ -87,6 +97,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
   },
   ege: {
     slug: "ege",
+    fillValue: "var(--region-ege, #e69f00)",
     fill: "fill-[var(--region-ege)]",
     fillSoft: "fill-[var(--region-ege)]/80 hover:fill-[var(--region-ege)]",
     surface: "bg-[var(--region-ege-tint)]",
@@ -101,6 +112,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
   },
   akdeniz: {
     slug: "akdeniz",
+    fillValue: "var(--region-akdeniz, #56b4e9)",
     fill: "fill-[var(--region-akdeniz)]",
     fillSoft: "fill-[var(--region-akdeniz)]/80 hover:fill-[var(--region-akdeniz)]",
     surface: "bg-[var(--region-akdeniz-tint)]",
@@ -115,6 +127,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
   },
   "ic-anadolu": {
     slug: "ic-anadolu",
+    fillValue: "var(--region-ic-anadolu, #f0e442)",
     fill: "fill-[var(--region-ic-anadolu)]",
     fillSoft: "fill-[var(--region-ic-anadolu)]/80 hover:fill-[var(--region-ic-anadolu)]",
     surface: "bg-[var(--region-ic-anadolu-tint)]",
@@ -129,6 +142,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
   },
   karadeniz: {
     slug: "karadeniz",
+    fillValue: "var(--region-karadeniz, #cc79a7)",
     fill: "fill-[var(--region-karadeniz)]",
     fillSoft: "fill-[var(--region-karadeniz)]/80 hover:fill-[var(--region-karadeniz)]",
     surface: "bg-[var(--region-karadeniz-tint)]",
@@ -143,6 +157,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
   },
   "dogu-anadolu": {
     slug: "dogu-anadolu",
+    fillValue: "var(--region-dogu-anadolu, #009e73)",
     fill: "fill-[var(--region-dogu-anadolu)]",
     fillSoft: "fill-[var(--region-dogu-anadolu)]/80 hover:fill-[var(--region-dogu-anadolu)]",
     surface: "bg-[var(--region-dogu-anadolu-tint)]",
@@ -157,6 +172,7 @@ export const REGION_IDENTITY: Readonly<Record<RegionSlug, RegionIdentity>> = {
   },
   "guneydogu-anadolu": {
     slug: "guneydogu-anadolu",
+    fillValue: "var(--region-guneydogu-anadolu, #d55e00)",
     fill: "fill-[var(--region-guneydogu-anadolu)]",
     fillSoft:
       "fill-[var(--region-guneydogu-anadolu)]/80 hover:fill-[var(--region-guneydogu-anadolu)]",
