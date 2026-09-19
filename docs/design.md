@@ -150,6 +150,14 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
   It is `--ring` and not a raw Terra token on purpose: raw tokens are frozen at their light
   values, so `--color-accent` measured 3.04:1 in dark mode. `app/globals.css` records the
   working against the alternatives beside the rule.
+  Since T-053 the rule lives in `@layer base`, which makes it the **default a component may
+  replace** with its own `focus-visible:ring-*` rather than an override nothing can escape.
+  Replacing it is allowed; removing it and putting nothing there is not, and
+  `components/ui/focus-suppression.test.ts` refuses that per declaration. Before the move the
+  rule was unlayered and beat every utility: all 26 `outline-none` class strings in the repo
+  were inert, a component with its own ring drew two concentrically, and the rule's
+  `border-radius: 4px` reached every focused element (`site-search`'s trigger measured
+  `rounded-lg` 10px unfocused, 4px focused).
 - Skip link exists; `<main>` is focusable.
 - Text contrast 4.5:1 measured on **`--color-surface`** (the darkest light-mode panel),
   not only on `--color-bg`. Taupe is 3.9:1 on white: placeholder / decorative only, never
