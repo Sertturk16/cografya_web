@@ -470,9 +470,39 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 81 -> 56 is Task 10's fifth step and its only multi-file one: the four AUTH surfaces, which
+ * belong together because three of them render the SAME success alert.
+ * `components/v2/v2-register-card.tsx` 9 -> 0, `components/v2/v2-login-card.tsx` 7 -> 0,
+ * `components/v2/v2-profile-form.tsx` 5 -> 0 and `components/v2/v2-auth-benefits-plate.tsx`
+ * 4 -> 0. Twenty-one semantic, four decoration.
+ *
+ * MOST OF THESE FIGURES ARE COMPUTED, NOT PAINTED, and the reason is the shape this branch has
+ * already met four times. A success alert renders only after a successful POST, the login
+ * card's confirmation plate renders only for a signed-in visitor, and `cg_has_session=1` alone
+ * does not buy that -- the BFF answers 401, so the signed-in branch is reachable in the model
+ * and not on a headless route. The register card's password rules are the exception and are
+ * painted. Every figure below says which it is.
+ *
+ * The alert, COMPUTED, on a 10% success tint over the auth card (itself `--card`/95 over
+ * `--background`): `--success-strong` 6.56 light and 7.62 dark, against emerald-700's 4.87 and
+ * **2.71** -- the dark pair was doing the work in dark and the light half was failing on its
+ * own. The login card's confirmation plate, COMPUTED on the same tint: 6.56 / 7.61 against
+ * 3.32 / 3.97. The four password rules, PAINTED on the card: 7.49 light and 8.79 dark against
+ * 3.65 and 4.66, failing light. Each of the three alerts drops its hand-written dark pair.
+ *
+ * The benefits plate is the fourth file and the only decoration in the group. Its three raw
+ * glyphs are BOUND rather than deleted, because the FOURTH row of the same array is already
+ * `--primary`: deleting three of four leaves one tinted glyph in a column of four. On the row's
+ * own card plate they measured 2.13, 2.47 and 3.75 light, at or under the 3:1 graphical floor,
+ * against 5.13 / 4.99. The trust-footer shield is a singleton beside foreground prose rather
+ * than a member of that set, so it inherits: 2.34 light before, 14.15 after. The inventory row
+ * is split in two and records both.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 81;
+const RAW_PALETTE_BUDGET = 56;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {

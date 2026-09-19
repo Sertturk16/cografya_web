@@ -372,9 +372,9 @@ export function V2RegisterCard({
         <div
           role="status"
           aria-live="polite"
-          className="mb-5 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300 animate-in fade-in-50 duration-200"
+          className="mb-5 p-3.5 rounded-2xl bg-success/10 border border-success/25 flex items-start gap-2.5 text-xs text-success-strong animate-in fade-in-50 duration-200"
         >
-          <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-emerald-600" />
+          <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">{successMsg}</span>
         </div>
       )}
@@ -624,23 +624,23 @@ export function V2RegisterCard({
             {/* Dynamic Password Strength Indicators */}
             <div className="grid grid-cols-4 gap-1 pt-1 text-[11px] text-muted-foreground">
               <span
-                className={`inline-flex items-center gap-0.5 ${hasMinLength ? "text-emerald-600 font-bold" : ""}`}
+                className={`inline-flex items-center gap-0.5 ${hasMinLength ? "text-success-strong font-bold" : ""}`}
               >
                 <Check className={`size-3 ${hasMinLength ? "opacity-100" : "opacity-30"}`} /> 6+
                 karakter
               </span>
               <span
-                className={`inline-flex items-center gap-0.5 ${hasUpper ? "text-emerald-600 font-bold" : ""}`}
+                className={`inline-flex items-center gap-0.5 ${hasUpper ? "text-success-strong font-bold" : ""}`}
               >
                 <Check className={`size-3 ${hasUpper ? "opacity-100" : "opacity-30"}`} /> Büyük harf
               </span>
               <span
-                className={`inline-flex items-center gap-0.5 ${hasLower ? "text-emerald-600 font-bold" : ""}`}
+                className={`inline-flex items-center gap-0.5 ${hasLower ? "text-success-strong font-bold" : ""}`}
               >
                 <Check className={`size-3 ${hasLower ? "opacity-100" : "opacity-30"}`} /> Küçük harf
               </span>
               <span
-                className={`inline-flex items-center gap-0.5 ${hasNumber ? "text-emerald-600 font-bold" : ""}`}
+                className={`inline-flex items-center gap-0.5 ${hasNumber ? "text-success-strong font-bold" : ""}`}
               >
                 <Check className={`size-3 ${hasNumber ? "opacity-100" : "opacity-30"}`} /> Rakam
               </span>

@@ -240,9 +240,9 @@ export function V2ProfileForm({ locale, profile }: V2ProfileFormProps) {
         <div
           role="status"
           aria-live="polite"
-          className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-2.5 text-xs text-emerald-700 dark:text-emerald-300 animate-in fade-in-50 duration-200"
+          className="p-3.5 rounded-2xl bg-success/10 border border-success/25 flex items-start gap-2.5 text-xs text-success-strong animate-in fade-in-50 duration-200"
         >
-          <CheckCircle2 className="size-4 shrink-0 mt-0.5 text-emerald-600" />
+          <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
           <span className="leading-relaxed font-medium">{t("profile.saved")}</span>
         </div>
       )}
