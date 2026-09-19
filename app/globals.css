@@ -1835,9 +1835,11 @@
        vs --map-sea   4.64  5.90  7.44  9.53  12.17
        vs --map-land  4.83  6.14  7.74  9.92  12.67
        --eq-mag-fg    4.81  6.12  7.72  9.89  12.63
-     The window is narrow in both directions: below oklch L 0.65 the label misses 4.5:1 on
-     step 1, and a single label across a wider span is impossible in either direction, which
-     is why the ramp is a light-purple family here and a dark-purple one in light.
+     The window is narrow in both directions: step 1 sits at oklch L 0.649 and measures 4.81
+     against --eq-mag-fg; holding its hue and chroma fixed, 4.5:1 is not reached until L drops
+     to roughly 0.63, not 0.65. A single label across a wider span is impossible in either
+     direction, which is why the ramp is a light-purple family here and a dark-purple one in
+     light.
 
      --eq-mag-fg is --color-ink-dark, not white: the dark ramp's own lightest step (step 5,
      magnitude 6+) measures only 1.34:1 against white, so the light-mode foreground is not

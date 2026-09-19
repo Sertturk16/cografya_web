@@ -64,8 +64,11 @@ import { magnitudeBucket, type MagnitudeBucket } from "@/lib/earthquake/magnitud
  * `--card`/`--background` has no reason to track it and does not. Measured against the current
  * ramp, `--foreground` reads 3.19 / 2.33 / 1.66 / 1.14 / 1.15:1 in light and 3.03 / 2.38 / 1.89
  * / 1.48 / 1.16:1 in dark — every step misses `TEXT_MIN` (4.5:1) in both themes, and all but
- * the lightest miss `GRAPHICAL_MIN` (3:1) too. `--eq-mag-fg` exists precisely because it is
- * measured against the ramp it labels, not against a page surface the label never sits on.
+ * step 1 miss `GRAPHICAL_MIN` (3:1) too. Step 1 is the ramp's LIGHTEST step in light (where the
+ * ramp darkens with magnitude) but its DARKEST step in dark (where the ramp lightens with
+ * magnitude), so "all but the lightest" holds only in light — in dark the step that clears is
+ * the darkest one. `--eq-mag-fg` exists precisely because it is measured against the ramp it
+ * labels, not against a page surface the label never sits on.
  *
  * **The ramp's own fills were the dark-mode defect, and that was T-031d's, not this module's.**
  * Against the dark `--card`, the SHIPPED (pre-Task-12) fills measured 3.63 / 2.65 / 1.89 / 1.29

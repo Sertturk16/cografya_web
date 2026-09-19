@@ -27,8 +27,11 @@ interface MagnitudeBadgeProps {
  * against the FILL under it, which is a DATA colour that does not follow the theme, not against
  * the page. `--foreground` FAILS IN BOTH THEMES against the current ramp — 3.19 / 2.33 / 1.66 /
  * 1.14 / 1.15:1 in light, 3.03 / 2.38 / 1.89 / 1.48 / 1.16:1 in dark — every step under 4.5:1 and
- * all but the lightest under 3:1, in either theme. A bridge token tracks the PAGE; this label
- * needs a token that tracks the RAMP, which is what `--eq-mag-fg` is for.
+ * all but step 1 under 3:1, in either theme. Step 1 is the LIGHTEST step in light, where the
+ * ramp darkens with magnitude, but the DARKEST step in dark, where the ramp lightens with
+ * magnitude — "all but the lightest" is only true in light and would misstate dark, where the
+ * step that clears is the darkest one, not the lightest. A bridge token tracks the PAGE; this
+ * label needs a token that tracks the RAMP, which is what `--eq-mag-fg` is for.
  *
  * `rounded-full` where the stylesheet wrote `border-radius: 999px`. The computed value changes
  * (999px to Tailwind v4's `calc(infinity * 1px)`) and the rendering does not: both fully round
