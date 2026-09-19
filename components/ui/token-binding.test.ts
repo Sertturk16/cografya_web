@@ -55,13 +55,35 @@ const ACHROMATIC_EXEMPTIONS: ReadonlyArray<readonly [string, string, string]> = 
 const BRAND_HEX = /#(b0522e|7e3a1e|4f6d30|276b70|496f35|c9860f|b23b2e|ede3d5|2b2622|211c19)/i;
 
 /**
+ * ANY read of a raw Terra token, with or without a hex fallback — and the fallback is the part
+ * that never mattered.
+ *
+ * This used to be `/var\(--color-[a-z-]+,\s*#[0-9a-fA-F]{3,8}\)/`, i.e. it required the comma
+ * and the hex. The defect is not the fallback: it is reading a `--color-*` token at all, because
+ * `.dark` redefines not one of them. `text-[var(--color-ink)] bg-[var(--color-surface)]` — the
+ * exact 1.14:1 pair T-033 spent eight tasks deleting — planted into a scanned component left the
+ * whole suite green, 229 files and 5,170 tests, because the narrow pattern walked straight past a
+ * bare `var()`. T-033 also made that spelling IDIOMATIC: `bg-[var(--region-marmara)]/15` ships on
+ * the province page, so a frozen token coming back would not even look like an escape.
+ *
+ * The widening is bounded, and was measured before it was written: over the 153 files these two
+ * `describe`s scan, comment-stripped, it finds **zero** hits in code. The 26 occurrences in the
+ * tree are 10 inside docblocks (which `stripComments` removes — `alert.tsx` quotes an escape to
+ * explain it) and 16 in the four `MAP_SURFACE_FILES` already exempt below. **No exemption row was
+ * added to land this**, which is the same standard `V2_DIRS` was grown to across eight
+ * directories.
+ */
+const RAW_TOKEN_READ = /var\(\s*--color-[a-z0-9-]+/;
+
+/**
  * Colour in a component comes from a bridge token. Three things are forbidden, and each has
  * already cost this repo something (T-034 spec §3):
  *
- *   - `var(--color-x, #hex)` escapes read a Terra token the `.dark` block never redefines,
- *     so the component is frozen at its light value in dark mode. There were 44 of them
- *     across six files, which is why no dark palette could have reached Badge, Alert,
- *     Button, Tabs, Dialog or Sheet.
+ *   - reading a `--color-*` Terra token AT ALL — `var(--color-x)`, with or without a `#hex`
+ *     fallback — freezes the component at that token's light value, because `.dark` redefines
+ *     none of them. There were 44 of the fallback form across six files, which is why no dark
+ *     palette could have reached Badge, Alert, Button, Tabs, Dialog or Sheet; the bare form is
+ *     what T-033 spec §6 asked this file to hold once the CSS Modules were gone.
  *   - raw Tailwind palette classes are off-brand and theme-blind.
  *   - hand-written `dark:` classes mean the component is bound to the wrong token.
  *     `docs/design.md` says so outright: override tokens in `.dark`, do not sprinkle `dark:`
@@ -78,8 +100,16 @@ describe("components bind colour through the token bridge", () => {
     expect(alert?.[1]).not.toContain("never did anything");
   });
 
-  it.each(FILES)("%s has no var(--color-*, #hex) escape", (_path, source) => {
-    expect(source).not.toMatch(/var\(--color-[a-z-]+,\s*#[0-9a-fA-F]{3,8}\)/);
+  it.each(FILES)("%s reads no raw Terra token", (_path, source) => {
+    expect(source).not.toMatch(RAW_TOKEN_READ);
+  });
+
+  it("the raw-token pattern fires on source that does read one — positive control", () => {
+    // This surface has no exempt file to keep the pattern honest, unlike the V2 one below, and
+    // an absence-only rule with a broken pattern is green and worthless. Both spellings, because
+    // the narrow predecessor matched only the second.
+    expect("text-[var(--color-ink)]").toMatch(RAW_TOKEN_READ);
+    expect("bg-[var(--color-surface,#f1e9de)]").toMatch(RAW_TOKEN_READ);
   });
 
   it.each(FILES)("%s has no raw Tailwind palette class", (_path, source) => {
@@ -161,8 +191,8 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * because task 5 did and `components/earthquake` because task 6 did. The rule that put them
    * here:
    * **the task that retires a module adds that module's directory to this list, in the same
-   * commit as the conversion.** Nothing would otherwise have caught a `var(--color-*, #hex)`
-   * escape in the four files that conversion rewrote — the constraint was complied with by
+   * commit as the conversion.** Nothing would otherwise have caught a raw `var(--color-*)` read
+   * in the four files that conversion rewrote — the constraint was complied with by
    * hand and enforced by nothing, which is the shape every defect in this file's docblocks
    * started as.
    *
@@ -247,8 +277,8 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * of the eight. It is the one directory added to this list whose component deliberately keeps
    * a FROZEN colour, and it is here rather than in `MAP_SURFACE_FILES` because the freeze needs
    * no escape: the overlay reads `fill-primary-dark` / `stroke-primary-dark`, utilities the
-   * `@theme inline` block exports, so there is no `var(--color-*, #hex)` for this `describe` to
-   * find. The reason for the freeze is the same one the exempt files carry — the base map is an
+   * `@theme inline` block exports, so there is no `var(--color-*)` read in its code for this
+   * `describe` to find — measured under the widened pattern, not only the hex-fallback one. The reason for the freeze is the same one the exempt files carry — the base map is an
    * isolated `<img>` document whose land and sea are literal hex that no theme redefines, so the
    * ink on top of it is measured against a fixed backdrop: **8.36:1** on that white land and
    * **6.61:1** on that sea, against a lifted primary's **2.08** and **1.64** there in dark. The
@@ -287,6 +317,10 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
   /**
    * Map surfaces, and they stay escaped on purpose.
    *
+   * All four read `--color-*` tokens directly in code (16 reads), and the staleness check below
+   * holds them to it under the same widened pattern the rule uses, so an exemption cannot outlive
+   * the thing it exempts.
+   *
    * Every one is an SVG `fill` or `stroke` drawn onto a map, where the contrast was measured
    * against surfaces that do NOT follow the theme — white land and the seven Okabe-Ito region
    * tints. `--color-ink-dark` in particular is documented in `app/globals.css` as the single
@@ -310,10 +344,10 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
   });
 
   it.each(FILES_V2.map((f) => [f.split("/").slice(-2).join("/"), f] as const))(
-    "%s has no var(--color-*, #hex) escape",
+    "%s reads no raw Terra token",
     (_label, path) => {
       const source = stripComments(readFileSync(path, "utf8"));
-      expect(source).not.toMatch(/var\(--color-[a-z-]+,\s*#[0-9a-fA-F]{3,8}\)/);
+      expect(source).not.toMatch(RAW_TOKEN_READ);
     },
   );
 
@@ -323,8 +357,8 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
       expect(match, `${exempt} no longer exists; drop the exemption`).toBeDefined();
       expect(
         stripComments(readFileSync(match!, "utf8")),
-        `${exempt} no longer escapes; drop the exemption`,
-      ).toMatch(/var\(--color-[a-z-]+,\s*#[0-9a-fA-F]{3,8}\)/);
+        `${exempt} no longer reads a raw Terra token; drop the exemption`,
+      ).toMatch(RAW_TOKEN_READ);
     }
   });
 });
