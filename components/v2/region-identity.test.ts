@@ -384,6 +384,22 @@ describe("the /turkiye map and the game map wear the same colour as the pages th
     for (const slug of SLUGS) expect(table).toContain(identityReference(slug));
   });
 
+  /**
+   * A ratchet, not a restatement of the budget. `raw-palette-count.test.ts` holds a TOTAL and
+   * is satisfied by any distribution that sums under it, so a file taken to zero can drift back
+   * to five while the total falls elsewhere. These two are the branch's heaviest product files
+   * and the ones that hold the region identity; they stay at zero by name.
+   */
+  it.each([
+    ["v2-turkey-map-explorer.tsx", explorer],
+    ["v2-game-screen.tsx", game],
+  ] as const)("%s carries no raw palette hue at all", (_name, source) => {
+    // Positive control on the premise: the file was really read, so an empty string cannot
+    // satisfy the assertion below.
+    expect(source.length).toBeGreaterThan(1000);
+    expect(source.match(new RegExp(RAW_HUE.source, "g"))).toBeNull();
+  });
+
   it("the game map paints regions from the module, not from a table of its own", () => {
     expect(
       game.includes("REGION_COLOR_CLASSES"),

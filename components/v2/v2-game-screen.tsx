@@ -871,14 +871,14 @@ export function V2GameScreen({
               </div>
 
               <div className="flex items-center gap-2.5">
-                <div className="size-9 rounded-xl bg-orange-500/15 text-orange-600 flex items-center justify-center">
+                <div className="size-9 rounded-xl bg-muted text-muted-foreground flex items-center justify-center">
                   <Flame className="size-4" />
                 </div>
                 <div>
                   <span className="text-[10px] text-muted-foreground uppercase font-bold block">
                     Seri (Streak)
                   </span>
-                  <span className="font-heading text-lg font-bold text-orange-600 font-mono">
+                  <span className="font-heading text-lg font-bold text-foreground font-mono">
                     {streak} 🔥
                   </span>
                 </div>
@@ -923,7 +923,7 @@ export function V2GameScreen({
                     playHintSound(soundEnabled);
                   }}
                   disabled={showHint}
-                  leftIcon={<HelpCircle className="size-3.5 text-amber-500" />}
+                  leftIcon={<HelpCircle className="size-3.5" />}
                 >
                   {showHint ? "İpucu Açık" : "İpucu"}
                 </Button>
@@ -980,9 +980,21 @@ export function V2GameScreen({
                 )}
               </div>
 
+              {/* The hint costs half the question's maximum score, which the sentence itself
+                  says — a caution, not neutral information, so the warning family rather than
+                  `info`. BACKDROP NAMED: this panel is inside the question banner, whose own
+                  `bg-gradient-to-r from-primary/10 via-primary/5 to-card` sits on the play
+                  card. `--warning-strong` on `--warning/15` over the gradient's WORST end
+                  (`--primary/10` over `--card`, the left end the panel starts at) measures
+                  5.19:1 light and 6.52:1 dark; over the `to-card` end 5.87 / 7.36. Confirmed
+                  from painted pixels: the panel's dominant painted tone gives 5.27:1 light at
+                  320px and 5.64:1 at 1280 — 320 is the binding width, because the panel spans
+                  proportionally more of the gradient's tinted end there — and 7.34:1 dark at
+                  both. The 5.19 analytic end is the figure recorded, being the lowest of them.
+                  Floored, never rounded toward the flattering direction. */}
               {showHint && (
-                <div className="w-full p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex items-center gap-2 animate-in fade-in duration-200">
-                  <Sparkles className="size-4 text-amber-600 shrink-0" />
+                <div className="w-full p-3 rounded-xl bg-warning/15 border border-warning/30 text-warning-strong text-xs flex items-center gap-2 animate-in fade-in duration-200">
+                  <Sparkles className="size-4 text-warning-strong shrink-0" />
                   <span>
                     {getSmartHint()}{" "}
                     <em className="opacity-80">
@@ -994,16 +1006,20 @@ export function V2GameScreen({
             </div>
           )}
 
-          {/* Feedback Alert Bar */}
+          {/* Feedback Alert Bar. Its third branch was already on `destructive`, so the other
+              two are finishing a conversion rather than starting one. BACKDROP: the play card
+              (`bg-card`) — this bar is a direct child of it, not of the question banner above.
+              `--success-strong` on `--success/15` over `--card` measures 6.08:1 light and
+              7.05:1 dark; `--warning-strong` on `--warning/15` over the same, 5.87 / 7.36. */}
           {lastFeedback && !isFinished && (
             <div
               role="status"
               aria-live="polite"
               className={`p-3 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all animate-in fade-in-50 duration-200 ${
                 lastFeedback.type === "correct"
-                  ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300"
+                  ? "bg-success/15 border-success/30 text-success-strong"
                   : lastFeedback.type === "revealed"
-                    ? "bg-amber-500/15 border-amber-500/30 text-amber-800 dark:text-amber-300"
+                    ? "bg-warning/15 border-warning/30 text-warning-strong"
                     : "bg-destructive/15 border-destructive/30 text-destructive-strong"
               }`}
             >
@@ -1275,7 +1291,7 @@ export function V2GameScreen({
                     <span className="text-[10px] text-muted-foreground block font-bold">
                       En İyi Seri
                     </span>
-                    <span className="font-heading text-2xl font-bold text-orange-600 font-mono">
+                    <span className="font-heading text-2xl font-bold text-foreground font-mono">
                       {bestStreak} 🔥
                     </span>
                   </div>
@@ -1284,10 +1300,16 @@ export function V2GameScreen({
                       Derece
                     </span>
                     <div className="flex items-center justify-center gap-0.5 mt-1">
+                      {/* The COUNT of filled stars is the value; the gold is brand accent on an
+                          earned mark, so `--primary` rather than a data token. A solid glyph,
+                          so the 3:1 graphical floor applies. BACKDROP: this tile's own opaque
+                          `bg-card`, NOT the overlay behind it — confirmed from painted pixels
+                          as #ffffff light and #121e21 dark. `--primary` against it measures
+                          5.13:1 light and 4.98:1 dark. */}
                       {Array.from({ length: 3 }).map((_, i) => (
                         <Star
                           key={i}
-                          className={`size-4 ${i < starCount ? "text-amber-500 fill-amber-500" : "text-muted/40"}`}
+                          className={`size-4 ${i < starCount ? "text-primary fill-primary" : "text-muted/40"}`}
                         />
                       ))}
                     </div>
@@ -1333,8 +1355,16 @@ export function V2GameScreen({
                       <span>Skorunuz profilinize kaydediliyor...</span>
                     </div>
                   )}
+                  {/* BACKDROP: the finish overlay, `bg-background/95 backdrop-blur-md` over the
+                      play card. Its painted surface is #fbf8f4 light and #0b1417 dark, READ OFF
+                      THE RENDERED OVERLAY at 320 and 1280 rather than modelled, because
+                      `backdrop-blur-md` is not a blend any analytic model expresses — the model
+                      said #0b1517 in dark, one byte out in green, which is how far the blur
+                      moves it at 95% opacity. `--success-strong` on `--success/15` over the
+                      PAINTED surface measures 5.76:1 light and 7.81:1 dark. Its `failed`
+                      sibling below is already on `destructive`. */}
                   {saveStatus === "saved" && (
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-success/15 border border-success/30 text-success-strong text-xs font-semibold">
                       <CheckCircle2 className="size-3.5" />
                       <span>Skor profilinize kaydedildi</span>
                     </div>

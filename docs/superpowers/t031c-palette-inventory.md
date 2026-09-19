@@ -302,6 +302,26 @@ deeper, and it is the reason a count that saw only call sites would have been mi
 
 **Totals:** data 70, semantic 8, decoration 0.
 
+**APPLIED, Task 4 — all 78, with two rows corrected before applying.**
+
+1. **Rows 1032/1034/1048 named the wrong backdrop.** The `Becomes` column is unchanged and the
+   figures 6.18 light / 8.18 dark are correct for `--card` — but this banner is a child of a bare
+   `<section>`, so its tint composites over `--background`. Over the surface the page actually
+   paints, `--warning-strong` on `--warning/10` measures **5.81:1 light and 9.19:1 dark** from
+   painted pixels at 320 and 1280 (5.86 / 9.10 analytically; Tailwind's `/10` is a
+   `color-mix(in oklab, …)`, not an sRGB alpha blend, which is the 0.05 the two differ by, and
+   the painted figure is the one recorded because it is the lower of the two in light). The
+   escape button supplies its own `bg-card`, so its label is `--warning-strong` on bare `--card`:
+   6.81 light, 9.64 dark.
+2. **Rows 73-137 are single-sourced, not merely re-tokenised.** The verdict `--region-* + tint/text`
+   is applied through `lib/theme/region-identity.ts`, which is now the ONE module that turns a
+   `--region-*` token into a class; `bolge/[slug]`, `v2-turkey-regions` and `v2-game-screen` were
+   folded into it in the same commit. Four tables that agree are not the property "one colour per
+   region" — they are four chances to disagree again.
+3. `headerClass` was a two-stop gradient under `text-white`. It becomes the same tint banner the
+   deck uses, and its count chip moves to `bg-background` rather than `bg-card`, which would have
+   been a 189th hand-drawn card surface against `page-composition-cards.test.ts`'s recorded 188.
+
 ### components/v2/v2-marine-map-explorer.tsx (61)
 
 | Line        | Class(es)                                                                                  | #   | Verdict    | Becomes                                               | Note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -361,6 +381,41 @@ deeper, and it is the reason a count that saw only call sites would have been mi
 | 1332      | `bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-400`           | 4   | semantic   | `bg-success/15 border-success/30 text-success-strong` | "Skor profilinize kaydedildi"; its `saveStatus === "failed"` sibling is already on `destructive`.                                                                                                                                 |
 
 **Totals:** data 27, semantic 19, decoration 5.
+
+**APPLIED, Task 4 — all 51. Three notes the rows did not carry.**
+
+1. **7 of the 21 in `REGION_COLOR_CLASSES` were dead.** Only `.fill` was ever read; `.border` had
+   no reader anywhere in the file. It is not carried over to the identity module rather than
+   re-tokenised into a member nothing uses.
+2. **Row 1132-1133 changes what the reveal LOOKS like, and that is the verdict, not a slip.**
+   `--game-reveal` is #3f3a36, a dark near-neutral, where the raw class was `fill-amber-400/80`.
+   `app/globals.css` states why: the reveal marker is deliberately the one dark, low-hue value
+   because it has to read as "look here" over all seven region tints at once.
+3. **Row 1121-1130's aside is applied.** `isFlashingWrong` used `fill-destructive/80` /
+   `stroke-destructive` — a bridge token doing a data job. It goes to `--game-wrong` /
+   `--game-wrong-edge` in the same edit. It is not a raw palette occurrence, so it moves no
+   number; it is the third of three states that had to agree.
+
+**LEFT FOR T-031d, unchanged and deliberately so.** The dark land/sea separation on this map is
+arbitrary hexes, so the counter never saw them and no row above covers them: the stage is
+`bg-[#dbe8ee] dark:bg-[#15232d]`, neighbour countries are `fill-[#e8edea] dark:fill-[#202b33]`,
+inland water is `fill-[#a9ccdf] dark:fill-[#122b3d]`, and Türkiye's own provinces rest on
+`fill-card` (#121e21 in dark). PAIRS NAMED, dark, against WCAG 1.4.11's 3:1 floor:
+
+| dark pair                                     | ratio |
+| --------------------------------------------- | ----- |
+| province base fill `--card` vs neighbour land | 1.17  |
+| province base fill `--card` vs inland water   | 1.16  |
+| neighbour land vs inland water                | 1.01  |
+| neighbour land vs the sea stage               | 1.11  |
+| province base fill `--card` vs the sea stage  | 1.06  |
+
+The binding case is the 1.17 — Türkiye against everything beyond its border — and the 1.01 means
+a lake and a neighbouring country are the same tone in dark. These belong to the map token sets
+(`--map-*`, `--province-*`), not to `--region-*` or `--game-*`, and T-031d redesigns that surface,
+so binding them here would move lines whose justification is a measurement T-031d is about to
+redo. The same applies to `v2-turkey-map-explorer`'s `fill-[#f1ece3] dark:fill-[#2d2822]` context
+land and its `dark:bg-[#1a2529]` sea.
 
 ### app/[locale]/(site)/dunya/[slug]/page.tsx (51)
 
