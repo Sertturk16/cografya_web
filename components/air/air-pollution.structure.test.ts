@@ -46,15 +46,46 @@ const code = stripComments;
  * `<polyline points="60,15 …">`, `<line y1="15">` and `transform="translate(0 15)"` went the
  * same way, and the `<line\b` count pin catches only the third of those spellings.
  *
- * So the strip is surgical: it touches ONLY `const NAME = …;` declarations at the top level,
- * and inside them only the quoted strings. A hoisted `const THRESHOLD = 15;` keeps its number,
- * because the number is not in a string — which is the second hole the broad version opened.
+ * So the strip is surgical on THREE axes, each closing a hole the previous version left open:
+ *
+ *  1. ONLY `const NAME = …;` declarations at the top level. Everything else in the file — every
+ *     attribute, every JSX expression — is scanned whole.
+ *  2. Inside them, only the quoted strings. A hoisted `const THRESHOLD = 15;` keeps its number,
+ *     because the number is not in a string.
+ *  3. And only strings that are CLASS-SHAPED. Hoisting a constant in SCREAMING_CASE is this
+ *     file's own convention, so `const GUIDE_PATH = "M 60 15 L 700 15";` with
+ *     `<path d={GUIDE_PATH} />` is the spelling an author adding a guideline would actually
+ *     reach for — and rules 1 and 2 alone blanked it. `const GUIDE_POINTS = "60,15 700,15";`
+ *     went the same way. Both are controls below.
+ *
+ * CLASS-SHAPED means every whitespace-separated token carries a letter and is longer than one
+ * character. That admits all six of the chart's real class strings, including `p-1`,
+ * `[stroke-width:0.6]` and the `${AXIS}` template halves, and rejects `"M 60 15 L 700 15"` (the
+ * lone `M`), `"60,15 700,15"` (no letters) and `"translate(0 15)"` (the trailing `15)`).
+ *
+ * THE PREDICATE IS A HEURISTIC AND IT FAILS CLOSED, DELIBERATELY. It is not a Tailwind parser
+ * and cannot be one; it is a cheap question — "could this string be a coordinate?" — answered
+ * conservatively. A legitimate class string that is one short token, or that carries a bare
+ * number as a token, will NOT be blanked, its numbers will reach the scan, and this test will
+ * red naming them. That is the intended direction: a false red costs one reader one minute and
+ * is resolved by re-spelling the class or justifying the number in the allow-list, whereas a
+ * false green ships a WHO reference line onto 81 province pages against a ruling that was made
+ * twice. If you are here because of such a red, this paragraph is the answer: it is working.
+ *
  * Every control below runs through THIS function rather than re-spelling it, so editing the
  * strip cannot leave the controls passing on a scan that no longer exists.
  */
 function stripHoistedClassStrings(source: string): string {
+  /** Could this string be a coordinate list rather than a class list? See the docblock. */
+  const isClassShaped = (literal: string): boolean => {
+    const body = literal.slice(1, -1).trim();
+    if (body === "") return false;
+    return body.split(/\s+/).every((token) => /[A-Za-z]/.test(token) && token.length > 1);
+  };
   return source.replace(/^const [A-Z][A-Z0-9_]* =[\s\S]*?;$/gm, (declaration) =>
-    declaration.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, '""'),
+    declaration.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, (literal) =>
+      isClassShaped(literal) ? '""' : literal,
+    ),
   );
 }
 
@@ -342,8 +373,31 @@ describe("the chart carries no reference line and no index colouring", () => {
       "a hoisted numeric threshold",
       "const THRESHOLD = 15;\n<line y1={THRESHOLD} y2={THRESHOLD} />",
     ],
+    [
+      "a hoisted path `d`, this file's own SCREAMING_CASE convention",
+      'const GUIDE_PATH = "M 60 15 L 700 15";\n<path className={GRID} d={GUIDE_PATH} />',
+    ],
+    [
+      "a hoisted `points` list, the same convention",
+      'const GUIDE_POINTS = "60,15 700,15";\n<polyline className={GRID} points={GUIDE_POINTS} />',
+    ],
   ])("POSITIVE CONTROL — the scan rejects a guideline written as %s", (_label, poisoned) => {
     expect(unexplainedNumbers(poisoned)).toContain("15");
+  });
+
+  it("NEGATIVE CONTROL — and still blanks a real hoisted class string", () => {
+    // The other half of the strip, pinned directly rather than inferred from the main scan
+    // being green: narrowing `isClassShaped` until it blanks nothing would satisfy every
+    // control above, and the chart's own `15px`/`700px` would then red the assertion with no
+    // explanation of why. This says which half broke, in one line, with the real constants.
+    for (const real of [
+      'const AXIS = "font-sans fill-ink/80 text-[15px] max-[700px]:text-[19px]";',
+      'const FRAME = "max-w-[720px] aspect-[720/300] rounded-lg p-1 bg-white border border-ink/15";',
+      'const GRID_YEAR = "stroke-ink/8 [stroke-width:0.6]";',
+      "const AXIS_LABEL_LEFT = `${AXIS} [text-anchor:end]`;",
+    ]) {
+      expect(unexplainedNumbers(real), real).toEqual([]);
+    }
   });
 
   it("keeps the guideline sentence in the SECTION, under the chart", () => {
