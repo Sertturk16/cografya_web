@@ -97,6 +97,40 @@ function unexplainedNumbers(source: string): string[] {
   );
 }
 
+/**
+ * SVG tags this chart has no business drawing.
+ *
+ * The number scan above asks "is there a bare number?". The question it is standing in for is
+ * "is there a horizontal line?", and those two come apart. Three ways past the number scan were
+ * found that never write a bare numeric literal at all:
+ *
+ *   - `const GUIDE = "fill-ink/80 [x:60px] [y:15px] [width:640px] [height:1px]"` on a `<rect/>`;
+ *   - `const GUIDE = "stroke-ink/80 [d:path('M_60_15_L_700_15')]"` on a `<path/>`;
+ *   - `<rect y={20 - 20 / 4} height={4} />` — arithmetic over allow-listed numbers, since
+ *     20 − 20/4 is 15.
+ *
+ * The first two are class-shaped by construction, so `stripHoistedClassStrings` blanks them and
+ * is RIGHT to: they are perfectly ordinary Tailwind. They render, too — SVG2 makes `x`, `y`,
+ * `width`, `height` and `d` real CSS properties, and headless Chromium gives that rect a
+ * bounding box of 640×1 at y=15, i.e. the WHO AQG level on the truncated axis.
+ *
+ * **The third one does not involve the strip at all.** Its mechanism is the ALLOW-LIST, which
+ * predates T-033 and which this branch never widened: `20` and `4` were already explained
+ * numbers, and no scan that filters by value can see that subtracting one from the other lands
+ * on a threshold. So this assertion closes a pre-existing gap rather than one the conversion
+ * opened — worth saying, so a later reader does not go looking for the regression that let it in.
+ *
+ * Hence a SHAPE question beside the number question, in the same idiom as the `<line\b` count
+ * pin: the chart legitimately draws `<line>`, `<polyline>`, `<circle>` and `<text>` and nothing
+ * else, every one of the three attacks needs a tag outside that set, and a tag cannot be
+ * arithmetic'd into existence. A chart that genuinely needs one of these is a chart whose
+ * "no reference line" ruling should be re-read first (DEC 2026-08-20d md.1/md.2), which is the
+ * conversation this red is meant to start.
+ */
+function unexpectedShapeTags(source: string): string[] {
+  return source.match(/<(?:rect|path|polygon|image)\b/g) ?? [];
+}
+
 /** Whether a source reaches a CSS Module at all — shared with its own controls, same reason. */
 function looksUpAModuleClass(source: string): boolean {
   return /\.module\.css/.test(source) || /styles\./.test(source);
@@ -343,6 +377,9 @@ describe("the chart carries no reference line and no index colouring", () => {
     // numeric threshold to place it at. Both are checked structurally.
     const lineElements = chartCode.match(/<line\b/g) ?? [];
     expect(lineElements).toHaveLength(2);
+    // …and no tag outside the four this chart draws. `unexpectedShapeTags` carries the three
+    // attacks this closes and why the number scan below cannot see any of them.
+    expect(unexpectedShapeTags(chartCode)).toEqual([]);
     // No constant concentration anywhere in the chart — the AQG level or any of the four
     // interim targets would appear as one. Coordinates come from the scale module and the
     // marker radius is the only literal the chart owns. Everything but the hoisted class
@@ -383,6 +420,36 @@ describe("the chart carries no reference line and no index colouring", () => {
     ],
   ])("POSITIVE CONTROL — the scan rejects a guideline written as %s", (_label, poisoned) => {
     expect(unexplainedNumbers(poisoned)).toContain("15");
+  });
+
+  it.each([
+    [
+      "an SVG2 geometry rect, entirely in class-shaped Tailwind",
+      'const GUIDE = "fill-ink/80 [x:60px] [y:15px] [width:640px] [height:1px]";\n<rect className={GUIDE} />',
+    ],
+    [
+      "an SVG2 `d:path()` on a <path>, same trick",
+      "const GUIDE = \"stroke-ink/80 [d:path('M_60_15_L_700_15')]\";\n<path className={GUIDE} />",
+    ],
+    [
+      "arithmetic over allow-listed numbers and no string at all",
+      "<rect y={20 - 20 / 4} height={4} />",
+    ],
+  ])("POSITIVE CONTROL — the shape scan rejects a guideline drawn as %s", (_label, poisoned) => {
+    // Deliberately asserted on the SHAPE scan, not the number scan: all three of these are
+    // invisible to `unexplainedNumbers` by construction, which is the whole reason the tag
+    // assertion exists. A control that passed through the number scan would be claiming a
+    // coverage this file does not have.
+    expect(unexplainedNumbers(poisoned)).not.toContain("15");
+    expect(unexpectedShapeTags(poisoned)).not.toEqual([]);
+  });
+
+  it("NEGATIVE CONTROL — the shape scan clears the four tags the chart really draws", () => {
+    // Anti-vacuity for the assertion above: a regex that matched nothing would agree with the
+    // real chart just as happily. These are the tags that must NEVER start reading as attacks.
+    expect(unexpectedShapeTags("<line /><polyline /><circle /><text /><svg><title><desc>")).toEqual(
+      [],
+    );
   });
 
   it("NEGATIVE CONTROL — and still blanks a real hoisted class string", () => {
