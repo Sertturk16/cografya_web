@@ -31,25 +31,61 @@ export const RAW_PALETTE = new RegExp(
 );
 
 /**
- * The second arm: an arbitrary hex in brackets, e.g. `bg-[#ea580c]`, `dark:fill-[#202b33]`.
+ * The second arm: a colour written as a literal VALUE inside a bracketed utility.
  *
  * WHY THIS EXISTS. `RAW_PALETTE` matches a NOTATION, not a colour, so a file can reach zero on
- * it by rewriting `bg-orange-600` as `bg-[#ea580c]` — the same colour, the same problem, and a
- * budget of 0 would then assert something materially weaker than it reads.
- * `v2-marine-map-explorer.tsx` already does exactly this three times (orange-600, teal-600 and
- * blue-600 as the sea-surface-temperature legend swatches).
+ * it by rewriting `bg-orange-600` as the same colour spelled some other way — and a budget of 0
+ * would then assert something materially weaker than it reads.
+ * `v2-marine-map-explorer.tsx` already does this three times with a plain hex (orange-600,
+ * teal-600 and blue-600 as the sea-surface-temperature legend swatches).
  *
- * This is the THIRD instance of one class of blindness — the count's scope not matching the
- * thing being counted. The first was occurrences inside comments, the second was `lib/` sitting
- * outside the roots. Each was found after the number had been quoted. So this arm ships with
- * the counter rather than as a note for later.
+ * THE PAYLOAD IS MATCHED ANYWHERE INSIDE THE BRACKETS, and the property prefix is optional.
+ * A first version of this arm required `-[#` and so caught only the plain-hex spelling. Eleven
+ * others escape it, all carrying the same orange-600 payload:
+ *
+ *   bg-[rgb(234 88 12)] / bg-[rgb(234,88,12)] / bg-[rgb(234 88 12 / 1)]   the three rgb forms
+ *   bg-[rgba(...)]  bg-[hsl(...)]  bg-[color-mix(in srgb, ... )]          other functions
+ *   bg-[oklch(0.646 0.222 41.116)]                                        see below
+ *   shadow-[0_0_0_2px_#ea580c]  ring-[1px_solid_#ea580c]                  hex not at [ start
+ *   [color:#ea580c]  [--tw-x:#ea580c]                                     arbitrary property
+ *
+ * `bg-[oklch(...)]` is the one worth naming: that is Tailwind v4's OWN notation for its
+ * palette — `--color-orange-600: oklch(0.646 0.222 41.116)` sits in its `theme.css` — so
+ * copy-pasting the theme value verbatim is the most natural laundering there is.
+ *
+ * Exposure to all eleven is zero today (every root grepped), so this arm's pinned count does
+ * not move; what moves is what the count is able to claim.
+ *
+ * `[var(--x)]` IS DELIBERATELY NOT MATCHED, and this is not an oversight to be tidied up later.
+ * `fill-[var(--region-marmara)]` is the GOAL state — it is how `lib/theme/region-identity.ts`
+ * binds every region, because these tokens are not in Tailwind's colour namespace. A `var()`
+ * reference names a token; a hex or a colour function inlines a value. Only the second is the
+ * thing this arm is for.
+ *
+ * `var(` is excluded ANYWHERE in the brackets, not merely at the start, and that is load-bearing:
+ * `bg-[var(--map-sea,#dbe7e8)]` carries a literal hex as a FALLBACK while still naming a token.
+ * Eleven of those exist across five map components. They are a token reference, and the escape
+ * they represent is already governed — `components/ui/token-binding.test.ts` forbids
+ * `var(--color-*, #hex)` outright and keeps its own named exemption list for the map surfaces.
+ * Counting them here would double-govern one shape under two rules with different exemptions.
+ * The residual this leaves is `bg-[var(--not-a-real-token, #ea580c)]`, which neither rule sees;
+ * it is recorded rather than papered over, and it is a strictly stranger thing to write than
+ * simply inlining the hex.
  *
  * Counted SEPARATELY, not folded into `RAW_PALETTE`'s total: most of these 75 are legitimate map
  * surfaces (sea, neighbour land, inland water) whose values were measured against fixed
  * backdrops and which belong to the `--map-*` / `--province-*` sets T-031d owns. A single number
  * mixing them with laundered palette values would be a number nobody could act on.
  */
-export const ARBITRARY_HEX = new RegExp(`\\b(?:${PROPERTIES})-\\[#[0-9a-fA-F]{3,8}\\]`, "g");
+const COLOR_PAYLOAD = "#[0-9a-fA-F]{3,8}|\\b(?:rgba?|hsla?|oklch|oklab|lab|lch|color-mix)\\(";
+
+/** Bracket content, with `var(` excluded anywhere in it — see the docblock above. */
+const NOT_VAR = "(?:(?!var\\()[^\\]])*";
+
+export const ARBITRARY_COLOR = new RegExp(
+  `(?:\\b[a-z][a-z0-9-]*-)?\\[${NOT_VAR}(?:${COLOR_PAYLOAD})${NOT_VAR}\\]`,
+  "g",
+);
 
 /** Files this branch does not own, and files that are not product code. */
 export const EXCLUDED = [
@@ -99,17 +135,22 @@ export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) 
 }
 
 /**
- * Arbitrary-hex utilities, the notation `RAW_PALETTE` cannot see.
+ * Bracketed utilities carrying a literal colour value, the spellings `RAW_PALETTE` cannot see.
  *
  * @returns {{ file: string, line: number, cls: string, context: string }[]}
  */
-export function collectArbitraryHexOccurrences(roots = ["components", "app", "lib"]) {
-  return collect(ARBITRARY_HEX, roots);
+export function collectArbitraryColorOccurrences(roots = ["components", "app", "lib"]) {
+  return collect(ARBITRARY_COLOR, roots);
 }
 
-/** The bare `#rrggbb` inside `bg-[#ea580c]`, lower-cased and expanded from a 3-digit form. */
+/**
+ * The bare `#rrggbb` inside `bg-[#ea580c]`, lower-cased and expanded from a 3-digit form, or
+ * `null` when the value is spelled as a colour FUNCTION rather than a hex.
+ */
 export function hexOf(cls) {
-  const raw = /#([0-9a-fA-F]{3,8})/.exec(cls)[1].toLowerCase();
+  const match = /#([0-9a-fA-F]{3,8})/.exec(cls);
+  if (match === null) return null;
+  const raw = match[1].toLowerCase();
   const six =
     raw.length === 3
       ? raw

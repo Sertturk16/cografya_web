@@ -82,7 +82,8 @@ const RAW_HUE =
  * An unbalanced or unterminated construct throws rather than returning a short block, so this
  * fails closed — no caller can mistake a truncated block for a complete one.
  */
-function matchBraces(source: string, open: number): string {
+function matchBraces(source: string, open: number, pair: "{}" | "[]" = "{}"): string {
+  const [OPEN, CLOSE] = [pair[0]!, pair[1]!];
   let depth = 0;
   let quote: string | null = null;
   let comment: "line" | "block" | null = null;
@@ -111,10 +112,10 @@ function matchBraces(source: string, open: number): string {
       comment = "block";
       i++;
     } else if (c === '"' || c === "'" || c === "`") quote = c;
-    else if (c === "{") depth++;
-    else if (c === "}" && --depth === 0) return source.slice(open, i + 1);
+    else if (c === OPEN) depth++;
+    else if (c === CLOSE && --depth === 0) return source.slice(open, i + 1);
   }
-  throw new Error("unbalanced braces in REGION_THEMES");
+  throw new Error(`unbalanced ${pair} in the table being read`);
 }
 
 /**
@@ -139,14 +140,46 @@ const ENUM_TO_SLUG = new Map<string, RegionSlug>(
  * block naming two different regions could never be caught. The enum name is the one property of
  * an entry that is not a colour, which is exactly what a key has to be here.
  */
-function tableOf(source: string, declaration: string): string {
+function tableOf(source: string, declaration: string, pair: "{}" | "[]" = "{}"): string {
   const at = source.indexOf(declaration);
   if (at < 0) throw new Error(`${declaration} is gone — this test is about that table`);
-  // The table's own opener is the first `= {` after the declaration; the `{` inside a
+  // The table's own opener is the first `= {` (or `= [`) after the declaration; the `{` inside a
   // `Record<string, { ... }>` type annotation is not preceded by `=`.
-  const opener = /=\s*\{/.exec(source.slice(at));
-  if (opener === null) throw new Error(`${declaration} has no object literal`);
-  return matchBraces(source, at + opener.index + opener[0].length - 1);
+  const opener = new RegExp(`=\\s*\\${pair[0]}`).exec(source.slice(at));
+  if (opener === null) throw new Error(`${declaration} has no literal`);
+  return matchBraces(source, at + opener.index + opener[0].length - 1, pair);
+}
+
+/**
+ * Every `TURKEY_REGIONS` entry, keyed by the region its own `id` names.
+ *
+ * The deck is an ARRAY of objects rather than a keyed record, so the non-colour property that
+ * identifies an entry is its `id` — which is the deck's own spelling (`icanadolu`), translated
+ * through the file's exported `CANONICAL_REGION_SLUGS` rather than by a mapping held here.
+ *
+ * This exists because the deck's assertions were FILE-WIDE (`deck.toContain(...)`) while the
+ * page's were block-scoped, and the asymmetry was a real hole: a comment anywhere in the file
+ * carrying the right reference satisfied a file-wide `toContain`, so a card wearing another
+ * region's colour could survive. Both halves are block-scoped now.
+ */
+function locateDeckBlocks(source: string): Map<string, string> {
+  const table = tableOf(source, "export const TURKEY_REGIONS", "[]");
+  const canonical = new Map<string, string>();
+  const slugTable = tableOf(source, "export const CANONICAL_REGION_SLUGS");
+  for (const m of slugTable.matchAll(/(\w+):\s*"([a-z-]+)"/g)) canonical.set(m[1]!, m[2]!);
+
+  const blocks = new Map<string, string>();
+  let cursor = 0;
+  while (true) {
+    const open = table.indexOf("{", cursor);
+    if (open < 0) break;
+    const block = matchBraces(table, open);
+    cursor = open + block.length;
+    const id = /\bid:\s*"([a-z]+)"/.exec(block);
+    const slug = id === null ? undefined : canonical.get(id[1]!);
+    if (slug !== undefined) blocks.set(slug, block);
+  }
+  return blocks;
 }
 
 export function locateRegionBlocks(source: string): Map<string, string> {
@@ -316,8 +349,25 @@ describe("the region card deck wears the same colour", () => {
     expect(deck.match(new RegExp(RAW_HUE.source, "g"))).toBeNull();
   });
 
+  const deckBlocks = locateDeckBlocks(deck);
+
+  it("finds exactly the seven cards, one block each", () => {
+    expect([...deckBlocks.keys()].sort()).toEqual([...SLUGS].sort());
+  });
+
   it.each(SLUGS)("%s's card header is bound to its own region token", (slug) => {
-    expect(deck).toContain(`${identityReference(slug)}.banner`);
+    // Block-scoped and exclusive, the same shape the page half uses. A file-wide `toContain`
+    // is satisfied by a COMMENT carrying the right reference, which is why this is not one.
+    const block = deckBlocks.get(slug);
+    expect(block, `no TURKEY_REGIONS entry is declared for ${slug}`).toBeDefined();
+    expect(block).toContain(`${identityReference(slug)}.banner`);
+    for (const other of SLUGS) {
+      if (other === slug) continue;
+      expect(
+        block!.includes(identityReference(other)),
+        `the ${slug} card names ${other}'s identity — a region is wearing another's colour`,
+      ).toBe(false);
+    }
     expect(REGION_IDENTITY[slug].banner).toContain(`--region-${slug}-tint`);
     expect(REGION_IDENTITY[slug].banner).toContain(`--region-${slug}-text`);
   });
