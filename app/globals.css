@@ -2,6 +2,41 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* =============================================================================
+   WHAT TAILWIND IS ALLOWED TO READ A CLASS OUT OF.
+
+   Tailwind v4 scans source TEXT, not JSX. With no `@source` declared it auto-detects from
+   the project root, so every non-gitignored text file in the repo is a stylesheet input —
+   including prose. That is not theoretical: `docs/superpowers/t031c-palette-inventory.md`
+   is a 461-occurrence census of the raw palette classes this branch removed, and every one
+   of them was being compiled into a real rule. `text-purple-600` and `text-rose-500` exist
+   nowhere else in this repo, and both shipped. It is the same defect T-031c already fixed
+   once inside a single component (a comment quoting a class name), at repository scale.
+
+   Three trees are subtracted, and each one is prose or tooling rather than markup:
+
+     docs           the design notes, plans, specs and the palette census itself
+     scripts        build-time generators; their output lands in lib/ and is still scanned
+     the tests      which necessarily NAME the classes they forbid
+
+   (The patterns themselves are the four `@source not` lines below. They are not repeated
+   here because a CSS comment cannot contain the `.test` glob without ending itself — which
+   is how the fourth arm earned its keep before it had finished being written.)
+
+   Nothing here narrows what the application can use: every route, component and library
+   module is still auto-detected. `components/ui/raw-palette-count.test.ts`'s fourth arm
+   compiles this file and asserts the result, which is what keeps this list honest — drop a
+   line and the palette classes it was holding back reappear in the compiled sheet and fail.
+
+   THE PATHS ARE RELATIVE TO THIS FILE, not to the project root. `@source not "docs/**"`
+   resolves against `app/` and silently matches nothing; the leading `../` is load-bearing
+   and was verified by compiling both spellings (125 rules vs 53).
+   ============================================================================= */
+@source not "../docs/**";
+@source not "../scripts/**";
+@source not "../**/*.test.ts";
+@source not "../**/*.test.tsx";
+
 @custom-variant dark (&:is(.dark *));
 
 /* =============================================================================
