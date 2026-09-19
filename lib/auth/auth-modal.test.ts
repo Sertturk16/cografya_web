@@ -51,6 +51,37 @@ describe("createAuthModalStore", () => {
     });
   });
 
+  /**
+   * T-059. `requestAuth` used to commit `mode: "register"` unconditionally, so the mode a caller
+   * wanted had to be set AFTER the request and never before. Two of the four header call sites
+   * wrote it before, and the mobile "Giris Yap" therefore always opened the register tab -- on
+   * every page, for as long as the button has existed. The trap was the API's, not the caller's:
+   * both orderings read correctly and only one worked. The mode is now an argument, so opening
+   * in a chosen mode is one call and there is no order left to get wrong.
+   */
+  it("requestAuth opens in the mode it is given", () => {
+    const store = createAuthModalStore();
+    store.requestAuth("generic", "login");
+    expect(store.getSnapshot().mode).toBe("login");
+    expect(store.getSnapshot().open).toBe(true);
+    expect(store.getSnapshot().intent).toBe("generic");
+  });
+
+  it("requestAuth still defaults to register when no mode is given", () => {
+    const store = createAuthModalStore();
+    store.requestAuth("gameRound");
+    expect(store.getSnapshot().mode).toBe("register");
+  });
+
+  it("requestAuth in login mode does not inherit a register mode left by an earlier request", () => {
+    const store = createAuthModalStore();
+    store.requestAuth("favorite");
+    expect(store.getSnapshot().mode).toBe("register");
+    store.dismissAuth();
+    store.requestAuth("generic", "login");
+    expect(store.getSnapshot().mode).toBe("login");
+  });
+
   it("setMode changes only the mode, leaving the rest of the request untouched", () => {
     const store = createAuthModalStore();
     const id = store.requestAuth("favorite");
