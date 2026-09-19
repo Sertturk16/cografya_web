@@ -737,7 +737,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               </g>
 
               {/* 4. Inland Lakes */}
-              <g className="fill-[var(--map-sea)] stroke-accent/40 stroke-[0.5] pointer-events-none">
+              <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
                 {INLAND_WATER_SHAPES.map((lake) => (
                   <path key={lake.id} d={lake.d} />
                 ))}
