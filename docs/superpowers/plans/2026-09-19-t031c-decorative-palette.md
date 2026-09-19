@@ -1,6 +1,6 @@
 # T-031c — Decorative Palette to the Token Bridge Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Drive 939 raw Tailwind palette classes to zero — each one decided case by case as data, semantic or pure decoration — and close the correctness bug underneath them: a region's badge and its map fill are currently unrelated colours.
 
@@ -83,7 +83,7 @@ Six of seven disagree, and one (İç Anadolu) agrees by coincidence. The page te
 - Consumes: nothing.
 - Produces: `collectPaletteOccurrences(roots: string[]): { file: string; line: number; cls: string; context: string }[]` from `scripts/palette-inventory.mjs`, reused by Task 2's counter so the branch has **one** reader of this pattern, not two. Two readers of one notation that nothing compares is the failure T-045 was split to fix.
 
-- [ ] **Step 1: Write the collector**
+- [x] **Step 1: Write the collector**
 
 Create `scripts/palette-inventory.mjs`:
 
@@ -157,7 +157,7 @@ export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) 
 }
 ```
 
-- [ ] **Step 2: Generate the raw list**
+- [x] **Step 2: Generate the raw list**
 
 ```bash
 node --input-type=module -e "
@@ -173,7 +173,7 @@ for (const [f, n] of Object.entries(byFile).sort((a,b)=>b[1]-a[1])) console.log(
 Expected: `total 939` across 41 files. If it disagrees, find out why before writing the
 inventory — the number is the thing this branch is accountable to.
 
-- [ ] **Step 3: Classify every occurrence**
+- [x] **Step 3: Classify every occurrence**
 
 Write `docs/superpowers/t031c-palette-inventory.md`. One row per occurrence, grouped by file,
 with a verdict from exactly three:
@@ -208,7 +208,7 @@ Rules while classifying:
   note. If nothing else carries it, the row is `semantic`, not `decoration`.
 - Never guess at a bridge token's contrast. Quote the figure from `lib/theme/contrast.ts`.
 
-- [ ] **Step 4: Commit the inventory alone**
+- [x] **Step 4: Commit the inventory alone**
 
 ```bash
 git add docs/superpowers/t031c-palette-inventory.md scripts/palette-inventory.mjs
@@ -220,7 +220,7 @@ removed. One collector, reused by the counter, so the branch has a single
 reader of this notation."
 ```
 
-- [ ] **Step 5: Get the inventory reviewed before any code changes**
+- [x] **Step 5: Get the inventory reviewed before any code changes**
 
 Stop here and ask for review of the table. This is the gate the whole design rests on: after
 this, the edits are mechanical, and a wrong verdict discovered at Task 6 costs a rewrite.
@@ -238,7 +238,7 @@ this, the edits are mechanical, and a wrong verdict discovered at Task 6 costs a
 - Consumes: `collectPaletteOccurrences`, `EXCLUDED` from `scripts/palette-inventory.mjs`.
 - Produces: `RAW_PALETTE_BUDGET` — the number each later task steps down.
 
-- [ ] **Step 1: Write the test**
+- [x] **Step 1: Write the test**
 
 Create `components/ui/raw-palette-count.test.ts`:
 
@@ -295,14 +295,14 @@ describe("the raw palette is being retired, and the number is held", () => {
 });
 ```
 
-- [ ] **Step 2: Run it**
+- [x] **Step 2: Run it**
 
 Run: `pnpm vitest run components/ui/raw-palette-count.test.ts`
 
 Expected: PASS at 939 — the budget starts where reality is. It goes red only if someone adds
 a raw class, and it is stepped down by every task below.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/ui/raw-palette-count.test.ts
@@ -329,7 +329,7 @@ The one place where the raw palette is not a theming wart but a page contradicti
 - Consumes: `deltaE00`, `CATEGORICAL_MIN` from `lib/theme/delta-e.ts`; `simulate`, `VISIONS` from `lib/theme/cvd.ts`; `REGION_TINTS` from `lib/theme/region-palette.test.ts` (all PR0).
 - Produces: `--region-*-tint` and `--region-*-text` in `app/globals.css`, seven of each, consumed by T-031d.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `components/v2/region-identity.test.ts`:
 
@@ -357,14 +357,14 @@ describe("a region wears one colour, not two", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `pnpm vitest run components/v2/region-identity.test.ts`
 
 Expected: FAIL — all 14 cases. Marmara's block matches `bg-amber-500/15`, and no
 `--region-marmara-tint` exists.
 
-- [ ] **Step 3: Add the two derived members per region**
+- [x] **Step 3: Add the two derived members per region**
 
 In `app/globals.css`, beside the seven `--region-*` hues, add a tint and a text member for
 each, and **record the measured figures in a comment the way every other token block here
@@ -372,25 +372,25 @@ does**. Each `-text` member must clear 4.5:1 on `--card` in both themes; produce
 with `lib/theme/contrast.ts` and `blendOver` — a tinted chip's real contrast is against the
 blend, not against the token.
 
-- [ ] **Step 4: Rewrite the descriptor table**
+- [x] **Step 4: Rewrite the descriptor table**
 
 Replace `badgeClass`, `accentColor`, `gradient` and `borderAccent` for all seven regions so
 each is expressed through that region's own token. Marmara's badge becomes blue because
 Marmara **is** blue on the map; that is the fix, not a side effect.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `pnpm vitest run components/v2/region-identity.test.ts components/ui/raw-palette-count.test.ts`
 
 Expected: both PASS. Step `RAW_PALETTE_BUDGET` down by what this task actually removed — read
 the number from the failure message, do not estimate it.
 
-- [ ] **Step 6: Verify the set is still CVD-safe after the derived members land**
+- [x] **Step 6: Verify the set is still CVD-safe after the derived members land**
 
 The seven hues do not move in this task, so `lib/theme/region-palette.test.ts` must still be
 green and its four worst-case figures unchanged. If any moved, a hue was edited — revert it.
 
-- [ ] **Step 7: Visual round and commit**
+- [x] **Step 7: Visual round and commit**
 
 Screenshot `/tr/turkiye/bolge/marmara` and two more regions at 320, 360, 390 and desktop in
 both themes, then:
@@ -417,11 +417,11 @@ batches for the long tail.
 Every one of these tasks has the same five steps. What changes is the file and its verdict
 rows from Task 1's inventory.
 
-- [ ] **Step 1** — Re-read that file's section of `docs/superpowers/t031c-palette-inventory.md`. The inventory is the decision; this step is not where classification happens.
-- [ ] **Step 2** — Apply the rows. `semantic` binds to its bridge token and its hand-written `dark:` pair is deleted in the same edit. `decoration` is removed. `data` binds to its data token set, never to a bridge token.
-- [ ] **Step 3** — `pnpm typecheck && pnpm lint && pnpm vitest run` and step `RAW_PALETTE_BUDGET` by the exact number removed.
-- [ ] **Step 4** — For any file with a visible surface: `pnpm sweep:overflow -- --filter=<its route>` and screenshots at the four widths in both themes. Measure the changed text against its surface with `lib/theme/contrast.ts` and record the worst figure in the commit body.
-- [ ] **Step 5** — Commit, naming the file and the count removed.
+- [x] **Step 1** — Re-read that file's section of `docs/superpowers/t031c-palette-inventory.md`. The inventory is the decision; this step is not where classification happens.
+- [x] **Step 2** — Apply the rows. `semantic` binds to its bridge token and its hand-written `dark:` pair is deleted in the same edit. `decoration` is removed. `data` binds to its data token set, never to a bridge token.
+- [x] **Step 3** — `pnpm typecheck && pnpm lint && pnpm vitest run` and step `RAW_PALETTE_BUDGET` by the exact number removed. **[done, mechanism changed at close: `RAW_PALETTE_BUDGET` no longer exists. The arm is a named exemption table (`RAW_EXEMPT`), so a step is now a row edit or a row deletion, asserted `toBe` in both directions.]**
+- [x] **Step 4** — For any file with a visible surface: `pnpm sweep:overflow -- --filter=<its route>` and screenshots at the four widths in both themes. Measure the changed text against its surface with `lib/theme/contrast.ts` and record the worst figure in the commit body.
+- [x] **Step 5** — Commit, naming the file and the count removed.
 
 Files needing particular care, with the reason:
 
@@ -443,7 +443,7 @@ Files needing particular care, with the reason:
 - Modify: `components/ui/token-binding.test.ts`
 - Modify: `docs/design.md`
 
-- [ ] **Step 1: Take the budget to zero**
+- [x] **Step 1: Take the budget to zero** **[done as a named row, not a literal zero: 15 occurrences in `v2-world-map-explorer.tsx` are deferred to T-031d with a measured reason, pinned as one row and asserted `toBe(15)`, with `toBe(0)` for every other file. Deleting that row is how T-031d ends the arm.]**
 
 `RAW_PALETTE_BUDGET = 0`, and change the assertion from `toBeLessThanOrEqual` to `toBe(0)` —
 a budget of zero checked with `<=` passes on a negative count and reads as a floor when it is
@@ -453,26 +453,26 @@ If any occurrence genuinely must survive, it is an **exemption listed by file an
 its reason**, and a further assertion fails if an exemption goes stale. `token-binding.test.ts`
 already carries exactly that pattern for its two achromatic exemptions — follow it.
 
-- [ ] **Step 2: Fold the count into the existing rule**
+- [x] **Step 2: Fold the count into the existing rule**
 
 `token-binding.test.ts`'s docblock says _"Raw palette classes (749) and hand-written `dark:`
 pairs are counted in a comment"_. Replace that sentence with a pointer to the counter, so
 there is one place the number lives and it is executable.
 
-- [ ] **Step 3: Correct `docs/design.md`**
+- [x] **Step 3: Correct `docs/design.md`**
 
 The dark-mode section says _"Not yet themed, and known: the categorical accent system (T-031c)
 and map surfaces (T-031d). Measured 2026-09-17: 895 raw palette classes across 42 files."_
 Replace with the finished state, leaving T-031d named as still open.
 
-- [ ] **Step 4: Full verification**
+- [x] **Step 4: Full verification**
 
 ```bash
 pnpm typecheck && pnpm lint && pnpm test && pnpm build
 pnpm sweep:overflow
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -485,12 +485,12 @@ git commit -m "test(ui): the raw palette count is zero and held
 
 ## Branch close
 
-- [ ] `pnpm typecheck && pnpm lint && pnpm test && pnpm build` green.
-- [ ] `pnpm sweep:overflow` green across all 22 URLs, five widths, both themes.
-- [ ] `lib/theme/region-palette.test.ts` still green with its four worst-case figures unchanged.
-- [ ] Every region's badge, accent, gradient and border derive from that region's own token; screenshots of three regions in both themes in the PR body.
-- [ ] The inventory in `docs/superpowers/t031c-palette-inventory.md` matches what shipped — no row applied differently from its verdict without the row being edited and the change explained.
-- [ ] Open the PR to `dev` (squash), titled `T-031c: bind or delete every raw palette class`.
+- [x] `pnpm typecheck && pnpm lint && pnpm test && pnpm build` green.
+- [x] `pnpm sweep:overflow` green across all 22 URLs, five widths, both themes. **[re-run at close against the production build: PASS, 230 checks across 23 URLs.]**
+- [x] `lib/theme/region-palette.test.ts` still green with its four worst-case figures unchanged.
+- [ ] Every region's badge, accent, gradient and border derive from that region's own token; screenshots of three regions in both themes in the PR body. ← still open: belongs to the PR step, not to the branch.
+- [x] The inventory in `docs/superpowers/t031c-palette-inventory.md` matches what shipped — no row applied differently from its verdict without the row being edited and the change explained.
+- [ ] Open the PR to `dev` (squash), titled `T-031c: bind or delete every raw palette class`. ← still open: belongs to the PR step, not to the branch.
 
 ## After this branch: T-031d
 

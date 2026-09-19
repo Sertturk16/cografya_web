@@ -30,7 +30,12 @@
 
    THE PATHS ARE RELATIVE TO THIS FILE, not to the project root. `@source not "docs/**"`
    resolves against `app/` and silently matches nothing; the leading `../` is load-bearing
-   and was verified by compiling both spellings (125 rules vs 53).
+   and was verified by compiling both spellings against this file. Measured on the file as it
+   now stands: 147 distinct raw-palette rules without the `docs` line, 56 with it — and both
+   halves of that pair are read by walking SELECTORS, because a text scan anchored on the `.`
+   in front of the property misses every variant-prefixed rule and reports 122 and 45 instead.
+   (An earlier version of this comment said "125 vs 53". Those were the text-scan figures taken
+   before the `scripts` and test exclusions were added, and neither reproduces today.)
    ============================================================================= */
 @source not "../docs/**";
 @source not "../scripts/**";

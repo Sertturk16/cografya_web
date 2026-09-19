@@ -1,6 +1,6 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   ARBITRARY_PINNED,
@@ -762,10 +762,80 @@ describe("the raw palette is retired everywhere but one named file", () => {
     }
   });
 
-  it("collects something at all — positive control", () => {
-    // Narrow root, deliberately hand-spelled: proves the collector finds real hits on a
-    // smaller tree, not just an empty result that would trivially satisfy any budget.
-    expect(collectPaletteOccurrences(["components"]).length).toBeGreaterThan(0);
+  /**
+   * THE ANTI-VACUITY CONTROL IS SYNTHETIC, AND IT HAD TO BECOME SO.
+   *
+   * It used to read `collectPaletteOccurrences(["components"]).length > 0`, and at the end of
+   * this branch that was satisfied by exactly one thing: the 15 deferred occurrences in
+   * `v2-world-map-explorer.tsx`. So the control was due to go RED on the very commit that
+   * closes this arm — T-031d deletes those classes and deletes the `RAW_EXEMPT` row — and the
+   * obvious response, deleting the control, would leave arm 1 asserting zero with nothing
+   * proving the collector can still see anything at all. That is this branch's own signature
+   * defect (a guard that is green because it did not look), aimed at its own future.
+   *
+   * Arms 2, 3 and 4 already work this way: `LAUNDERING_SPELLINGS`, `seenIn()` and
+   * `compileProbe()` all feed the collector input they own. Arm 1 now does too, so it survives
+   * reaching a literal zero in the tree.
+   *
+   * The two halves are separated on purpose. The NOTATION is proved against a tree this test
+   * writes, which nothing in the repo can empty. The SCOPE — that `sourceFiles` still walks
+   * real files rather than returning nothing — is proved against the real tree through the
+   * arbitrary arm, which shares `sourceFiles` with this one ("one reader for the scope", see
+   * `scripts/palette-inventory.mjs`). Arm 1's own population is the thing being driven to zero
+   * and therefore cannot be the evidence that the walk works.
+   */
+  const seenIn = (files: Record<string, string>) => {
+    const dir = mkdtempSync(join(tmpdir(), "t11-raw-"));
+    try {
+      for (const [name, source] of Object.entries(files)) {
+        const full = join(dir, name);
+        mkdirSync(dirname(full), { recursive: true });
+        writeFileSync(full, source, "utf8");
+      }
+      return collectPaletteOccurrences([dir]).map((o) => o.cls);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("sees a raw palette class on a tree it owns — synthetic positive control", () => {
+    expect(seenIn({ "probe.tsx": 'const a = <div className="text-rose-500" />;' })).toEqual([
+      "text-rose-500",
+    ]);
+    // A variant prefix and an alpha suffix are the same class; both spellings must be counted,
+    // and 42 of the 939 this branch removed were written one of those two ways.
+    expect(
+      seenIn({ "probe.tsx": 'const a = <div className="dark:bg-amber-600/15 fill-slate-700" />;' }),
+    ).toEqual(["bg-amber-600", "fill-slate-700"]);
+    // It recurses, and it reads `.ts` as well as `.tsx` — `lib/map/continent-theme.ts` alone
+    // held 112, and a collector that only walked its root would have reported this branch done.
+    expect(seenIn({ "nested/deep/theme.ts": 'export const C = "border-teal-500";' })).toEqual([
+      "border-teal-500",
+    ]);
+  });
+
+  it("does not see what it must not — synthetic negative control", () => {
+    // A test file is not product code, which is why the 939 is not the 1017 the regex matches.
+    expect(seenIn({ "probe.test.tsx": 'const a = "text-rose-500";' })).toEqual([]);
+    // A bracketed literal is the SAME colour and is deliberately arm 2's, not arm 1's: the two
+    // arms partition the population, and folding them would make one number nobody can act on.
+    expect(seenIn({ "probe.tsx": 'const a = <div className="bg-[#ea580c]" />;' })).toEqual([]);
+    // A bridge token, a shade that is not in the palette scale, and a token that merely ends
+    // like one. None of these is a raw palette class.
+    expect(
+      seenIn({
+        "probe.tsx":
+          'const a = <div className="bg-primary text-warning-strong fill-[var(--region-marmara)] border-teal-550 bg-my-rose-500" />;',
+      }),
+    ).toEqual([]);
+  });
+
+  it("walks real files, not an empty scope — real-tree control", () => {
+    // Deliberately NOT `collectPaletteOccurrences(["components"]).length > 0`: that is the
+    // population this arm exists to drive to zero, so it would have gone red on the commit that
+    // finished the job. The arbitrary arm shares `sourceFiles` with this one, so a scope that
+    // stopped walking would empty both, and 72 bracketed map surfaces are not going anywhere.
+    expect(collectArbitraryColorOccurrences(["components"]).length).toBeGreaterThan(0);
   });
 
   it("still has a reason for every exclusion", () => {
@@ -1061,7 +1131,9 @@ describe("the palette cannot be laundered into brackets", () => {
  * the other two arms had, in the arm that had already solved it once.
  *
  * The global budget is gone. Every occurrence is now either a no-stylesheet row
- * (`INLINE_EXEMPT`, 17) or a painted-surface row (`INLINE_PINNED`, 16), each with a file, an
+ * (`INLINE_EXEMPT`, **22**) or a painted-surface row (`INLINE_PINNED`, **11**) — 33 in total,
+ * unchanged; the split is 22/11 and not the 17/16 it was, because `base-map-svg.ts`'s five
+ * moved from the live half into the exempt one where they belonged. Each row carries a file, an
  * exact count and a reason; anything else is a failure. The LIVE count is therefore **0 by
  * construction** rather than 16 by allowance, and it is asserted as a literal zero below.
  *

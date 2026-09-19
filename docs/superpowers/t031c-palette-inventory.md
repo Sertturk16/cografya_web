@@ -19,9 +19,27 @@ else) and `components/ui/compiled-stylesheet.test.ts` (the SHIPPED stylesheet). 
 first arm by deleting one row from `RAW_EXEMPT` in `scripts/palette-inventory.mjs`, not by
 editing a number.
 
+**"939 → 15" IS ARM 1 ONLY, and the honest whole-tree figure is bigger.** That number counts the
+raw palette NOTATION. Across all three source arms the tree holds **120** named colour literals:
+15 raw, 72 bracketed (`ARBITRARY_PINNED`) and 33 inlined outside a class (`INLINE_EXEMPT` 22 +
+`INLINE_PINNED` 11). Of those, **22** are contexts where no stylesheet exists and a token cannot
+resolve at all — the root error boundary, the Satori OG card, the web app manifest, the
+`themeColor` meta pair, the favicon builder and the shared locator SVGs. The remaining 98 are map
+and canvas surfaces T-031d owns, plus one wordmark literal in `v2-header.tsx`. Every one of the
+120 is a named row with a count and a reason; none is a budget.
+
+**THE DEBT THIS TRADED IS REAL AND IS NOT HIDDEN.** Replacing 939 scattered literals cost roughly
+a thousand lines of literal class strings across six identity modules — `lib/theme/region-identity.ts`,
+`continent-identity.ts` and their siblings — because Tailwind's scanner is static and a class
+assembled at runtime does not compile. That was forced, not chosen. This inventory is another
+1,161 lines. The branch therefore ships MORE text than it removed. What it bought is that the
+text is single-sourced, compile-checked and red-proved, which 939 literals spread over 41 files
+were not.
+
 **This document was itself a Tailwind source until close, and that is the branch's own defect at
 scale.** `app/globals.css` declared no `@source`, so Tailwind scanned `docs/**` and compiled the
-461 palette classes in the tables below into 125 real rules in the shipped stylesheet —
+**463** palette classes in the tables below (**129** distinct) into real rules in the shipped
+stylesheet — **147** of them, counting every variant-prefixed rule, against 56 today —
 `text-purple-600` and `text-rose-500` among them, which exist nowhere else in the repo. It is
 commit `2bd41da`'s defect (a comment quoting a class name) at repository scale. Closed with four
 `@source not` lines and the fourth arm.
@@ -81,9 +99,9 @@ wrong split leaves strays behind.
 - **`semantic`** — means success, warning, danger, information or brand accent. Binds to the
   matching bridge token (`--success` / `--warning` / `--destructive` / `--info` / `--primary` and
   their `-strong` members), and its hand-written `dark:` pair is deleted in the same edit.
-  170 rows.
+  168 rows (two were re-labelled in-cell to `decoration` at the sea-page rows; see the split note).
 - **`decoration`** — means nothing. A topic tint, per-card variety, an ornamental wash, a bullet
-  before a label that already says the thing. It is **removed**, not re-tokenised. 269 rows.
+  before a label that already says the thing. It is **removed**, not re-tokenised. 271 rows.
 
 ### Two rulings the brief left open, applied throughout
 
@@ -1117,8 +1135,8 @@ distinct glyph. No scale, no comparison, no map or chart reads these.
 | Verdict      | Rows    | Share |
 | ------------ | ------- | ----- |
 | `data`       | 500     | 53.2% |
-| `semantic`   | 170     | 18.1% |
-| `decoration` | 269     | 28.6% |
+| `semantic`   | 168     | 17.9% |
+| `decoration` | 271     | 28.9% |
 | **Total**    | **939** |       |
 
 Per-file totals, heaviest first, summing to 939:
@@ -1131,6 +1149,13 @@ The three `lib/` sections added in fix round 1 are all `data` — 152 rows, no `
 to say which colour a continent, a fault or a basin **is** has no warnings and no ornament in it.
 The verdict split moved with them, from 348/170/269 to 500/170/269: widening the roots added no
 judgement calls, only more of the one verdict that was already the majority.
+
+**AND THEN IT MOVED AGAIN, BY TWO, WHICH THIS TABLE NOW SHOWS: 500 / 168 / 271.** Two rows on the
+sea page were re-labelled inside their own cells while they were being applied —
+`~~semantic~~ **decoration**`, one occurrence each — and the headline was never re-added. Adding
+up the rows gave 500/168/271 while four places in this document still said 500/170/269. The
+tables are the record, so the tables won; the figures above and in the verdict definitions are
+re-derived from the cells rather than transcribed.
 
 ## Recorded at close, and deliberately NOT fixed
 

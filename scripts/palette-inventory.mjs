@@ -401,7 +401,8 @@ export const INLINE_EXEMPT = [
  * six files, so a new `fillStyle` in a seventh passed as long as a dead gradient stop went in
  * the same commit. Splitting it per file with `toBe` makes the live population **0 by
  * construction** — an occurrence is either a named row here, a no-stylesheet row in
- * `INLINE_EXEMPT`, or a failure — and every surviving colour carries a reason.
+ * `INLINE_EXEMPT`, or a failure — and every surviving colour carries a reason. The split is
+ * 22 exempt and 11 pinned, 33 in total.
  *
  * These eleven are not the same thing as the five above. A token WOULD resolve in each of
  * them; they are pinned because they are painted map/canvas values owned by T-031d, or a
