@@ -748,25 +748,28 @@ describe("the raw palette is retired everywhere but one named file", () => {
     ).toEqual([]);
   });
 
-  it.each(RAW_EXEMPT)("$file is deferred for exactly $count", (entry) => {
-    // BOTH DIRECTIONS. A rise is new work sneaking in under a deferral; a FALL means T-031d
-    // has partly landed and the row is stale, which is the reminder to re-record or delete it.
-    expect(
-      byFile.get(entry.file) ?? 0,
-      `${entry.file} is deferred for ${entry.count} (${entry.why}) but carries ${
-        byFile.get(entry.file) ?? 0
-      }`,
-    ).toBe(entry.count);
-    expect(entry.why.length, `${entry.file} is deferred without a reason`).toBeGreaterThan(20);
-  });
-
-  it("names only files that still exist — staleness", () => {
-    // A deferral pointing at a path the tree no longer has is a row nobody will ever delete.
-    // `toBe(0)` above would also fire, but it would blame the wrong thing.
-    for (const entry of RAW_EXEMPT) {
-      expect(existsSync(entry.file), `${entry.file} is deferred but is not in the tree`).toBe(true);
-    }
-  });
+  /**
+   * THE PER-ROW CASES ARE DELETED, NOT STEPPED TO ZERO. `it.each(RAW_EXEMPT)` ("$file is
+   * deferred for exactly $count", asserting the count in BOTH directions and that the reason
+   * was more than 20 characters) and the staleness loop over the same list ("names only files
+   * that still exist") both survived into the commit that emptied `RAW_EXEMPT`, where the first
+   * registered ZERO test cases and the second ran its `for` body zero times. An `it.each` over
+   * an empty list is a green case that looked at nothing, which is this branch's own signature
+   * defect turned on its own guards — the same ruling `components/css-module-dark-safety.test.ts`
+   * recorded when its `reduce` and its `it.each` reached an empty population.
+   *
+   * WHAT REPLACED THEM. The zero itself is now held in two places, neither of which can go
+   * vacuous: the stray assertion above (`toEqual([])` over files the collector actually walked,
+   * naming any file that comes back) and the emptiness assertion at the foot of this file
+   * (`expect(RAW_EXEMPT).toEqual([])`, which reds on a row being added back). The machinery the
+   * deleted cases exercised — that the collector still sees a raw palette class, and that the
+   * walk still reaches real files — is proved by the synthetic control below and by the
+   * arbitrary arm, which shares `sourceFiles` with this one.
+   *
+   * A row added back to `RAW_EXEMPT` reds at the foot of this file and names itself. If a
+   * deferral list is ever genuinely needed again, restore these two cases WITH it, in one
+   * commit, so neither exists without a population.
+   */
 
   /**
    * THE ANTI-VACUITY CONTROL IS SYNTHETIC, AND IT HAD TO BECOME SO.
@@ -894,14 +897,21 @@ describe("the raw palette is retired everywhere but one named file", () => {
  */
 /**
  * THE END STATE OF THIS ARM. `ARBITRARY_COLOR_BUDGET = 72` had not moved for twelve commits,
- * so a `<=` on it was a tripwire armed against the least likely failure this repo has. And
- * 72 is not going to zero: these are painted map surfaces, and a sea plate measured against a
- * fixed backdrop is not a decoration anybody is retiring.
+ * so a `<=` on it was a tripwire armed against the least likely failure this repo has.
  *
- * What changes is WHAT IT COUNTS. `ARBITRARY_PINNED` names every file that legitimately holds
+ * AND 72 DID GO TO ZERO, in this very commit. An earlier version of this note said it would
+ * not — "these are painted map surfaces, and a sea plate measured against a fixed backdrop is
+ * not a decoration anybody is retiring" — and that was true of the SURFACES and false of the
+ * spellings. T-031d did not retire the surfaces; it gave them names. Every one of the 72
+ * bracketed literals became a `--map-*` token reference, which `inlinesAColor` does not count,
+ * and the last row of `ARBITRARY_PINNED` went with the header wordmark's hex.
+ *
+ * What changed is WHAT IT COUNTS. `ARBITRARY_PINNED` names every file that legitimately holds
  * a bracketed colour and the exact number it holds; every other file must read 0. A new
  * `bg-[#ea580c]` in a component now fails by name, where before it was absorbed by a 72-wide
- * allowance that also covered eight map files.
+ * allowance that also covered eight map files. With the table empty, that is a literal zero
+ * across the tree, held by the stray assertion below and by the emptiness assertion at the
+ * foot of this file.
  */
 
 /**
@@ -1017,16 +1027,14 @@ describe("the palette cannot be laundered into brackets", () => {
     ).toEqual([]);
   });
 
-  it.each(ARBITRARY_PINNED)("$file holds exactly $count", (entry) => {
-    expect(
-      byFile.get(entry.file) ?? 0,
-      `${entry.file} is pinned at ${entry.count} (${entry.why}) but carries ${
-        byFile.get(entry.file) ?? 0
-      }`,
-    ).toBe(entry.count);
-    expect(entry.why.length, `${entry.file} is pinned without a reason`).toBeGreaterThan(20);
-    expect(existsSync(entry.file), `${entry.file} is pinned but is not in the tree`).toBe(true);
-  });
+  /**
+   * `it.each(ARBITRARY_PINNED)` ("$file holds exactly $count", plus the reason-length and
+   * still-in-the-tree checks) IS DELETED for the reason the raw arm's two cases above are:
+   * `ARBITRARY_PINNED` is `[]`, so it registered zero test cases in the commit that emptied it.
+   * The `pinned` set it fed is kept — it is what makes the stray assertion above say "any file
+   * at all", and an empty set is a meaningful input there where an empty `it.each` is not.
+   * Restore this case together with any row that goes back into the table.
+   */
 
   it("collects something at all — positive control", () => {
     // The same anti-vacuity guard the first arm carries: a budget satisfied by an empty result

@@ -388,23 +388,23 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             ))}
           </g>
 
-          {/* 5. Sea Water Typography */}
+          {/* 5. Sea Water Typography. FULL STRENGTH, no `opacity-*`: an opacity utility is
+              part of the rendered colour and has to be measured with `blendOver`. The
+              `opacity-80` these labels shipped with put `fill-accent` at 3.35:1 light /
+              3.85:1 dark on `--map-sea`, under TEXT_MIN, while the commit justified it with
+              the UNBLENDED 4.85/5.19. At full strength those 4.85/5.19 are what renders. */}
           <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
             {SEA_LABELS.map((sea, i) => (
-              <text
-                key={i}
-                x={sea.x}
-                y={sea.y}
-                textAnchor="middle"
-                fontSize={sea.fontSize}
-                className="opacity-80"
-              >
+              <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
                 {sea.name}
               </text>
             ))}
           </g>
 
-          {/* 6. Neighbor Country Name Labels */}
+          {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea labels
+              above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1 dark on
+              `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the token records
+              in `app/globals.css`. */}
           <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
             {CONTEXT_SHAPES.filter(
               (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
@@ -417,7 +417,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   y={country.labelPoint.y}
                   textAnchor="middle"
                   dominantBaseline="central"
-                  className="tracking-tight opacity-80 select-none"
+                  className="tracking-tight select-none"
                 >
                   {name}
                 </text>

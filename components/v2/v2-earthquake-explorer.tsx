@@ -441,7 +441,7 @@ export function V2EarthquakeExplorer({
 
       {/* 2. FULL-WIDTH INTERACTIVE SEISMIC ATLAS MAP WITH DIRECT CONTROLS */}
       <div className="rounded-3xl border border-border bg-card p-5 sm:p-6 shadow-xl space-y-4 relative overflow-hidden">
-        {/* Map Header Toolbar with Integrated Legend & Fault Lines Toggle */}
+        {/* Map Header Toolbar with Integrated Legend & Magnitude Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
           <div className="flex items-center gap-2">
             <Badge variant="primary" size="sm" icon={<Activity className="size-3.5" />}>
@@ -492,7 +492,10 @@ export function V2EarthquakeExplorer({
               ))}
             </g>
 
-            {/* Neighbor Country Name Labels */}
+            {/* Neighbor Country Name Labels. FULL STRENGTH, the same fix this file's SEA
+                labels already took: `opacity-75` put `--map-label` at 3.36:1 light / 3.80:1
+                dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the token
+                records in `app/globals.css`. */}
             <g className="fill-[var(--map-label)] font-sans font-bold text-[11px] pointer-events-none select-none">
               {CONTEXT_SHAPES.filter(
                 (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
@@ -505,7 +508,7 @@ export function V2EarthquakeExplorer({
                     y={country.labelPoint.y}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    className="tracking-tight opacity-75 select-none"
+                    className="tracking-tight select-none"
                   >
                     {name}
                   </text>

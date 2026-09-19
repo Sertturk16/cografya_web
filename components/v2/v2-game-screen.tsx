@@ -1095,13 +1095,21 @@ export function V2GameScreen({
               onPointerCancel={handleTouchPointerUp}
               aria-label="Türkiye İnteraktif Oyun Haritası"
             >
-              {/* Background Neighbor Countries (Rendered when full country is shown) */}
+              {/* Background Neighbor Countries. `--map-context-land`, NOT `--map-land`: the
+                  country fill on this board is `fill-card`, and `--map-land` against `--card`
+                  measures 1.00:1 light / 1.01:1 dark -- Türkiye and its neighbours were ONE
+                  tone here while the other five Türkiye maps kept the warm/white split this
+                  token exists for. Bound to it, the step is 1.18:1 light / 1.17:1 dark, and
+                  the line moves with the fill: `--map-context-line` is the hairline measured
+                  against that neighbour land (3.28:1 light / 3.18:1 dark) and against the
+                  `--map-plate` it also borders (3.05:1 / 3.54:1), where `--province-stroke`
+                  is the token for Türkiye's OWN coast. */}
               {!region &&
                 CONTEXT_SHAPES.map((country) => (
                   <path
                     key={country.iso}
                     d={country.d}
-                    className="fill-[var(--map-land)] stroke-[var(--province-stroke)] stroke-[0.8]"
+                    className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
                   />
                 ))}
 
@@ -1184,12 +1192,20 @@ export function V2GameScreen({
                   province layer's fill is opaque or near-opaque in every state (fill-card,
                   the region fills, the correct/reveal/wrong fills): with the lakes underneath,
                   that fill covered them almost entirely in both themes, independent of colour
-                  -- the same inversion `v2-earthquake-explorer.tsx` carried until Task 7. */}
+                  -- the same inversion `v2-earthquake-explorer.tsx` carried until Task 7.
+
+                  `pointer-events-none` IS LOAD-BEARING, not tidiness. SVG hit-testing takes the
+                  LAST-PAINTED element under the pointer, and the province layer above is the one
+                  that carries `onClick`/`onKeyDown` (per PATH, not on the <svg>). Without this
+                  attribute a tap on Van, Tuz, Beysehir or Egirdir landed on a lake path with no
+                  handler and the answer was silently lost, in both rounds and on both input
+                  types. `components/v2/inland-water-hit-testing.test.ts` holds the attribute on
+                  every render site in the tree. */}
               {INLAND_WATER_SHAPES.map((water) => (
                 <path
                   key={water.id}
                   d={water.d}
-                  className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5]"
+                  className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
                 />
               ))}
             </svg>

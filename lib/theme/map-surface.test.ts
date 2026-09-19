@@ -347,6 +347,29 @@ describe("the world map's flat ocean", () => {
   );
 
   /**
+   * THE BORDER BETWEEN TWO ADJACENT UN-CONTINENT COUNTRIES, which the case above does not
+   * reach: it measures the unknown-land FILL against the ocean and says nothing about the
+   * hairline drawn ON that fill. `v2-world-map-explorer.tsx` first drew it in
+   * `--map-context-line` — a token measured only against `--map-context-land` — where it reads
+   * 1.23:1 light / 1.04:1 dark, worse than the `stroke-slate-400/45` it replaced (1.97 / 2.04)
+   * even as the fill improved from 1.67 to 3.66. The pairing is asserted here rather than left
+   * to a comment, because an unmeasured pairing is exactly how that one shipped.
+   *
+   * The SEAWARD edge is ocean line on ocean, 1:1 by construction and not a defect: that
+   * boundary is carried by the fill's own silhouette, which the case above already holds at
+   * 3:1.
+   */
+  it.each(THEMES)(
+    "outlines un-continent land at 3:1 against the fill it borders in %s",
+    (_t, _s, table) => {
+      expect(
+        ratio(table["--map-ocean"], table["--map-unknown-land"]),
+        "the internal border between two un-continent countries",
+      ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+    },
+  );
+
+  /**
    * The hover/selected highlight. `--map-graticule` (above) clears `GRAPHICAL_MIN` too but sits
    * INSIDE the continent fills' own contrast range against `--map-ocean`, near the BOTTOM of it
    * (4.03/4.49 against a 3.35-13.15 / 3.74-14.65 range) — only Avrupa is dimmer — which is why a

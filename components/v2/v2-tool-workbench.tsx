@@ -1334,12 +1334,19 @@ export function V2ToolWorkbench({
             onPointerCancel={handleTouchPointerUp}
             aria-label="Türkiye CBS Ölçüm Haritası"
           >
-            {/* Background neighbor lands */}
+            {/* Background neighbor lands. `--map-context-land`, NOT `--map-land`: the country
+                fill here is `fill-card/90` over `--map-plate`, and `--map-land` against that
+                blend measures 1.02:1 light / 1.01:1 dark -- Türkiye and its neighbours were
+                one tone, while the other five Türkiye maps kept the warm/white split this
+                token exists for. Bound to it the step is 1.15:1 light / 1.16:1 dark, and the
+                hairline moves with the fill to `--map-context-line` (3.28:1 / 3.18:1 on that
+                neighbour land, 3.05:1 / 3.54:1 on the `--map-plate` it also borders), leaving
+                `--province-stroke` to Türkiye's own coast. */}
             {CONTEXT_SHAPES.map((country) => (
               <path
                 key={country.iso}
                 d={country.d}
-                className="fill-[var(--map-land)] stroke-[var(--province-stroke)] stroke-[0.8]"
+                className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
               />
             ))}
 
@@ -1366,12 +1373,21 @@ export function V2ToolWorkbench({
                 it was originally) because SVG paints in document order and the province
                 layer's fill-card/90 is ~90% opaque: with the lakes underneath, that fill
                 covered them almost entirely in both themes, independent of colour -- the same
-                inversion `v2-earthquake-explorer.tsx` carried until Task 7. */}
+                inversion `v2-earthquake-explorer.tsx` carried until Task 7.
+
+                `pointer-events-none` is not load-bearing HERE — this screen's click handler is
+                `onClick={handleMapClick}` on the <svg> itself and reads `e.clientX/clientY`, not
+                `e.target`, so a click over a lake still bubbles to it and still measures. It is
+                set anyway so the attribute is an invariant of this layer rather than a per-file
+                judgement: the play board next door has a PER-PATH handler and lost answers to
+                exactly this (see `v2-game-screen.tsx`), and
+                `components/v2/inland-water-hit-testing.test.ts` now holds it on every render
+                site in the tree. */}
             {INLAND_WATER_SHAPES.map((water) => (
               <path
                 key={water.id}
                 d={water.d}
-                className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5]"
+                className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
               />
             ))}
 

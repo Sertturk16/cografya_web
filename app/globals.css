@@ -402,13 +402,29 @@
      strength, the worst case is Avrupa at 3.35:1 light and it is the same figure at every
      point on the map. */
   --map-ocean: #0d1b2a;
-  /* The world map's latitude/longitude grid. One tone at one opacity, replacing three
-     sky-400/sky-500 opacities that measured nothing in particular against the old gradient
-     ocean. Measured: 4.03:1 on --map-ocean. */
+  /* The world map's latitude/longitude grid. One tone at ONE opacity -- full strength --
+     replacing three sky-400/sky-500 opacities that measured nothing in particular against the
+     old gradient ocean. Measured: 4.03:1 light / 4.49:1 dark on --map-ocean.
+     THAT FIGURE IS THE RENDERED ONE AND HAS TO STAY THAT WAY. A round of this task shipped the
+     group as `stroke-[var(--map-graticule)]/60`, which only the equator and the prime meridian
+     overrode: the two tropics rendered at 2.26:1 / 2.34:1 -- under GRAPHICAL_MIN, and under the
+     number recorded right here, which no consumer then achieved. An opacity utility is part of
+     the rendered colour (blendOver), so a consumer that wants a quieter minor line takes it out
+     of STROKE WIDTH, which costs no contrast, not out of alpha. */
   --map-graticule: #4d7ea8;
   /* World-map land the continent table does not name (unclaimed territory, ice shelves).
      Replaces slate-600/65, which measured 1.67:1 on the ocean — invisible, on exactly the
-     shapes a reader is most likely to be hunting for. Measured: 3.66:1 on --map-ocean. */
+     shapes a reader is most likely to be hunting for. Measured: 3.66:1 light / 4.07:1 dark on
+     --map-ocean.
+     ITS OWN BORDER IS DRAWN IN --map-ocean, and that is measured too, because the first version
+     of this fill reached for --map-context-line — a token tuned against --map-context-land
+     (3.18/3.54) and never measured against THIS one, where it reads 1.23:1 light / 1.04:1 dark.
+     The border between two adjacent un-continent countries was then WORSE than the
+     slate-400/45 it replaced (1.97 / 2.04) while the fill got better. --map-ocean clears
+     3.66:1 / 4.07:1 against this fill and is the only shipped token that clears the floor
+     without flipping polarity between themes, which /dunya being dark in BOTH forbids (see
+     --map-hover for the same ruling). The seaward edge is ocean-on-ocean, 1:1 and deliberately
+     so: that boundary is carried by the fill's own 3.66/4.07 silhouette. */
   --map-unknown-land: #64748b;
   /* The world map's hover/selected country highlight. ONE value, not a light/dark pair, for
      the same reason --map-graticule and --map-unknown-land are not one either: /dunya is dark

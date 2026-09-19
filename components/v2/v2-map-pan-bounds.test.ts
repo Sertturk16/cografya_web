@@ -91,7 +91,12 @@ describe("V2 Map Pan & Hover Contracts", () => {
       // slate-600/65 measured 1.67:1 on the flat ocean, invisible on exactly the shapes a
       // reader is hunting for.
       expect(worldFile).toContain("fill-[var(--map-unknown-land)]");
-      expect(worldFile).toContain("stroke-[var(--map-context-line)]");
+      // `--map-ocean`, NOT `--map-context-line`, and the swap is the point of the pin rather
+      // than an incidental rename: `--map-context-line` is measured against
+      // `--map-context-land` and reads 1.23:1 light / 1.04:1 dark on the `--map-unknown-land`
+      // it was outlining here — worse than the slate-400/45 line it replaced. The ocean tone
+      // clears 3.66:1 / 4.07:1 on that fill; `lib/theme/map-surface.test.ts` holds the figure.
+      expect(worldFile).toContain("stroke-[var(--map-ocean)]");
       expect(worldFile).not.toContain("fill-slate-700/20 stroke-slate-600/10 opacity-30");
     });
   });
