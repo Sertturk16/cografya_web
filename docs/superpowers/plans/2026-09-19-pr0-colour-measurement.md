@@ -511,7 +511,7 @@ export function simulate(css: string, vision: Vision): string {
 
 Run: `pnpm vitest run lib/theme/cvd.test.ts`
 
-Expected: PASS, all six.
+Expected: PASS, all five.
 
 - [ ] **Step 5: Typecheck, lint, commit**
 
@@ -604,14 +604,22 @@ describe("the seven region tints are a usable categorical set", () => {
     expect(worst).toBe(WORST[vision]);
   });
 
-  it("fails the floor for a set that genuinely collapses — positive control", () => {
-    // Two blues a dichromat cannot separate. If the assertion above were vacuous (a broken
-    // deltaE00 returning something huge, a simulate() that no-ops), this would pass too.
-    const collapsed = deltaE00(
-      simulate("#0072b2", "deuteranopia"),
-      simulate("#0082c8", "deuteranopia"),
-    );
-    expect(collapsed).toBeLessThan(CATEGORICAL_MIN);
+  it("discriminates: a pair that is clear to normal vision and collapses under deuteranopia", () => {
+    // #008000 / #a52a2a measure 65.6 apart normally and 4.6 under deuteranopia. Both halves
+    // matter. The first says the pair is a fair test rather than two colours that were never
+    // distinguishable. The second is what a no-op `simulate` would break: it would report
+    // 65.6 here and this assertion would fail.
+    //
+    // CORRECTED DURING EXECUTION. This case first used two blues (#0072b2 / #0082c8) that sit
+    // 6.2 apart in RAW Lab space — under the floor with or without simulation — so it could
+    // not tell a working `simulate` from an identity one, while its comment claimed it could.
+    // The Step 3 no-op run failed 3 of 10 cases instead of 4, which is how it was caught.
+    expect(
+      deltaE00(simulate("#008000", "normal"), simulate("#a52a2a", "normal")),
+    ).toBeGreaterThanOrEqual(CATEGORICAL_MIN);
+    expect(
+      deltaE00(simulate("#008000", "deuteranopia"), simulate("#a52a2a", "deuteranopia")),
+    ).toBeLessThan(CATEGORICAL_MIN);
   });
 });
 ```
@@ -630,7 +638,7 @@ Temporarily change `simulate` to `return hex([r8, g8, b8]);` for every vision (a
 
 Run: `pnpm vitest run lib/theme/region-palette.test.ts`
 
-Expected: FAIL — the three non-`normal` "worst pair" assertions and the positive control all break. Revert the edit and re-run to green.
+Expected: FAIL — four cases: the three non-`normal` "worst pair" assertions plus the discriminating control. Revert the edit and re-run to green.
 
 This step is the whole point of the branch: it is how you know the suite would notice a simulation that stopped simulating.
 
