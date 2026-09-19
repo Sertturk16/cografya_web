@@ -117,20 +117,29 @@ comparison run by hand.
   2 themes = 220 checks in **85s** against a production build, four browser contexts in
   parallel. `-- --concurrency=1` gives a stable order at roughly 3.5× the wall clock (measured
   at four viewports: 198s against 57s).
-- **It is not a CI job, and the reason is the API, not the 85s.** CI has no API on :3001. The
-  degradation is not in `lib/env.server.ts` (that file throws; it only carries a comment
-  pointing here) — it is the 16 `*Resilient`/`*Safe` wrappers in `lib/api/*.ts`, each gated on
-  `isProductionBuild()` (`NEXT_PHASE === PHASE_PRODUCTION_BUILD`): swallow to `[]` during
-  `next build`, re-throw at runtime. That asymmetry is what produces the 500s. Measured:
+- **It is not a CI job today, but the reason it wasn't one is gone.** The blocker was never
+  the 85s — it was that CI had no API on :3001, so the build CI swept would not have been the
+  build production ships. The degradation is not in `lib/env.server.ts` (that file throws; it
+  only carries a comment pointing here) — it is the 16 `*Resilient`/`*Safe` wrappers in
+  `lib/api/*.ts`, each gated on `isProductionBuild()`
+  (`NEXT_PHASE === PHASE_PRODUCTION_BUILD`): swallow to `[]` during `next build`, re-throw at
+  runtime. That asymmetry is what produced the 500s. Measured on an API-less build:
   `API_BASE_URL` pointed at a dead port builds **136 pages instead of 992**, exit 0, in 19s
   instead of 110 — and several of the 136 bake an empty state rather than being absent, which
   `docs/architecture.md` calls the worse failure. A server from that build answers **HTTP 500
   on 8 of the 22 URLs**: `/turkiye`, `/turkiye/istanbul` (both locales), `/turkiye/bolge/
-marmara`, `/dunya`, `/dunya/almanya` and both book routes. Note what is NOT in that set —
-  `/deniz/karadeniz` and `/en/sea/black-sea` answer 200 and still carry the ECMWF notice, so
-  the T-038 surface would still be measured. A fourth CI job would be permanently red, or
-  green over fourteen pages of which only five render what production renders. Wire it up the
-  day CI's build step gets an API service.
+marmara`, `/dunya`, `/dunya/almanya` and both book routes. A sweep over that build would have
+  been permanently red, or green over fourteen pages of which only five render what production
+  renders.
+- **What T-048 changed.** `ci.yml`'s `Build` job now stands a real API up from the committed
+  seeds before `pnpm build`, and `scripts/assert-prerender-floor.mjs` asserts the build
+  actually prerendered its ~980 routes. So a CI build is now the production build, and the
+  sweep could run in that same job against `next start` over its output while the API is still
+  listening. **It is deliberately not wired up as part of T-048** — that branch's scope is
+  build integrity, and adding a browser matrix to a job whose wall clock is already the thing
+  being watched is a separate decision. What is left to weigh is now only cost and tolerance:
+  a Playwright browser download on the runner, the 85s of sweep, and the bullets above about
+  the sweep going INCOMPLETE rather than BROKEN. The API argument no longer applies.
 
 ## Generated artifacts
 
