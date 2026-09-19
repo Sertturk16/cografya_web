@@ -999,11 +999,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             button on the right. Hence the warning family rather than `info`.
             Measured with lib/theme/contrast.ts, BACKDROP NAMED: this banner sits in a bare
             <section>, so the tint composites over `--background`, not over `--card`.
-            `--warning-strong` on `--warning/10` over `--background` measures 5.86:1 light and
-            9.10:1 dark (the same pairing over `--card` would be 6.17 / 8.18 — close, but this
-            page never paints it there). The escape button supplies its own `bg-card`, so its
-            label is `--warning-strong` on bare `--card`: 6.81:1 light, 9.64:1 dark. Every
-            figure floored, never rounded toward the flattering direction. */}
+            `--warning-strong` on `--warning/10` over `--background` measures 5.81:1 light and
+            9.19:1 dark FROM PAINTED PIXELS at 320 and 1280 in both themes; analytically the
+            same pairing is 5.86 / 9.10, and the 0.05 gap in light is real — Tailwind's `/10`
+            is `color-mix(in oklab, …)`, not an sRGB alpha blend, so the analytic figure is the
+            flattering one and the painted figure is what is recorded. The same pairing over
+            `--card` would be 6.17 / 8.18, but this page never paints it there. The escape
+            button supplies its own `bg-card`, so its label is `--warning-strong` on bare
+            `--card`: 6.81:1 light, 9.64:1 dark. Every figure floored. */}
         {isSearchRestrictedByRegion && (
           <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 text-xs text-warning-strong flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -1102,7 +1105,12 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 {/* The region's own colour, the one the map above paints it. `[&_h4]:text-inherit`
                     is load-bearing: `@layer base` sets `h1,h2,h3,h4 { color: var(--foreground) }`,
                     which beats a merely inherited colour, so without it the heading drops the
-                    region's label member and renders plain foreground. */}
+                    region's label member and renders plain foreground.
+                    BACKDROP: one `--region-*-tint` over `--card` — the `BANNER` column of the
+                    table in `app/globals.css`, because this Card is opaque and nothing else
+                    paints over it. Confirmed from painted pixels at 320 and 1280: Marmara's
+                    heading measures 5.97:1 light and 4.82:1 dark, against a recorded 5.97 /
+                    4.77, so the stylesheet's figures are the conservative ones. */}
                 <div
                   className={`p-4 sm:p-5 ${group.identity.banner} [&_h4]:text-inherit flex flex-wrap items-center justify-between gap-3`}
                 >
