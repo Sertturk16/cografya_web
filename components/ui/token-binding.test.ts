@@ -227,6 +227,13 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
    * table is `outline-ring` (5.44:1 dark / 6.13:1 light on `--card`) where the stylesheet had
    * `--color-accent` at 2.78:1.
    *
+   * `components/book` is here because T-033 task 7 converted `book-video.module.css`, the
+   * module with the most consumers of the eight (five). It carries NO exception at all: no
+   * escape, no `dark:`, no raw palette class, no bare `white`/`black` utility and no brand hex
+   * in code. The one place a bare `white` would have been tempting is the timeline card, which
+   * the stylesheet painted `#fff` outright — it is `bg-card` now, because unlike the two chart
+   * plates above it carries no data token that needs a fixed ground.
+   *
    * The tempting move is to widen this to every feature directory at once. Do NOT. The six
    * unconverted modules' consumers carry exactly the defects T-033 exists to remove, so a
    * blanket widening reds immediately and the only way back to green is an exemption list —
@@ -241,6 +248,7 @@ describe("the V2 surface binds chrome colour through the bridge too", () => {
     fileURLToPath(new URL("../climate", import.meta.url)),
     fileURLToPath(new URL("../site-search", import.meta.url)),
     fileURLToPath(new URL("../earthquake", import.meta.url)),
+    fileURLToPath(new URL("../book", import.meta.url)),
     fileURLToPath(new URL("../../app/[locale]", import.meta.url)),
   ];
 

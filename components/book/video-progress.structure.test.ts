@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
+import { stripComments } from "@/lib/test-support/strip-comments";
+import { classConstant, renderSites } from "@/lib/test-support/converted-floor";
 
 /**
  * SOURCE-SCAN, for the same reason `deneme-video.src-invariant.test.ts` and
@@ -25,15 +26,21 @@ function flatCode(source: string): string {
 const BENCH = flatCode(sourceOf("./video-bench.tsx"));
 const VIDEO = flatCode(sourceOf("./deneme-video.tsx"));
 const PROGRESS_CONTROLS = flatCode(sourceOf("./video-progress-controls.tsx"));
-/** CSS comments use only the C-style form — the `bench.structure.test.ts` precedent. */
-const STYLES = stripCssComments(sourceOf("./book-video.module.css"));
+/** The same file, comment-stripped but NOT whitespace-collapsed: `classConstant` reads a
+ *  declaration verbatim, and collapsing would fold a two-line class string into one. */
+const VIDEO_CONTROLS = stripComments(sourceOf("./video-progress-controls.tsx"));
 
-function declaredValues(selector: string, property: string): string[] {
-  return [...STYLES.matchAll(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`, "g"))].flatMap((rule) =>
-    [...(rule[1] ?? "").matchAll(new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*([^;]+)`, "g"))].map(
-      (declaration) => (declaration[1] ?? "").trim(),
-    ),
-  );
+/**
+ * The two CSS-shape cases below used to parse `book-video.module.css`. T-033 task 7 deleted it
+ * — its 19 raw Terra-token reads were frozen at light values — so the declarations they pinned
+ * are hoisted Tailwind constants now, read through `lib/test-support/converted-floor.ts`. That
+ * extractor returns `null` for a value left inline on a `className` rather than hoisted, and
+ * says nothing when it does, so every reading below rules the `null` out first.
+ */
+function classOf(source: string, name: string, file: string): string {
+  const found = classConstant(source, name);
+  expect(found, `${file} has no top-level ${name} constant`).not.toBeNull();
+  return found!;
 }
 
 function clickHandler(): string {
@@ -65,11 +72,13 @@ function visibilityChangeBody(): string {
 
 /** Isolates `handleToggle` (§5.6, PR #90 review `TEST90R2-I1`) from `PROGRESS_CONTROLS`, the
  *  same position-based slicing `saveNowBody()`/`visibilityChangeBody()` above use for `VIDEO`.
- *  `return ( <div className={styles.progressControls}>` is the next statement after the
- *  declaration and appears nowhere earlier in the file. */
+ *  `return ( <div className={PROGRESS_CONTROLS}>` is the next statement after the declaration
+ *  and appears nowhere earlier in the file — the component's own hoisted class constant shares
+ *  that name, and the marker is searched for INSIDE the source text rather than evaluated, so
+ *  the two never meet. */
 function handleToggleBody(): string {
   const start = PROGRESS_CONTROLS.indexOf("async function handleToggle()");
-  const end = PROGRESS_CONTROLS.indexOf("return ( <div className={styles.progressControls}>");
+  const end = PROGRESS_CONTROLS.indexOf("return ( <div className={PROGRESS_CONTROLS}>");
   return start < 0 || end < 0 || end <= start ? "" : PROGRESS_CONTROLS.slice(start, end);
 }
 
@@ -184,18 +193,27 @@ describe("the sign-in CTA's reserved box (§5.3.4)", () => {
     expect(externalBranchStart).toBeGreaterThan(0);
     expect(externalBranchEnd).toBeGreaterThan(externalBranchStart);
     const externalBranch = VIDEO.slice(externalBranchStart, externalBranchEnd);
-    expect(externalBranch).not.toContain("styles.signInCta");
-    expect(VIDEO.slice(externalBranchEnd)).toContain("styles.signInCta");
+    expect(externalBranch).not.toContain("SIGN_IN_CTA");
+    expect(VIDEO.slice(externalBranchEnd)).toContain("SIGN_IN_CTA");
   });
 
   it("always renders the paragraph — an empty node when authenticated, never an omitted one", () => {
     expect(VIDEO).toContain(
-      '<p className={styles.signInCta}>{authState === "authenticated" ? null : signInCtaText}</p>',
+      '<p className={SIGN_IN_CTA}>{authState === "authenticated" ? null : signInCtaText}</p>',
     );
   });
 
-  it("is taken out of flow, so its own presence/content never changes .frame's box height", () => {
-    expect(declaredValues(".signInCta", "position")).toEqual(["absolute"]);
+  it("is taken out of flow, so its own presence/content never changes FRAME's box height", () => {
+    const cta = classOf(VIDEO, "SIGN_IN_CTA", "deneme-video.tsx");
+    expect(cta, "SIGN_IN_CTA is back in flow").toContain("absolute");
+    expect(cta, "SIGN_IN_CTA was put back in flow by a second position").not.toMatch(
+      /\b(relative|static|fixed|sticky)\b/,
+    );
+    expect(renderSites(VIDEO, "SIGN_IN_CTA")).toBe(1);
+    // The `:empty` half: an authenticated reader's `<p>` renders no text node, so the box must
+    // stay in the DOM at its fixed size and paint NOTHING — not an empty parchment band across
+    // the bottom of the cover.
+    expect(cta, "SIGN_IN_CTA lost its :empty rule").toContain("empty:bg-transparent");
   });
 
   it("swaps the İzle button's own accessible name for a signed-out reader", () => {
@@ -241,14 +259,61 @@ describe("the watched toggle (§5.6)", () => {
     expect(body).toContain("if (pending) return;");
   });
 
-  it("the checked fill stays --color-secondary, not a reverted --color-primary (İRİS idea B2/video-wall, iris-ideas-small-fix-bundle plan §5.2 — the terracotta İzle overlay button sits directly above this toggle on the same stage)", () => {
-    // `declaredValues`'s outer regex prepends one literal backslash before the selector and
-    // otherwise passes it through unescaped, so an attribute-selector's own `[`/`]` must be
-    // pre-escaped here or the bracket pair is read as a regex character class instead of a
-    // literal match — verified against this file's real CSS before relying on it.
-    expect(declaredValues(String.raw`.watchedToggle\[aria-checked="true"\]`, "background")).toEqual(
-      ["var(--color-secondary)"],
+  it("the checked fill stays the OLIVE secondary, not a reverted terracotta primary (İRİS idea B2/video-wall, iris-ideas-small-fix-bundle plan §5.2 — the terracotta İzle overlay button sits directly above this toggle on the same stage)", () => {
+    const checked = classOf(
+      VIDEO_CONTROLS,
+      "WATCHED_TOGGLE_CHECKED",
+      "video-progress-controls.tsx",
     );
+    expect(checked, "the checked fill is no longer the secondary token").toContain("bg-secondary");
+    expect(checked, "the checked fill reverted to the primary token").not.toMatch(/\bbg-primary\b/);
+    expect(checked).toContain("text-secondary-foreground");
+    expect(checked).toContain("border-secondary");
+    // Applied by the component, not merely declared: the toggle composes it onto the Button's
+    // own variant classes, so `renderSites` (which matches only a bare `className={NAME}`)
+    // cannot see it and the composition is what is asserted instead.
+    expect(PROGRESS_CONTROLS).toContain(
+      "className={cn(WATCHED_TOGGLE, watched && WATCHED_TOGGLE_CHECKED)}",
+    );
+  });
+
+  it("restates the checked HOVER fill, because a Tailwind utility no longer outranks the variant's", () => {
+    // The retired `.watchedToggle[aria-checked="true"]` was an UNLAYERED CSS-Module selector and
+    // therefore beat `buttonVariants`' layered `hover:bg-muted` for free. These are utilities in
+    // one layer now, and `tailwind-merge` resolves `hover:bg-muted` against a `hover:` class —
+    // not against the resting `bg-secondary` — so a checked toggle would go parchment under the
+    // pointer with nothing failing.
+    const checked = classOf(
+      VIDEO_CONTROLS,
+      "WATCHED_TOGGLE_CHECKED",
+      "video-progress-controls.tsx",
+    );
+    expect(
+      checked,
+      "the checked hover fill is unstated and the outline variant's will win",
+    ).toMatch(/hover:bg-secondary\b/);
+    // NOT `brightness-*`. The stylesheet used `filter: brightness(0.88)`, which scales the fill
+    // AND the ink: over the frozen white-on-#4f6d30 pair that measured 5.36:1, but over the
+    // bridge pair dark mode's `--secondary-foreground` is `--color-ink-dark`, and darkening both
+    // leaves 4.39:1 — under AA for a 14px/600 label. `bg-secondary/90` touches only the fill.
+    expect(checked, "the brightness filter is back and it fails AA in dark mode").not.toMatch(
+      /\bbrightness-/,
+    );
+  });
+
+  it("keeps the 44px target on the toggle (WCAG 2.2 §2.5.5)", () => {
+    expect(classOf(VIDEO_CONTROLS, "WATCHED_TOGGLE", "video-progress-controls.tsx")).toContain(
+      "min-h-11",
+    );
+  });
+
+  it("does not encode the checked state by colour alone", () => {
+    // `docs/design.md`'s last colour rule. The glyph pairs with the fill, so the state still
+    // reads for someone who cannot distinguish the two fills; the control's accessible name
+    // carries it for everyone else through two distinct aria-labels.
+    expect(
+      classOf(VIDEO_CONTROLS, "WATCHED_TOGGLE_CHECKED", "video-progress-controls.tsx"),
+    ).toContain("before:content-");
   });
 });
 

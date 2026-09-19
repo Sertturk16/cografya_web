@@ -127,21 +127,13 @@ const EXPECTED: Record<string, string[]> = {
     "grid-template-columns: repeat(auto-fit, minmax(min(88px, 100%), 1fr))",
     "width: 1px",
   ],
-  "components/book/book-video.module.css": [
-    "max-width: 560px",
-    "max-width: 560px",
-    "width: 24px",
-    "max-width: 560px",
-    "max-width: 560px",
-    "width: 1px",
-  ],
   "components/map/locator-map.module.css": ["width: min(100%, 460px)", "width: min(100%, 560px)"],
 };
 
 describe("fixed-px inline-axis declarations in the surviving CSS Modules", () => {
   it("scans every module, and only modules", () => {
     // Anti-vacuity: a scan that found no files would agree with any expectation.
-    expect(stylesheets.length).toBe(3);
+    expect(stylesheets.length).toBe(2);
     expect(Object.keys(census).sort()).toEqual(Object.keys(EXPECTED).sort());
   });
 
@@ -177,6 +169,18 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * mutation" claim is now about the RULE, not about that file, and
    * `pnpm sweep:overflow -- --filter=/turkiye/istanbul` at 320 is what covers the frame itself.
    *
+   * 7 across TWO once T-033 converted `book-video.module.css`, the largest block left at six:
+   * FOUR copies of one `max-width: 560px` — the stage's cover box, its caption, the timeline
+   * card and the progress row, which have to agree or the caption starts 84px to the left of
+   * the player it names — plus the tick dot's `width: 24px`, WCAG 2.2 §2.5.8's (AA) target
+   * floor exactly, and a visually-hidden `width: 1px` that became Tailwind's own `sr-only`.
+   * The first six did not evaporate into the sweep: they are `max-w-[560px]` in `FRAME`
+   * (`deneme-video.tsx`), `STAGE_CAPTION` (`bench-stage.tsx`), `TIMELINE`
+   * (`bench-timeline.tsx`) and `PROGRESS_CONTROLS` (`video-progress-controls.tsx`), and
+   * `size-6` in `TICK_DOT`, and `components/book/bench.structure.test.ts` pins all five —
+   * the cap as an EQUALITY across the four, the dot as its own bidirectional pin, both with
+   * de-hoist controls.
+   *
    * 13 across THREE once T-033 converted `earthquake.module.css`, whose single entry —
    * `.table`'s `min-width: 520px` — is the first one this programme did NOT let evaporate into
    * the sweep. It is now `min-w-[520px]` inside `earthquake-list.tsx`'s hoisted `TABLE`
@@ -186,9 +190,9 @@ describe("fixed-px inline-axis declarations in the surviving CSS Modules", () =>
    * rule. Marine's, air's and climate's five are still covered by the sweep alone; this census
    * records that rather than implying otherwise.
    */
-  it("counts 13 declarations in total", () => {
+  it("counts 7 declarations in total", () => {
     const total = Object.values(census).reduce((sum, list) => sum + list.length, 0);
-    expect(total).toBe(13);
+    expect(total).toBe(7);
   });
 
   it("does not read an at-rule prelude as a declaration", () => {

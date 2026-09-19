@@ -20,7 +20,7 @@ export const SURVIVING_MODULES: readonly string[] = [
  * Steps down as T-033 converts each module. The count is the POSITIVE CONTROL: without it, a
  * walk that found nothing would satisfy the raw-token assertion perfectly.
  */
-const EXPECTED_MODULE_COUNT = 3;
+const EXPECTED_MODULE_COUNT = 2;
 
 /**
  * Raw Terra tokens are frozen at their light values — `.dark` redefines not one of the 13
@@ -66,13 +66,25 @@ const EXPECTED_MODULE_COUNT = 3;
  * header band was the "light card on a dark page" shape again in miniature: #f1e9de at 14.15:1
  * against the card it sat on.
  *
+ * 27 once `book-video.module.css` went, taking 19 — the module with the MOST consumers of the
+ * eight (five) and no dead class among its 23. Its readings were the "light box on a night
+ * page" shape at full size rather than in miniature: a literal `#fff` timeline card at
+ * **18.65:1** against dark `--background`, a `--color-surface` cover box at **15.50:1** and a
+ * `--color-border` hairline at **12.85:1** around it, with the ink on top frozen the other way
+ * — `--color-primary-dark` on the stage caption at **2.23:1** and `--color-slate` on the künye
+ * strip, the resume line, the tick times and all thirty index rows at **2.36:1**. Four of the
+ * five consumers render for any visitor on
+ * `/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri`; `video-progress-controls.tsx` and the
+ * player branch of `deneme-video.tsx` need an authenticated session, so they were measured with
+ * one rather than left unmeasured.
+ *
  * What did NOT move is `magnitude-badge.tsx`'s `--eq-mag-1`…`-5` ramp. It is a data token set
  * encoding a public-safety scale, so it is absent from the bridge mapping by design — and it is
  * measured rather than assumed: **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** on dark `--card`, four of
  * five under 3:1. That is T-031d's to re-derive with the other dark data surfaces; the reading is
  * recorded in the badge's own docblock rather than left silent.
  */
-const TOTAL_RAW_READS = 46;
+const TOTAL_RAW_READS = 27;
 
 describe("CSS modules cannot read a colour that dark mode never redefines", () => {
   it("found the modules it claims to check", () => {

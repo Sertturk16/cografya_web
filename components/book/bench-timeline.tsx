@@ -3,7 +3,91 @@
 import { useTranslations } from "next-intl";
 import { formatDuration } from "@/lib/book/duration";
 import { tagFragment } from "@/lib/book/video-identity";
-import styles from "./book-video.module.css";
+
+/**
+ * THE CARD. `book-video.module.css`'s `.timeline`, in bridge tokens (T-033 task 7).
+ *
+ * `max-w-[560px]` is ONE OF FOUR COPIES OF ONE CAP — `.frame`, `.stageCaption`, this card and
+ * `.progressControls` all wore it, and `bench.structure.test.ts` asserts the four as an
+ * EQUALITY rather than as four presence checks, because a cap that drifts on one of them is
+ * the defect (PR #70 review `CODE70-M2`: an uncapped caption started 84px to the player's
+ * left). It was a `components/css-module-fixed-widths.test.ts` census entry until this
+ * conversion; the census cannot read a Tailwind class in JSX, so the pin moved to that suite
+ * per `lib/test-support/converted-floor.ts`. Hoisted for that reason: the extractor reads a
+ * top-level `const NAME = "…";` and hands back `null` for a value left inline — silently.
+ *
+ * NO `min-h-*` HERE, and the absence is asserted. The empty card's height is the composition
+ * of this padding and `TIMELINE_BAR`'s fixed lane, never a second declaration of the same
+ * measurement (see this component's docblock).
+ *
+ * `bg-card` is the bridge for the stylesheet's literal `#fff` — the same value in light mode
+ * (`--card` is `#ffffff`) and `#121e21` in dark, where the raw `#fff` painted a white card on
+ * a night page at **18.65:1 against `--background`**. `rounded-lg` is `--radius-lg`, which
+ * `app/globals.css` defines as `var(--radius)` — the exact value the stylesheet wrote.
+ */
+const TIMELINE =
+  "mx-auto mt-[14px] max-w-[560px] rounded-lg border border-border bg-card px-6 pt-4 pb-3";
+
+/**
+ * The rail the ticks are placed along — `.timelineBar`.
+ *
+ * `h-1.5` (6px) and `mb-[38px]` are the fixed lane that makes the empty card and the full one
+ * measure identically; `bench.structure.test.ts` pins both, because losing either turns the
+ * card's reserved height back into a number that can drift.
+ *
+ * MEASURED, AND IT IS A KNOWN GAP RATHER THAN A SILENT ONE. The rail is a graphical object in
+ * WCAG 1.4.11's sense — the tick positions are read against its extent — and `bg-muted` on the
+ * card it sits in measures **1.20:1 light / 1.16:1 dark**, under the 3:1 floor. That is not a
+ * regression this conversion introduces: the stylesheet painted `--color-surface` on a literal
+ * `#fff` card, which is the SAME 1.20:1 pair in both themes because both values were frozen.
+ * The rail is `--color-surface`'s faithful bridge (`bg-muted`, the substitution
+ * `earthquake-list.tsx` and `pm25-table.tsx` already make where `bg-card` IS the surface
+ * underneath). Re-colouring a signature element is a design change and is not this task's to
+ * make; the reading is recorded here rather than left unmeasured. The information itself is
+ * not lost at 1.16:1 — each tick's dot carries a 2px `border-primary` boundary at **5.13:1
+ * light / 4.99:1 dark** against the same card, and the time under it is a text label.
+ */
+const TIMELINE_BAR = "relative mb-[38px] h-1.5 rounded-full bg-muted";
+
+/**
+ * The whole tick — dot plus time — is the link, so the target is the 24px dot AND the label
+ * beneath it. `-translate-x-1/2` centres it on its own percentage.
+ *
+ * `group` is load-bearing: the stylesheet's `.tick:hover .tickDot` is a descendant rule, and a
+ * Tailwind `hover:` on the DOT would only fire when the pointer is over the dot itself rather
+ * than anywhere on the link. `text-primary-strong` is the bridge for `--color-primary-dark`,
+ * which the dot's number inherits: **7.89:1 light / 8.99:1 dark** on `--background`, against
+ * the frozen token's 2.23:1 in dark.
+ */
+const TICK =
+  "group absolute -top-[9px] flex -translate-x-1/2 flex-col items-center gap-1 text-primary-strong no-underline";
+
+/**
+ * 24x24 is WCAG 2.2 §2.5.8's (AA) floor EXACTLY, and unlike the question cells this control
+ * cannot be generous: its position IS its meaning, so a 44px dot would overlap its neighbours
+ * at the measured spacings and stop reporting where the question is. That is §2.5.8's own
+ * "Essential" case. The question is never reachable only here — the same six links sit in the
+ * index row below at 44px.
+ *
+ * `size-6` is the `width: 24px` the fixed-px census used to hold, so `bench.structure.test.ts`
+ * pins it here instead, bidirectionally and against a de-hoist control.
+ *
+ * `bg-card` matches the card beneath it deliberately: the dot is drawn by its 2px terracotta
+ * BORDER, not by a fill that differs from the card, exactly as the stylesheet's `#fff`-on-
+ * `#fff` pair did.
+ */
+const TICK_DOT =
+  "grid size-6 place-items-center rounded-full border-2 border-primary bg-card text-[0.75rem] " +
+  "font-bold tabular-nums group-hover:border-primary-strong group-hover:bg-muted";
+
+/**
+ * `text-[0.7rem]` rather than `text-xs`: a named Tailwind size carries a line-height the
+ * stylesheet never set (the tick inherits 1.6 from `body`), and `text-xs` would have replaced
+ * 17.92px with 16px and reflowed the label lane the empty card's height depends on.
+ * `text-muted-foreground` is `--color-slate`'s bridge — **7.92:1 light / 7.79:1 dark** on the
+ * card, against the frozen token's 2.36:1 on a dark page.
+ */
+const TICK_TIME = "text-[0.7rem] text-muted-foreground tabular-nums";
 
 /**
  * Where the questions fall inside the video — position as the encoding, the number as the label.
@@ -93,21 +177,21 @@ export function BenchTimeline({
   // both keep the box.
   if (durationSeconds === null || !Number.isFinite(durationSeconds) || durationSeconds <= 0) {
     return (
-      <div className={styles.timeline}>
-        <div className={styles.timelineBar} />
+      <div className={TIMELINE}>
+        <div className={TIMELINE_BAR} />
       </div>
     );
   }
 
   return (
-    <div className={styles.timeline} role="group" aria-label={t("timelineLabel")}>
-      <div className={styles.timelineBar}>
+    <div className={TIMELINE} role="group" aria-label={t("timelineLabel")}>
+      <div className={TIMELINE_BAR}>
         {tags.map((tag) => {
           const ratio = Math.min(1, Math.max(0, tag.second / durationSeconds));
           return (
             <a
               key={tag.orderNo}
-              className={styles.tick}
+              className={TICK}
               style={{ left: `${(ratio * 100).toFixed(2)}%` }}
               href={`#${tagFragment(orderNo, tag, tags)}`}
               data-second={tag.second}
@@ -116,10 +200,10 @@ export function BenchTimeline({
                 time: formatDuration(tag.second),
               })}
             >
-              <span className={styles.tickDot} aria-hidden="true">
+              <span className={TICK_DOT} aria-hidden="true">
                 {tag.orderNo}
               </span>
-              <span className={styles.tickTime} aria-hidden="true">
+              <span className={TICK_TIME} aria-hidden="true">
                 {formatDuration(tag.second)}
               </span>
             </a>

@@ -214,10 +214,14 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     pathname: "/kitaplar/[slug]",
     params: { slug: "ayt-cografya-konu-ozetli-brans-denemeleri" },
     locales: ["tr", "en"],
-    modules: ["book-detail.module.css", "book-video.module.css"],
+    modules: ["book-detail.module.css"],
     why:
-      "The book detail: two CSS Modules, including the embedded-video aspect box — a " +
-      "fixed-ratio iframe is the classic 320px overflow. Both locales: the EN twin is a " +
+      "The book detail, and the embedded-video aspect box is why: a fixed-ratio iframe is the " +
+      "classic 320px overflow, and the stage's cover box combines `aspect-video` with a " +
+      "200px min-height, which gives it an intrinsic minimum WIDTH of ~356px inside a 280px " +
+      "column. T-033 task 7 converted `book-video.module.css` and deleted it, so one module " +
+      "claim is left here — but the geometry that made this shape worth sweeping moved into " +
+      "`FRAME` and `STAGE` in `components/book/`, not away. Both locales: the EN twin is a " +
       "permanent `noindex` page with its own reduced composition.",
   },
   {

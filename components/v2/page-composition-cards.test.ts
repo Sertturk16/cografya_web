@@ -726,17 +726,52 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * {@link CARD_ROUNDING}, the same reading the climate note above already records for the same
  * spelling — and the magnitude badge is `rounded-full`, a pill. The `ternary` figure does not
  * move; this conversion introduced none.
+ *
+ * T-033 task 7: **154 -> 181**, `member` 57 -> 27, and the `call` bucket REOPENS at 1. The
+ * arithmetic, because three different things happened at once and the net (-2 unreadable) hides
+ * all three:
+ *
+ * · `book-video.module.css` had 30 `className={styles.x}` sites across its five consumers — the
+ *   most of any module in T-033 — and every one of them left the member bucket;
+ * · 5 of those 30 were the module's own `.srOnly` block, which is Tailwind's `sr-only` utility
+ *   now (two in `bench-stage.tsx`, two in `deneme-meta.tsx`, one in `deneme-video.tsx`'s live
+ *   region). A string literal is READABLE, so those five left this population altogether;
+ * · 24 became bare identifiers, and 3 MORE arrived from the other direction:
+ *   `deneme-video.tsx`'s cover/player boxes were `` `${styles.frame} ${styles.playerBox}` ``
+ *   and `` `${styles.frame} ${styles.thumbBox}` `` — template holes, which is why
+ *   `lib/test-support/composition-scan.test.ts`'s own `TEMPLATE_HOLE_DIVS` falls 21 -> 18 in
+ *   the same commit. They are `PLAYER_BOX` and `THUMB_BOX` now.
+ *
+ * THE `call` BUCKET IS NOT AN OVERSIGHT AND ITS RETURN IS THE POINT OF LISTING IT BY SHAPE.
+ * `video-progress-controls.tsx` writes `cn(WATCHED_TOGGLE, watched && WATCHED_TOGGLE_CHECKED)`
+ * on the watched toggle: the checked fill is ADDITIVE over a base the control keeps in both
+ * states (the 44px target), so a ternary would have had to restate that target in both branches
+ * and let the two drift. It is a `<Button>`, not a `<div>`, and neither constant carries a card
+ * rounding token — `WATCHED_TOGGLE` is `min-h-11` alone — so it hides nothing this counter
+ * exists to find.
+ *
+ * NO NEW HAND-DRAWN CARD here either, measured the same way. The one surface-ish constant is
+ * `bench-timeline.tsx`'s `TIMELINE`: `rounded-lg border border-border bg-card`, and `rounded-lg`
+ * is outside {@link CARD_ROUNDING} for the same reason the two notes above give for the same
+ * spelling — it is the deleted stylesheet's own `var(--radius)`, not a card radius.
+ * `deneme-video.tsx`'s `THUMB_BOX` is the same `rounded-lg`. The `ternary` figure does not move.
  */
-export const COMPUTED_CARD_CLASSNAMES = 154;
+export const COMPUTED_CARD_CLASSNAMES = 181;
 
-/** The whole unreadable-className population by expression shape — the 210 the counter above
- * deliberately does not watch, kept visible rather than dropped. The `call` bucket held exactly
- * one element, `components/patterns/callout.tsx`'s `cn(calloutVariants({…}))`, and T-042 deleted
- * that file; an empty bucket is not listed, so a `call` reappearing fails this pin as a NEW
- * shape rather than as a moved number. */
+/** The whole unreadable-className population by expression shape — the rest of what the counter
+ * above deliberately does not watch, kept visible rather than dropped.
+ *
+ * The `call` bucket used to hold exactly one element, `components/patterns/callout.tsx`'s
+ * `cn(calloutVariants({…}))`, and T-042 deleted that file; an empty bucket is not listed, so a
+ * `call` reappearing failed this pin as a NEW shape rather than as a moved number. It DID
+ * reappear, in T-033 task 7, and the pin worked exactly as designed: the element is
+ * `video-progress-controls.tsx`'s watched toggle, whose checked fill is additive over a base the
+ * control keeps in both states. See {@link COMPUTED_CARD_CLASSNAMES}'s note for why that is a
+ * composition rather than a ternary, and for the whole 154 -> 181 / 57 -> 27 arithmetic. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
-  ["identifier", 154],
-  ["member", 57],
+  ["call", 1],
+  ["identifier", 181],
+  ["member", 27],
   ["ternary", 2],
 ];
 

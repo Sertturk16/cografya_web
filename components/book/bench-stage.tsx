@@ -10,7 +10,78 @@ import { useBenchState } from "./active-video";
 import { BenchTimeline } from "./bench-timeline";
 import { DenemeVideo } from "./deneme-video";
 import { VideoProgressControls } from "./video-progress-controls";
-import styles from "./book-video.module.css";
+
+/**
+ * THE STAGE COLUMN — `book-video.module.css`'s `.stage`, in bridge tokens (T-033 task 7).
+ *
+ * `min-w-0` IS NOT BOILERPLATE: it fixes a measured 56px horizontal overflow at the two
+ * mandatory narrow viewports. A grid item's default `min-width: auto` refuses to shrink below
+ * its content's min-content width, and `FRAME` (`deneme-video.tsx`) combines `aspect-video`
+ * with `min-h-[200px]`, which gives it an intrinsic minimum WIDTH of 200 x 16/9 ~= 355.6px. At
+ * a 320px viewport the column is 280px, so the stage pushed `document.scrollWidth` to 356 and
+ * the page scrolled sideways (WCAG 1.4.10 Reflow).
+ *
+ * THE STAGE STICKS ONLY WHERE THERE IS A SECOND COLUMN TO STICK BESIDE. Below `lg` (64rem, the
+ * media query the stylesheet wrote) it sits above the index in one column and scrolls away
+ * normally: a sticky player there would take 200px+ off a 568px viewport and the reader would
+ * be studying through a slot.
+ *
+ * `lg:top-[calc(var(--header-height)+1rem)]` IS THE SAME EXPRESSION `PLAYER`'s
+ * `scroll-mt-[…]` uses, and the pairing is the point rather than a coincidence: it keeps the
+ * player clear of the sticky site header, and it makes `deneme-video.tsx`'s corrective scroll a
+ * no-op in the stuck state — that effect compares the box's measured `top` against its own
+ * scroll margin and only scrolls when the box is above its mark. Change one and the other has
+ * to change with it; `bench.structure.test.ts` asserts the two expressions are one string.
+ * `--header-height` is a LAYOUT token, not a colour one, so it stays a `var()` read.
+ */
+const STAGE = "min-w-0 lg:sticky lg:top-[calc(var(--header-height)+1rem)]";
+
+/**
+ * THE CAPTION'S HEIGHT IS RESERVED, and it is the second half of "selecting a video moves
+ * nothing but the stage". The heading's width varies with the deneme number and the fact
+ * strip's with the duration, so the line count can tip between videos at a given viewport;
+ * without a floor the timeline below — and, in the one-column layout, the entire index — would
+ * step up and down as the reader moves through the book. `min-h-[3.1rem]` is the two-line
+ * height measured at 320px, the widest the strip ever wraps in either locale.
+ *
+ * IT CARRIES `FRAME`'s CAP TOO. `max-w-[560px]` is one of FOUR copies of one cap — `FRAME`,
+ * this caption, `TIMELINE` and `PROGRESS_CONTROLS` — and `bench.structure.test.ts` asserts the
+ * four as an EQUALITY, because between 564 and 1023px an uncapped caption started 84px to the
+ * left of the player it names (PR #70 review `CODE70-M2`).
+ *
+ * `mb-0` IS LOAD-BEARING AND IS NOT DECORATION. This is a `<p>`, and `app/globals.css`'s base
+ * rule gives every `<p>` `margin: 0 0 1rem`. The stylesheet's `margin: 10px auto 0` cancelled
+ * that bottom margin; `mt-2.5 mx-auto` alone would let 16px back in under the caption and push
+ * the timeline card — and with it the whole index — down. Measured before/after rather than
+ * reasoned.
+ */
+const STAGE_CAPTION =
+  "mx-auto mt-2.5 mb-0 flex max-w-[560px] flex-wrap items-baseline gap-x-[10px] gap-y-1 min-h-[3.1rem]";
+
+/**
+ * SMALLER THAN A REAL HEADING, deliberately, and the direction was reversed after review. At
+ * 1.15rem/600 in the heading face this `<p>`'s name out-weighed the thirty `<h3>` index rows it
+ * sits above (1.05rem), so the visual outline and the document outline disagreed about what the
+ * most important line in the section was — WCAG 1.3.1's F2 shape (PR #70 review `A11Y70-M5`).
+ * Marking it up AS a heading is worse: the caption follows client state, so the outline would
+ * gain a heading whose text changes when the reader presses a question.
+ *
+ * `text-[1rem]` rather than `text-base`: `text-base` carries a 1.5 line-height token, and this
+ * span inherits 1.6 from `body` — 25.6px, not 24px. `text-primary-strong` is
+ * `--color-primary-dark`'s bridge: **7.89:1 light / 8.99:1 dark** on the page's `--background`,
+ * which is what the stage sits on. The retired raw token measured **2.23:1** in dark.
+ */
+const STAGE_NAME = "font-heading text-[1rem] font-semibold text-primary-strong";
+
+/** The künye strip beside the name. `text-[0.85rem]` for the same line-height reason;
+ *  `text-muted-foreground` is `--color-slate`'s bridge — **7.48:1 light / 8.53:1 dark** on
+ *  `--background`, against the frozen token's 2.36:1 in dark. */
+const STAGE_FACTS = "flex flex-wrap items-baseline gap-1.5 text-[0.85rem] text-muted-foreground";
+
+/** THE SAME SPELLING `deneme-meta.tsx`'s separator carries — asserted equal in
+ *  `bench.structure.test.ts`, because the two dots sit on ONE line inside one fact strip and a
+ *  drift in either file would split that line into two colours. */
+const META_SEPARATOR = "text-muted-foreground";
 
 /**
  * One video's presentational payload, as the stage needs it.
@@ -173,7 +244,7 @@ export function BenchStage({
        an attribute rather than a closure because the island delegates ONE listener over both the
        stage and the thirty index rows. The index puts the same attribute on each row's question
        list, so `closest("[data-deneme]")` answers the question from either side. */
-    <div className={styles.stage} data-deneme={video.orderNo}>
+    <div className={STAGE} data-deneme={video.orderNo}>
       {/* `active` IS HANDED DOWN WHOLE, and the gate is the swap point's alone. This site used to
           re-derive `video.playable && active?.orderNo === video.orderNo` and pass `null` when it
           failed — the same expression `deneme-video.tsx` computes again on arrival, because that
@@ -203,24 +274,24 @@ export function BenchStage({
           The same two facts also stand on every one of the thirty index rows, which is what
           satisfies `SEO-POLICY.md` §B5 5.7 for all thirty `VideoObject` blocks; this copy is a
           convenience for the reader whose eyes are on the player, not the compliance surface. */}
-      <p className={styles.stageCaption}>
+      <p className={STAGE_CAPTION}>
         {/* Through the shared builder, exactly as the index row and `VideoObject.name` are. The
             three strings must be one string (§B5 5.7), and this caption was the consumer outside
             the seam (→ PR #70 review `FENER70-M1` / `CODE70-M4`). */}
-        <span className={styles.stageName}>{videoTitle(t, locale, video)}</span>
-        <span className={styles.stageFacts}>
+        <span className={STAGE_NAME}>{videoTitle(t, locale, video)}</span>
+        <span className={STAGE_FACTS}>
           <span>{t("videoTagCount", { count: video.tags.length })}</span>
           {rich !== null && (
             <>
-              <span className={styles.metaSeparator} aria-hidden="true">
+              <span className={META_SEPARATOR} aria-hidden="true">
                 ·
               </span>
-              <span className={styles.srOnly}>{t("durationLabel")}</span>
+              <span className="sr-only">{t("durationLabel")}</span>
               <time dateTime={rich.durationIso}>{formatDuration(rich.durationSeconds)}</time>
-              <span className={styles.metaSeparator} aria-hidden="true">
+              <span className={META_SEPARATOR} aria-hidden="true">
                 ·
               </span>
-              <span className={styles.srOnly}>{t("publishedLabel")}</span>
+              <span className="sr-only">{t("publishedLabel")}</span>
               <time dateTime={rich.publishedAtUtc}>{rich.publishedText}</time>
             </>
           )}
