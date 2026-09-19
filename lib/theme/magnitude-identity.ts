@@ -173,6 +173,26 @@ export const MAGNITUDE_BUCKETS: readonly MagnitudeBucket[] = [1, 2, 3, 4, 5];
 export const MAGNITUDE_RING = "stroke-[var(--eq-mag-fg)]";
 
 /**
+ * The magnitude NUMBER printed directly on the disc (`v2-earthquake-explorer.tsx`'s SVG
+ * `<text>`, shown for `eq.magnitude >= 3.5`) — the SAME token as `MAGNITUDE_RING`,
+ * `--eq-mag-fg`, but as a `fill-*` utility rather than `stroke-*`: SVG `<text>` paints its
+ * glyphs with `fill`, not `stroke`, the same split `mark` (fill) and `ripple`/`MAGNITUDE_RING`
+ * (stroke) already have for the identical reason.
+ *
+ * This is the label-on-fill relationship, not the ring's disc-vs-disc one — the number sits
+ * directly on its OWN disc's fill, the same shape `badge` already has — and `--eq-mag-fg` is
+ * measured for exactly that (4.69 worst light, 4.81 worst dark, against every one of the five
+ * fills). It replaces a hard-coded `fill="#ffffff"` SVG *presentation attribute*, not a class:
+ * a class cannot shadow a presentation attribute (the same reason Task 10 deleted
+ * `fill="url(#ocean-gradient)"` rather than layer a class over it), so the attribute itself has
+ * to go, not just gain a sibling. White there measured 3.51 / 2.76 / 2.19 / 1.71 / 1.34 against
+ * the dark ramp's five steps — under `TEXT_MIN` on ALL FIVE, worst at the step the ramp
+ * inversion exists to make prominent (magnitude 6+). Light was never broken (4.69–17.21); only
+ * dark needed the token.
+ */
+export const MAGNITUDE_LABEL = "fill-[var(--eq-mag-fg)]";
+
+/**
  * Which bucket a magnitude falls into.
  *
  * Re-exported from `lib/earthquake/magnitude.ts` rather than reimplemented, so this module adds

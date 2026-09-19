@@ -5,7 +5,7 @@ import { tokensIn } from "@/lib/test-support/css-tokens";
 import { stripComments } from "@/lib/test-support/strip-comments";
 import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
 import { GRAPHICAL_MIN, ratio, relativeLuminance, TEXT_MIN } from "./contrast";
-import { MAGNITUDE_RING } from "./magnitude-identity";
+import { MAGNITUDE_LABEL, MAGNITUDE_RING } from "./magnitude-identity";
 
 /**
  * The five magnitude steps per theme, and the one label colour that sits on all five.
@@ -104,18 +104,30 @@ describe("the ramp is ordered, and its direction follows the ground", () => {
 });
 
 /**
- * THE TWO LABEL CONSUMERS BIND TO `--eq-mag-fg`, NOT A BARE ACHROMATIC.
+ * THE THREE LABEL CONSUMERS BIND TO `--eq-mag-fg`, NOT A BARE ACHROMATIC.
  *
- * Neither arm of the palette count can see this swap: `text-white` is not a raw palette class
- * (`raw-palette-count.test.ts` only scans the Tailwind colour families), and
- * `text-[var(--eq-mag-fg)]` is a token reference, not a value, so nothing that greps for a hex
- * or a named hue trips on either direction of this change. This file is where the ramp and its
- * one shared foreground are asserted correct — it is also the right place to assert that the
- * two files painting a label ON that ramp actually reach for the foreground this file measured,
- * rather than a hard-coded white that silently stopped being safe when Task 12 turned the ramp
- * around under `.dark`.
+ * Neither arm of the palette count can see any of these swaps: `text-white`/`fill="#ffffff"`
+ * are not raw palette classes (`raw-palette-count.test.ts` only scans the Tailwind colour
+ * families and bracketed arbitrary values, never a bare SVG presentation attribute), and
+ * `text-[var(--eq-mag-fg)]`/`fill-[var(--eq-mag-fg)]` are token references, not values, so
+ * nothing that greps for a hex or a named hue trips on either direction of any of these
+ * changes. This file is where the ramp and its one shared foreground are asserted correct — it
+ * is also the right place to assert that the three places painting a label ON that ramp (two
+ * Tailwind classes, one SVG `fill` attribute) actually reach for the foreground this file
+ * measures, rather than a hard-coded white that silently stopped being safe when Task 12 turned
+ * the ramp around under `.dark`.
+ *
+ * The third — the on-disc magnitude number, `v2-earthquake-explorer.tsx`'s SVG `<text
+ * fill="#ffffff">` shown for `eq.magnitude >= 3.5` — is the same defect as the badge, one
+ * element over: white measured 3.51 / 2.76 / 2.19 / 1.71 / 1.34 against the dark ramp's five
+ * steps, under `TEXT_MIN` on every step and worst at magnitude 6+, the exact case the ramp
+ * inversion exists to make prominent. `fill="#ffffff"` is an SVG *presentation attribute*, not
+ * a class — a class cannot override it, so the attribute itself had to be deleted, not shadowed
+ * (the same reason Task 10 deleted `fill="url(#ocean-gradient)")` rather than layer a class over
+ * it) — which is why the assertion below checks for the attribute's absence, not merely the
+ * class's presence.
  */
-describe("the ramp's two label consumers read --eq-mag-fg, not a bare white", () => {
+describe("the ramp's three label consumers read --eq-mag-fg, not a bare white", () => {
   const read = (rel: string): string =>
     stripComments(readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8"));
 
@@ -129,6 +141,24 @@ describe("the ramp's two label consumers read --eq-mag-fg, not a bare white", ()
     const source = read("../../components/earthquake/magnitude-badge.tsx");
     expect(source).toContain("text-[var(--eq-mag-fg)]");
     expect(source).not.toMatch(/text-white\b/);
+  });
+
+  it("MAGNITUDE_LABEL is --eq-mag-fg, as a fill class — the same token as MAGNITUDE_RING, a different property", () => {
+    expect(MAGNITUDE_LABEL).toBe("fill-[var(--eq-mag-fg)]");
+  });
+
+  it("the explorer's on-disc magnitude number carries MAGNITUDE_LABEL, with no bare fill attribute left", () => {
+    const source = stripComments(
+      readFileSync(
+        fileURLToPath(new URL("../../components/v2/v2-earthquake-explorer.tsx", import.meta.url)),
+        "utf8",
+      ),
+    );
+    expect(source).toContain("MAGNITUDE_LABEL");
+    // The presentation attribute, not just the achromatic: `fill="#ffffff"` (or any bare hex
+    // fill) must be gone, since a class cannot shadow it.
+    expect(source).not.toMatch(/fill="#[0-9a-fA-F]{3,6}"/);
+    expect(source).not.toContain("--eq-mag-");
   });
 });
 

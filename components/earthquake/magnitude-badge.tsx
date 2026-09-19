@@ -50,17 +50,19 @@ const BADGE =
  * WHAT THE CONVERSION DID DO IS MEASURE THEM, because nobody had. Against the section's real
  * backdrop — `--card` (#121e21 in dark), the fill of the `<Card variant="panel">` that wraps
  * `ProvinceEarthquakeSection` on `/turkiye/[slug]`, which is the only route that renders this
- * badge (`/deprem` renders `V2EarthquakeExplorer` instead) — the five fills measure
- * **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1**. Four of the five are under WCAG 1.4.11's 3:1 floor
- * for a graphical object and the strongest bucket is invisible. On light `--card` (#ffffff) the
- * same five read 4.69 / 6.43 / 9.01 / 13.15 / 17.21:1, so this is a dark-mode-only defect:
- * the ramp was drawn to darken toward the top of the scale, which inverts against a dark page.
+ * badge (`/deprem` renders `V2EarthquakeExplorer` instead) — the five fills measured
+ * **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** AS SHIPPED AT THE TIME (T-033). Four of the five were
+ * under WCAG 1.4.11's 3:1 floor for a graphical object and the strongest bucket was invisible.
+ * On light `--card` (#ffffff) the same five read 4.69 / 6.43 / 9.01 / 13.15 / 17.21:1, so it was
+ * a dark-mode-only defect: the ramp darkened toward the top of the scale, which inverts against
+ * a dark page.
  *
- * **That fix is T-031d's, not this task's.** T-031d owns the dark data surfaces and its own
- * first job is re-measuring exactly this kind of table (see `components/ui/token-binding.test.ts`,
- * MAP_SURFACE_FILES). A ramp is a scale, not five independent colours: it cannot be repaired one
- * bucket at a time without destroying the ordering the badge encodes, and re-deriving it belongs
- * with the branch that re-derives the map tints. Nothing here is silently left as if it passed.
+ * **T-031d Task 12 fixed it — the current dark fills are 4.86 / 6.18 / 7.79 / 9.98 / 12.74:1
+ * against `--card` and 4.64 / 5.90 / 7.44 / 9.53 / 12.17:1 against `--map-plate`**, both
+ * clearing `GRAPHICAL_MIN` on every step with the strongest bucket now the most prominent, not
+ * the most invisible. A ramp is a scale, not five independent colours, so this was re-derived as
+ * one table on the branch that re-derives the map tints rather than patched bucket by bucket —
+ * `lib/theme/magnitude-ramp.test.ts` is where those five hexes and their measurements now live.
  *
  * Colour is never the only signal either way (`DESIGN.md` §6.1 rule 3) — the number is always
  * printed — so an invisible fill degrades the badge, it does not hide the magnitude.
