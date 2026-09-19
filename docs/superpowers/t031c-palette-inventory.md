@@ -658,6 +658,29 @@ Every occurrence here is one of the five meanings; nothing in this file is decor
 
 **Totals:** data 0, semantic 16, decoration 0.
 
+**APPLIED, Task 9 — all 16, with two rows corrected before applying.**
+
+1. **Rows 965 and 1652 named a target that fails on the surface the page paints.** Both `Check`
+   glyphs sit inside a FILLED `variant="secondary"` button (`components/ui/button.tsx`:
+   `bg-secondary text-secondary-foreground`), so their backdrop is `--secondary`, not a card.
+   `--success-strong` measures **1.27:1 light / 1.62:1 dark** against it — a worse figure than
+   the 1.56 / 1.20 the raw `emerald-600` was already scoring, so binding the row as written
+   would have swapped one failure for another. No member of the success family reads on
+   `--secondary`; the fix is for the glyph to inherit `--secondary-foreground` (5.89 / 5.37),
+   which is what the `Copy` glyph in the same slot already does. Nothing is lost: the copied
+   state swaps the glyph (Copy → Check) **and** the label ("Özeti Kopyala" → "Kopyalandı!"), so
+   the hue was never the carrier. Verdict changes `semantic` → `decoration` for these 2, making
+   the file's split **semantic 14, decoration 2**.
+
+2. **Row 1264's action pill is an inversion, and the hovered state is the reason.** With the
+   toast panel now a solid `--warning`, a `bg-card` pill on it separates by 3.04:1 at rest but
+   only **2.53:1** when it hovers to `--muted` — under WCAG 1.4.11's 3:1 graphical floor. The
+   pill takes `--warning-foreground` as its fill with `--warning` as its label instead: 5.54 /
+   7.46 at rest, 4.80 / 6.27 hovered. Its rim is `--warning-foreground/25` rather than the
+   literal `border-warning` in the `Becomes` column, because a rim the same value as its own
+   fill draws no line; inverting a panel inverts its rim. The now-dead `backdrop-blur-md` on
+   the opaque panel went with it.
+
 ### lib/marine/sea-basins-detail.ts (16)
 
 The definition behind `--basin-*`. Its four hues agree, exactly, with `v2-marine-basin-cards.tsx`'s

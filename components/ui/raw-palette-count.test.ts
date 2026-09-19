@@ -138,9 +138,41 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after.
  *
+ * 237 -> 221 is T-031c Task 9's second file: `components/v2/v2-tool-workbench.tsx` 16 -> 0.
+ * The inventory calls all sixteen semantic and it is right about fourteen of them: the
+ * self-intersection toast that floats over the measuring map, the caution strip that repeats
+ * the same warning in the results column, and the save confirmation. Their backdrops, named:
+ * the toast is its own opaque surface, now a solid `--warning` carrying `--warning-foreground`
+ * at 5.54 light and 7.46 dark; the strip is a 10% warning tint over `--card` (#faf3e7 light,
+ * #262b24 dark) carrying `--warning-strong` at 6.18 and 8.18; the strip's escape button sets
+ * its own `--background` fill, where the same token measures 6.43 and 10.56; the save
+ * confirmation is bare `--card`, 7.50 light and 8.78 dark against 3.77 for the raw emerald it
+ * replaces.
+ *
+ * TWO ROWS WERE CORRECTED BEFORE THEY WERE APPLIED, both by naming the surface.
+ *
+ * The two `Check` glyphs are NOT `text-success-strong`. They sit inside a filled
+ * `variant="secondary"` button, so their backdrop is `--secondary`, and that token measures
+ * 1.27 light / 1.62 dark against it -- a different failure from the 1.56 / 1.20 the raw
+ * emerald was already scoring, not a fix. The glyph inherits `--secondary-foreground` instead
+ * (5.89 / 5.37), and the "copied" state keeps both non-colour carriers it always had: the
+ * glyph swaps from Copy to Check and the label swaps to "Kopyalandi!".
+ *
+ * The toast's action pill is an INVERSION, not an opaque card chip, and the hovered state is
+ * why. On a solid `--warning` panel a `--card` pill separates by 3.04:1 at rest but only
+ * **2.53:1** once it hovers to `--muted`, under the 3:1 graphical floor -- the sixth time on
+ * this branch that a chip measured fine at rest and failed hovered. `--warning-foreground` as
+ * the fill with `--warning` as the label measures 5.54 / 7.46 at rest and 4.80 / 6.27 hovered,
+ * so it is authored against the worst state rather than patched after it. The toast's rim is
+ * `--warning-foreground/25` rather than the inventory's literal `border-warning`, because a rim
+ * the same value as its own fill draws no line at all; inverting the panel inverts the rim.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The ten bracketed map hexes in this
+ * file are the dark map surface and stay T-031d's.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 237;
+const RAW_PALETTE_BUDGET = 221;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
