@@ -376,11 +376,12 @@ export const INLINE_PINNED = [
     count: 2,
     why: "two `ctx.fillStyle` calls on the measurement canvas — a white label and its 60% black plate. Canvas takes a colour VALUE and cannot read a custom property without a `getComputedStyle` round trip per frame",
   },
-  {
-    file: "components/v2/v2-earthquake-explorer.tsx",
-    count: 1,
-    why: "the white epicentre mark drawn inside the magnitude disc, measured against that disc rather than against the page",
-  },
+  // T-031d Task 13 dropped the `v2-earthquake-explorer.tsx` row that lived here: the white
+  // on-disc magnitude number, an SVG `fill="#ffffff"` presentation attribute measured against
+  // that disc's own fill rather than the page. A token (`--eq-mag-fg`) resolves the same
+  // relationship in both themes now, so it moved to `fill-[var(--eq-mag-fg)]` and left this
+  // table rather than staying pinned at a stale reason. See `raw-palette-count.test.ts`'s
+  // addendum for the running total this leaves.
   {
     file: "components/v2/v2-region-locator-map.tsx",
     count: 1,

@@ -13,28 +13,32 @@ interface MagnitudeBadgeProps {
 }
 
 /**
- * The pill itself. `text-white`, and it is the third DELIBERATE bare achromatic on this
- * surface after `pm25-chart.tsx` and `climate-chart.tsx`, for the same class of reason: the
- * label is measured against the FILL under it, which is a data colour that does not follow the
- * theme, not against the page. Measured (`lib/theme/contrast.ts`) — #fff on `--eq-mag-1`…`-5`:
- * **4.69 / 6.43 / 9.01 / 13.15 / 17.21:1** — clearing 4.5:1 on every step, worst at the light
- * end of the ramp.
+ * The pill itself. `text-[var(--eq-mag-fg)]`, T-031d Task 12's single per-theme foreground for
+ * the whole ramp — white in light, `--color-ink-dark` in dark — in place of the bare
+ * `text-white` this carried before: `.dark`'s ramp inverted (lightness now rises with
+ * magnitude, matching a dark ground) and a hard-coded white measures only **1.34:1** on the new
+ * lightest dark step (`--eq-mag-5`, magnitude 6+ — the step that matters most). `--eq-mag-fg` is
+ * measured (`lib/theme/magnitude-ramp.test.ts`) against every one of the five fills in both
+ * themes — **4.69:1 worst case in light, 4.81:1 worst case in dark** — so one token still covers
+ * the whole ramp, the way one hard-coded colour used to, except it now survives the ramp
+ * inverting.
  *
- * A bridge token would track a surface the label never sits on, and it FAILS IN BOTH THEMES.
- * `--foreground`'s light value #2b2622 measures **3.19 / 2.33 / 1.66 / 1.14 / 1.15:1** across the
- * five — its worst is `--eq-mag-4` at 1.14:1, not `--eq-mag-5`, because the ramp's darkest step is
- * a shade off pure black and the ink is not — and four of the five are under 3:1, let alone 4.5:1.
- * Its dark value #e8f0f1 is not "the same reading" as white either: **4.06 / 5.56 / 7.80 / 11.38 /
- * 14.89:1**, uniformly below white's figures and BELOW 4.5:1 on `--eq-mag-1`. So a themed label
- * would be illegible in light mode and would fail WCAG 1.4.3 on the commonest bucket in dark. The
- * label is white in both themes because the ground under it is.
+ * A bridge token would still be wrong here, for the reason it always was: the label is measured
+ * against the FILL under it, which is a DATA colour that does not follow the theme, not against
+ * the page. `--foreground` FAILS IN BOTH THEMES against the current ramp — 3.19 / 2.33 / 1.66 /
+ * 1.14 / 1.15:1 in light, 3.03 / 2.38 / 1.89 / 1.48 / 1.16:1 in dark — every step under 4.5:1 and
+ * all but step 1 under 3:1, in either theme. Step 1 is the LIGHTEST step in light, where the
+ * ramp darkens with magnitude, but the DARKEST step in dark, where the ramp lightens with
+ * magnitude — "all but the lightest" is only true in light and would misstate dark, where the
+ * step that clears is the darkest one, not the lightest. A bridge token tracks the PAGE; this
+ * label needs a token that tracks the RAMP, which is what `--eq-mag-fg` is for.
  *
  * `rounded-full` where the stylesheet wrote `border-radius: 999px`. The computed value changes
  * (999px to Tailwind v4's `calc(infinity * 1px)`) and the rendering does not: both fully round
  * a 24px-tall pill, and 999px was already ten times the half-height it needed.
  */
 const BADGE =
-  "inline-block rounded-full px-2 py-0.5 text-[0.8rem] font-semibold whitespace-nowrap text-white";
+  "inline-block rounded-full px-2 py-0.5 text-[0.8rem] font-semibold whitespace-nowrap text-[var(--eq-mag-fg)]";
 
 /**
  * THE MAGNITUDE RAMP IS A DATA TOKEN SET AND DOES NOT MOVE TO A BRIDGE TOKEN.
@@ -49,17 +53,19 @@ const BADGE =
  * WHAT THE CONVERSION DID DO IS MEASURE THEM, because nobody had. Against the section's real
  * backdrop — `--card` (#121e21 in dark), the fill of the `<Card variant="panel">` that wraps
  * `ProvinceEarthquakeSection` on `/turkiye/[slug]`, which is the only route that renders this
- * badge (`/deprem` renders `V2EarthquakeExplorer` instead) — the five fills measure
- * **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1**. Four of the five are under WCAG 1.4.11's 3:1 floor
- * for a graphical object and the strongest bucket is invisible. On light `--card` (#ffffff) the
- * same five read 4.69 / 6.43 / 9.01 / 13.15 / 17.21:1, so this is a dark-mode-only defect:
- * the ramp was drawn to darken toward the top of the scale, which inverts against a dark page.
+ * badge (`/deprem` renders `V2EarthquakeExplorer` instead) — the five fills measured
+ * **3.63 / 2.65 / 1.89 / 1.29 / 1.01:1** AS SHIPPED AT THE TIME (T-033). Four of the five were
+ * under WCAG 1.4.11's 3:1 floor for a graphical object and the strongest bucket was invisible.
+ * On light `--card` (#ffffff) the same five read 4.69 / 6.43 / 9.01 / 13.15 / 17.21:1, so it was
+ * a dark-mode-only defect: the ramp darkened toward the top of the scale, which inverts against
+ * a dark page.
  *
- * **That fix is T-031d's, not this task's.** T-031d owns the dark data surfaces and its own
- * first job is re-measuring exactly this kind of table (see `components/ui/token-binding.test.ts`,
- * MAP_SURFACE_FILES). A ramp is a scale, not five independent colours: it cannot be repaired one
- * bucket at a time without destroying the ordering the badge encodes, and re-deriving it belongs
- * with the branch that re-derives the map tints. Nothing here is silently left as if it passed.
+ * **T-031d Task 12 fixed it — the current dark fills are 4.86 / 6.18 / 7.79 / 9.98 / 12.74:1
+ * against `--card` and 4.64 / 5.90 / 7.44 / 9.53 / 12.17:1 against `--map-plate`**, both
+ * clearing `GRAPHICAL_MIN` on every step with the strongest bucket now the most prominent, not
+ * the most invisible. A ramp is a scale, not five independent colours, so this was re-derived as
+ * one table on the branch that re-derives the map tints rather than patched bucket by bucket —
+ * `lib/theme/magnitude-ramp.test.ts` is where those five hexes and their measurements now live.
  *
  * Colour is never the only signal either way (`DESIGN.md` §6.1 rule 3) — the number is always
  * printed — so an invisible fill degrades the badge, it does not hide the magnitude.

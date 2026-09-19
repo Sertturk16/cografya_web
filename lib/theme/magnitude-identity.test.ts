@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
+import { tokensIn } from "@/lib/test-support/css-tokens";
+import { stripComments } from "@/lib/test-support/strip-comments";
 import { magnitudeBucket, type MagnitudeBucket } from "@/lib/earthquake/magnitude";
-import { GRAPHICAL_MIN, ratio } from "./contrast";
+import { ratio } from "./contrast";
 import {
   bucketFor,
   MAGNITUDE_BUCKETS,
@@ -13,29 +14,31 @@ import {
 
 const CLASS_MEMBERS = ["mark", "ripple", "badge", "swatch"] as const;
 
-/** The two card surfaces every figure below is a ratio TO. Neither is "the background". */
-const LIGHT_CARD = "#ffffff";
-const DARK_CARD = "#121e21";
+const CSS = readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8");
 
-/**
- * The five ramp steps as `app/globals.css` declares them, PARSED rather than transcribed.
- *
- * This matters more here than in the palette tests, because this file pins a FAILURE. A
- * transcribed copy would keep asserting 3.63 / 2.65 / … about five literals while the stylesheet
- * said something else entirely, and the test that exists to say "T-031d has not happened yet"
- * would be green after T-031d happened. Comments are stripped first: the token block's own
- * docblock quotes contrast figures and bucket ranges in prose.
- */
-const SHIPPED: Readonly<Record<number, string>> = (() => {
-  const css = stripCssComments(
-    readFileSync(fileURLToPath(new URL("../../app/globals.css", import.meta.url)), "utf8"),
-  );
+/** The five `--eq-mag-*` entries a block's own token map declares, keyed by bucket number. */
+function eqMagOf(tokens: Readonly<Record<string, string>>): Readonly<Record<number, string>> {
   const out: Record<number, string> = {};
-  for (const m of css.matchAll(/--eq-mag-([1-5]):\s*(#[0-9a-fA-F]{6})\s*;/g)) {
-    out[Number(m[1])] = m[2]!.toLowerCase();
+  for (const bucket of [1, 2, 3, 4, 5] as const) {
+    const value = tokens[`--eq-mag-${bucket}`];
+    if (value !== undefined) out[bucket] = value.toLowerCase();
   }
   return out;
-})();
+}
+
+/**
+ * The five ramp steps as `app/globals.css`'s `:root` declares them, PARSED rather than
+ * transcribed, and BLOCK-SCOPED to `:root` rather than read file-wide.
+ *
+ * The block scoping is the fix, not a stylistic change: this used to run
+ * `css.matchAll(/--eq-mag-([1-5]):.../g)` over the WHOLE file, which was safe only as long as
+ * `--eq-mag-1`…`-5` were declared exactly once. T-031d Task 12 gave `.dark` its own five, and a
+ * file-wide match lets the LATER declaration win for every bucket — `SHIPPED` would silently
+ * hold the DARK hexes even where a test means to measure the light theme. That is precisely
+ * the failure `lib/test-support/css-tokens.ts`'s `tokensIn`/`blockOf` exist to prevent, and it
+ * had shipped here since PR1 without being wired to them.
+ */
+const SHIPPED: Readonly<Record<number, string>> = eqMagOf(tokensIn(CSS, ":root"));
 
 describe("the magnitude identity table", () => {
   it("covers exactly the five buckets the token set declares", () => {
@@ -79,11 +82,13 @@ describe("the magnitude identity table", () => {
   });
 
   it("shares ONE foreground across the ramp, and it clears 4.5 on the lightest step", () => {
-    // White on `--eq-mag-1` — the lightest of the five and so the binding case — measures 4.69
-    // against that step's own fill as the backdrop. The old four-step scale needed a second
-    // foreground because its amber step was too light for white; the token ramp does not.
+    // `--eq-mag-fg` (T-031d Task 13), not a bare `text-white`: the ramp inverts under `.dark`
+    // (`lib/theme/magnitude-ramp.test.ts`), and a hard-coded white measures only 1.34:1 against
+    // the new dark lightest step. White on `--eq-mag-1` — the lightest of the LIGHT five and so
+    // the binding case for the light theme's own token value — measures 4.69 against that
+    // step's own fill as the backdrop.
     for (const bucket of MAGNITUDE_BUCKETS) {
-      expect(MAGNITUDE_IDENTITY[bucket].badge).toContain("text-white");
+      expect(MAGNITUDE_IDENTITY[bucket].badge).toContain("text-[var(--eq-mag-fg)]");
     }
     expect(ratio("#ffffff", "#aa4cbd")).toBe(4.69);
   });
@@ -152,25 +157,25 @@ describe("the magnitude identity table", () => {
     expect(source).not.toMatch(/#[0-9a-fA-F]{6}/);
   });
 
-  it("does NOT re-light the ramp — the dark-mode failure stays T-031d's", () => {
-    // A pin that RECORDS A FAILURE, so it has to be measured on the values that ship rather than
-    // on transcribed literals. The first version of this read five hexes written out here, which
-    // would have stayed green through any edit to `--eq-mag-3`; `SHIPPED` is parsed out of
-    // `app/globals.css`, the way `fault-palette.test.ts` parses its own set.
-    const steps = MAGNITUDE_BUCKETS.map((b) => SHIPPED[b]!);
-    expect(steps.map((hex) => ratio(hex, DARK_CARD))).toEqual([3.63, 2.65, 1.89, 1.29, 1.01]);
-    // The same five on the LIGHT card, which is where the ramp works and why it shipped.
-    expect(steps.map((hex) => ratio(hex, LIGHT_CARD))).toEqual([4.69, 6.43, 9.01, 13.15, 17.21]);
-
-    // …and the FAILURE itself is asserted, against the floor the repo exports, not described in
-    // prose beside a number. Four of five steps are under `GRAPHICAL_MIN` on the dark card. If a
-    // future change fixes that, this reds and T-031d has landed; if a future change makes it
-    // worse, this reds too.
-    const failing = steps.filter((hex) => ratio(hex, DARK_CARD) < GRAPHICAL_MIN);
-    expect(
-      failing,
-      `on the dark --card the ramp is supposed to be FAILING; this pin exists to record that`,
-    ).toHaveLength(4);
-    expect(steps.filter((hex) => ratio(hex, LIGHT_CARD) < GRAPHICAL_MIN)).toHaveLength(0);
-  });
+  /**
+   * DELETED HERE: `it("does NOT re-light the ramp — the dark-mode failure stays T-031d's")`.
+   *
+   * It was a pin that RECORDED A FAILURE — the light ramp's five hexes, measured against the
+   * dark `--card`, were supposed to be four-of-five under `GRAPHICAL_MIN` until T-031d Task 12
+   * turned the dark ramp around. Its own comment said as much: "if a future change fixes that,
+   * this reds and T-031d has landed." Task 12 is that future change. It fired, exactly as
+   * designed — the same shape as the `fillSoft` negative control this suite's sibling
+   * `continent-palette.test.ts` deleted when Task 10 removed what it was recording the absence
+   * of. Editing its five expected numbers would have kept a test with the same NAME asserting
+   * the opposite claim; deleting it, the way that sibling did, is the honest move.
+   *
+   * Not replaced with a same-shape positive version here, because `lib/theme/magnitude-ramp.test.ts`
+   * (Task 12) already says everything this pin's premise-flip would say, and says it better: it
+   * compares `:root` and `.dark` against the SAME committed table (this file's old pin only ever
+   * read `:root`, even nominally "for" the dark case), it checks the WCAG floor against
+   * `--card`, `--map-plate`, `--map-sea` AND `--map-land` rather than `--card` alone, it checks
+   * the shared `--eq-mag-fg` label at 4.5:1, and it asserts monotonic lightness in both
+   * directions explicitly. A rewritten pin here would be a strictly weaker duplicate kept for
+   * sentiment, which is exactly what not to do.
+   */
 });

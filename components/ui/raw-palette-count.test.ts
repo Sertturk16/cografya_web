@@ -1162,6 +1162,11 @@ describe("the palette cannot be laundered into brackets", () => {
  * T-031d Task 10 dropped `INLINE_PINNED`'s three-count `v2-world-map-explorer.tsx` row — the
  * dead ocean gradient's stops, deleted along with the gradient — so the live split is 22/8,
  * 30 in total, not 22/11/33 any more.
+ *
+ * T-031d Task 13 dropped its one-count `v2-earthquake-explorer.tsx` row — the white on-disc
+ * magnitude number, an SVG `fill="#ffffff"` presentation attribute that had to be deleted
+ * rather than overridden (a class cannot shadow a presentation attribute), replaced by
+ * `fill-[var(--eq-mag-fg)]` — so the live split is 22/7, 29 in total, not 22/8/30.
  */
 
 describe("a colour cannot hide outside a class either", () => {

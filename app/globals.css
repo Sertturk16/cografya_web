@@ -514,6 +514,14 @@
   --eq-mag-3: #772281; /* 4–4.9 */
   --eq-mag-4: #521457; /* 5–5.9 */
   --eq-mag-5: #2e0e2f; /* 6 and up */
+  /* The one label colour the whole ramp carries. White in light, where #fff measures
+     4.69 / 6.43 / 9.01 / 13.15 / 17.21 across the five and --foreground measures
+     3.19 / 2.33 / 1.66 / 1.14 / 1.15 -- four of five under 3:1, which is why the badge was a
+     bare text-white and not a bridge token. A token rather than that bare literal because
+     the DARK ramp inverts: a hard-coded white kept on it would measure 1.34:1 at its lightest
+     step (magnitude 6 and up, the step that matters most), not a typo of "3:1 short" but a
+     label that goes nearly invisible on the ramp's own biggest quake. */
+  --eq-mag-fg: #ffffff;
 
   /* ---- Map-game region palette (Kâşif Mode 1; DESIGN.md §6.1 rule 4 — CATEGORICAL) ----
      Colouring the map by coğrafi bölge is a DATA encoding (an unordered categorical
@@ -1811,6 +1819,37 @@
   --map-graticule: #4d7ea8;
   --map-unknown-land: #64748b;
   --map-hover: #f49f80;
+
+  /* ---- MAGNITUDE RAMP, TURNED AROUND (T-031d) ---------------------------------------
+     Light mode reads a bigger earthquake as a DARKER mark on a pale map. On the night map
+     that rule makes the biggest quake the faintest thing on screen: the light ramp measured
+     3.63 / 2.65 / 1.89 / 1.29 / 1.01 against this block's --card, four of five under WCAG
+     1.4.11's 3:1 and worst at the step that matters most. Against --map-plate/--map-sea,
+     the ground offshore and lake-centred quakes sit on, it is worse still: 3.47 / 2.53 /
+     1.80 / 1.24 / 1.06.
+
+     Same hue, lightness rising with magnitude. MEASURED (lib/theme/contrast.ts), held by
+     lib/theme/magnitude-ramp.test.ts:
+       vs --card     4.86  6.18  7.79  9.98  12.74
+       vs --map-plate 4.64  5.90  7.44  9.53  12.17
+       vs --map-sea   4.64  5.90  7.44  9.53  12.17
+       vs --map-land  4.83  6.14  7.74  9.92  12.67
+       --eq-mag-fg    4.81  6.12  7.72  9.89  12.63
+     The window is narrow in both directions: step 1 sits at oklch L 0.649 and measures 4.81
+     against --eq-mag-fg; holding its hue and chroma fixed, 4.5:1 is not reached until L drops
+     to roughly 0.63, not 0.65. A single label across a wider span is impossible in either
+     direction, which is why the ramp is a light-purple family here and a dark-purple one in
+     light.
+
+     --eq-mag-fg is --color-ink-dark, not white: the dark ramp's own lightest step (step 5,
+     magnitude 6+) measures only 1.34:1 against white, so the light-mode foreground is not
+     safe to reuse here. */
+  --eq-mag-1: #ba69cd;
+  --eq-mag-2: #ca80db;
+  --eq-mag-3: #d998e8;
+  --eq-mag-4: #e9b4f5;
+  --eq-mag-5: #f7d3ff;
+  --eq-mag-fg: var(--color-ink-dark);
 }
 
 /* T-018: `components/climate/climate.module.css` is a frozen V1 CSS Module — it reads the

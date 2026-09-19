@@ -12,6 +12,8 @@ import { bindingSentenceKey } from "@/lib/earthquake/binding-sentence";
 import {
   MAGNITUDE_BUCKETS,
   MAGNITUDE_IDENTITY,
+  MAGNITUDE_LABEL,
+  MAGNITUDE_RING,
   magnitudeIdentityOf,
 } from "@/lib/theme/magnitude-identity";
 import { Badge } from "@/components/ui/badge";
@@ -696,16 +698,23 @@ export function V2EarthquakeExplorer({
                     />
                   )}
 
-                  {/* Epicenter Core Circle (Pure SVG radius - zero CSS transform displacement) */}
+                  {/* Epicenter Core Circle (Pure SVG radius - zero CSS transform displacement).
+                      Ring is MAGNITUDE_RING, not the old `stroke-white dark:stroke-black` pair
+                      — see that constant's docblock in lib/theme/magnitude-identity.ts for the
+                      measurement behind it (T-031d Task 13). */}
                   <circle
                     cx={pt.x}
                     cy={pt.y}
                     r={radius}
-                    className={`${tone.mark} stroke-white dark:stroke-black stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
+                    className={`${tone.mark} ${MAGNITUDE_RING} stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
                     pointerEvents="none"
                   />
 
-                  {/* Magnitude text badge on M >= 3.5 */}
+                  {/* Magnitude text badge on M >= 3.5. MAGNITUDE_LABEL, not the old
+                      `fill="#ffffff"` — that was an SVG presentation attribute, which a class
+                      cannot shadow, so it had to be deleted rather than overridden (T-031d
+                      Task 13; see MAGNITUDE_LABEL's docblock in lib/theme/magnitude-identity.ts
+                      for the measurement). */}
                   {eq.magnitude >= 3.5 && (
                     <text
                       x={pt.x}
@@ -713,8 +722,7 @@ export function V2EarthquakeExplorer({
                       textAnchor="middle"
                       fontSize={isSelected ? "9.5" : "8.5"}
                       fontWeight="bold"
-                      fill="#ffffff"
-                      className="pointer-events-none select-none font-mono"
+                      className={`${MAGNITUDE_LABEL} pointer-events-none select-none font-mono`}
                     >
                       {eq.magnitude.toFixed(1)}
                     </text>
