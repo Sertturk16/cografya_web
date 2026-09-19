@@ -647,6 +647,14 @@ import {
  * takes the rotation token, 6.13 / 5.44. That was true of the amber it replaces too, so the row
  * moved exactly one mark.
  *
+ * ONE MORE FIGURE THE PAINT MOVED, and it is an alpha figure. The achievement glyph's plate is
+ * `--background` at EIGHTY per cent, well past the ~20% above which this branch stopped trusting
+ * the model. Computed it was 4.74 light / 5.26 dark; painted it is 4.49 and 4.63. The painted
+ * pair is what ships and both clear the 3:1 a glyph is held to, but the gap is a quarter of a
+ * point and a whole point respectively -- larger than the one byte the two agree to at 5% and
+ * 15%. The unlocked tile needs a session, so the probe injected the tile's own class strings
+ * into the live page and let the page's compiled CSS and Chromium's compositing do the rest.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
 const RAW_PALETTE_BUDGET = 15;
