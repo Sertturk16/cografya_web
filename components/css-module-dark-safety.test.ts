@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -11,33 +11,39 @@ function findModules(dir: string): string[] {
   });
 }
 
-export const SURVIVING_MODULES: readonly string[] = [
+const SURVIVING_MODULES: readonly string[] = [
   ...findModules("components"),
   ...findModules("app"),
 ].sort();
 
 /**
- * Steps down as T-033 converts each module, and is now ZERO — the walk finds nothing because
- * nothing is left. It started as the POSITIVE CONTROL for the raw-token assertion below (a walk
- * that found nothing would satisfy that assertion perfectly); at zero it is the opposite
- * instrument, and the more important one. A count of zero over a population that is built by
- * WALKING the tree is the one assertion on this surface that can still fail: it reds the day a
- * `*.module.css` comes back anywhere under `app/` or `components/`.
+ * ONE ASSERTION SURVIVES HERE, AND IT IS THE ONLY ONE THAT CAN STILL FAIL.
  *
- * That is deliberately the ONLY place that guard lives. `components/orphan-stylesheets.test.ts`
- * (reachability, basename uniqueness) and `components/css-module-fixed-widths.test.ts` (the
- * fixed-px census) both went vacuous with their subject and were deleted in task 9 rather than
- * stepped to a floor of zero; `lib/overflow-sweep/routes.test.ts` lost its "every surviving
- * module has a route" case and the `modules` field it read. Task 10 retires the two assertions
- * below that a zero population makes trivially true, and keeps this one.
+ * `SURVIVING_MODULES` is built by WALKING `app/` and `components/`, not from a list, so asserting
+ * it is empty reds the day a `*.module.css` comes back anywhere under either root — and names the
+ * file that came back, which the `toHaveLength(EXPECTED_MODULE_COUNT)` it replaces did not.
+ *
+ * The other two assertions this file used to carry were retired in task 10 because a zero
+ * population made them incapable of failing: `TOTAL_RAW_READS = 0` was a `reduce` over an empty
+ * array, and `it.each(SURVIVING_MODULES)` registered zero cases. A count of zero over an empty
+ * population is the exact defect this branch exists to undo, so neither was stepped to a floor of
+ * zero. The same ruling was applied to four other guards in task 9:
+ * `components/orphan-stylesheets.test.ts` (reachability, basename uniqueness) and
+ * `components/css-module-fixed-widths.test.ts` (the fixed-px census) were DELETED, the first after
+ * its `reachable.size` parser anchor moved intact to `components/orphan.test.ts` and the second
+ * after its live pins were re-homed in their consumers' own tests;
+ * `lib/overflow-sweep/routes.test.ts` lost its "every surviving module has a route" case together
+ * with the `SweepShape.modules` field it read; and `components/anchor-offset-token.test.ts` was
+ * RE-AIMED, its `components/` half now asserting that root holds no stylesheet at all.
+ *
+ * So the guard against the subject RETURNING lives in exactly one place: this file, this `it`.
  */
-const EXPECTED_MODULE_COUNT = 0;
 
 /**
  * Raw Terra tokens are frozen at their light values — `.dark` redefines not one of the 13
- * these files use. Measured 2026-09-19 on /tr/turkiye/istanbul in dark: 111 of 181 text
+ * these files used. Measured 2026-09-19 on /tr/turkiye/istanbul in dark: 111 of 181 text
  * elements carrying a module class fell below 3:1, worst 1.14:1 (`--color-ink` #2b2622 on
- * `--card` #121e21). Every read below is one of those failures waiting to render.
+ * `--card` #121e21). Every read counted below was one of those failures waiting to render.
  *
  * 179 when pinned; 147 once T-033 deleted `marine.module.css`'s 42 classes with no call
  * site, which took 32 of those reads with them without moving a pixel; 128 once the file's
@@ -167,23 +173,8 @@ const EXPECTED_MODULE_COUNT = 0;
  * five under 3:1. That is T-031d's to re-derive with the other dark data surfaces; the reading is
  * recorded in the badge's own docblock rather than left silent.
  */
-const TOTAL_RAW_READS = 0;
-
-describe("CSS modules cannot read a colour that dark mode never redefines", () => {
-  it("found the modules it claims to check", () => {
-    expect(SURVIVING_MODULES).toHaveLength(EXPECTED_MODULE_COUNT);
-  });
-
-  it("reads exactly the recorded number of raw Terra tokens", () => {
-    const total = SURVIVING_MODULES.reduce(
-      (sum, path) => sum + (readFileSync(path, "utf8").match(/var\(--color-/g) ?? []).length,
-      0,
-    );
-    expect(total).toBe(TOTAL_RAW_READS);
-  });
-
-  it.each(SURVIVING_MODULES)("%s reads no raw Terra token", (path) => {
-    const reads = readFileSync(path, "utf8").match(/var\(--color-[a-z0-9-]+/g) ?? [];
-    expect(reads, `${path} reads ${reads.length}: ${[...new Set(reads)].join(", ")}`).toEqual([]);
+describe("the CSS-module era is over", () => {
+  it("no *.module.css survives anywhere in the product tree", () => {
+    expect(SURVIVING_MODULES, "a CSS Module returned to app/ or components/").toEqual([]);
   });
 });

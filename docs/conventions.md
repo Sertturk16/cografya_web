@@ -43,8 +43,9 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   string you are searching for. A docblock explaining why a credit is required satisfies a naive
   search for that credit, so the test passes on the explanation after someone deletes the markup,
   and the "fix" for a false positive is to delete the explanation. This has now been arrived at
-  independently four times (`locator-attribution.test.ts`, `orphan-stylesheets.test.ts`,
-  `lib/map/tr-inland-water-jrc.test.ts`, `components/v2/footer-source-badges.test.ts`), the last
+  independently four times (`locator-attribution.test.ts`, `orphan-stylesheets.test.ts` — retired
+  with the last CSS Module in T-033, `lib/map/tr-inland-water-jrc.test.ts`,
+  `components/v2/footer-source-badges.test.ts`), the last
   of which shipped green against a comment in `i18n/routing.ts` — a module reachable from every
   page through `Link` and rendering nothing. Strip with `lib/test-support/strip-comments.ts`, not
   a pair of `String.replace` calls: a `/*` inside a line comment (`messages/*.json`) makes the

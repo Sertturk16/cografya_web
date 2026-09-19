@@ -21,13 +21,15 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 - Unlocalized: `app/api/**` (BFF), `app/flags/[flag]`, `app/maps/*.svg`, `app/llms.txt`,
   `robots.ts`, `sitemap.ts`, `manifest.ts`.
 - **V1 IS DELETED** (T-032). There is no `/v2` prefix, no `.v2-app` wrapper and no chrome
-  suppression rule. Eight `*.module.css` files remain (`earthquake`, `marine`, `climate`,
-  `air-pollution`, `book-video`, `locator-map`, `site-search`, `book-detail`), each with an
-  importer a route reaches — `components/orphan-stylesheets.test.ts` is what says so, and its
-  recorded-orphan list is empty. They are not frozen — see `CLAUDE.md` on why "do not touch" was
-  itself a defect. One of the deleted, `components/map/map.module.css`, was 876 lines whose four
-  consumers PR4 deleted; its own orphan test could not see it, because a substring match let
-  `locator-map.module.css` answer for it.
+  suppression rule. **No `*.module.css` remains either**: T-033 converted the last eight
+  (`earthquake`, `marine`, `climate`, `air-pollution`, `book-video`, `locator-map`, `site-search`,
+  `book-detail`) to Tailwind and bridge tokens and deleted the files. `components/orphan-stylesheets.test.ts`,
+  which used to hold their reachability, went with them — a reachability claim over an empty
+  population cannot fail; its `reachable.size` parser anchor moved intact to
+  `components/orphan.test.ts`. The one guard left is `components/css-module-dark-safety.test.ts`,
+  which walks `app/` and `components/` and reds if a module returns. One of the earlier deletions,
+  `components/map/map.module.css`, was 876 lines whose four consumers PR4 deleted; its own orphan
+  test could not see it, because a substring match let `locator-map.module.css` answer for it.
 
 ## i18n (next-intl 4)
 
@@ -192,8 +194,10 @@ Details and the open dark-mode bugs: `docs/design.md`.
   script, and `.dark` redefines the bridge tokens with a measured contrast table beside it in
   `app/globals.css`. What is still true, and is the trap: the RAW Terra tokens
   (`--color-slate`, `--color-ink`, …) are frozen at their light values and never redefine, so
-  any CSS Module reading one directly is a dark-mode defect waiting to be found — that is how a
-  mandated licence notice shipped at 2.34:1 (T-032 PR3). Bridge tokens (`text-foreground`,
+  anything reading one directly is a dark-mode defect waiting to be found — that is how a mandated
+  licence notice shipped at 2.34:1 (T-032 PR3), and why one province page measured 111 text
+  elements below 3:1 before T-033. The CSS Modules that did the reading are gone; the tokens are
+  still frozen, so the rule outlives them. Bridge tokens (`text-foreground`,
   `text-muted-foreground`, `border-border`) redefine per theme; prefer them.
 - `components.json` `aliases.hooks` points to a non-existent `@/hooks`.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`
