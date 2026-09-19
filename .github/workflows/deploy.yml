@@ -80,8 +80,59 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "==> Building Web container (Next.js standalone)..."
             cd /opt/cografya
+
+            # The web image PRERENDERS ~980 data routes at build time, so `build web` needs the
+            # API answering on the host's 127.0.0.1:3001 (docker-compose.prod.yml gives the web
+            # build `network: host`). Two things follow, both load-bearing:
+            #
+            # 1. `up -d api` must run BEFORE the build. Editing the compose file to add api's
+            #    `ports: ["127.0.0.1:3001:3001"]` does NOT republish the port on the container
+            #    already running — only a recreate does. Without this step, the first deploy
+            #    after that edit reaches nothing at :3001, the prerender floor guard FAILs and
+            #    the deploy wedges until a human intervenes. It is a no-op whenever the running
+            #    api already matches the file; when it does not, it briefly restarts the API
+            #    (seconds, and only on the one deploy that applies the change).
+            # 2. `--no-build`: a WEB deploy must never build or ship an API image. A missing api
+            #    image is the api repo's deploy to fix, and this fails loudly instead of quietly
+            #    compiling whatever happens to be in /opt/cografya/cografya_api.
+            echo "==> Ensuring the API is up and published for the web build..."
+            docker compose -f docker-compose.prod.yml up -d --no-build api
+
+            # The one way the host's compose file can be wrong that otherwise fails SILENTLY:
+            # `- "3001:3001"` instead of `- "127.0.0.1:3001:3001"`. The build succeeds and the
+            # floor guard goes green, but the API is then world-reachable on the production
+            # host, bypassing Caddy, with INTERNAL_REQUEST_TOKEN travelling in clear over plain
+            # HTTP. Every other way that file can be wrong already fails loudly and by name;
+            # this closes the last one, and it FAILS the deploy rather than warning.
+            # `ps --format '{{.Ports}}'` is used rather than `compose port api 3001` because it
+            # lists EVERY host binding of the running container, not just the first one — so a
+            # stray wide publish sitting alongside a correct loopback publish is caught too.
+            echo "==> Verifying the API is published on loopback only..."
+            API_PORTS="$(docker compose -f docker-compose.prod.yml ps --format '{{.Ports}}' api)"
+            BINDINGS_3001="$(printf '%s\n' "$API_PORTS" | tr ',' '\n' | sed 's/^ *//' | grep -- '->3001/tcp' || true)"
+            if [ -z "$BINDINGS_3001" ]; then
+              echo "ERROR: the api service publishes no host port for 3001 (saw: '$API_PORTS')." >&2
+              echo "       docker-compose.prod.yml's api service needs:" >&2
+              echo "         ports:" >&2
+              echo "           - \"127.0.0.1:3001:3001\"" >&2
+              echo "       The web build prerenders ~980 routes and cannot reach the API without it." >&2
+              exit 1
+            fi
+            NON_LOOPBACK="$(printf '%s\n' "$BINDINGS_3001" | grep -v -e '^127\.0\.0\.1:' -e '^\[::1\]:' || true)"
+            if [ -n "$NON_LOOPBACK" ]; then
+              echo "ERROR: the api service publishes 3001 off loopback:" >&2
+              echo "$NON_LOOPBACK" >&2
+              echo "       That exposes the API to the internet, bypassing Caddy, with" >&2
+              echo "       INTERNAL_REQUEST_TOKEN sent in clear. Fix docker-compose.prod.yml to" >&2
+              echo "         ports:" >&2
+              echo "           - \"127.0.0.1:3001:3001\"" >&2
+              echo "       then re-run the deploy. Refusing to deploy." >&2
+              exit 1
+            fi
+            echo "    api published on loopback only: $BINDINGS_3001"
+
+            echo "==> Building Web container (Next.js standalone)..."
             docker compose -f docker-compose.prod.yml build web
 
             echo "==> Restarting Web container..."
