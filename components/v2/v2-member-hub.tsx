@@ -293,7 +293,7 @@ export function V2MemberHub({
           subtitle: `Dünya Ülkesi · ISO ${item.entityId}`,
           href: found ? `/dunya/${found.slugTr}` : `/dunya`,
           badge: "Ülke",
-          icon: <Globe className="size-4 text-sky-500" />,
+          icon: <Globe className="size-4 text-primary" />,
         };
       }
       case "region": {
@@ -303,7 +303,7 @@ export function V2MemberHub({
           subtitle: "Türkiye Coğrafi Bölgesi",
           href: `/turkiye/bolge/${item.entityId}`,
           badge: "Bölge",
-          icon: <Compass className="size-4 text-emerald-500" />,
+          icon: <Compass className="size-4 text-primary" />,
         };
       }
       case "continent": {
@@ -313,7 +313,7 @@ export function V2MemberHub({
           subtitle: "Kıta Rehberi",
           href: `/dunya`,
           badge: "Kıta",
-          icon: <Layers className="size-4 text-amber-500" />,
+          icon: <Layers className="size-4 text-primary" />,
         };
       }
     }
@@ -434,7 +434,7 @@ export function V2MemberHub({
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border/80">
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-              <Heart className="size-3.5 text-rose-500" />
+              <Heart className="size-3.5 text-primary" />
               Favorilerim
             </div>
             <div className="font-heading font-bold text-xl text-foreground mt-0.5">
@@ -452,7 +452,7 @@ export function V2MemberHub({
           </div>
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-              <Trophy className="size-3.5 text-amber-500" />
+              <Trophy className="size-3.5 text-primary" />
               Sınav Turları
             </div>
             <div className="font-heading font-bold text-xl text-foreground mt-0.5">
@@ -461,7 +461,7 @@ export function V2MemberHub({
           </div>
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-              <Ruler className="size-3.5 text-indigo-500" />
+              <Ruler className="size-3.5 text-primary" />
               Kayıtlı Ölçüm
             </div>
             <div className="font-heading font-bold text-xl text-foreground mt-0.5">
@@ -980,9 +980,9 @@ export function V2MemberHub({
                 meas.type === "distance" ? (
                   <Ruler className="size-4 text-primary" />
                 ) : meas.type === "area" ? (
-                  <Layers className="size-4 text-emerald-500" />
+                  <Layers className="size-4 text-primary" />
                 ) : (
-                  <MapPin className="size-4 text-sky-500" />
+                  <MapPin className="size-4 text-primary" />
                 );
 
               return (

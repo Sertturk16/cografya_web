@@ -522,9 +522,32 @@ import {
  *
  * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
  *
+ * 48 -> 40 is Task 10's seventh file: `components/v2/v2-member-hub.tsx` 8 -> 0, all decoration,
+ * and it is three separate sets that all have the SAME shape. The favourite-entity glyphs are
+ * four cases of one switch and the `province` case is already the brand token; the quick-stats
+ * glyphs are four tiles and the "Izlenen Video" tile is already brand; the measurement-type
+ * glyphs are three arms and the distance arm is already brand. In each set the raw members were
+ * the minority, so deleting them leaves one brand glyph beside two or three grey ones.
+ *
+ * Binding also keeps a ruling the inventory made on this file: the emerald glyph on the "Bolge"
+ * row is NOT a region identity -- all seven regions share it -- and must not take `--region-*`.
+ * A brand token is the only thing it can take without saying something false.
+ *
+ * COMPUTED, NOT PAINTED. This is the member hub; everything measured here is behind a session,
+ * and `cg_has_session=1` does not buy one because the BFF answers 401. On the favourites and
+ * measurements plate (60% muted over `--card`) the three raw glyphs measured 2.43, 2.22 and
+ * 1.92 in light -- the worst readings in this task and all far under the 3:1 graphical floor --
+ * against `--primary` at 4.61. On the quick-stats tiles (60% background over `--card`) they
+ * were 3.64, 2.07 and 4.43 against 4.97. Dark moves the other way for these -- 5.77 / 6.31 /
+ * 7.31 down to 4.57 -- and that is the trade the set makes: every glyph in a set clears the
+ * floor in both themes and agrees with the one that was already brand, instead of three of them
+ * failing light to be bright in dark.
+ *
+ * The arbitrary arm does not move: 72 before, 72 after. The inline arm does not move: 16 and 16.
+ *
  * Both figures are read from these collectors, not arithmetic.
  */
-const RAW_PALETTE_BUDGET = 48;
+const RAW_PALETTE_BUDGET = 40;
 
 describe("the raw palette is being retired, and the number is held", () => {
   it("finds no more than the budget", () => {
