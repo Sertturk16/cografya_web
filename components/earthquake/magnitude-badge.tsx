@@ -13,28 +13,29 @@ interface MagnitudeBadgeProps {
 }
 
 /**
- * The pill itself. `text-white`, and it is the third DELIBERATE bare achromatic on this
- * surface after `pm25-chart.tsx` and `climate-chart.tsx`, for the same class of reason: the
- * label is measured against the FILL under it, which is a data colour that does not follow the
- * theme, not against the page. Measured (`lib/theme/contrast.ts`) — #fff on `--eq-mag-1`…`-5`:
- * **4.69 / 6.43 / 9.01 / 13.15 / 17.21:1** — clearing 4.5:1 on every step, worst at the light
- * end of the ramp.
+ * The pill itself. `text-[var(--eq-mag-fg)]`, T-031d Task 12's single per-theme foreground for
+ * the whole ramp — white in light, `--color-ink-dark` in dark — in place of the bare
+ * `text-white` this carried before: `.dark`'s ramp inverted (lightness now rises with
+ * magnitude, matching a dark ground) and a hard-coded white measures only **1.34:1** on the new
+ * lightest dark step (`--eq-mag-5`, magnitude 6+ — the step that matters most). `--eq-mag-fg` is
+ * measured (`lib/theme/magnitude-ramp.test.ts`) against every one of the five fills in both
+ * themes — **4.69:1 worst case in light, 4.81:1 worst case in dark** — so one token still covers
+ * the whole ramp, the way one hard-coded colour used to, except it now survives the ramp
+ * inverting.
  *
- * A bridge token would track a surface the label never sits on, and it FAILS IN BOTH THEMES.
- * `--foreground`'s light value #2b2622 measures **3.19 / 2.33 / 1.66 / 1.14 / 1.15:1** across the
- * five — its worst is `--eq-mag-4` at 1.14:1, not `--eq-mag-5`, because the ramp's darkest step is
- * a shade off pure black and the ink is not — and four of the five are under 3:1, let alone 4.5:1.
- * Its dark value #e8f0f1 is not "the same reading" as white either: **4.06 / 5.56 / 7.80 / 11.38 /
- * 14.89:1**, uniformly below white's figures and BELOW 4.5:1 on `--eq-mag-1`. So a themed label
- * would be illegible in light mode and would fail WCAG 1.4.3 on the commonest bucket in dark. The
- * label is white in both themes because the ground under it is.
+ * A bridge token would still be wrong here, for the reason it always was: the label is measured
+ * against the FILL under it, which is a DATA colour that does not follow the theme, not against
+ * the page. `--foreground` FAILS IN BOTH THEMES against the current ramp — 3.19 / 2.33 / 1.66 /
+ * 1.14 / 1.15:1 in light, 3.03 / 2.38 / 1.89 / 1.48 / 1.16:1 in dark — every step under 4.5:1 and
+ * all but the lightest under 3:1, in either theme. A bridge token tracks the PAGE; this label
+ * needs a token that tracks the RAMP, which is what `--eq-mag-fg` is for.
  *
  * `rounded-full` where the stylesheet wrote `border-radius: 999px`. The computed value changes
  * (999px to Tailwind v4's `calc(infinity * 1px)`) and the rendering does not: both fully round
  * a 24px-tall pill, and 999px was already ten times the half-height it needed.
  */
 const BADGE =
-  "inline-block rounded-full px-2 py-0.5 text-[0.8rem] font-semibold whitespace-nowrap text-white";
+  "inline-block rounded-full px-2 py-0.5 text-[0.8rem] font-semibold whitespace-nowrap text-[var(--eq-mag-fg)]";
 
 /**
  * THE MAGNITUDE RAMP IS A DATA TOKEN SET AND DOES NOT MOVE TO A BRIDGE TOKEN.

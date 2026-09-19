@@ -82,11 +82,13 @@ describe("the magnitude identity table", () => {
   });
 
   it("shares ONE foreground across the ramp, and it clears 4.5 on the lightest step", () => {
-    // White on `--eq-mag-1` — the lightest of the five and so the binding case — measures 4.69
-    // against that step's own fill as the backdrop. The old four-step scale needed a second
-    // foreground because its amber step was too light for white; the token ramp does not.
+    // `--eq-mag-fg` (T-031d Task 13), not a bare `text-white`: the ramp inverts under `.dark`
+    // (`lib/theme/magnitude-ramp.test.ts`), and a hard-coded white measures only 1.34:1 against
+    // the new dark lightest step. White on `--eq-mag-1` — the lightest of the LIGHT five and so
+    // the binding case for the light theme's own token value — measures 4.69 against that
+    // step's own fill as the backdrop.
     for (const bucket of MAGNITUDE_BUCKETS) {
-      expect(MAGNITUDE_IDENTITY[bucket].badge).toContain("text-white");
+      expect(MAGNITUDE_IDENTITY[bucket].badge).toContain("text-[var(--eq-mag-fg)]");
     }
     expect(ratio("#ffffff", "#aa4cbd")).toBe(4.69);
   });

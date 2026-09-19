@@ -12,6 +12,7 @@ import { bindingSentenceKey } from "@/lib/earthquake/binding-sentence";
 import {
   MAGNITUDE_BUCKETS,
   MAGNITUDE_IDENTITY,
+  MAGNITUDE_RING,
   magnitudeIdentityOf,
 } from "@/lib/theme/magnitude-identity";
 import { Badge } from "@/components/ui/badge";
@@ -696,12 +697,15 @@ export function V2EarthquakeExplorer({
                     />
                   )}
 
-                  {/* Epicenter Core Circle (Pure SVG radius - zero CSS transform displacement) */}
+                  {/* Epicenter Core Circle (Pure SVG radius - zero CSS transform displacement).
+                      Ring is MAGNITUDE_RING, not the old `stroke-white dark:stroke-black` pair
+                      — see that constant's docblock in lib/theme/magnitude-identity.ts for the
+                      measurement behind it (T-031d Task 13). */}
                   <circle
                     cx={pt.x}
                     cy={pt.y}
                     r={radius}
-                    className={`${tone.mark} stroke-white dark:stroke-black stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
+                    className={`${tone.mark} ${MAGNITUDE_RING} stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
                     pointerEvents="none"
                   />
 

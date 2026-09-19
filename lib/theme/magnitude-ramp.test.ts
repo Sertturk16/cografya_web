@@ -2,8 +2,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { tokensIn } from "@/lib/test-support/css-tokens";
+import { stripComments } from "@/lib/test-support/strip-comments";
 import { MAP_SURFACES } from "@/test/fixtures/theme/map-surfaces";
 import { GRAPHICAL_MIN, ratio, relativeLuminance, TEXT_MIN } from "./contrast";
+import { MAGNITUDE_RING } from "./magnitude-identity";
 
 /**
  * The five magnitude steps per theme, and the one label colour that sits on all five.
@@ -102,31 +104,74 @@ describe("the ramp is ordered, and its direction follows the ground", () => {
 });
 
 /**
- * THE DISC'S IDENTIFYING RING, MEASURED BUT NOT BOUND HERE.
+ * THE TWO LABEL CONSUMERS BIND TO `--eq-mag-fg`, NOT A BARE ACHROMATIC.
  *
- * `v2-earthquake-explorer.tsx` strokes the epicentre circle `stroke-white dark:stroke-black`
- * (a plain opaque stroke, no alpha suffix — `ratio` alone measures the rendered pixel). That
- * ring is the only thing that separates two overlapping discs, and separates a disc from
- * `--map-plate`/`--map-sea` under it, once the fill itself stops being a reliable edge.
- *
- * Re-lighting the fills without touching the ring is not neutral: `dark:stroke-black` was
- * already below floor against `--map-plate` (1.29:1, unchanged by this task — the ring never
- * sat on a magnitude fill). What this task's own ramp change newly exposes is that the OTHER
- * candidate, white, fails against the ramp's own new lightest step: a disc at magnitude 6+
- * (step 5, the step that matters most) is `#f7d3ff`, and white on it measures only 1.34:1.
- *
- * No single value clears all three grounds at once, and the reason is arithmetic, not a
- * missed shade: --map-plate sits at luminance ~0.0146 and the ramp's own lightest step at
- * ~0.7358, a span wide enough that no colour of any hue can hold 3:1 against both while also
- * holding 3:1 against the ramp's darkest step (~0.2495) in between. A ring lighter than
- * everything would need a luminance past 1 to clear the darkest step from the plate side; a
- * ring darker than everything has no room left below the already-near-black plate; and a ring
- * sitting between any two of the three fails the third by construction. This is reported
- * rather than "fixed" with an invented token — the brief for this task asks for exactly that
- * when nothing single-valued clears, and nothing does.
+ * Neither arm of the palette count can see this swap: `text-white` is not a raw palette class
+ * (`raw-palette-count.test.ts` only scans the Tailwind colour families), and
+ * `text-[var(--eq-mag-fg)]` is a token reference, not a value, so nothing that greps for a hex
+ * or a named hue trips on either direction of this change. This file is where the ramp and its
+ * one shared foreground are asserted correct — it is also the right place to assert that the
+ * two files painting a label ON that ramp actually reach for the foreground this file measured,
+ * rather than a hard-coded white that silently stopped being safe when Task 12 turned the ramp
+ * around under `.dark`.
  */
-describe("the disc's ring is not bound to a single value, and is not invented here", () => {
+describe("the ramp's two label consumers read --eq-mag-fg, not a bare white", () => {
+  const read = (rel: string): string =>
+    stripComments(readFileSync(fileURLToPath(new URL(rel, import.meta.url)), "utf8"));
+
+  it("magnitude-identity.ts's five badge entries all carry the token", () => {
+    const source = read("./magnitude-identity.ts");
+    expect(source.match(/text-\[var\(--eq-mag-fg\)\]/g)).toHaveLength(5);
+    expect(source).not.toMatch(/text-white\b/);
+  });
+
+  it("magnitude-badge.tsx's BADGE constant carries the token", () => {
+    const source = read("../../components/earthquake/magnitude-badge.tsx");
+    expect(source).toContain("text-[var(--eq-mag-fg)]");
+    expect(source).not.toMatch(/text-white\b/);
+  });
+});
+
+/**
+ * THE DISC'S IDENTIFYING RING — RECONSIDERED, AND BOUND TO `--eq-mag-fg`.
+ *
+ * Task 12 measured `v2-earthquake-explorer.tsx`'s `stroke-white dark:stroke-black` (a plain
+ * opaque stroke, no alpha suffix — `ratio` alone measures the rendered pixel) against three
+ * grounds at once — `--map-plate`, the dark ramp's darkest step and its lightest step — and
+ * proved arithmetically that no single value clears all three: the span from `--map-plate`
+ * (lum ~0.0146) to the ramp's lightest step (~0.7358) is wide enough that any colour clearing
+ * 3:1 against both ends necessarily fails 3:1 against the darkest step (~0.2495) sitting
+ * between them. Those three facts are re-asserted below, unchanged — `blackVsPlateFails`,
+ * `blackClearsBothRampEnds`, `whiteClearsPlateAndDarkestStep`, `whiteMissesLightestStep`.
+ *
+ * TASK 13's QUESTION, tested rather than assumed: does the ring actually need to clear
+ * `--map-plate` at all? A disc's boundary has two neighbours — its own fill inside, the plate
+ * (or another disc) outside — and the FILL already carries the plate boundary on its own: the
+ * ramp clears `GRAPHICAL_MIN` against `--map-plate` in both themes with room to spare (3.71
+ * worst in light, 4.64 worst in dark — see the "clears 3:1" test above). That is the same shape
+ * Ruling 16 (Task 5/6, this branch) found for inland water: in dark the FILL carries the water
+ * body against the region tints it sits on (worst 3.14, 0/7 under), which freed the OUTLINE to
+ * suit a different constraint entirely. Here the constraint the ring is actually needed for,
+ * once the fill already carries the plate boundary, is separating two OVERLAPPING discs — a
+ * ring-against-fill question, not a ring-against-plate one.
+ *
+ * `--eq-mag-fg` is measured against every one of the five fills in both themes already (the
+ * "carries ONE label" test above: 4.69 worst in light, 4.81 worst in dark, both comfortably
+ * past `GRAPHICAL_MIN` and even `TEXT_MIN`). A disc's fill is always one of those five, in
+ * either theme, regardless of which bucket the disc UNDER it belongs to — so a ring in
+ * `--eq-mag-fg` reads against any other disc's fill it might overlap, in both themes, without a
+ * new figure. Checked and confirmed here rather than assumed: `--eq-mag-fg` itself fails badly
+ * against `--map-plate` and `--card` (`fgFailsAgainstPlate`, `fgFailsAgainstCard`) — it is not
+ * a general-purpose achromatic, it is a fill-relative one, which is exactly the role the ring
+ * needs and the plate boundary does not.
+ *
+ * `stroke-[var(--eq-mag-fg)]` replaces `stroke-white dark:stroke-black` in
+ * `v2-earthquake-explorer.tsx` — a single binding for a `dark:` pair, using a token that
+ * already exists and is already measured for this exact relationship.
+ */
+describe("the disc's ring: the plate boundary is the fill's job, not the ring's", () => {
   const PLATE_DARK = MAP_SURFACES.dark["--map-plate"];
+  const PLATE_LIGHT = MAP_SURFACES.light["--map-plate"];
   const DARKEST_STEP = RAMP.dark[1]; // magnitude < 3 — the darkest fill in the dark ramp
   const LIGHTEST_STEP = RAMP.dark[5]; // magnitude 6+ — the lightest fill, the step that matters
 
@@ -134,7 +179,7 @@ describe("the disc's ring is not bound to a single value, and is not invented he
     expect(ratio("#000000", PLATE_DARK)).toBeLessThan(GRAPHICAL_MIN);
   });
 
-  it("black clears the floor against both ends of the new ramp", () => {
+  it("black clears the floor against both ends of the dark ramp", () => {
     expect(ratio("#000000", DARKEST_STEP)).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
     expect(ratio("#000000", LIGHTEST_STEP)).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
   });
@@ -144,7 +189,40 @@ describe("the disc's ring is not bound to a single value, and is not invented he
     expect(ratio("#ffffff", DARKEST_STEP)).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
   });
 
-  it("but white newly misses the floor against the ramp's own lightest step", () => {
+  it("but white misses the floor against the dark ramp's own lightest step", () => {
     expect(ratio("#ffffff", LIGHTEST_STEP)).toBeLessThan(GRAPHICAL_MIN);
+  });
+
+  it("the fill already clears the plate boundary on its own, in both themes", () => {
+    for (const n of STEPS) {
+      expect(ratio(RAMP.light[n], PLATE_LIGHT)).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+      expect(ratio(RAMP.dark[n], PLATE_DARK)).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+    }
+  });
+
+  it("--eq-mag-fg is fill-relative, not plate-relative — it fails against the plate and the card", () => {
+    expect(ratio(RAMP.light.fg, PLATE_LIGHT)).toBeLessThan(GRAPHICAL_MIN);
+    expect(ratio(RAMP.dark.fg, PLATE_DARK)).toBeLessThan(GRAPHICAL_MIN);
+    expect(ratio(RAMP.light.fg, "#ffffff")).toBeLessThan(GRAPHICAL_MIN);
+    expect(ratio(RAMP.dark.fg, "#121e21")).toBeLessThan(GRAPHICAL_MIN);
+  });
+
+  it("MAGNITUDE_RING is --eq-mag-fg, as a stroke class", () => {
+    expect(MAGNITUDE_RING).toBe("stroke-[var(--eq-mag-fg)]");
+  });
+
+  it("the explorer strokes the disc's core circle with MAGNITUDE_RING, not the old dark: pair", () => {
+    // `MAGNITUDE_RING`, not the raw token: `components/v2/magnitude-identity.test.ts` asserts
+    // the ramp's token names appear in this file nowhere but through `lib/theme/
+    // magnitude-identity.ts`, the same rule `mark`/`ripple`/`badge`/`swatch` already follow.
+    const source = stripComments(
+      readFileSync(
+        fileURLToPath(new URL("../../components/v2/v2-earthquake-explorer.tsx", import.meta.url)),
+        "utf8",
+      ),
+    );
+    expect(source).toContain("MAGNITUDE_RING");
+    expect(source).not.toContain("--eq-mag-");
+    expect(source).not.toMatch(/stroke-white\s+dark:stroke-black/);
   });
 });
