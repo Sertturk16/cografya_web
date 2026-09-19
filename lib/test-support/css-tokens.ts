@@ -7,21 +7,46 @@ import { stripCssComments } from "./strip-comments";
  * mention of a selector inside a comment made its parser return the wrong block. Brace
  * counting rather than a regex, because `@media`/`@supports` nest and a non-greedy match to
  * the first `}` would truncate the block at its first nested rule.
+ *
+ * A second decoy survives comment-stripping because it is not a comment: `app/globals.css:45`
+ * reads `@custom-variant dark (&:is(.dark *));` — real, uncommented code that happens to
+ * contain the literal substring `.dark`. A naive `indexOf` finds THAT occurrence, walks
+ * forward to the next `{` — which belongs to `:root`, hundreds of lines later — and returns
+ * `:root`'s body under the name `.dark`, without ever throwing. `map-surface.test.ts` hit
+ * exactly this: every `.dark`-selector lookup silently read `:root` instead, and the failure
+ * looked like a data mismatch rather than the parser bug it was.
+ *
+ * What tells a decoy apart from a real selector is a `;`: a genuine selector's own text runs
+ * straight into ITS `{` with nothing but whitespace in between, while
+ * `@custom-variant dark (&:is(.dark *));` always has a statement-terminating `;` before any
+ * `{` appears at all. So each candidate occurrence is checked for a `;` between itself and
+ * the next `{`; a decoy is skipped and the search resumes just past it, rather than being
+ * accepted (silently wrong) or thrown on immediately (a real block with this selector may
+ * still appear later in the file, as `.dark {` does here). The existing "not found" throw
+ * still fires once every occurrence — decoy or not — has been exhausted.
  */
 export function blockOf(css: string, selector: string): string {
   const stripped = stripCssComments(css);
-  const start = stripped.indexOf(selector);
-  if (start === -1) throw new Error(`${selector} block not found`);
-  const open = stripped.indexOf("{", start);
-  let depth = 0;
-  for (let i = open; i < stripped.length; i += 1) {
-    if (stripped[i] === "{") depth += 1;
-    if (stripped[i] === "}") {
-      depth -= 1;
-      if (depth === 0) return stripped.slice(open, i);
+  let from = 0;
+  for (;;) {
+    const start = stripped.indexOf(selector, from);
+    if (start === -1) throw new Error(`${selector} block not found`);
+    const open = stripped.indexOf("{", start);
+    const isDecoy = open === -1 || stripped.slice(start, open).includes(";");
+    if (isDecoy) {
+      from = start + selector.length;
+      continue;
     }
+    let depth = 0;
+    for (let i = open; i < stripped.length; i += 1) {
+      if (stripped[i] === "{") depth += 1;
+      if (stripped[i] === "}") {
+        depth -= 1;
+        if (depth === 0) return stripped.slice(open, i);
+      }
+    }
+    throw new Error(`${selector} block never closed`);
   }
-  throw new Error(`${selector} block never closed`);
 }
 
 /**

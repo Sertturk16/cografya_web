@@ -29,11 +29,28 @@ import { GRAPHICAL_MIN, ratio, TEXT_MIN } from "./contrast";
  * `lib/theme/contrast.ts`'s `ratio` against `--map-sea`: 3.59:1 light, 4.14:1 dark. Both
  * already clear `GRAPHICAL_MIN` (3:1) with the component's shipped values unchanged, which is
  * why this is a promotion to a token, not a repaint.
+ *
+ * TWELVE, not eleven, as of review round 1: `--map-water` joins the table. It shipped before
+ * this file did (`--map-water: var(--map-sea)`, inland water on the Türkiye map) and was
+ * always a real surface — the original oversight was leaving it out of `MAP_SURFACES` while
+ * the `matches app/globals.css` test filtered `shipped` down to `name in table`, so a real
+ * `--map-*` token nobody had written down here could never make that test fail either way.
+ * See `NOT_A_SURFACE` and `mapSurfacesIn` below for the prefix-based filter that replaced it
+ * and now needs `--map-water` accounted for on purpose. It resolves to the sea in both
+ * themes, so its value here is the same as `--map-sea`'s, per theme.
+ *
+ * BINDING NOTE FOR TASK 3: `.dark` must declare `--map-water` explicitly (as
+ * `var(--map-sea)`, the same alias `:root` already carries), not leave it to inherit from
+ * `:root`. Same decision the plan already records for `--map-graticule` and
+ * `--map-unknown-land` (both identical across themes, both still declared in `.dark`): a
+ * token missing from a block reads as either "unchanged from light" or "forgotten", and
+ * nothing here can tell those apart except declaring it.
  */
 export const MAP_SURFACES = {
   light: {
     "--map-plate": "#dbe7e8",
     "--map-sea": "#dbe7e8",
+    "--map-water": "#dbe7e8",
     "--map-land": "#ffffff",
     "--map-context-land": "#f1ece3",
     "--map-context-line": "#8a8078",
@@ -47,6 +64,7 @@ export const MAP_SURFACES = {
   dark: {
     "--map-plate": "#152228",
     "--map-sea": "#152228",
+    "--map-water": "#152228",
     "--map-land": "#201c18",
     "--map-context-land": "#2d2822",
     "--map-context-line": "#7d7468",
@@ -58,6 +76,49 @@ export const MAP_SURFACES = {
     "--map-tectonic": "#5a86a0",
   },
 } as const;
+
+/**
+ * `--map-*` tokens that are declared in `app/globals.css` but are not painted surfaces, so
+ * they have no floor in this file and must not be demanded of `MAP_SURFACES`.
+ *
+ * Named and exhaustive on purpose. Review round 1 found that the original "matches
+ * app/globals.css exactly, both directions" test filtered `shipped` to `name in table` —
+ * which drops any `--map-*` token this file never wrote down BEFORE the comparison runs, so
+ * a stray or renamed token could never fail it in either direction despite the test's own
+ * name. The fix is a prefix filter (every `--map-*` token) with this named exclusion list
+ * subtracted, so an unlisted extra has nowhere to hide: it either belongs in `MAP_SURFACES`
+ * or belongs here, explicitly, with a reason.
+ *
+ * - `--map-hover-width` is a stroke WIDTH (3.5px), not a colour — nothing to contrast-check.
+ * - `--map-1` … `--map-6` are the ordered choropleth ramp, a DATA encoding (province density
+ *   buckets), not a static surface. It has its own measurement elsewhere; folding it in here
+ *   would test the same six colours against floors this file's surfaces don't share (a
+ *   sequential ramp's job is to be perceptually ordered, not to clear a fixed contrast ratio
+ *   against a single background).
+ */
+const NOT_A_SURFACE: ReadonlySet<string> = new Set([
+  "--map-hover-width",
+  "--map-1",
+  "--map-2",
+  "--map-3",
+  "--map-4",
+  "--map-5",
+  "--map-6",
+]);
+
+/**
+ * Every `--map-*` token in a block that IS a painted surface: the prefix, minus
+ * `NOT_A_SURFACE`. Shared by the real `app/globals.css` comparison and by the "catches a
+ * stray token" tests below, so both exercise the exact same filter rather than two
+ * independently written copies that could drift apart from each other.
+ */
+function mapSurfacesIn(tokens: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(tokens).filter(
+      ([name]) => name.startsWith("--map-") && !NOT_A_SURFACE.has(name),
+    ),
+  );
+}
 
 /** `--province-stroke`, which `.dark` deliberately does not redefine. See the docblock above. */
 const PROVINCE_STROKE = "#8a8078";
@@ -100,7 +161,7 @@ describe.each(THEMES)("the %s map surfaces", (theme, selector, table) => {
     // reaching for a general fixed-point resolver that would swallow the same signal
     // `resolveVars` was written to preserve.
     const shipped = resolveVars(resolveVars(tokensIn(CSS, selector)));
-    const mapOnly = Object.fromEntries(Object.entries(shipped).filter(([name]) => name in table));
+    const mapOnly = mapSurfacesIn(shipped);
     expect(mapOnly, `${selector} declares none of the --map-* tokens`).not.toEqual({});
     expect(mapOnly).toEqual(table);
   });
@@ -149,6 +210,35 @@ describe.each(THEMES)("the %s map surfaces", (theme, selector, table) => {
       ratio(table["--map-tectonic"], table["--map-sea"]),
       `--map-tectonic on --map-sea in ${theme}`,
     ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+  });
+});
+
+/**
+ * Proves the hole review round 1 found is actually closed: a `--map-*` token this file never
+ * wrote down must fail the comparison, not be silently dropped before it runs. Constructed
+ * with a mock token map — `app/globals.css` is not touched to prove this, since the whole
+ * point is that the filter, not the stylesheet, was the bug.
+ */
+describe("the surface filter is genuinely bidirectional", () => {
+  it("a stray, unexcluded --map-* token makes the filtered set disagree with the table", () => {
+    const shipped = { ...MAP_SURFACES.light, "--map-stray": "#123456" };
+    const mapOnly = mapSurfacesIn(shipped);
+    // The old bug: filtering by `name in table` would have dropped --map-stray right here,
+    // leaving mapOnly === MAP_SURFACES.light and the assertion below passing when it must not.
+    expect(mapOnly).not.toEqual(MAP_SURFACES.light);
+    expect(mapOnly).toHaveProperty("--map-stray", "#123456");
+  });
+
+  it("the excluded non-surface tokens never get mistaken for a missing or stray surface", () => {
+    const shipped = {
+      ...MAP_SURFACES.light,
+      "--map-hover-width": "3.5px",
+      "--map-1": "#e8efce",
+      "--map-6": "#6e3a1c",
+    };
+    // Real, declared --map-* tokens that are excluded by name must vanish from the filtered
+    // set, landing exactly back on the table — the positive control for NOT_A_SURFACE.
+    expect(mapSurfacesIn(shipped)).toEqual(MAP_SURFACES.light);
   });
 });
 

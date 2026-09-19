@@ -24,6 +24,37 @@ describe("blockOf", () => {
   });
 });
 
+/**
+ * The decoy this repo actually ships: `app/globals.css:45` reads
+ * `@custom-variant dark (&:is(.dark *));` — real, uncommented code containing the literal
+ * substring `.dark`, positioned before the real `.dark { ... }` rule. Comment-stripping does
+ * nothing for it (it is not a comment), so `blockOf` used to walk from that occurrence to the
+ * NEXT `{` — `:root`'s — and hand back `:root`'s body under the name `.dark`, silently.
+ * `map-surface.test.ts` hit this in review: every `.dark`-selector lookup quietly read
+ * `:root`, and the symptom looked like a palette mismatch rather than a parser bug.
+ *
+ * `DECOY_CSS` reproduces the shape (a `;`-terminated statement mentioning the selector, ahead
+ * of the real rule) without depending on the real stylesheet, so this regression is pinned
+ * independently of any future edit to `app/globals.css` itself.
+ */
+const DECOY_CSS = `
+  @custom-variant dark (&:is(.dark *));
+  :root { --a: #111111; }
+  .dark { --a: #333333; }
+`;
+
+describe("blockOf skips a decoy occurrence that has a ; before its own {", () => {
+  it("a bare selector reaches the real block past the @custom-variant decoy", () => {
+    expect(blockOf(DECOY_CSS, ".dark")).toContain("--a: #333333");
+    expect(blockOf(DECOY_CSS, ".dark")).not.toContain("#111111");
+  });
+
+  it("still throws, naming the selector, when nothing but the decoy matches", () => {
+    const onlyDecoy = `@custom-variant dark (&:is(.dark *));\n:root { --a: #111111; }`;
+    expect(() => blockOf(onlyDecoy, ".dark")).toThrow(".dark");
+  });
+});
+
 describe("tokensIn", () => {
   it("reads one block's declarations and no other block's", () => {
     expect(tokensIn(CSS, ":root")).toEqual({ "--a": "#111111", "--b": "#222222" });
