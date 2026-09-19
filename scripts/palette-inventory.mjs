@@ -30,6 +30,27 @@ export const RAW_PALETTE = new RegExp(
   "g",
 );
 
+/**
+ * The second arm: an arbitrary hex in brackets, e.g. `bg-[#ea580c]`, `dark:fill-[#202b33]`.
+ *
+ * WHY THIS EXISTS. `RAW_PALETTE` matches a NOTATION, not a colour, so a file can reach zero on
+ * it by rewriting `bg-orange-600` as `bg-[#ea580c]` — the same colour, the same problem, and a
+ * budget of 0 would then assert something materially weaker than it reads.
+ * `v2-marine-map-explorer.tsx` already does exactly this three times (orange-600, teal-600 and
+ * blue-600 as the sea-surface-temperature legend swatches).
+ *
+ * This is the THIRD instance of one class of blindness — the count's scope not matching the
+ * thing being counted. The first was occurrences inside comments, the second was `lib/` sitting
+ * outside the roots. Each was found after the number had been quoted. So this arm ships with
+ * the counter rather than as a note for later.
+ *
+ * Counted SEPARATELY, not folded into `RAW_PALETTE`'s total: most of these 75 are legitimate map
+ * surfaces (sea, neighbour land, inland water) whose values were measured against fixed
+ * backdrops and which belong to the `--map-*` / `--province-*` sets T-031d owns. A single number
+ * mixing them with laundered palette values would be a number nobody could act on.
+ */
+export const ARBITRARY_HEX = new RegExp(`\\b(?:${PROPERTIES})-\\[#[0-9a-fA-F]{3,8}\\]`, "g");
+
 /** Files this branch does not own, and files that are not product code. */
 export const EXCLUDED = [
   // T-033 rewrites this file's climate markup wholesale and clears its 65 occurrences.
@@ -47,21 +68,54 @@ function walk(dir) {
   });
 }
 
+/**
+ * Every source file both arms read. ONE reader for the scope, so the two counts can never be
+ * taken over different trees — which is the mistake that produced 787 and 939 for the same
+ * question.
+ */
+function sourceFiles(roots) {
+  return roots.flatMap(walk).filter((file) => !EXCLUDED.some((e) => file.endsWith(e)));
+}
+
+/** @returns {{ file: string, line: number, cls: string, context: string }[]} */
+function collect(pattern, roots) {
+  return sourceFiles(roots).flatMap((file) =>
+    readFileSync(file, "utf8")
+      .split("\n")
+      .flatMap((text, i) =>
+        [...text.matchAll(pattern)].map((m) => ({
+          file,
+          line: i + 1,
+          cls: m[0],
+          context: text.trim().slice(0, 120),
+        })),
+      ),
+  );
+}
+
 /** @returns {{ file: string, line: number, cls: string, context: string }[]} */
 export function collectPaletteOccurrences(roots = ["components", "app", "lib"]) {
-  return roots
-    .flatMap(walk)
-    .filter((file) => !EXCLUDED.some((e) => file.endsWith(e)))
-    .flatMap((file) =>
-      readFileSync(file, "utf8")
-        .split("\n")
-        .flatMap((text, i) =>
-          [...text.matchAll(RAW_PALETTE)].map((m) => ({
-            file,
-            line: i + 1,
-            cls: m[0],
-            context: text.trim().slice(0, 120),
-          })),
-        ),
-    );
+  return collect(RAW_PALETTE, roots);
+}
+
+/**
+ * Arbitrary-hex utilities, the notation `RAW_PALETTE` cannot see.
+ *
+ * @returns {{ file: string, line: number, cls: string, context: string }[]}
+ */
+export function collectArbitraryHexOccurrences(roots = ["components", "app", "lib"]) {
+  return collect(ARBITRARY_HEX, roots);
+}
+
+/** The bare `#rrggbb` inside `bg-[#ea580c]`, lower-cased and expanded from a 3-digit form. */
+export function hexOf(cls) {
+  const raw = /#([0-9a-fA-F]{3,8})/.exec(cls)[1].toLowerCase();
+  const six =
+    raw.length === 3
+      ? raw
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : raw.slice(0, 6);
+  return `#${six}`;
 }
