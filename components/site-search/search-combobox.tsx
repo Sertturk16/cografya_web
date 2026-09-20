@@ -547,9 +547,6 @@ export function SearchCombobox({
           >
             <SearchIcon />
             <span>{t("triggerLabel")}...</span>
-            <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-background border border-border rounded-md shadow-2xs text-muted-foreground">
-              Ctrl K
-            </kbd>
           </a>
           <a
             className="sm:hidden size-9 rounded-xl border border-border/80 bg-card flex items-center justify-center text-foreground shadow-2xs"
