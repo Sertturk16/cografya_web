@@ -164,8 +164,14 @@ every page, so it ships last and alone.
 | `POST /auth/password/change`                                                                                                                        | new route                                                                                   |
 | `GET /auth/session`                                                                                                                                 | **unchanged** — the minimum-PII rule stands; PII travels only on the no-store profile route |
 
-No schema change: every column already exists, so there is no migration. Province is
-resolved through `districts.province_id`, which the district entity already carries.
+No COLUMN change: every one already exists, and province is resolved through
+`districts.province_id`, which the district entity already carries.
+
+**One migration was needed anyway, which this section originally missed.** The password
+route needs an identity-axis rate-limit budget, and `auth_rate_limits.scope` is a closed set
+enforced by a DB `CHECK` — adding `PASSWORD_CHANGE_USER` means widening it. Recorded here
+rather than quietly fixed in the code, because "no migration" is exactly the kind of claim a
+later reader would trust without re-deriving.
 
 Sequence: `pnpm openapi:generate` in the API, copy `openapi/openapi.json` into the web
 repo by hand, `pnpm codegen` there. Nothing automates the copy.

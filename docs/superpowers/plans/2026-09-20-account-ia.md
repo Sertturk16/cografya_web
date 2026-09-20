@@ -14,7 +14,12 @@
 
 - Work on `dev` in both repos; each PR is `feature/*` → `dev`, squash-merged. Never push to `main`.
 - Conventional Commits (commitlint hook is live in both repos).
-- API: `synchronize` off; **no migration is needed in this work** — every column already exists.
+- API: `synchronize` off. **The plan said "no migration is needed" and that was wrong.** Every
+  COLUMN did already exist, but the signed-in password change needed an identity-axis rate-limit
+  scope, and `auth_rate_limits.scope` is a DB-enforced closed set — widening
+  `CHK_auth_rate_limits_scope` is a migration. It landed as
+  `1789862400000-AddPasswordChangeRateLimitScope`, and it broke four e2e cases in suites that
+  never mention it (see `cografya_api/CLAUDE.md`).
 - API: every request DTO carries `class-validator` + `@nestjs/swagger` decorators; the global pipe is `whitelist + forbidNonWhitelisted + transform`.
 - API: no user-facing prose. Error bodies carry i18n keys from `src/auth/auth-error-keys.ts`.
 - API: auth is opt-in per route via `@UseGuards(AccessTokenGuard)`; PII routes also carry `@NoTrustedClientExemption()`. `AuthNoStoreMiddleware` is applied `.forRoutes(AuthController)`, so new controller routes inherit `no-store` with no extra registration.
