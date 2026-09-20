@@ -9,6 +9,7 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { getMarineLayersSafe } from "@/lib/api/marine";
 import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
+import { env } from "@/lib/env";
 
 interface V2AboutPageProps {
   params: Promise<{ locale: Locale }>;
@@ -118,11 +119,11 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
               overflow-wrap never got a chance: at 320px this address pushed the document
               to 318px against a 305px viewport. The span is what is allowed to break. */}
           <a
-            href="mailto:info@cografyagurmesi.com"
+            href={`mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`}
             className="inline-flex max-w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-muted"
           >
             <Mail className="size-4 shrink-0" aria-hidden="true" />
-            <span className="min-w-0 break-all">info@cografyagurmesi.com</span>
+            <span className="min-w-0 break-all">{env.NEXT_PUBLIC_CONTACT_EMAIL}</span>
           </a>
         </section>
 
