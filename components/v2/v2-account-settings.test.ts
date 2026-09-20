@@ -134,6 +134,12 @@ describe("each section saves on its own", () => {
     expect(PASSWORD).not.toContain("sifre-sifirlama");
   });
 
+  it("announces the new-password error as well as the rules", () => {
+    // `aria-describedby` naming only the rules list would mark the field invalid and leave
+    // the reason unspoken.
+    expect(PASSWORD).toContain("`${IDS.newPassword}-rules ${IDS.newPassword}-error`");
+  });
+
   it("clears every password field after a successful change", () => {
     // A filled password input left in the DOM after the change is the member's live secret
     // sitting there for no reason.

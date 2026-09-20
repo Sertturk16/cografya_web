@@ -139,7 +139,14 @@ export function V2SettingsPasswordCard() {
             disabled={submitting}
             autoComplete="new-password"
             isError={Boolean(errors.newPassword)}
-            aria-describedby={`${IDS.newPassword}-rules`}
+            // Both, not one: the rules list is always relevant, and when there IS an error
+            // the field is marked invalid — a describedby that named only the rules would
+            // leave the reason unannounced to a screen reader.
+            aria-describedby={
+              errors.newPassword
+                ? `${IDS.newPassword}-rules ${IDS.newPassword}-error`
+                : `${IDS.newPassword}-rules`
+            }
             suffix={
               <button
                 type="button"
