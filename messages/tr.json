@@ -3,7 +3,13 @@
     "skipToContent": "Ana içeriğe geç",
     "localeSwitcherLabel": "Dil seçimi",
     "localeName": "Türkçe",
-    "enWorkInProgress": "Bu sayfanın ayrıntılı bölümleri şimdilik Türkçe."
+    "enWorkInProgress": "Bu sayfanın ayrıntılı bölümleri şimdilik Türkçe.",
+    "unsavedChanges": {
+      "title": "Kaydedilmemiş değişikliklerin var",
+      "body": "Bu sayfadan ayrılırsan yaptığın değişiklikler kaydedilmez.",
+      "stay": "Sayfada kal",
+      "leave": "Yine de ayrıl"
+    }
   },
   "Nav": {
     "label": "Ana gezinme",

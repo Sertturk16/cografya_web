@@ -3,7 +3,13 @@
     "skipToContent": "Skip to main content",
     "localeSwitcherLabel": "Language selection",
     "localeName": "English",
-    "enWorkInProgress": "The detailed sections of this page are in Turkish for now."
+    "enWorkInProgress": "The detailed sections of this page are in Turkish for now.",
+    "unsavedChanges": {
+      "title": "You have unsaved changes",
+      "body": "If you leave this page, your changes will not be saved.",
+      "stay": "Stay on this page",
+      "leave": "Leave anyway"
+    }
   },
   "Nav": {
     "label": "Primary navigation",

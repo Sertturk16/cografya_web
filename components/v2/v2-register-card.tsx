@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useUnsavedChanges } from "@/lib/forms/use-unsaved-changes.client";
 import { Link, getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { submitAuth } from "@/lib/auth/submit.client";
@@ -170,6 +171,30 @@ export function V2RegisterCard({
   // submit disabled the code input and the "Kodu Doğrula ve Başla" button while a resend was
   // in flight, which is a different control's state leaking into the primary action.
   const [resendLoading, setResendLoading] = React.useState(false);
+
+  /**
+   * The wizard's unsaved-changes guard (T-062), and the reason it stops at `verify`.
+   *
+   * Through `identity` and `education` nothing has been sent: every field is client state, and
+   * leaving the page loses all of it with no way back. From `verify` on, the pending registration
+   * exists server-side — the member can reach the same step again from the e-mail, and the only
+   * thing a navigation costs them is a six-digit code they can have resent. Warning there would
+   * be warning about nothing, which is how a warning stops being read.
+   *
+   * `selectedRole` is excluded on purpose: it has a default and is not something the member
+   * typed, so an untouched form would otherwise read as dirty the moment it mounted.
+   */
+  useUnsavedChanges(
+    step !== "verify" &&
+      (firstName !== "" ||
+        lastName !== "" ||
+        phone !== "" ||
+        email !== "" ||
+        password !== "" ||
+        selectedPlate !== "" ||
+        selectedDistrictId !== "" ||
+        JSON.stringify(education) !== JSON.stringify(EMPTY_EDUCATION_SELECTION)),
+  );
 
   // Resend code countdown timer (SEC126-I1)
   React.useEffect(() => {

@@ -9,6 +9,7 @@ import { getSiteUrl, siteConfig } from "@/lib/seo/site";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { V2AuthDialog } from "@/components/v2/v2-auth-dialog";
+import { UnsavedChangesDialog } from "@/components/v2/v2-unsaved-changes-dialog";
 import "../globals.css";
 
 interface LocaleLayoutProps {
@@ -93,6 +94,11 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
               forgotten by a route group that does not exist yet; two would be.
               `components/v2/auth-dialog-reachability.test.ts` holds the invariant. */}
             <V2AuthDialog />
+            {/* "Kaydedilmemiş değişikliklerin var" (T-062), mounted here for the reason stated
+                above it: the guard that raises it lives in the wrapped `Link`, which renders in
+                the header of both route groups, so the dialog has to be reachable from both. One
+                mount, one store, no route group left out. */}
+            <UnsavedChangesDialog />
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

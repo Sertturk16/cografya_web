@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Gamepad2, Search, Sparkles, ArrowRight, Compass, MapPin, X } from "lucide-react";
@@ -176,7 +175,12 @@ export function V2Hero({
     setIsOpen(false);
     setQuery("");
     toast.success(`${name} sayfasına yönlendiriliyorsunuz...`);
-    router.push(path);
+    // `@/i18n/navigation`'s router, not `next/navigation`'s: these are UNPREFIXED route keys
+    // (`/turkiye`, `/dunya`), the same ones the tag links below hand to `Link`. A raw push sent
+    // an `/en` reader to `/turkiye`, a path that does not exist under that locale. The cast is
+    // this repo's documented spelling for a computed href (`CLAUDE.md`, "Href typing"), read
+    // off `push` itself rather than off `Link` — the two href types differ in their query shape.
+    router.push(path as unknown as Parameters<typeof router.push>[0]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

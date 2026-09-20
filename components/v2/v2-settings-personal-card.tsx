@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useUnsavedChanges } from "@/lib/forms/use-unsaved-changes.client";
 import { useTranslations } from "next-intl";
 import { UserRound } from "lucide-react";
 import type { Profile } from "@/lib/api/types";
@@ -66,6 +67,29 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
   const [submitting, setSubmitting] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<ProfileBffCode | null>(null);
+
+  /**
+   * What the fields above are compared against to decide "has this member typed something they
+   * have not saved" (T-062). It starts at the server's values and moves to the saved values on a
+   * successful submit, which is what makes the warning stop once the edit is safe — a comparison
+   * against the `profile` prop alone would keep claiming unsaved edits after the save that
+   * produced them, because a client-navigated `router.refresh()` does not remount this card.
+   */
+  const [baseline, setBaseline] = React.useState({
+    firstName: profile.firstName,
+    lastName: profile.lastName,
+    phone: profile.phone,
+    provincePlateCode: profile.provincePlateCode,
+    districtId: profile.districtId,
+  });
+
+  useUnsavedChanges(
+    firstName !== baseline.firstName ||
+      lastName !== baseline.lastName ||
+      phone !== baseline.phone ||
+      plateCode !== baseline.provincePlateCode ||
+      districtId !== baseline.districtId,
+  );
 
   React.useEffect(() => {
     if (plateCode === loadedPlate) return;
@@ -132,6 +156,13 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
         setPhone(res.profile.phone);
         setPlateCode(res.profile.provincePlateCode);
         setDistrictId(res.profile.districtId);
+        setBaseline({
+          firstName: res.profile.firstName,
+          lastName: res.profile.lastName,
+          phone: res.profile.phone,
+          provincePlateCode: res.profile.provincePlateCode,
+          districtId: res.profile.districtId,
+        });
         // The header greets the member by first name and reads it from the session, so a
         // rename has to invalidate the server render, not just this card's state.
         router.refresh();

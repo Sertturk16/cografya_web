@@ -1,7 +1,7 @@
 # T-062 — One unsaved-changes pattern for the whole site
 
-**Status:** design in progress. Section 1 recorded; sections 2 (dialog behaviour and copy) and 3
-(testing) follow. Nothing is implemented yet.
+**Status:** designed and implemented. Verified in the browser on the registration wizard in both
+locales; the settings page itself was not reachable locally (see "What was not verified").
 
 ## The problem
 
@@ -19,62 +19,121 @@ decision about a **site-wide dirty-form pattern**, with the settings page as its
 
 ## Decisions taken
 
-| Question                | Answer                                                                                                                                                                                                                  |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| What happens on leave?  | A confirmation dialog: "unsaved changes — leave or stay". Navigation blocks until the member chooses.                                                                                                                   |
-| Which exits are caught? | In-site links and programmatic `router.push`, plus tab close via `beforeunload`. Browser back/forward is **out of scope** — catching it needs a synthetic history entry, which is fragile and degrades the back button. |
-| Approach                | Guarded navigation primitives (below), not a global click listener and not per-consumer wrappers.                                                                                                                       |
+| Question                | Answer                                                                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What happens on leave?  | A confirmation dialog: "unsaved changes — leave or stay". Navigation blocks until the member chooses.                                                                                                                     |
+| Which exits are caught? | In-site links and programmatic `router.push`/`replace`, plus tab close via `beforeunload`. Browser back/forward is **out of scope** — catching it needs a synthetic history entry, which degrades the back button itself. |
+| Approach                | Guarded navigation primitives, not a global click listener and not per-consumer wrappers.                                                                                                                                 |
 
 ## Why guarded primitives
 
-Two facts about this repo decide it:
+- **`i18n/navigation.ts` is already the single door for links.** 56 files import `Link` from it and
+  nothing in the tree imports `next/link`. Wrapping there covers every existing call site without
+  editing one of them.
+- **A global capture-phase `click` listener** would catch plain `<a>` too, but never sees
+  `router.push` and races React's own event system.
+- **A per-consumer `<GuardedLink>`** cannot work: the navigation a member actually takes is a
+  header link, and the header renders outside the form's tree.
 
-- **`i18n/navigation.ts` is already the single choke point for links.** It re-exports `Link` and
-  `useRouter` from `createNavigation`, 56 files import from it, and no file imports `next/link`
-  directly. Wrapping `Link` there gives every existing link the guard with no call-site changes.
-- **`useRouter` does not hold that line.** Six files import it from `next/navigation` directly —
-  `v2-settings-personal-card`, `v2-settings-education-card`, `v2-login-card`, `v2-register-card`,
-  `v2-hero`, `v2-verify-email-card` — against the hard rule in `CLAUDE.md`, and nothing guards the
-  rule. Two of them are settings forms, so programmatic `push` currently escapes any guard placed
-  in `i18n/navigation.ts`. Converting those six and adding a test for the rule is part of this
-  work, not a side errand.
+### Correction to the first draft of this spec
 
-The two alternatives were rejected:
+That draft claimed six files "violate" the `CLAUDE.md` rule by importing `useRouter` from
+`next/navigation`. Reading them, most do it **deliberately and correctly**:
+`v2-login-card.tsx`, `v2-verify-email-card.tsx` and `v2-register-card.tsx` push a path the BFF has
+already resolved (`safeReturnPath()`, `result.redirectTo`), and next-intl's router would prefix it
+a second time. Two of the six had no such reason and were converted — and `v2-hero.tsx` turned out
+to be a real bug, not a style violation: it pushed unprefixed route keys (`/turkiye`), so an `/en`
+reader was sent to a path that does not exist under that locale.
 
-- **A global capture-phase `click` listener** catches plain `<a>` too, but never sees
-  `router.push` — which is exactly what the settings cards call — and races React's own event
-  system.
-- **Per-consumer `<GuardedLink>`** cannot work: the navigation a member actually takes is a
-  header link, and the header is rendered outside the form's tree.
+The allowed list is now recorded, with each entry's reason, in
+`lib/forms/navigation-import-discipline.test.ts`.
 
 ## Section 1 — the dirty-state API
 
-Three parts.
+**`useUnsavedChanges(dirty: boolean)`** is the only thing a form calls. While `dirty` is true the
+component holds a source in a module-level registry; it releases on `dirty` going false and on
+unmount.
 
-**`useUnsavedChanges(dirty: boolean, message?: string)`** is the only thing a form calls. While
-`dirty` is true the component is registered as a dirty source in a module-level registry; it
-deregisters when `dirty` goes false or the component unmounts. The `beforeunload` listener is
-attached while the registry is non-empty and removed when it drains, so the tab-close warning and
-the in-site dialog are driven by one truth rather than two.
+**Computing "dirty" belongs to the caller.** The settings cards already seed their state from
+`profile`, so dirty is "current fields ≠ a baseline". The baseline is state, not the prop: it moves
+to the saved values on success, because `router.refresh()` does not remount the card and a
+comparison against the prop would keep claiming unsaved edits after the save that produced them.
+The password card is the shape that shows why the caller must decide — its fields start empty, so
+dirty there is "anything has been typed".
 
-**Computing "dirty" belongs to the caller.** The three settings cards already seed their state
-from `profile`, so dirty is "current fields ≠ the initial snapshot". The hook is deliberately not
-a form-state manager: the cards keep their `useState` exactly as they are and add one line. The
-password card is the one different shape — its initial values are empty strings, so dirty there
-means "anything has been typed".
+**The registry counts sources, it does not hold a flag.** Three independent forms sit on the
+settings page and any subset can be dirty. A boolean would be written by whichever re-rendered
+last. Each release is idempotent, because React 19 Strict Mode double-invokes effect cleanups.
 
-**The registry is module-level, not context.** The wrapper that raises the warning lives in
-`i18n/navigation.ts` and renders inside the header, the footer, everywhere — outside any provider
-a form could mount. A context would have to be provided at the top of
-`app/[locale]/(site)/layout.tsx`, and the `(play)` group would never see it. A module-level
-registry read through `useSyncExternalStore` works identically under both layout groups.
+**Module singleton, not context.** The guard lives in the wrapped `Link`, which renders in the
+header of both route groups — outside any provider a form could mount. Read through
+`useSyncExternalStore`, the same shape `lib/auth/auth-modal.client.ts` uses.
 
-**A successful save clears dirty.** The cards' `handleSubmit` already sets `saved`; re-seeding the
-snapshot from the saved values at that point is one more line.
+**No callbacks in module state**, which that file's docblock states as a rule and a reason. The
+pending navigation is held as a PATH, a plain string, and the dialog performs the navigation.
 
-## Sections still to write
+**`message` was dropped from the hook.** The first draft had `useUnsavedChanges(dirty, message?)`.
+`beforeunload` ignores any message a page supplies and shows the browser's own wording, so one of
+the two channels would have silently discarded it.
 
-- **Section 2** — dialog behaviour (focus, escape, the pending href, what "stay" restores) and the
-  Turkish and English copy.
-- **Section 3** — testing: which of these rules are held by a test, and the new test that pins
-  `useRouter` to `@/i18n/navigation`.
+## Section 2 — dialog behaviour and copy
+
+**One mount, in `app/[locale]/layout.tsx`** — the only point above both `(site)` and `(play)`. The
+auth dialog is mounted there for the same reason, recorded in that file.
+
+**The safe answer is the default.** Focus opens on "stay"; Escape and the backdrop both mean stay;
+`showCloseButton={false}` removes a fourth exit whose meaning is ambiguous. The member's intent was
+to leave, so this looks backwards for a moment — but an accidental Enter on "leave" costs the edit
+this pattern exists to protect, and on "stay" costs one click.
+
+**Focus returns to the link.** Base UI restores focus to a dialog's trigger, and this dialog has
+none — it opens because a store changed. Without handling, "stay" left focus on `<body>` and the
+next Tab restarted at the top of the page (WCAG 2.4.3). The dialog captures `document.activeElement`
+when it opens and passes it as `finalFocus`; a prevented click never moves focus, so that is the
+link.
+
+**Copy** lives at `Common.unsavedChanges.*` — `Common`, not `Settings`, because the pattern is
+site-wide and should not carry its first consumer's name.
+
+| Key     | TR                                                         | EN                                                      |
+| ------- | ---------------------------------------------------------- | ------------------------------------------------------- |
+| `title` | Kaydedilmemiş değişikliklerin var                          | You have unsaved changes                                |
+| `body`  | Bu sayfadan ayrılırsan yaptığın değişiklikler kaydedilmez. | If you leave this page, your changes will not be saved. |
+| `stay`  | Sayfada kal                                                | Stay on this page                                       |
+| `leave` | Yine de ayrıl                                              | Leave anyway                                            |
+
+`title` is the `DialogTitle` and `body` the `DialogDescription`, so both are wired to
+`aria-labelledby`/`aria-describedby` by the primitive.
+
+## Section 3 — what a test holds, and what it cannot
+
+The vitest environment here is `node` with no jsdom, so nothing in this repo can render a dialog
+and click it. That shapes the split:
+
+**Held by unit tests** (`lib/forms/unsaved-changes.test.ts`, 14 cases). The store is deliberately
+free of React and the DOM so its rules are directly testable: a clean store lets navigation
+through; a held source blocks it and parks the path; `confirmLeave` returns the path exactly once;
+cancel forgets the path but keeps the hold; a second blocked click overwrites the pending path; the
+count survives a double release; `releaseAll` unblocks the confirmed leave; the server snapshot is
+empty so SSR never renders the dialog.
+
+**Held by a structural test** (`lib/forms/navigation-import-discipline.test.ts`, 5 cases). Exactly
+two files may import the raw primitives; `useRouter` from `next/navigation` is allowed only in the
+recorded files; nothing imports `next/link`; `i18n/navigation.ts` exports the guarded pair. This is
+the test the rule needed — `CLAUDE.md` had stated it since before this task and nothing enforced it.
+
+**Not held by any test, and verified by hand instead.** That a click actually opens the dialog,
+that focus lands on "stay" and returns to the link, that Escape means stay, and that the pushed
+path is not double-prefixed under `/en`. All four were exercised in the browser on
+`/kayit` and `/en/register`; the measurements are in the commit message.
+
+## What was not verified
+
+`/hesabim/ayarlar` itself. It is behind a verified account, and reaching one locally needs the
+API's `MAIL_TRANSPORT` flipped to `noop` and the dev API restarted — it runs in a container as
+root, which is a bigger intervention than this task warrants. The three settings cards call the
+same hook the registration wizard does, through the same guarded `Link`; what is unverified is
+each card's own dirty comparison, not the mechanism.
+
+The first person who can sign in locally should type into each of the three cards, click a header
+link, and confirm the dialog appears — and that saving first makes it stop appearing.

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
+import { useUnsavedChanges } from "@/lib/forms/use-unsaved-changes.client";
 import { useTranslations } from "next-intl";
 import { GraduationCap } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
@@ -51,6 +52,20 @@ export function V2SettingsEducationCard({ locale, profile }: V2SettingsEducation
   const [saved, setSaved] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<ProfileBffCode | null>(null);
 
+  /**
+   * The saved selection this card's `value` is compared against for the unsaved-changes warning
+   * (T-062). Serialised rather than compared field by field: `EducationSelection` is a
+   * discriminated union whose shape changes with the level, so a field list here would have to be
+   * kept in step with `education-fieldset.tsx`'s — a second reader of the same type, which is the
+   * duplication `docs/conventions.md` asks for one of. Key order is stable because both sides come
+   * out of `educationSelectionFromProfile`.
+   */
+  const [baseline, setBaseline] = React.useState(() =>
+    JSON.stringify(educationSelectionFromProfile(profile)),
+  );
+
+  useUnsavedChanges(JSON.stringify(value) !== baseline);
+
   const handleChange = (next: EducationSelection) => {
     setValue(next);
     setErrors({});
@@ -80,6 +95,7 @@ export function V2SettingsEducationCard({ locale, profile }: V2SettingsEducation
         setSaved(true);
         setIsComplete(res.profile.isComplete);
         setValue(educationSelectionFromProfile(res.profile));
+        setBaseline(JSON.stringify(educationSelectionFromProfile(res.profile)));
         router.refresh();
       } else {
         setSubmitError(res.code);

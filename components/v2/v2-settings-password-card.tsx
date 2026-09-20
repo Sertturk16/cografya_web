@@ -6,6 +6,7 @@ import { Check, Eye, EyeOff, ShieldCheck, X } from "lucide-react";
 import { AUTH_ERROR_MESSAGE_KEYS } from "@/lib/auth/error-messages";
 import { isPasswordPolicyCompliant, PASSWORD_MIN } from "@/lib/auth/form-rules";
 import { submitAuth } from "@/lib/auth/submit.client";
+import { useUnsavedChanges } from "@/lib/forms/use-unsaved-changes.client";
 import type { AuthBffCode } from "@/lib/auth/transport.server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,14 @@ export function V2SettingsPasswordCard() {
   const [submitting, setSubmitting] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<AuthBffCode | null>(null);
+
+  /**
+   * Dirty here is "anything has been typed", not "differs from the server" (T-062) — this card's
+   * three fields start empty and have no saved value to compare against, which is the case the
+   * `useUnsavedChanges` docblock names for leaving the comparison to the caller. It clears itself
+   * on a successful change, because the handler already blanks all three fields.
+   */
+  useUnsavedChanges(currentPassword !== "" || newPassword !== "" || confirmPassword !== "");
 
   const rules = [
     { key: "length", ok: newPassword.length >= PASSWORD_MIN, label: t("password.ruleLength") },
