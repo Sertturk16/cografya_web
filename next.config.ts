@@ -36,6 +36,28 @@ const nextConfig: NextConfig = {
         destination: "/dunya/guney-kibris-rum-yonetimi",
         permanent: true,
       },
+      // T-061: `/profil` moved to `/hesabim/ayarlar`. It is a config redirect and NOT a page
+      // that calls `permanentRedirect()`, for a reason worth writing down: a page whose whole
+      // body is a redirect is still a render root, and this repo's composition scanners walk
+      // every render root expecting a JSX tree out of each. A page that returns nothing would
+      // have needed an exemption in four separate counters, each one saying "ignore this, it
+      // draws nothing" — four places to be wrong about a file that should not be a page at
+      // all. Redirecting before the router is reached is both the honest shape and the
+      // cheaper one: no server render, no session read, no API call.
+      //
+      // Both locale spellings are listed because `localePrefix: "as-needed"` leaves TR
+      // unprefixed and prefixes EN, and the EN segment is localized too
+      // (`/en/profile` → `/en/account/settings`).
+      {
+        source: "/profil",
+        destination: "/hesabim/ayarlar",
+        permanent: true,
+      },
+      {
+        source: "/en/profile",
+        destination: "/en/account/settings",
+        permanent: true,
+      },
     ];
   },
 

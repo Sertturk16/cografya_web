@@ -1043,5 +1043,65 @@
     "heading": "Something went wrong",
     "body": "An unexpected error occurred. You can try reloading the page.",
     "retry": "Try again"
+  },
+  "Settings": {
+    "metaTitle": "Account settings",
+    "metaDescription": "Manage your profile, your education details and your password in one place.",
+    "heading": "Settings",
+    "lede": "Everything about your account is here: your personal details, your education details and your password.",
+    "sectionNavLabel": "Settings sections",
+    "breadcrumbHome": "Home",
+    "breadcrumbAccount": "My account",
+    "breadcrumbCurrent": "Settings",
+    "save": "Save",
+    "saved": "Your details were saved.",
+    "loadError": "Your details could not be loaded.",
+    "loadErrorHint": "Try reloading the page; if it keeps happening, check back in a little while.",
+    "personal": {
+      "title": "Profile details",
+      "description": "Your name, your contact number and where you are.",
+      "firstName": "First name",
+      "lastName": "Surname",
+      "phone": "Phone",
+      "phoneInvalid": "Enter a valid mobile number (e.g. 05xx xxx xx xx).",
+      "province": "Province",
+      "district": "District"
+    },
+    "education": {
+      "title": "Education details",
+      "description": "The level you study at and the details that go with it.",
+      "complete": "Complete",
+      "incomplete": "Some fields are missing"
+    },
+    "password": {
+      "title": "Security",
+      "description": "Change your password.",
+      "current": "Current password",
+      "next": "New password",
+      "confirm": "New password (again)",
+      "show": "Show password",
+      "hide": "Hide password",
+      "submit": "Change password",
+      "saved": "Your password was changed.",
+      "policy": "Your password must be at least 6 characters and contain an uppercase letter, a lowercase letter and a digit.",
+      "sameAsCurrent": "Your new password cannot be the one you already use.",
+      "mismatch": "The two passwords do not match.",
+      "ruleLength": "6+ characters",
+      "ruleUpper": "Uppercase",
+      "ruleLower": "Lowercase",
+      "ruleDigit": "Digit",
+      "otherSessionsNotice": "Changing your password keeps you signed in on this device and signs you out everywhere else."
+    },
+    "account": {
+      "title": "Account",
+      "description": "Account details that cannot be changed here.",
+      "email": "E-mail",
+      "role": "Account type",
+      "memberSince": "Member since",
+      "roleStudent": "Student",
+      "roleTeacher": "Teacher",
+      "roleParent": "Parent",
+      "emailNotice": "You cannot change your e-mail address here yet; get in touch with us if it needs to change."
+    }
   }
 }

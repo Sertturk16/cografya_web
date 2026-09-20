@@ -69,7 +69,7 @@ function parseRedirects(source: string): RedirectEntry[] {
 describe("next.config.ts redirects() — TEST119-I1 guard", () => {
   const entries = parseRedirects(CONFIG_SOURCE);
 
-  it("parses at least one entry, and exactly one today", () => {
+  it("parses at least one entry, and exactly three today", () => {
     // Assertions further below are universally quantified over `entries`: a regex that
     // silently stopped matching (a Prettier reflow, a trailing comma, a shorthand refactor)
     // would satisfy every one of them VACUOUSLY and this file would go green while guarding
@@ -77,7 +77,10 @@ describe("next.config.ts redirects() — TEST119-I1 guard", () => {
     // legitimately lands, the `toHaveLength(1)` half is the one line that needs updating, and
     // that is the intended prompt to re-read this test, not a reflex bump.
     expect(entries.length).toBeGreaterThan(0);
-    expect(entries).toHaveLength(1);
+    // One until T-061, which retired `/profil` into `/hesabim/ayarlar` and needed BOTH locale
+    // spellings: `localePrefix: "as-needed"` leaves TR unprefixed and prefixes EN, and the EN
+    // segment is localized too.
+    expect(entries).toHaveLength(3);
   });
 
   it("carries the CY canonical-name redirect as one object literal with all three fields together", () => {
@@ -86,6 +89,22 @@ describe("next.config.ts redirects() — TEST119-I1 guard", () => {
     expect(entries).toContainEqual({
       source: "/dunya/kibris-cumhuriyeti",
       destination: "/dunya/guney-kibris-rum-yonetimi",
+      permanent: true,
+    });
+  });
+
+  it("carries both locale spellings of the T-061 account-settings move, each complete", () => {
+    // Two entries, not one: a single `/profil` rule would leave `/en/profile` 404ing, which is
+    // the half-migration this pair exists to prevent. Asserted as whole object literals so a
+    // right destination sitting on the wrong source cannot pass.
+    expect(entries).toContainEqual({
+      source: "/profil",
+      destination: "/hesabim/ayarlar",
+      permanent: true,
+    });
+    expect(entries).toContainEqual({
+      source: "/en/profile",
+      destination: "/en/account/settings",
       permanent: true,
     });
   });

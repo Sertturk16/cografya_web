@@ -22,12 +22,15 @@ export const AUTH_PATHNAMES = [
   "/sifre-sifirlama/yeni",
   "/kayit",
   "/e-posta-dogrulama",
-  // The post-registration profile-completion route (DEC 2026-09-03a md.1). Joined to
-  // AUTH_PATHNAMES so the personal-data route receives audited noindex/canonical/hreflang
-  // coverage in lib/seo/auth-routes.test.ts.
-  "/profil",
+  // `/profil` was here until T-061 retired it. It is now a `next.config.ts` redirect with no
+  // page behind it, so there is no metadata to audit — its personal data, and the audited
+  // coverage that goes with it, moved to `/hesabim/ayarlar` below.
   // The dedicated member area / hub (UYE-P3).
   "/hesabim",
+  // T-061: account management, moved off the hub and off `/profil` into its own route. It
+  // carries more personal data than any other page on the site, so it belongs in this array
+  // for exactly the reason `/profil` does — the audited noindex/canonical/hreflang coverage.
+  "/hesabim/ayarlar",
   // T-032 PR3 retired the version prefix, so each route appears here exactly once. The old
   // D-4 note — that the prefixed login and register shells sat outside this array because
   // they predated the centralization — is resolved rather than carried: those shells now

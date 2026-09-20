@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import type { Session, Profile, FavoriteEntityType } from "@/lib/api/types";
 import {
@@ -26,17 +25,10 @@ import {
   type GameRoundRecord,
   GAME_ROUNDS_FETCH_TIMEOUT_MS,
 } from "@/lib/game-rounds/client";
-import { submitAuth } from "@/lib/auth/submit.client";
-import { useAuthSession } from "@/lib/auth/use-session.client";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
-import {
-  EDUCATION_LEVEL_LABELS,
-  GRADE_LEVEL_LABELS,
-  STUDY_STREAM_LABELS,
-} from "@/lib/auth/profile-labels";
+import {} from "@/lib/auth/profile-labels";
 import { V2GameHistoryStats } from "@/components/v2/v2-game-history-stats";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -47,9 +39,9 @@ import {
   PlayCircle,
   Trophy,
   Ruler,
-  LogOut,
   ChevronRight,
   ExternalLink,
+  Settings,
   Trash2,
   MapPin,
   Globe,
@@ -58,7 +50,6 @@ import {
   Sparkles,
   ArrowRight,
   AlertCircle,
-  CheckCircle2,
   Calendar,
   BookOpen,
 } from "lucide-react";
@@ -105,10 +96,7 @@ export function V2MemberHub({
   regions,
   books,
 }: V2MemberHubProps) {
-  const router = useRouter();
-  const [, setAuthState] = useAuthSession();
   const [activeTab, setActiveTab] = React.useState<TabKey>("favorites");
-  const [signingOut, setSigningOut] = React.useState(false);
 
   // Status announcement for screen readers
   const [announcement, setAnnouncement] = React.useState<string>("");
@@ -229,18 +217,6 @@ export function V2MemberHub({
       clearTimeout(videoTimeout);
     };
   }, [books]);
-
-  // Sign out handler
-  const handleSignOut = async () => {
-    setSigningOut(true);
-    try {
-      await submitAuth("logout", {});
-      setAuthState("anonymous");
-      router.push("/");
-    } finally {
-      setSigningOut(false);
-    }
-  };
 
   // Remove favorite handler
   const handleRemoveFavorite = async (item: FavoriteRecord) => {
@@ -372,25 +348,22 @@ export function V2MemberHub({
                   )}
                 </Badge>
 
-                {session.accountRole === "STUDENT" && (
-                  <>
-                    {profile?.isComplete ? (
-                      <Badge variant="success" size="sm" dot>
-                        Profil Tamamlandı
-                      </Badge>
-                    ) : (
-                      <Link href="/profil">
-                        <Badge
-                          variant="warning"
-                          size="sm"
-                          className="hover:opacity-80 transition-opacity cursor-pointer"
-                        >
-                          <AlertCircle className="size-3 mr-1" />
-                          Profili Tamamla (%50)
-                        </Badge>
-                      </Link>
-                    )}
-                  </>
+                {/* Since T-061 registration collects the education fields, so a new account
+                    arrives complete and this prompt never fires for one. It stays for the
+                    accounts that predate that change, and it points at the settings section
+                    that can actually finish the job. The "%50" the badge used to claim was
+                    not a measurement of anything — it is gone rather than recomputed. */}
+                {session.accountRole === "STUDENT" && !profile?.isComplete && (
+                  <Link href={{ pathname: "/hesabim/ayarlar", hash: "egitim-bilgileri" }}>
+                    <Badge
+                      variant="warning"
+                      size="sm"
+                      className="hover:opacity-80 transition-opacity cursor-pointer"
+                    >
+                      <AlertCircle className="size-3 mr-1" />
+                      Eğitim bilgilerini tamamla
+                    </Badge>
+                  </Link>
                 )}
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
@@ -402,32 +375,15 @@ export function V2MemberHub({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {/* ONE action, and it is not logout (T-061). The header owns signing out — the
+                hub's copy was the third on the page, next to the mobile menu's. */}
             <Link
-              href="/profil"
-              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs cursor-pointer"
+              href="/hesabim/ayarlar"
+              className="inline-flex items-center justify-center gap-1.5 font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs cursor-pointer"
             >
-              Profili Düzenle
+              <Settings className="size-3.5" />
+              Ayarlar
             </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:border-destructive/30 rounded-xl h-10"
-              aria-label="Güvenli Çıkış Yap"
-            >
-              {signingOut ? (
-                <span role="status" className="inline-flex items-center gap-1.5">
-                  <Spinner size="sm" decorative />
-                  Çıkış Yapılıyor…
-                </span>
-              ) : (
-                <>
-                  <LogOut className="size-3.5" />
-                  Güvenli Çıkış
-                </>
-              )}
-            </Button>
           </div>
         </div>
 
@@ -519,11 +475,6 @@ export function V2MemberHub({
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground">
               {measurements ? measurements.length : 0}
             </span>
-          </TabsTrigger>
-
-          <TabsTrigger value="profile" className="gap-2">
-            <User className="size-3.5" />
-            <span>Hesap &amp; Profil</span>
           </TabsTrigger>
         </TabsList>
 
@@ -998,128 +949,6 @@ export function V2MemberHub({
         </TabsContent>
 
         {/* Tab 5: Profil & Hesap Özeti Panel */}
-        <TabsContent value="profile" className="space-y-6">
-          <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 shadow-sm space-y-6 max-w-2xl">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
-                  <User className="size-5" />
-                </div>
-                <div>
-                  <h3 className="font-heading font-bold text-lg text-foreground">
-                    Hesap ve Eğitim Bilgileri
-                  </h3>
-                  <span className="text-xs text-muted-foreground">
-                    Kişisel üyelik detayların ve profil durumun
-                  </span>
-                </div>
-              </div>
-
-              {session.accountRole === "TEACHER" ? (
-                <Badge variant="success" size="default">
-                  Öğretmen Hesabı
-                </Badge>
-              ) : profile?.isComplete ? (
-                <Badge variant="success" size="default" dot>
-                  Profil Tamam
-                </Badge>
-              ) : (
-                <Badge variant="warning" size="default">
-                  Eksik Alanlar Var
-                </Badge>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                <span className="text-muted-foreground font-medium block">Ad</span>
-                <span className="font-semibold text-foreground text-sm block">
-                  {session.firstName}
-                </span>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                <span className="text-muted-foreground font-medium block">Hesap Rolü</span>
-                <span className="font-semibold text-foreground text-sm block">
-                  {session.accountRole === "TEACHER"
-                    ? "Öğretmen"
-                    : session.accountRole === "PARENT"
-                      ? "Veli"
-                      : "Öğrenci"}
-                </span>
-              </div>
-
-              {session.accountRole === "STUDENT" && (
-                <>
-                  <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                    <span className="text-muted-foreground font-medium block">Eğitim Seviyesi</span>
-                    <span className="font-semibold text-foreground text-sm block">
-                      {profile?.educationLevel
-                        ? EDUCATION_LEVEL_LABELS[profile.educationLevel]?.tr
-                        : "Belirtilmedi"}
-                    </span>
-                  </div>
-
-                  {profile?.educationLevel === "SECONDARY" && (
-                    <>
-                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                        <span className="text-muted-foreground font-medium block">Sınıf</span>
-                        <span className="font-semibold text-foreground text-sm block">
-                          {profile?.gradeLevel
-                            ? GRADE_LEVEL_LABELS[profile.gradeLevel]?.tr
-                            : "Belirtilmedi"}
-                        </span>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                        <span className="text-muted-foreground font-medium block">Alan</span>
-                        <span className="font-semibold text-foreground text-sm block">
-                          {profile?.studyStream
-                            ? STUDY_STREAM_LABELS[profile.studyStream]?.tr
-                            : "Belirtilmedi"}
-                        </span>
-                      </div>
-                    </>
-                  )}
-
-                  {(profile?.educationLevel === "UNDERGRADUATE" ||
-                    profile?.educationLevel === "GRADUATE") && (
-                    <>
-                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                        <span className="text-muted-foreground font-medium block">Üniversite</span>
-                        <span className="font-semibold text-foreground text-sm block">
-                          {profile?.universityName || "Belirtilmedi"}
-                        </span>
-                      </div>
-                      <div className="p-3.5 rounded-2xl bg-muted/30 border border-border space-y-1">
-                        <span className="text-muted-foreground font-medium block">Bölüm</span>
-                        <span className="font-semibold text-foreground text-sm block">
-                          {profile?.departmentName || "Belirtilmedi"}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border">
-              <Link
-                href="/profil"
-                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
-              >
-                <CheckCircle2 className="size-3.5" />
-                Profil Formuna Git
-              </Link>
-
-              <Link
-                href="/sifre-sifirlama"
-                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-10 px-4 py-2 text-xs border border-border bg-card hover:bg-muted text-muted-foreground hover:text-foreground shadow-xs cursor-pointer"
-              >
-                Şifre Değiştir
-              </Link>
-            </div>
-          </div>
-        </TabsContent>
       </Tabs>
     </div>
   );

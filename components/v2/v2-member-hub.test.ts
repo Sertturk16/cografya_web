@@ -50,16 +50,19 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
     // components/ui/tabs.tsx (Base UI Tabs), which supplies every role, aria-* and the roving
     // tabindex/arrow-key behaviour at runtime; this test checks the hub still routes through it
     // rather than re-inlining the tablist, and that none of the five panels was dropped.
-    const PANELS = ["favorites", "videos", "games", "measurements", "profile"] as const;
+    // Four, not five. T-061 deleted the "profile" panel: it rendered the same values the hero
+    // already summarised, read-only, and its two buttons led to a page that now redirects here.
+    // Account management lives at `/hesabim/ayarlar`, which the hero links to.
+    const PANELS = ["favorites", "videos", "games", "measurements"] as const;
 
-    it("routes its five member panels through the shared Tabs primitive", () => {
+    it("routes its four member panels through the shared Tabs primitive", () => {
       expect(hubSource).toContain('from "@/components/ui/tabs"');
       expect(hubSource).toContain("<TabsList");
       expect(hubSource).toContain("onValueChange=");
     });
 
     // A bare `toContain('value="favorites"')` is satisfied by the TRIGGER alone, and a bare
-    // `toContain("<TabsContent")` by any one panel, so four of the five could be deleted and
+    // `toContain("<TabsContent")` by any one panel, so three of the four could be deleted and
     // this block would stay green. Each half of each pair is therefore matched on its own tag.
     it.each(PANELS)("keeps both the trigger and the panel for %s", (panel) => {
       expect(hubSource, `the ${panel} trigger is gone`).toMatch(
@@ -108,9 +111,22 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
       expect(hubSource).toContain("<V2GameHistoryStats />");
     });
 
-    it("implements secure sign-out via submitAuth('logout', {})", () => {
-      expect(hubSource).toContain('submitAuth("logout", {})');
-      expect(hubSource).toContain('setAuthState("anonymous")');
+    // The hub used to carry its own sign-out button, the THIRD copy on a signed-in page —
+    // beside the header's desktop button and the mobile menu's item. T-061 removed it, and
+    // this case is the ratchet that keeps it removed: the header owns signing out, and a
+    // member should not have to wonder which of three buttons is the real one.
+    it("does not sign out — the header owns that, and the hub no longer duplicates it", () => {
+      expect(hubSource).not.toContain('submitAuth("logout"');
+      expect(hubSource).not.toContain("Güvenli Çıkış");
+    });
+
+    it("sends account management to /hesabim/ayarlar, and nowhere else", () => {
+      expect(hubSource).toContain('href="/hesabim/ayarlar"');
+      // The completion prompt deep-links into the education section of the same page.
+      expect(hubSource).toContain('pathname: "/hesabim/ayarlar"');
+      // The three doors are one. `/profil` is a redirect now; a link to it here would send a
+      // member through an extra hop for no reason.
+      expect(hubSource).not.toContain('href="/profil"');
     });
   });
 });
