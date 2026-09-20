@@ -555,12 +555,16 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * read-only key/value tiles and the two result banners. Net: **190 → 187 cards, 166 → 160
  * wells, 233 → 230 spellings, 356 → 347 total.**
  */
-export const HAND_DRAWN_CARDS = 187;
+// 187 → **188** in T-061 PR5: the mobile menu's new "Ayarlar" row is one more hand-drawn
+// `rounded-xl bg-card border border-border` beside the "Hesabım" row it sits under. It is
+// hand-drawn for the same reason that row is — a menu row inside a Sheet is not a panel, and
+// `Card` would have wrapped a link in a section surface.
+export const HAND_DRAWN_CARDS = 188;
 
 export const HAND_DRAWN_WELLS = 160;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 230;
+export const HAND_DRAWN_CARD_SPELLINGS = 231;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
