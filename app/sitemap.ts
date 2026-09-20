@@ -86,6 +86,9 @@ function staticEntries(): MetadataRoute.Sitemap {
     ...sitemapEntriesFor(() => "/deprem", now, 0.7, "trOnly"),
     ...sitemapEntriesFor(() => "/dunya/kita", now, 0.8, "trOnly"),
     ...sitemapEntriesFor(() => "/hakkimizda", now, 0.5),
+    // The terms of use, `trOnly` (T-073). Lowest priority on the map: an indexable page a
+    // reader looks up once, never a landing page.
+    ...sitemapEntriesFor(() => "/kullanim-sartlari", now, 0.3, "trOnly"),
     // NINE ROUTES THAT WERE INDEXABLE AND UNADVERTISED.
     //
     // Each declares `"trOnly"` in its own `generateMetadata` — so each was crawlable, in the

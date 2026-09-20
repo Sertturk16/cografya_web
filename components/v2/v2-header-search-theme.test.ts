@@ -44,15 +44,28 @@ describe("T-014 V2 Header Global Search and Theme Toggle", () => {
    * the app no longer has, and pinning it would have meant keeping the light flash the
    * provider exists to remove.
    */
-  it("ThemeToggle drives next-themes, offers three states, and keeps the QA selectors", () => {
+  it("ThemeToggle drives next-themes, cycles light ⇄ dark only, and keeps the QA selectors", () => {
     expect(themeToggleContent).toContain('from "next-themes"');
     expect(themeToggleContent).toContain("useTheme()");
 
-    // Three real destinations. `system` being reachable is the point: the previous binary
-    // toggle pinned a choice on first press and could never follow the OS again.
-    for (const choice of ["light", "dark", "system"]) {
-      expect(themeToggleContent).toContain(`"${choice}"`);
-    }
+    // TWO destinations, and the pair is closed (T-066). `system` was the third stop until a
+    // reader asked what the monitor icon between the sun and the moon was for: a button whose
+    // current state does not tell you which colour scheme you are about to get. Asserted as
+    // the CYCLE entries rather than as bare strings, because the word still appears in this
+    // file's prose and in the provider's `defaultTheme`, which is a different thing.
+    expect(themeToggleContent).toContain('value: "light"');
+    expect(themeToggleContent).toContain('next: "dark"');
+    expect(themeToggleContent).toContain('value: "dark"');
+    expect(themeToggleContent).toContain('next: "light"');
+    expect(themeToggleContent).not.toMatch(/(?:value|next):\s*"system"/);
+    // The monitor icon went with it; nothing else in this file draws one.
+    expect(themeToggleContent).not.toContain("Monitor");
+
+    // WHAT THE STORED `"system"` BECOMES. The provider still defaults to the OS preference,
+    // so `theme` is `"system"` for a visitor who has never pressed the button and for anyone
+    // who pinned it before T-066. The control reads `resolvedTheme` precisely so neither of
+    // those falls through to the light branch while the page is painted dark.
+    expect(themeToggleContent).toContain("resolvedTheme");
 
     // The storage key is a compatibility promise — visitors keep the preference they set
     // before this change. next-themes writes it; the provider passes it.
@@ -62,6 +75,9 @@ describe("T-014 V2 Header Global Search and Theme Toggle", () => {
     );
     expect(providerContent).toContain('storageKey="theme"');
     expect(providerContent).toContain('attribute="class"');
+    // Following the OS until the first press is NOT the removed third state: it is the
+    // starting value, and `app/not-found.tsx`'s pre-paint script mirrors it.
+    expect(providerContent).toContain('defaultTheme="system"');
 
     // Accessible name must still match /Tema|Karanlık|Aydınlık|Dark|Light/i
     expect(themeToggleContent).toMatch(/Tema|Karanlık|Aydınlık|Dark|Light/i);

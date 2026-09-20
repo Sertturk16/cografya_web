@@ -559,7 +559,10 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // `rounded-xl bg-card border border-border` beside the "Hesabım" row it sits under. It is
 // hand-drawn for the same reason that row is — a menu row inside a Sheet is not a panel, and
 // `Card` would have wrapped a link in a section surface.
-export const HAND_DRAWN_CARDS = 188;
+// 188 → **189** in T-073: `/kullanim-sartlari`'s mailto card, the same
+// `rounded-2xl border border-border bg-card` anchor `/hakkimizda` already carries and for the
+// same reason — the page's one action, given a surface of its own.
+export const HAND_DRAWN_CARDS = 189;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -577,10 +580,18 @@ export const HAND_DRAWN_CARDS = 188;
  * className written as a conditional is not exempt from these predicates, it is INVISIBLE to
  * them, and the two look identical from the green side.
  */
-export const HAND_DRAWN_WELLS = 161;
+// 161 → **162** in T-073: the terms page's English-reader notice
+// (`rounded-2xl border border-border bg-muted`), a well and not a card — it states which
+// language of the text binds, it is not a panel the page offers.
+export const HAND_DRAWN_WELLS = 162;
 
-/** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 232;
+/** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
+ *
+ * 232 → **233** in T-073, and the +1 is the interesting half of a +2. The terms page added two
+ * elements: its mailto card reuses `/hakkimizda`'s spelling verbatim (deliberately — one action,
+ * one treatment, and a second spelling of the same thing is the drift these counts exist to
+ * catch), so only the English-reader notice is a new string. */
+export const HAND_DRAWN_CARD_SPELLINGS = 233;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -939,10 +950,14 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // caught that `components/ui/select.tsx` already existed, with variants, a built-in chevron
 // and a showcase specimen. Adopting it removed both new constants AND the six hand-drawn
 // selects they dressed, each of which had been an element in this population.
-// T-070: 192 → **194**. Two elements, both on the book page's index row: the `<summary>` the
+// T-067: 192 → 193. One element, and it is not a card: `search-combobox.tsx`'s new
+// `CloseIcon`, an `<svg className={ICON}>` beside the `SearchIcon` that has always been in
+// this population and reads the same constant. It replaced the `ESC` legend inside the
+// command dialog's close control, so the dialog gained a glyph and lost a keyboard legend.
+// T-070: 193 → **195**. Two more, both on the book page's index row: the `<summary>` the
 // accordion needed (`DENEME_SUMMARY`) and the chevron inside it (`DENEME_CHEVRON`). Neither is
 // a card; this population is "className is a bare identifier", which the whole page already is.
-export const COMPUTED_CARD_CLASSNAMES = 194;
+export const COMPUTED_CARD_CLASSNAMES = 195;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -959,9 +974,9 @@ export const COMPUTED_CARD_CLASSNAMES = 194;
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   ["call", 1],
   // 198 → 192 in T-061: six hand-drawn `<select>` elements moved onto the `Select`
-  // primitive. 192 → 194 in T-070: the index row's `<summary>` and its chevron. See
-  // {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 194],
+  // primitive. 192 → 193 in T-067: the command dialog's `CloseIcon`. 193 → 195 in T-070: the
+  // index row's `<summary>` and its chevron. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 195],
   ["member", 9],
   ["ternary", 2],
 ];
@@ -1342,7 +1357,9 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // 59 after T-061: `v2-profile-form.tsx` left the surface (deleted) while the five settings
     // components joined it, two of which hold hand-drawn shapes — the read-only tiles and the
     // result banners. Net one more file, not one more pattern.
-    expect(handDrawnTotals().files).toBe(59);
+    // 60 after T-073: `/kullanim-sartlari` joins the surface with two shapes, the mailto card
+    // and the English-reader notice.
+    expect(handDrawnTotals().files).toBe(60);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
@@ -1452,6 +1469,7 @@ const INTERACTIVE_CARD_CARRIERS: readonly string[] = [
   "app/[locale]/(site)/dunya/kita/[slug]/page.tsx <Link>",
   "app/[locale]/(site)/dunya/kita/[slug]/page.tsx <Link>",
   "app/[locale]/(site)/hakkimizda/page.tsx <a>",
+  "app/[locale]/(site)/kullanim-sartlari/page.tsx <a>",
   "app/[locale]/(site)/page.tsx <a>",
   "app/[locale]/(site)/page.tsx <a>",
   "app/[locale]/(site)/turkiye/[slug]/page.tsx <Link>",

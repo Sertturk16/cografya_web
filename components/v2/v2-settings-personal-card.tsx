@@ -6,7 +6,11 @@ import { useUnsavedChanges } from "@/lib/forms/use-unsaved-changes.client";
 import { useTranslations } from "next-intl";
 import { UserRound } from "lucide-react";
 import type { Profile } from "@/lib/api/types";
-import { canonicalizePhone } from "@/lib/auth/form-rules";
+import {
+  canonicalizePhone,
+  formatTurkishMobileInput,
+  PHONE_INPUT_MAX_LENGTH,
+} from "@/lib/auth/form-rules";
 import { PROFILE_ERROR_MESSAGE_KEYS, submitAccountReplacement } from "@/lib/profile/client";
 import type { ProfileBffCode } from "@/lib/profile/transport.server";
 import { Button } from "@/components/ui/button";
@@ -54,7 +58,12 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
 
   const [firstName, setFirstName] = React.useState(profile.firstName);
   const [lastName, setLastName] = React.useState(profile.lastName);
-  const [phone, setPhone] = React.useState(profile.phone);
+  // MASKED ON THE WAY IN, NOT JUST ON THE WAY THROUGH (T-072). `profile.phone` arrives from
+  // the api in its stored `+905XXXXXXXXX` form, and the field shows `5XX XXX XX XX` — so the
+  // seed is formatted here and the baseline below is seeded from the SAME expression. Seeding
+  // one and not the other would make the card claim an unsaved edit (T-062's warning) on first
+  // paint, before the member has touched anything.
+  const [phone, setPhone] = React.useState(() => formatTurkishMobileInput(profile.phone));
   const [plateCode, setPlateCode] = React.useState(profile.provincePlateCode);
   const [districtId, setDistrictId] = React.useState(profile.districtId);
 
@@ -78,7 +87,7 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
   const [baseline, setBaseline] = React.useState({
     firstName: profile.firstName,
     lastName: profile.lastName,
-    phone: profile.phone,
+    phone: formatTurkishMobileInput(profile.phone),
     provincePlateCode: profile.provincePlateCode,
     districtId: profile.districtId,
   });
@@ -153,13 +162,13 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
         setSaved(true);
         setFirstName(res.profile.firstName);
         setLastName(res.profile.lastName);
-        setPhone(res.profile.phone);
+        setPhone(formatTurkishMobileInput(res.profile.phone));
         setPlateCode(res.profile.provincePlateCode);
         setDistrictId(res.profile.districtId);
         setBaseline({
           firstName: res.profile.firstName,
           lastName: res.profile.lastName,
-          phone: res.profile.phone,
+          phone: formatTurkishMobileInput(res.profile.phone),
           provincePlateCode: res.profile.provincePlateCode,
           districtId: res.profile.districtId,
         });
@@ -234,9 +243,12 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
             id={IDS.phone}
             type="tel"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => setPhone(formatTurkishMobileInput(e.target.value))}
             disabled={submitting}
             autoComplete="tel"
+            inputMode="numeric"
+            maxLength={PHONE_INPUT_MAX_LENGTH}
+            placeholder="5xx xxx xx xx"
             isError={Boolean(errors.phone)}
             aria-describedby={errors.phone ? `${IDS.phone}-error` : undefined}
           />

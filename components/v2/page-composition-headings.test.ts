@@ -905,7 +905,10 @@ function pagesWithMultipleH1(): string[] {
  *      FLOOR TOKEN Ruling V spent a decision refusing to concede — so converging this page means
  *      accepting the floor, which is a decision and not a rename. Still the cheapest of the nine;
  *      not free, and the next task should be told which half is which.
- *  12. `…text-4xl sm:text-5xl lg:text-6xl font-bold …leading-[1.12]` — `v2-hero.tsx`, the home page.
+ *  12. `…text-3xl sm:text-5xl lg:text-6xl font-bold …leading-[1.12] text-balance` — `v2-hero.tsx`,
+ *      the home page. T-068 dropped the smallest step a size and added `text-balance`: the new
+ *      slogan is one long sentence rather than two short clauses, and at 320px the old 4xl set it
+ *      as six lines and 242px of heading.
  *  13. `text-xl font-bold tracking-tight text-foreground` ×2 — `profil` and `v2-profile-form`, the
  *      two branches of the `MULTIPLE_H1_EXEMPTIONS` entry below; card headings, not heroes.
  *
@@ -1088,7 +1091,9 @@ describe("the heading scanner itself", () => {
     ).toEqual([]);
 
     // Anti-vacuity for the property itself: it would also pass if NO root wrote any component.
-    expect(resolution).toHaveLength(39);
+    // 39 → 40 in T-073: `/kullanim-sartlari` is the 38th `(site)` page, and the two
+    // special files (`error.tsx`, `not-found.tsx`) still sit on top of the count.
+    expect(resolution).toHaveLength(40);
     expect(resolution.filter(({ names }) => names.length > 0).length).toBeGreaterThan(30);
   }, 20000);
 
@@ -1114,7 +1119,7 @@ describe("the heading scanner itself", () => {
 
   it("walkRenderRoots() adds the two special files and nothing else", () => {
     const roots = walkRenderRoots().map(label);
-    expect(roots).toHaveLength(39);
+    expect(roots).toHaveLength(40);
     expect(roots).toContain("app/[locale]/(site)/error.tsx");
     expect(roots).toContain("app/[locale]/(site)/not-found.tsx");
     // Never reaches the app-ROOT shells above `app/[locale]` — see its docblock for the cost.
@@ -1368,7 +1373,7 @@ describe("the heading scanner itself", () => {
   it("walkPages() is UNCHANGED by the widening — PR1/PR2's counters keep their scope", () => {
     // The whole reason `walkRenderRoots()` is a second function. If these two ever read the same
     // number, the split has been collapsed and three landed counters have silently moved.
-    expect(walkPages()).toHaveLength(37);
+    expect(walkPages()).toHaveLength(38);
     expect(walkRenderRoots().length).toBeGreaterThan(walkPages().length);
     expect(walkPages().map(label)).not.toContain("app/[locale]/(site)/error.tsx");
   });

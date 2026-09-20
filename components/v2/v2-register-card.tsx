@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/lib/forms/use-unsaved-changes.client";
 import { Link, getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { PRIVACY_ANCHOR } from "@/lib/legal/terms-anchor";
 import { submitAuth } from "@/lib/auth/submit.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import {
   EMAIL_SHAPE,
   canonicalizePhone,
+  formatTurkishMobileInput,
+  PHONE_INPUT_MAX_LENGTH,
   buildRegisterPayload,
   isPasswordPolicyCompliant,
   type RegisterFormState,
@@ -268,7 +271,7 @@ export function V2RegisterCard({
     }
     const cleanPhone = canonicalizePhone(phone);
     if (!cleanPhone) {
-      errors.phone = "Lütfen geçerli bir cep telefonu numarası gir (örn: 05xx xxx xx xx).";
+      errors.phone = "Lütfen cep telefonu numaranı tam olarak gir (5xx xxx xx xx).";
     }
     if (!cleanEmail || !EMAIL_SHAPE.test(cleanEmail)) {
       errors.email = "Lütfen geçerli bir e-posta adresi yaz.";
@@ -594,9 +597,11 @@ export function V2RegisterCard({
               id="v2-register-phone"
               type="tel"
               autoComplete="tel"
-              placeholder="05xx xxx xx xx"
+              placeholder="5xx xxx xx xx"
+              inputMode="numeric"
+              maxLength={PHONE_INPUT_MAX_LENGTH}
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatTurkishMobileInput(e.target.value))}
               leftIcon={<Phone className="size-4 text-muted-foreground" />}
               className="h-10 text-xs"
               disabled={loading}
@@ -803,6 +808,32 @@ export function V2RegisterCard({
           >
             {selectedRole === "teacher" ? "Ücretsiz Kayıt Ol" : "Devam Et"}
           </Button>
+
+          {/* THE CONSENT LINE (T-073). A statement, not a checkbox — ruled that way by the
+              owner: the act of submitting the form is the consent, and a box that only ever
+              gets ticked adds a press without adding a decision.
+              It sits UNDER the button rather than above it, which is where a reader looks for
+              it, and it names the two documents separately because that is what a reader
+              expects to read — both links land on the one page, the second on its KVKK
+              section. `/kullanim-sartlari` is in the pathname table, so the typed `Link`
+              resolves `/en/terms` for an English reader without a second href here. */}
+          <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
+            Kayıt olarak{" "}
+            <Link
+              href="/kullanim-sartlari"
+              className="font-semibold text-foreground underline underline-offset-2 hover:text-primary"
+            >
+              Kullanım Şartları
+            </Link>{" "}
+            ve{" "}
+            <Link
+              href={PRIVACY_ANCHOR}
+              className="font-semibold text-foreground underline underline-offset-2 hover:text-primary"
+            >
+              Gizlilik Politikası
+            </Link>
+            &apos;nı kabul etmiş olursun.
+          </p>
 
           {/* Switch to Login footer */}
           <div className="text-center pt-2 border-t border-border/80">

@@ -32,6 +32,18 @@ export const routing = defineRouting({
       tr: "/hakkimizda",
       en: "/about",
     },
+    // The platform's terms of use and its KVKK/privacy section, one page (T-073). LOCALIZED
+    // segment on the `/hakkimizda ↔ /en/about` precedent — "kullanım şartları" does not read
+    // as English at all. The page is `surface: "trOnly"`: it is a Turkish legal text governed
+    // by Turkish law, so an indexable English twin would be a translation of a contract, which
+    // is a thing this project is not in a position to publish. The segment is still declared
+    // for both locales for the reason `/deniz` and `/kitaplar` record above — a `noindex` page
+    // must resolve to exactly ONE correct URL per locale, and changing it later owes a
+    // redirect. The register card and the footer both link here through `getPathname`.
+    "/kullanim-sartlari": {
+      tr: "/kullanim-sartlari",
+      en: "/terms",
+    },
     "/turkiye": "/turkiye",
     "/turkiye/[slug]": "/turkiye/[slug]",
     // The region tier, which arrived with the V2 build and lost its prefix in T-032.

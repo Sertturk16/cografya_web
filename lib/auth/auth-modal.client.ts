@@ -34,9 +34,16 @@ export interface AuthModalStore {
   subscribe(listener: () => void): () => void;
   getSnapshot(): AuthModalState;
   getServerSnapshot(): AuthModalState;
-  /** Opens the dialog for `intent`, defaulting to `"register"` mode (§5.5 — AK-48's own
-   *  "become a member" framing: a first-time organic reader has no account yet), and returns a
-   *  fresh request id the caller must hold onto to recognise its own resolution later.
+  /** Opens the dialog for `intent`, defaulting to `"login"` mode (T-071, reversing the
+   *  original "become a member" framing), and returns a fresh request id the caller must hold
+   *  onto to recognise its own resolution later.
+   *
+   *  WHY LOGIN IS THE DEFAULT. The gated controls — a favourite, a video, a saved round, a
+   *  measurement — are things a reader reaches for on a RETURN visit more often than on a
+   *  first one, and the register form is the longer of the two: a returning reader met a
+   *  six-field wizard where one sentence of theirs would have done. The register tab is one
+   *  press away inside the dialog, and the header's own "Üye Ol" still opens it directly by
+   *  passing `"register"` explicitly.
    *
    *  `mode` is an ARGUMENT and not a follow-up `setMode` call because this method commits the
    *  mode: a `setMode` written before it was silently erased, and two of the header's four call
@@ -58,7 +65,7 @@ export interface AuthModalStore {
 const EMPTY: AuthModalState = Object.freeze({
   open: false,
   intent: "generic",
-  mode: "register",
+  mode: "login",
   requestId: null,
   resolvedRequestId: null,
 });
@@ -85,7 +92,7 @@ export function createAuthModalStore(): AuthModalStore {
     getServerSnapshot() {
       return EMPTY;
     },
-    requestAuth(intent, mode = "register") {
+    requestAuth(intent, mode = "login") {
       const requestId = crypto.randomUUID();
       // A fresh request supersedes any earlier, unconsumed resolution — starting a new flow
       // makes the old one moot even though the ids can never actually collide.
