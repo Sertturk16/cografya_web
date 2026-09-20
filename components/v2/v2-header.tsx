@@ -24,6 +24,7 @@ import {
   LogOut,
   ChevronDown,
   Menu,
+  Settings,
   Search,
 } from "lucide-react";
 import { useLocale } from "next-intl";
@@ -43,10 +44,15 @@ export function V2Header() {
   const [signingOut, setSigningOut] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [activeDropdown, setActiveDropdown] = React.useState<
-    "atlas" | "telemetry" | "interactive" | null
+    "atlas" | "telemetry" | "interactive" | "account" | null
   >(null);
 
   const navContainerRef = React.useRef<HTMLDivElement>(null);
+  // T-061: the account menu sits OUTSIDE `navContainerRef`, on the other side of the header,
+  // so the outside-click check needs both containers. One ref would have closed the account
+  // menu the instant it opened, because its own trigger is outside the nav.
+  const accountMenuRef = React.useRef<HTMLDivElement>(null);
+  const accountBtnRef = React.useRef<HTMLButtonElement>(null);
   const atlasBtnRef = React.useRef<HTMLButtonElement>(null);
   const telemetryBtnRef = React.useRef<HTMLButtonElement>(null);
   const interactiveBtnRef = React.useRef<HTMLButtonElement>(null);
@@ -60,7 +66,10 @@ export function V2Header() {
   // Close dropdown on outside click or Escape key
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (navContainerRef.current && !navContainerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const insideNav = navContainerRef.current?.contains(target) ?? false;
+      const insideAccount = accountMenuRef.current?.contains(target) ?? false;
+      if (!insideNav && !insideAccount) {
         setActiveDropdown(null);
       }
     }
@@ -72,6 +81,8 @@ export function V2Header() {
           telemetryBtnRef.current?.focus();
         } else if (activeDropdown === "interactive") {
           interactiveBtnRef.current?.focus();
+        } else if (activeDropdown === "account") {
+          accountBtnRef.current?.focus();
         }
         setActiveDropdown(null);
       }
@@ -102,7 +113,7 @@ export function V2Header() {
     pathStr.startsWith("/araclar");
   const isKitaplarActive = pathStr.startsWith("/kitaplar") || pathStr.startsWith("/kitaplar");
 
-  const toggleDropdown = (name: "atlas" | "telemetry" | "interactive") => {
+  const toggleDropdown = (name: "atlas" | "telemetry" | "interactive" | "account") => {
     setActiveDropdown((prev) => (prev === name ? null : name));
   };
 
@@ -111,7 +122,9 @@ export function V2Header() {
     try {
       await submitAuth("logout", {});
       setAuthState("anonymous");
-      if (pathStr.startsWith("/hesabim") || pathStr.startsWith("/profil")) {
+      // `/hesabim` covers the settings page too, which lives under it. The old second
+      // clause named `/profil`, a path that no longer renders anything (T-061).
+      if (pathStr.startsWith("/hesabim")) {
         router.push("/");
       }
     } finally {
@@ -411,31 +424,76 @@ export function V2Header() {
           <ThemeToggle />
 
           {authState === "authenticated" ? (
-            <div className="hidden lg:flex items-center gap-1.5">
-              <Link
-                href="/hesabim"
-                aria-label="Hesabım"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border text-xs font-semibold shadow-2xs hover:bg-muted/50 transition-colors"
+            /* T-061: ONE account control instead of two.
+               The header used to carry a "Hesabım" link and a "Çıkış Yap" button side by
+               side, and the hub hero carried a third sign-out below them. Two of those three
+               are gone; what remains is a single trigger holding the three things a
+               signed-in member does from the chrome.
+
+               It is the same DISCLOSURE pattern the three nav dropdowns in this file already
+               use — `aria-expanded` on a button, a labelled container of links below it, Tab
+               through them, Escape closes and returns focus. Deliberately not a `role="menu"`
+               widget: one header with two different menu mechanisms is worse than one with a
+               pattern used four times. */
+            <div ref={accountMenuRef} className="hidden lg:block relative">
+              <button
+                ref={accountBtnRef}
+                type="button"
+                onClick={() => toggleDropdown("account")}
+                aria-expanded={activeDropdown === "account"}
+                aria-label="Hesap menüsü"
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-2xs transition-colors cursor-pointer ${
+                  activeDropdown === "account"
+                    ? "bg-muted text-foreground border-border"
+                    : "bg-card border-border hover:bg-muted/50"
+                }`}
               >
                 <span className="size-2 rounded-full bg-success" />
                 <User className="size-3.5 text-primary" />
                 <span>Hesabım</span>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="text-xs h-8 px-2.5 text-destructive hover:bg-destructive/10 font-semibold gap-1.5"
-                aria-label="Çıkış Yap"
-              >
-                {signingOut ? (
-                  <Spinner size="sm" label="Çıkış yapılıyor" />
-                ) : (
-                  <LogOut className="size-3.5" />
-                )}
-                <span className="hidden sm:inline">Çıkış Yap</span>
-              </Button>
+                <ChevronDown
+                  className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "account" ? "rotate-180" : ""}`}
+                />
+              </button>
+
+              {activeDropdown === "account" && (
+                <div className="absolute top-full right-0 mt-2 w-52 p-2 rounded-2xl shadow-xl border border-border bg-card z-50 animate-in fade-in-50 zoom-in-95 duration-100 space-y-1">
+                  <Link
+                    href="/hesabim"
+                    onClick={() => setActiveDropdown(null)}
+                    className="flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <User className="size-3.5 text-primary" />
+                    Hesabım
+                  </Link>
+                  <Link
+                    href="/hesabim/ayarlar"
+                    onClick={() => setActiveDropdown(null)}
+                    className="flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                  >
+                    <Settings className="size-3.5 text-primary" />
+                    Ayarlar
+                  </Link>
+                  <div className="pt-1 border-t border-border/80">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveDropdown(null);
+                        void handleSignOut();
+                      }}
+                      disabled={signingOut}
+                      className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer disabled:opacity-60"
+                    >
+                      {signingOut ? (
+                        <Spinner size="sm" label="Çıkış yapılıyor" />
+                      ) : (
+                        <LogOut className="size-3.5" />
+                      )}
+                      Çıkış Yap
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="hidden lg:flex items-center gap-1.5">
@@ -693,6 +751,9 @@ export function V2Header() {
                     </div>
                   ) : (
                     <div className="space-y-2">
+                      {/* T-061: the same three entries the desktop menu holds, in the same
+                          order. The label was "Hesabım & Profil" and pointed at the hub —
+                          an ampersand promising a second destination that was never here. */}
                       <Link
                         href="/hesabim"
                         onClick={() => setMobileOpen(false)}
@@ -700,9 +761,7 @@ export function V2Header() {
                       >
                         <div className="flex items-center gap-2">
                           <User className="size-4 text-primary" />
-                          <span className="text-xs font-bold text-foreground">
-                            Hesabım &amp; Profil
-                          </span>
+                          <span className="text-xs font-bold text-foreground">Hesabım</span>
                         </div>
                         <Badge
                           variant="outline"
@@ -711,6 +770,14 @@ export function V2Header() {
                         >
                           Aktif
                         </Badge>
+                      </Link>
+                      <Link
+                        href="/hesabim/ayarlar"
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center gap-2 p-3 rounded-xl bg-card border border-border hover:bg-muted/50 transition-colors"
+                      >
+                        <Settings className="size-4 text-primary" />
+                        <span className="text-xs font-bold text-foreground">Ayarlar</span>
                       </Link>
                       <Button
                         variant="outline"

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import type {
   Department,
@@ -18,7 +17,9 @@ import {
   UNIVERSITY_GROUP_LABELS,
   renderLabel,
 } from "@/lib/auth/profile-labels";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 /**
  * The six declared education fields, as a form holds them: `""` for "not chosen yet" rather
@@ -183,27 +184,24 @@ export function EducationFieldset({
         <Label htmlFor={ids.educationLevel} className="text-xs font-bold text-foreground">
           {t("fields.educationLevel")}
         </Label>
-        <SelectShell>
-          <select
-            id={ids.educationLevel}
-            value={value.educationLevel}
-            onChange={(e) => handleLevelChange(e.target.value as EducationLevel | "")}
-            disabled={disabled}
-            aria-invalid={Boolean(errors.educationLevel)}
-            aria-describedby={errors.educationLevel ? `${ids.educationLevel}-error` : undefined}
-            className={SELECT_CLASS}
-          >
-            <option value="">{t("selectPlaceholder")}</option>
-            {(["SECONDARY", "UNDERGRADUATE", "GRADUATE"] as const).map((level) => {
-              const label = renderLabel(locale, EDUCATION_LEVEL_LABELS[level]);
-              return (
-                <option key={level} value={level} lang={label.lang}>
-                  {label.text}
-                </option>
-              );
-            })}
-          </select>
-        </SelectShell>
+        <Select
+          id={ids.educationLevel}
+          value={value.educationLevel}
+          onChange={(e) => handleLevelChange(e.target.value as EducationLevel | "")}
+          disabled={disabled}
+          aria-invalid={Boolean(errors.educationLevel)}
+          aria-describedby={errors.educationLevel ? `${ids.educationLevel}-error` : undefined}
+        >
+          <option value="">{t("selectPlaceholder")}</option>
+          {(["SECONDARY", "UNDERGRADUATE", "GRADUATE"] as const).map((level) => {
+            const label = renderLabel(locale, EDUCATION_LEVEL_LABELS[level]);
+            return (
+              <option key={level} value={level} lang={label.lang}>
+                {label.text}
+              </option>
+            );
+          })}
+        </Select>
         <FieldError id={`${ids.educationLevel}-error`} message={errors.educationLevel} />
       </div>
 
@@ -217,27 +215,24 @@ export function EducationFieldset({
               <Label htmlFor={ids.gradeLevel} className="text-xs font-bold text-foreground">
                 {t("fields.grade")}
               </Label>
-              <SelectShell>
-                <select
-                  id={ids.gradeLevel}
-                  value={value.gradeLevel}
-                  onChange={(e) => patch({ gradeLevel: e.target.value as GradeLevel | "" })}
-                  disabled={disabled}
-                  aria-invalid={Boolean(errors.gradeLevel)}
-                  aria-describedby={errors.gradeLevel ? `${ids.gradeLevel}-error` : undefined}
-                  className={SELECT_CLASS}
-                >
-                  <option value="">{t("selectPlaceholder")}</option>
-                  {(Object.keys(GRADE_LEVEL_LABELS) as GradeLevel[]).map((key) => {
-                    const label = renderLabel(locale, GRADE_LEVEL_LABELS[key]);
-                    return (
-                      <option key={key} value={key} lang={label.lang}>
-                        {label.text}
-                      </option>
-                    );
-                  })}
-                </select>
-              </SelectShell>
+              <Select
+                id={ids.gradeLevel}
+                value={value.gradeLevel}
+                onChange={(e) => patch({ gradeLevel: e.target.value as GradeLevel | "" })}
+                disabled={disabled}
+                aria-invalid={Boolean(errors.gradeLevel)}
+                aria-describedby={errors.gradeLevel ? `${ids.gradeLevel}-error` : undefined}
+              >
+                <option value="">{t("selectPlaceholder")}</option>
+                {(Object.keys(GRADE_LEVEL_LABELS) as GradeLevel[]).map((key) => {
+                  const label = renderLabel(locale, GRADE_LEVEL_LABELS[key]);
+                  return (
+                    <option key={key} value={key} lang={label.lang}>
+                      {label.text}
+                    </option>
+                  );
+                })}
+              </Select>
               <FieldError id={`${ids.gradeLevel}-error`} message={errors.gradeLevel} />
             </div>
 
@@ -245,27 +240,24 @@ export function EducationFieldset({
               <Label htmlFor={ids.studyStream} className="text-xs font-bold text-foreground">
                 {t("fields.stream")}
               </Label>
-              <SelectShell>
-                <select
-                  id={ids.studyStream}
-                  value={value.studyStream}
-                  onChange={(e) => patch({ studyStream: e.target.value as StudyStream | "" })}
-                  disabled={disabled}
-                  aria-invalid={Boolean(errors.studyStream)}
-                  aria-describedby={errors.studyStream ? `${ids.studyStream}-error` : undefined}
-                  className={SELECT_CLASS}
-                >
-                  <option value="">{t("selectPlaceholder")}</option>
-                  {(Object.keys(STUDY_STREAM_LABELS) as StudyStream[]).map((key) => {
-                    const label = renderLabel(locale, STUDY_STREAM_LABELS[key]);
-                    return (
-                      <option key={key} value={key} lang={label.lang}>
-                        {label.text}
-                      </option>
-                    );
-                  })}
-                </select>
-              </SelectShell>
+              <Select
+                id={ids.studyStream}
+                value={value.studyStream}
+                onChange={(e) => patch({ studyStream: e.target.value as StudyStream | "" })}
+                disabled={disabled}
+                aria-invalid={Boolean(errors.studyStream)}
+                aria-describedby={errors.studyStream ? `${ids.studyStream}-error` : undefined}
+              >
+                <option value="">{t("selectPlaceholder")}</option>
+                {(Object.keys(STUDY_STREAM_LABELS) as StudyStream[]).map((key) => {
+                  const label = renderLabel(locale, STUDY_STREAM_LABELS[key]);
+                  return (
+                    <option key={key} value={key} lang={label.lang}>
+                      {label.text}
+                    </option>
+                  );
+                })}
+              </Select>
               <FieldError id={`${ids.studyStream}-error`} message={errors.studyStream} />
             </div>
           </div>
@@ -274,7 +266,7 @@ export function EducationFieldset({
             <Label htmlFor={ids.schoolName} className="text-xs font-bold text-foreground">
               {t("fields.school")}
             </Label>
-            <input
+            <Input
               id={ids.schoolName}
               type="text"
               value={value.schoolName}
@@ -282,7 +274,6 @@ export function EducationFieldset({
               disabled={disabled}
               maxLength={200}
               autoComplete="organization"
-              className={SELECT_CLASS}
             />
           </div>
         </fieldset>
@@ -298,47 +289,42 @@ export function EducationFieldset({
               <Label htmlFor={ids.universityName} className="text-xs font-bold text-foreground">
                 {t("fields.university")}
               </Label>
-              <SelectShell>
-                <select
-                  id={ids.universityName}
-                  value={value.universityName}
-                  onChange={(e) => patch({ universityName: e.target.value })}
-                  disabled={disabled || universityState === "loading"}
-                  aria-invalid={Boolean(errors.universityName)}
-                  aria-describedby={
-                    errors.universityName ? `${ids.universityName}-error` : undefined
-                  }
-                  className={SELECT_CLASS}
-                >
-                  {universityState === "loading" ? (
-                    <option value="">{t("university.loading")}</option>
-                  ) : universityState === "error" ? (
-                    <option value="">{t("university.loadError")}</option>
-                  ) : (
-                    <>
-                      <option value="">{t("selectPlaceholder")}</option>
-                      {nonKktcUniversities.length > 0 && (
-                        <optgroup label={turkeyGroup.text} lang={turkeyGroup.lang}>
-                          {nonKktcUniversities.map((u) => (
-                            <option key={u.nameTr} value={u.nameTr} lang="tr">
-                              {u.nameTr}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                      {kktcUniversities.length > 0 && (
-                        <optgroup label={kktcGroup.text} lang={kktcGroup.lang}>
-                          {kktcUniversities.map((u) => (
-                            <option key={u.nameTr} value={u.nameTr} lang="tr">
-                              {u.nameTr}
-                            </option>
-                          ))}
-                        </optgroup>
-                      )}
-                    </>
-                  )}
-                </select>
-              </SelectShell>
+              <Select
+                id={ids.universityName}
+                value={value.universityName}
+                onChange={(e) => patch({ universityName: e.target.value })}
+                disabled={disabled || universityState === "loading"}
+                aria-invalid={Boolean(errors.universityName)}
+                aria-describedby={errors.universityName ? `${ids.universityName}-error` : undefined}
+              >
+                {universityState === "loading" ? (
+                  <option value="">{t("university.loading")}</option>
+                ) : universityState === "error" ? (
+                  <option value="">{t("university.loadError")}</option>
+                ) : (
+                  <>
+                    <option value="">{t("selectPlaceholder")}</option>
+                    {nonKktcUniversities.length > 0 && (
+                      <optgroup label={turkeyGroup.text} lang={turkeyGroup.lang}>
+                        {nonKktcUniversities.map((u) => (
+                          <option key={u.nameTr} value={u.nameTr} lang="tr">
+                            {u.nameTr}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    {kktcUniversities.length > 0 && (
+                      <optgroup label={kktcGroup.text} lang={kktcGroup.lang}>
+                        {kktcUniversities.map((u) => (
+                          <option key={u.nameTr} value={u.nameTr} lang="tr">
+                            {u.nameTr}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </>
+                )}
+              </Select>
               <FieldError id={`${ids.universityName}-error`} message={errors.universityName} />
             </div>
 
@@ -346,34 +332,29 @@ export function EducationFieldset({
               <Label htmlFor={ids.departmentName} className="text-xs font-bold text-foreground">
                 {t("fields.department")}
               </Label>
-              <SelectShell>
-                <select
-                  id={ids.departmentName}
-                  value={value.departmentName}
-                  onChange={(e) => patch({ departmentName: e.target.value })}
-                  disabled={disabled || departmentState === "loading"}
-                  aria-invalid={Boolean(errors.departmentName)}
-                  aria-describedby={
-                    errors.departmentName ? `${ids.departmentName}-error` : undefined
-                  }
-                  className={SELECT_CLASS}
-                >
-                  {departmentState === "loading" ? (
-                    <option value="">{t("department.loading")}</option>
-                  ) : departmentState === "error" ? (
-                    <option value="">{t("department.loadError")}</option>
-                  ) : (
-                    <>
-                      <option value="">{t("selectPlaceholder")}</option>
-                      {(departments ?? []).map((d) => (
-                        <option key={d.nameTr} value={d.nameTr} lang="tr">
-                          {d.nameTr}
-                        </option>
-                      ))}
-                    </>
-                  )}
-                </select>
-              </SelectShell>
+              <Select
+                id={ids.departmentName}
+                value={value.departmentName}
+                onChange={(e) => patch({ departmentName: e.target.value })}
+                disabled={disabled || departmentState === "loading"}
+                aria-invalid={Boolean(errors.departmentName)}
+                aria-describedby={errors.departmentName ? `${ids.departmentName}-error` : undefined}
+              >
+                {departmentState === "loading" ? (
+                  <option value="">{t("department.loading")}</option>
+                ) : departmentState === "error" ? (
+                  <option value="">{t("department.loadError")}</option>
+                ) : (
+                  <>
+                    <option value="">{t("selectPlaceholder")}</option>
+                    {(departments ?? []).map((d) => (
+                      <option key={d.nameTr} value={d.nameTr} lang="tr">
+                        {d.nameTr}
+                      </option>
+                    ))}
+                  </>
+                )}
+              </Select>
               <FieldError id={`${ids.departmentName}-error`} message={errors.departmentName} />
             </div>
           </div>
@@ -429,18 +410,6 @@ export function educationSelectionFromProfile(profile: {
 }
 
 type ReferenceState = "loading" | "loaded" | "error";
-
-const SELECT_CLASS =
-  "w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:border-primary transition-all duration-150 disabled:opacity-50";
-
-function SelectShell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="relative">
-      {children}
-      <ChevronDown className="size-3.5 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-    </div>
-  );
-}
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null;
