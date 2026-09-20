@@ -18,7 +18,7 @@ Read on demand, not every session:
 ```bash
 pnpm dev                                  # rarely needed: cografya-web-dev already serves :3000 from this tree
 pnpm typecheck && pnpm lint && pnpm test  # gate before every commit
-pnpm build                                # needs the API on :3001 (prerenders flags + district routes)
+pnpm build                                # docker stop cografya-web-dev FIRST (shares .next); needs the API on :3001
 pnpm codegen                              # after replacing openapi/openapi.json from the API repo
 pnpm generate:map | generate:world-map | generate:water | generate:tr-context   # map artifacts
 ```
