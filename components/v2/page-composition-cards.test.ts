@@ -939,7 +939,10 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // caught that `components/ui/select.tsx` already existed, with variants, a built-in chevron
 // and a showcase specimen. Adopting it removed both new constants AND the six hand-drawn
 // selects they dressed, each of which had been an element in this population.
-export const COMPUTED_CARD_CLASSNAMES = 192;
+// T-070: 192 → **194**. Two elements, both on the book page's index row: the `<summary>` the
+// accordion needed (`DENEME_SUMMARY`) and the chevron inside it (`DENEME_CHEVRON`). Neither is
+// a card; this population is "className is a bare identifier", which the whole page already is.
+export const COMPUTED_CARD_CLASSNAMES = 194;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -956,8 +959,9 @@ export const COMPUTED_CARD_CLASSNAMES = 192;
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   ["call", 1],
   // 198 → 192 in T-061: six hand-drawn `<select>` elements moved onto the `Select`
-  // primitive. See {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 192],
+  // primitive. 192 → 194 in T-070: the index row's `<summary>` and its chevron. See
+  // {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 194],
   ["member", 9],
   ["ternary", 2],
 ];

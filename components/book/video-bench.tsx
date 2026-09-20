@@ -418,6 +418,72 @@ export function VideoBench({
     target?.focus();
   }, [modal.resolvedRequestId]);
 
+  // THE MOBILE ACCORDION (T-070), and it is the island's job rather than the markup's because
+  // only the island knows which video is selected.
+  //
+  // WHAT THE SERVER SENDS IS EVERY ROW OPEN, which is the page as it was before this task —
+  // 31 rows and 186 links painted, for a crawler and for a reader with no JavaScript alike.
+  // What this does is CLOSE the rest, below `lg`, once there is a client to do it: at 390px
+  // the index was 5414px of identical six-button blocks between the reader and the bottom of
+  // the page, and 30 of those 31 blocks were for a video that was not on the stage.
+  //
+  // `lg` (64rem) is the SAME breakpoint `WORKBENCH` splits its columns at and `BenchStage`
+  // starts sticking at, and that is the whole reason it is the right one: above it the index
+  // sits BESIDE a stage that stays in view, so the list is a scannable index; below it the
+  // index sits UNDER the stage and every closed row is a screen the reader does not scroll.
+  // `matchMedia` and not a resize listener — the query fires only when the answer changes, and
+  // `change` covers a rotation as well as a resize.
+  //
+  // It writes `open` on every row on every selection, rather than toggling the two that moved:
+  // a reader can open a row by hand (it is a `<details>`), so "which rows are open" is not a
+  // value this component holds — the DOM is the state, and the only honest way to reconcile it
+  // is to state the whole answer.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (root === null) return;
+    const narrow = window.matchMedia("(max-width: 63.999rem)");
+    const apply = () => {
+      for (const row of root.querySelectorAll<HTMLDetailsElement>("details[data-deneme]")) {
+        const orderNo = Number.parseInt(row.dataset.deneme ?? "", 10);
+        row.open = !narrow.matches || orderNo === selectedOrderNo;
+      }
+    };
+    /* THE JUMP STRIP LANDS ON A HEADING, AND THE HEADING IS IN THE `<summary>`. Chrome expands a
+       `<details>` when a fragment resolves INSIDE its content, which is why a question link
+       (`#video-9-etiket-2`) needs nothing here — but `#video-9` resolves to the row's own
+       heading, which sits in the summary, so nothing needed expanding and the reader arrived on
+       a closed row. The strip's links are plain fragment anchors and deliberately do NOT move the
+       stage (they never have), so this opens the row and changes nothing else. */
+    const openFromHash = () => {
+      const id = window.location.hash.slice(1);
+      if (id === "") return;
+      const target = document.getElementById(id);
+      if (target === null || !root.contains(target)) return;
+      const row = target.closest<HTMLDetailsElement>("details[data-deneme]");
+      if (row !== null) row.open = true;
+
+      /* AND RE-ALIGN, because the collapse moved the ground under the browser's own scroll.
+         Landing on `#video-20-etiket-3` measured the target 30px ABOVE the viewport: the engine
+         scrolled to it while all 30 rows were open, then this effect closed the 19 rows above it
+         and everything below moved up. The correction is the same measure-then-move the hash
+         effect performs for the ordinary landing, with the same guard against scroll-jacking —
+         it moves only a target that is actually off its own `scroll-margin-top`.
+         It runs on a REAL hash navigation only. A question press writes its fragment with
+         `replaceState`, which fires no `hashchange`, so this never competes with the player's own
+         corrective scroll in `deneme-video.tsx`. */
+      const wanted = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+      if (Math.abs(target.getBoundingClientRect().top - wanted) > 1) target.scrollIntoView();
+    };
+    apply();
+    openFromHash();
+    narrow.addEventListener("change", apply);
+    window.addEventListener("hashchange", openFromHash);
+    return () => {
+      narrow.removeEventListener("change", apply);
+      window.removeEventListener("hashchange", openFromHash);
+    };
+  }, [selectedOrderNo]);
+
   return (
     <div ref={rootRef} className={className} onClick={onClick}>
       {bookProgress !== null && bookProgress.videoCount > 0 && (

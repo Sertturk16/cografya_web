@@ -31,6 +31,18 @@ ENV NODE_ENV=production
 # a failure mode the guard leaves open.
 ARG API_BASE_URL=http://127.0.0.1:3001
 ENV API_BASE_URL=${API_BASE_URL}
+# NEXT_PUBLIC_SITE_URL IS A BUILD ARG BECAUSE `NEXT_PUBLIC_*` IS INLINED AT BUILD TIME, and
+# that is the whole of T-069. docker-compose.prod.yml passed it as a RUNTIME environment
+# variable, which no client bundle ever reads — so `lib/env.ts`'s `http://localhost:3000`
+# default was baked into the shipped JavaScript, every book cover on the live site became
+# `<img src="http://localhost:3000/api/video-cover/…">`, and Chromium asked readers to let a
+# public HTTPS page "access other apps and services on this device" (Private Network Access).
+# NO DEFAULT, and the `:?` guard below, for the reason the secret above records: this compose
+# file lives outside every git repo in this workspace, so wiring it in is a manual step CI
+# cannot catch, and the failure this arg prevents is invisible from inside the build — a
+# localhost default produces a green build and a broken site.
+ARG NEXT_PUBLIC_SITE_URL
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
 # INTERNAL_REQUEST_TOKEN is deliberately NOT an ARG: build args land in image history. It is
 # mounted as a BuildKit secret for the duration of this one command and is not in any layer.
 # required=true: without it, a missing secret is not an error at this RUN — the mounted file
@@ -45,6 +57,7 @@ ENV API_BASE_URL=${API_BASE_URL}
 # `args.API_BASE_URL` already fails loudly via this guard's FAIL rows. Every path where the
 # host's compose file was not updated now fails loudly and by name.
 RUN --mount=type=secret,id=internal_request_token,required=true \
+    : "${NEXT_PUBLIC_SITE_URL:?build arg NEXT_PUBLIC_SITE_URL is required (see the ARG above): a production image built without it inlines the localhost default into the client bundle}" && \
     INTERNAL_REQUEST_TOKEN="$(cat /run/secrets/internal_request_token)" pnpm build
 
 FROM node:24-alpine AS runner

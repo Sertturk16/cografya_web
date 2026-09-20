@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
+import { ownOriginPath } from "@/lib/seo/site";
 import { fetchVideoIdentity, VIDEO_IDENTITY_FETCH_TIMEOUT_MS } from "@/lib/video-identity/client";
 import { saveVideoProgress } from "@/lib/video-progress/client";
 import { loadIframeApi, YT_PLAYER_STATE, type YouTubePlayer } from "@/lib/youtube/iframe-api";
@@ -653,7 +654,14 @@ export function DenemeVideo({
            was wrong in all ten measurements and is recorded here so it is not re-made. */
         <img
           className={THUMB}
-          src={rich.thumbnailUrl}
+          /* THE ONE ADDRESS THE BROWSER ACTUALLY FETCHES, so it is the one that must not be
+             able to leave this origin (T-069). `ownOriginPath` collapses our own
+             `/api/video-cover/…` proxy address to a path and returns a provider CDN address
+             untouched; see its docblock for the build-time inlining that made a live HTTPS
+             page request `http://localhost:3000` and trip Chromium's Private Network Access
+             prompt. The JSON-LD on this page keeps the ABSOLUTE address — structured data
+             needs one — which is why this is applied here and not in the payload. */
+          src={ownOriginPath(rich.thumbnailUrl)}
           alt=""
           width={rich.thumbnailWidth}
           height={rich.thumbnailHeight}

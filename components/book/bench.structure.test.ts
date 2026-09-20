@@ -120,14 +120,53 @@ describe("the bench keeps the index crawlable", () => {
     expect(FLAT_BENCH).toMatch(/<div className=\{indexClassName\}>\{children\}<\/div>/);
   });
 
-  it("has no accordion left to reintroduce", () => {
-    // The rows are always open now. A revert to `<details>`/`<summary>` would restore an
-    // element whose retired guards no longer exist, so the absence is asserted where those
-    // guards used to be.
+  /**
+   * REWRITTEN BY T-070, AND THE THING IT GUARDED IS STILL GUARDED.
+   *
+   * This case used to assert that `<details>`/`<summary>` appear NOWHERE — a tripwire against
+   * reverting to the thirty-island accordion the bench replaced. T-070 brings `<details>` back
+   * for the mobile index, and the two are not the same element:
+   *
+   * · the old accordion needed an ISLAND PER BLOCK, because the thing that had to hear a press
+   *   (`<details>`'s own `toggle`) was the thing that had to be torn down. Nothing listens to
+   *   `toggle` now — the one delegated listener still owns every press inside the index, and a
+   *   `<summary>` carries neither `data-second` nor `data-player-open`, so it falls through.
+   * · the old accordion's open row was `position: sticky`, which is what made `DENEME_HEADING`
+   *   carry a second `scroll-mt` addend. This one is not positioned at all.
+   * · the old accordion shipped its rows CLOSED. These ship open, which is the assertion below
+   *   and the whole crawlability promise: the server's markup is the page as it was.
+   *
+   * So the guard moves rather than goes: what may not come back is a CLOSED row in the server's
+   * HTML, and an island per row.
+   */
+  it("ships every accordion row OPEN, and closes none of them on the server", () => {
+    // `open` with no expression — a `open={…}` would make the server's answer conditional, and
+    // "conditional" is exactly what a crawler and a no-JavaScript reader cannot rely on.
+    expect(FLAT_PAGE).toMatch(/<details key=\{video\.orderNo\} open className=\{DENEME\}/);
+    expect(FLAT_PAGE).not.toMatch(/<details[^>]*open=\{/);
+  });
+
+  it("keeps the disclosure native — no island, no toggle listener, no per-row state", () => {
+    // The row's open state is written by ONE effect in the island (below) and by the browser.
+    // A `onToggle` anywhere here would be the first line of the thirty-island accordion coming
+    // back, and `useState` on this page is impossible in a different way worth pinning too: it
+    // is an async Server Component.
+    // `onToggle=` exactly, not the substring: `bench-stage.tsx` passes an `onToggleWatched`
+    // prop that has nothing to do with a disclosure, and a `toContain` here would red on it.
     for (const source of [PAGE, BENCH, STAGE]) {
-      expect(source).not.toContain("<details");
-      expect(source).not.toContain("<summary");
+      expect(source).not.toMatch(/onToggle\s*=/);
     }
+    expect(PAGE).not.toContain("useState");
+  });
+
+  it("closes rows only below the breakpoint the two columns split at", () => {
+    // 64rem is `lg`, the width `WORKBENCH` gives the index a column of its own at and
+    // `BenchStage` starts sticking at. Above it the index sits BESIDE a stage that stays in
+    // view and every row is open; below it the index sits UNDER the stage, where 30 open rows
+    // were 5414px of a 390px-wide page. A drift between this query and `lg` would leave one
+    // band of widths with a collapsed index and no visible stage.
+    expect(FLAT_BENCH).toContain('matchMedia("(max-width: 63.999rem)")');
+    expect(FLAT_BENCH).toMatch(/row\.open = !narrow\.matches \|\| orderNo === selectedOrderNo/);
   });
 
   it("keeps the deneme heading a real heading carrying the fragment id", () => {
@@ -210,21 +249,26 @@ describe("the delegated listener stays narrow", () => {
     // correctly from a question row one level down (→ PR #70 review `FENER70-M2` / `CODE70-M5`).
     // Presence alone cannot tell those two placements apart, so the containment is what is
     // asserted: the attribute is on the `<article>`, and the `<ul>` no longer carries one.
-    expect(FLAT_PAGE).toMatch(/<article[^>]*\bdata-deneme=\{video\.orderNo\}/);
+    // `<details>` since T-070; it is the same element in the same place, one tag name on.
+    expect(FLAT_PAGE).toMatch(/<details[^>]*\bdata-deneme=\{video\.orderNo\}/);
     expect(FLAT_PAGE).not.toMatch(/<ul[^>]*\bdata-deneme=/);
     // And the id that landing resolves to is inside it.
     // `DENEME_HEAD`, not `styles.denemeHead`: T-033 task 8 retired `book-detail.module.css` and
     // hoisted its fourteen rules into class constants on the page. The SHAPE this line asserts —
     // article, then the head div, then the `<h3>` carrying the id — is unchanged; only the
     // expression naming the class is.
-    expect(FLAT_PAGE).toMatch(/<article[^>]*>\s*<div className=\{DENEME_HEAD\}>\s*<h3 id=/);
+    // The head sits inside the `<summary>` now (T-070) — one element deeper, same containment.
+    expect(FLAT_PAGE).toMatch(
+      /<details[^>]*>\s*<summary className=\{DENEME_SUMMARY\}>\s*<div className=\{DENEME_HEAD\}>\s*<h3 id=/,
+    );
   });
 
   it("names each of the thirty index rows", () => {
-    // An `<article>` is a region a screen reader lists by name, and a heading INSIDE an element
-    // does not name it — so the rows arrived as thirty unnamed "article"s (→ `A11Y70-M1`). The
-    // name borrows the fragment id, which already exists and is already unique per video.
-    expect(FLAT_PAGE).toMatch(/<article[^>]*aria-labelledby=\{videoFragment\(video\.orderNo\)\}/);
+    // A heading INSIDE an element does not name it — so the rows arrived as thirty unnamed
+    // regions (→ `A11Y70-M1`). The name borrows the fragment id, which already exists and is
+    // already unique per video. It survived the `<article>` → `<details>` change in T-070: a
+    // `<details>` with a group role still reads its accessible name from this attribute.
+    expect(FLAT_PAGE).toMatch(/<details[^>]*aria-labelledby=\{videoFragment\(video\.orderNo\)\}/);
   });
 
   it("never opens a player for a video the provider refuses to embed", () => {
