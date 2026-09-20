@@ -235,7 +235,7 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *
  *   - {@link CARD_SHAPED_PRIMITIVES} (8) — design-system primitives wearing card chrome.
  *   - {@link MAP_VIEWPORTS} (11) — a rounded, bordered box around an `aspect-[…]` canvas.
- *   - {@link INTERACTIVE_CARD_CARRIERS} (37) — `<Link>` ×28, `<a>` ×5, `<button>` ×4.
+ *   - {@link INTERACTIVE_CARD_CARRIERS} (36) — `<Link>` ×27, `<a>` ×5, `<button>` ×4.
  *
  * ## SCOPE — what this scanner cannot see
  *
@@ -546,12 +546,21 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * distinct spellings drop because the auth dialog's switcher shared its exact spelling with one
  * of the two map explorers'.
  */
-export const HAND_DRAWN_CARDS = 190;
+/**
+ * T-061 MOVED ALL FOUR. `/profil`'s page and `components/v2/v2-profile-form.tsx` were deleted
+ * (the route is a `next.config.ts` redirect now), taking their hand-drawn card and well
+ * spellings with them; `/hesabim/ayarlar` and its five components arrived. The settings
+ * sections themselves are NOT hand-drawn — they go through `Card variant="panel"` via
+ * `SettingsCard` — so what the new files contribute is the smaller shapes a panel holds: the
+ * read-only key/value tiles and the two result banners. Net: **190 → 187 cards, 166 → 160
+ * wells, 233 → 230 spellings, 356 → 347 total.**
+ */
+export const HAND_DRAWN_CARDS = 187;
 
-export const HAND_DRAWN_WELLS = 166;
+export const HAND_DRAWN_WELLS = 160;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 233;
+export const HAND_DRAWN_CARD_SPELLINGS = 230;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -904,7 +913,12 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * than a themed surface. A map figure is an illustration, not a panel. The `ternary` and `call`
  * figures do not move; this conversion introduced neither.
  */
-export const COMPUTED_CARD_CLASSNAMES = 198;
+// T-061: 198 → **200**. Two more elements carry a className that is a bare identifier rather
+// than a literal — the shared `SELECT_CLASS` constant in `education-fieldset.tsx` and the one
+// in `v2-settings-personal-card.tsx`. Both are select inputs, neither is a card surface; they
+// land in this population for the same reason every hoisted constant does, which is that the
+// scanner reads source text and cannot follow the binding.
+export const COMPUTED_CARD_CLASSNAMES = 200;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -920,7 +934,9 @@ export const COMPUTED_CARD_CLASSNAMES = 198;
  * task 9 closed the programme with. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   ["call", 1],
-  ["identifier", 198],
+  // 198 → 200 in T-061: two select inputs whose className is a hoisted `SELECT_CLASS`
+  // constant. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 200],
   ["member", 9],
   ["ternary", 2],
 ];
@@ -1298,7 +1314,10 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // 58 after T-033: `province-marine-section.tsx` joins the surface, holding a card that was
     // always there and was only ever invisible because it was drawn from a CSS Module.
     // See {@link HAND_DRAWN_CARDS}.
-    expect(handDrawnTotals().files).toBe(58);
+    // 59 after T-061: `v2-profile-form.tsx` left the surface (deleted) while the five settings
+    // components joined it, two of which hold hand-drawn shapes — the read-only tiles and the
+    // result banners. Net one more file, not one more pattern.
+    expect(handDrawnTotals().files).toBe(59);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
@@ -1411,7 +1430,9 @@ const INTERACTIVE_CARD_CARRIERS: readonly string[] = [
   "components/v2/v2-header.tsx <Link>",
   "components/v2/v2-header.tsx <Link>",
   "components/v2/v2-header.tsx <button>",
-  "components/v2/v2-member-hub.tsx <Link>",
+  // Three since T-061, not four: the hub's "Hesap & Profil" panel held two card-shaped
+  // links to `/profil` and the hero held a third; they collapsed into one link to
+  // `/hesabim/ayarlar`.
   "components/v2/v2-member-hub.tsx <Link>",
   "components/v2/v2-member-hub.tsx <Link>",
   "components/v2/v2-member-hub.tsx <Link>",
@@ -1461,7 +1482,7 @@ describe("the three card-shaped populations PR4 must not touch", () => {
     ).toEqual([...MAP_VIEWPORTS].sort());
   });
 
-  it("the interactive carriers are exactly the recorded 37, by file", () => {
+  it("the interactive carriers are exactly the recorded 36, by file", () => {
     const tags = new Set(["Link", "a", "button"]);
     const found = cardsMatching((element) => tags.has(element.tag));
     expect(

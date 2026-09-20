@@ -506,11 +506,16 @@ const TIER_SWITCH = {
  * `RECONCILED_BY_TIER_SWITCH + RECONCILED_BY_EXEMPTION === REACHING_TWO` is asserted too, so the
  * three cannot be re-pinned independently into a set that does not add up.
  */
-const ROOTS_REACHING_TWO_H1 = 23;
+// 23 until T-061 deleted `/profil` — the one root that reached two DIFFERENT headings.
+const ROOTS_REACHING_TWO_H1 = 22;
 /** Roots reaching both TIER elements through `PageHero`'s one unevaluable `tier` switch. */
 const ROOTS_RECONCILED_BY_TIER_SWITCH = 22;
-/** Roots reaching two DIFFERENT headings on branches the walk cannot evaluate — `MULTIPLE_H1_EXEMPTIONS`. */
-const ROOTS_RECONCILED_BY_EXEMPTION = 1;
+/**
+ * Roots reaching two DIFFERENT headings on branches the walk cannot evaluate —
+ * `MULTIPLE_H1_EXEMPTIONS`. **0 since T-061**: its one member, `/profil`, is gone, and the page
+ * that replaced it puts its single `<h1>` outside both of its branches on purpose.
+ */
+const ROOTS_RECONCILED_BY_EXEMPTION = 0;
 
 /**
  * `tierPrimitiveWriters(root)` memo. Keyed by root and dropped wherever {@link sitesCache} is,
@@ -636,59 +641,26 @@ function effectiveH1Sites(root: string): H1Site[] {
 /**
  * Render roots that reach more than one `<h1>` and are NOT exempt, in the same named-with-a-reason
  * shape `BODY_WRAPPER_EXEMPTIONS` uses in `components/v2/page-composition-containers.test.ts` for
- * the three sticky nav bars: path, the two source
- * conditions that make it legitimate, and a liveness assertion so the exemption cannot outlive its
- * reason.
+ * the three sticky nav bars: path, the two source conditions that make it legitimate, and a
+ * liveness assertion so the exemption cannot outlive its reason.
  *
- * ONE member, VERIFIED IN THE SOURCE rather than asserted. `app/[locale]/(site)/profil/page.tsx`
- * reaches two `<h1>` elements, and they can never render together:
+ * **EMPTY since T-061, and the way it emptied is the point.** Its one member was
+ * `app/[locale]/(site)/profil/page.tsx`, which reached two `<h1>` elements on mutually exclusive
+ * `accountRole` branches — the page's own for a TEACHER, `V2ProfileForm`'s for a STUDENT. T-061
+ * deleted both: the page is now a `next.config.ts` redirect to `/hesabim/ayarlar` and the form
+ * component is gone. The liveness check below went red naming the missing guards the moment the
+ * file disappeared, which is exactly what "the exemption cannot outlive its reason" was written
+ * to do, and the exemption was dropped rather than rewritten.
  *
- *   line  82  {result.kind === "ok" && result.profile.accountRole === "TEACHER" && (
- *   line  89      <h1 className="text-xl font-bold tracking-tight text-foreground">   <- the page's own
- *   line 103  {result.kind === "ok" && result.profile.accountRole === "STUDENT" && (
- *   line 105      <V2ProfileForm locale={locale} profile={result.profile} />
- *
- * and `components/v2/v2-profile-form.tsx:220` renders the second `<h1>` unconditionally inside
- * that component. One `accountRole` cannot be both `"TEACHER"` and `"STUDENT"`, `V2ProfileForm` is
- * rendered from exactly one place in the file (line 105, inside the STUDENT branch — the only
- * other reference is its import on line 11), and the page's own `<h1>` occurs exactly once, inside
- * the TEACHER branch. So the rendered DOM carries exactly ONE `<h1>` on every request. The
- * reachability scan cannot evaluate a condition (SCOPE note 4) and sees two; the exemption is
- * where that difference is recorded, so `PAGES_WITH_MULTIPLE_H1` can be pinned at the number of
- * pages that really ship two, which is 0.
- *
- * The liveness check below fails if either guard disappears from the source, which is exactly what
- * would happen if someone unified the two branches — at which point the exemption is wrong and
- * must be dropped rather than carried.
- *
- * TASK 3 (2026-09-18) WAS BRIEFED TO DEMOTE ONE OF THE TWO AND DID NOT. That instruction was
- * written before the branches above were read, and it would have made the page's outline WORSE:
- * a STUDENT would have been left on a document whose only heading is an `<h2>`, which is the exact
- * defect the same task spent its Step 4 closing on `giris`, `kayit` and the three play screens. The
- * page ships one `<h1>` per request today; there is nothing here to fix. This paragraph exists so
- * the next reader of that brief finds the measurement rather than re-deriving it, and so the
- * withdrawal is a recorded decision rather than an omission.
- *
- * `PageHero` was NOT adopted here either, and that is the same judgement rather than a second one:
- * neither heading is a hero. Both sit inline beside an icon in a card header
- * (`p-2 rounded-xl bg-primary/10` + `<GraduationCap>`), at `text-xl` inside a `max-w-2xl mx-auto`
- * card — a component whose whole contract is a badge row, a hero heading, a locale notice and a
- * lede would have had to be bent around markup that wants none of them.
+ * What replaced it carries one `<h1>` outright: `/hesabim/ayarlar` has a single page heading and
+ * four `<h2>` section headings, for a teacher and a student alike. There is no longer a page on
+ * the surface whose heading count depends on a condition the scanner cannot evaluate.
  */
 const MULTIPLE_H1_EXEMPTIONS: ReadonlyArray<{
   readonly file: string;
   readonly guards: readonly [string, string];
   readonly why: string;
-}> = [
-  {
-    file: "app/[locale]/(site)/profil/page.tsx",
-    guards: [
-      'result.profile.accountRole === "TEACHER"',
-      'result.profile.accountRole === "STUDENT"',
-    ],
-    why: "Mutually exclusive accountRole branches: the page's own h1 (:89) renders only for TEACHER, V2ProfileForm's (v2-profile-form.tsx:220) only for STUDENT. One h1 ever reaches the DOM.",
-  },
-];
+}> = [];
 
 /** `page — n: file, file` for each non-exempt render root whose closure holds >1 `<h1>`. */
 function pagesWithMultipleH1(): string[] {
@@ -945,7 +917,11 @@ function pagesWithMultipleH1(): string[] {
  * RED at 18, and takes {@link PAGES_WITH_MULTIPLE_H1} RED too, which is the property the collapse
  * must not destroy. Reverted: GREEN.
  */
-export const H1_SPELLINGS = 13;
+// T-061: 13 → **12**. Deleting `/profil` and `v2-profile-form.tsx` removed the two
+// `text-xl font-bold tracking-tight text-foreground` card headings that were the 13th
+// spelling's only carriers. `/hesabim/ayarlar` adds NO spelling: it renders `H1`, the hub tier
+// this set already holds.
+export const H1_SPELLINGS = 12;
 
 /**
  * The denominator: how many distinct `<h1>` ELEMENTS those spellings cover. Pinned separately so
@@ -974,7 +950,10 @@ export const H1_SPELLINGS = 13;
  * 32 → 17 across the task. This is the counter that carries the result — 17 heroes that each wrote
  * their own heading now share two, and five render roots that rendered none now render one.
  */
-export const H1_ELEMENTS = 17;
+// T-061: 17 → **15**. `/profil`'s own `<h1>` and `v2-profile-form.tsx`'s both went with the
+// files. `/hesabim/ayarlar` adds no element either — it renders `typography.tsx`'s `H1`, an
+// element 16 other roots already reach.
+export const H1_ELEMENTS = 15;
 
 /**
  * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over
@@ -1546,22 +1525,29 @@ describe("the multiple-h1 exemptions", () => {
     },
   );
 
-  it("an exemption only silences its own file — negative control", () => {
-    // `pagesWithMultipleH1()` filters by exact label, so a second offender elsewhere is still
-    // reported. Proven by asking for the unfiltered list and confirming profil is really in it.
+  it("the exemption filter silences nothing it was not given — negative control", () => {
+    // This control used to prove that naming `profil` silenced `profil` AND NOTHING ELSE, by
+    // showing the unfiltered list held exactly that one file while the filtered list was empty.
+    // T-061 deleted `/profil`, so `MULTIPLE_H1_EXEMPTIONS` is empty and there is no file left to
+    // demonstrate the filter against.
     //
-    // Read off `effectiveH1Sites`, not `h1SitesOf`: since the adoption task, 22 render roots
-    // reach BOTH heading tiers through `PageHero`'s one `tier` switch, which the tier-switch
-    // block below collapses and separately proves. The property this control exists for is
-    // unchanged and is about the FILE exemption — that naming `profil` silences `profil` and
-    // nothing else. The number this control no longer observes is pinned by "the 23/22/1 split"
-    // immediately below, which reads the UNCOLLAPSED list.
+    // It is rewritten rather than deleted, because with an empty exemption list there is a
+    // STRONGER property available: the filtered and unfiltered lists must be IDENTICAL. Nothing
+    // is being silenced, so nothing may differ. If a page reaching two `<h1>` elements comes
+    // back, this case goes red alongside `PAGES_WITH_MULTIPLE_H1` and says which file — and if
+    // someone adds an exemption without a reason, the two lists diverge and this case is where
+    // that shows.
+    //
+    // Read off `effectiveH1Sites`, not `h1SitesOf`: 22 render roots reach BOTH heading tiers
+    // through `PageHero`'s one `tier` switch, which the tier-switch block below collapses and
+    // separately proves. The uncollapsed number is pinned by "the split" immediately below.
+    expect(MULTIPLE_H1_EXEMPTIONS).toEqual([]);
     const allWithTwo = walkRenderRoots().filter((page) => effectiveH1Sites(page).length > 1);
-    expect(allWithTwo.map(label)).toEqual(["app/[locale]/(site)/profil/page.tsx"]);
-    expect(pagesWithMultipleH1()).toEqual([]);
+    expect(pagesWithMultipleH1()).toEqual(allWithTwo.map(label));
+    expect(allWithTwo.map(label)).toEqual([]);
   });
 
-  it("the 23/22/1 split is exactly what both docblocks claim — the uncollapsed number", () => {
+  it("the 22/22/0 split is exactly what both docblocks claim — the uncollapsed number", () => {
     // THE ONE ASSERTION THAT READS `h1SitesOf` RATHER THAN `effectiveH1Sites`. Without it the raw
     // count is observed nowhere: a later task adopting `PageHero` on a headingless page moves it
     // and no other counter notices, so SCOPE note 4 and `PAGES_WITH_MULTIPLE_H1`'s docblock — both

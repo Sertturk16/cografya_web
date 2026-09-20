@@ -261,6 +261,13 @@ export const routing = defineRouting({
       tr: "/hesabim",
       en: "/account",
     },
+    // T-061: account management left the hub and `/profil` and became its own route. It sits
+    // UNDER `/hesabim` rather than beside it because that is what it is — the member's own
+    // area, one level in — and the breadcrumb reads the same way.
+    "/hesabim/ayarlar": {
+      tr: "/hesabim/ayarlar",
+      en: "/account/settings",
+    },
     // The earthquake hub (AFAD, → DEC 2026-08-29a; `SEO-POLICY.md` §B4's own IA row). LOCALIZED
     // segment, on the `/hakkimizda ↔ /en/about` / `/deniz ↔ /en/sea` precedent: "deprem" does
     // not read as English at all. `/en/earthquakes` is plain and descriptive — no `ş`/`ğ`/`ı`/

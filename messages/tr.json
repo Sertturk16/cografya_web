@@ -1097,5 +1097,65 @@
     "heading": "Bir şeyler ters gitti",
     "body": "Beklenmeyen bir hata oluştu. Sayfayı yeniden yüklemeyi deneyebilirsin.",
     "retry": "Tekrar dene"
+  },
+  "Settings": {
+    "metaTitle": "Hesap Ayarları",
+    "metaDescription": "Profil bilgilerini, eğitim bilgilerini ve şifreni tek yerden yönet.",
+    "heading": "Ayarlar",
+    "lede": "Hesabınla ilgili her şey burada: kişisel bilgilerin, eğitim bilgilerin ve şifren.",
+    "sectionNavLabel": "Ayar bölümleri",
+    "breadcrumbHome": "Ana sayfa",
+    "breadcrumbAccount": "Hesabım",
+    "breadcrumbCurrent": "Ayarlar",
+    "save": "Kaydet",
+    "saved": "Bilgilerin kaydedildi.",
+    "loadError": "Bilgilerin yüklenemedi.",
+    "loadErrorHint": "Sayfayı yenilemeyi dene; sorun sürerse biraz sonra tekrar bak.",
+    "personal": {
+      "title": "Profil bilgileri",
+      "description": "Adın, iletişim numaran ve bulunduğun yer.",
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "phone": "Telefon",
+      "phoneInvalid": "Geçerli bir cep telefonu numarası gir (örn: 05xx xxx xx xx).",
+      "province": "İl",
+      "district": "İlçe"
+    },
+    "education": {
+      "title": "Eğitim bilgileri",
+      "description": "Hangi düzeyde okuduğun ve buna bağlı bilgilerin.",
+      "complete": "Tamam",
+      "incomplete": "Eksik alanlar var"
+    },
+    "password": {
+      "title": "Güvenlik",
+      "description": "Şifreni değiştir.",
+      "current": "Mevcut şifren",
+      "next": "Yeni şifren",
+      "confirm": "Yeni şifren (tekrar)",
+      "show": "Şifreyi göster",
+      "hide": "Şifreyi gizle",
+      "submit": "Şifreyi değiştir",
+      "saved": "Şifren değiştirildi.",
+      "policy": "Şifren en az 6 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.",
+      "sameAsCurrent": "Yeni şifren mevcut şifrenle aynı olamaz.",
+      "mismatch": "İki şifre birbirini tutmuyor.",
+      "ruleLength": "6+ karakter",
+      "ruleUpper": "Büyük harf",
+      "ruleLower": "Küçük harf",
+      "ruleDigit": "Rakam",
+      "otherSessionsNotice": "Şifreni değiştirdiğinde bu cihazda açık kalırsın, diğer cihazlardaki oturumların kapanır."
+    },
+    "account": {
+      "title": "Hesap",
+      "description": "Değiştirilemeyen hesap bilgilerin.",
+      "email": "E-posta",
+      "role": "Hesap türü",
+      "memberSince": "Üyelik başlangıcı",
+      "roleStudent": "Öğrenci",
+      "roleTeacher": "Öğretmen",
+      "roleParent": "Veli",
+      "emailNotice": "E-posta adresini şimdilik buradan değiştiremezsin; değişmesi gerekiyorsa bize ulaş."
+    }
   }
 }

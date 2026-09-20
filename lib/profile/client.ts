@@ -1,6 +1,6 @@
 "use client";
 
-import type { Profile, UpdateProfileRequest } from "@/lib/api/types";
+import type { Profile, UpdateAccountRequest, UpdateProfileRequest } from "@/lib/api/types";
 import {
   EDUCATION_LEVEL_LABELS,
   GRADE_LEVEL_LABELS,
@@ -90,14 +90,21 @@ function parseProfileBffBody(value: unknown): SubmitProfileResult {
   return { ok: false, code: "errors.transport.unavailable" };
 }
 
-export async function submitProfileReplacement(
-  payload: UpdateProfileRequest,
+/**
+ * The one PUT both replacement routes make. `/api/profile` carries the education block and
+ * `/api/account` the personal one; they answer with the same `ProfileBffBody`, run the same
+ * timeout and are parsed by the same guard, so one function serves both rather than two that
+ * drift.
+ */
+async function submitReplacement(
+  path: "/api/profile" | "/api/account",
+  payload: UpdateProfileRequest | UpdateAccountRequest,
 ): Promise<SubmitProfileResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROFILE_FETCH_TIMEOUT_MS);
 
   try {
-    const res = await fetch("/api/profile", {
+    const res = await fetch(path, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -122,4 +129,18 @@ export async function submitProfileReplacement(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** Replace the education block. */
+export async function submitProfileReplacement(
+  payload: UpdateProfileRequest,
+): Promise<SubmitProfileResult> {
+  return submitReplacement("/api/profile", payload);
+}
+
+/** Replace the personal block (T-061). */
+export async function submitAccountReplacement(
+  payload: UpdateAccountRequest,
+): Promise<SubmitProfileResult> {
+  return submitReplacement("/api/account", payload);
 }
