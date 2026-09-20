@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronDown, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 import type { Profile } from "@/lib/api/types";
 import { canonicalizePhone } from "@/lib/auth/form-rules";
 import { PROFILE_ERROR_MESSAGE_KEYS, submitAccountReplacement } from "@/lib/profile/client";
@@ -11,6 +11,7 @@ import type { ProfileBffCode } from "@/lib/profile/transport.server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { SettingsCard, SettingsFieldError, SettingsResult } from "./v2-settings-card";
 
 export interface ProvinceOption {
@@ -216,23 +217,19 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
             <Label htmlFor={IDS.provincePlateCode} className="text-xs font-bold text-foreground">
               {t("personal.province")}
             </Label>
-            <div className="relative">
-              <select
-                id={IDS.provincePlateCode}
-                value={plateCode}
-                onChange={(e) => setPlateCode(e.target.value)}
-                disabled={submitting}
-                aria-invalid={Boolean(errors.provincePlateCode)}
-                className={SELECT_CLASS}
-              >
-                {provinces.map((p) => (
-                  <option key={p.plateCode} value={p.plateCode}>
-                    {p.nameTr}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="size-3.5 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+            <Select
+              id={IDS.provincePlateCode}
+              value={plateCode}
+              onChange={(e) => setPlateCode(e.target.value)}
+              disabled={submitting}
+              isError={Boolean(errors.provincePlateCode)}
+            >
+              {provinces.map((p) => (
+                <option key={p.plateCode} value={p.plateCode}>
+                  {p.nameTr}
+                </option>
+              ))}
+            </Select>
             <SettingsFieldError
               id={`${IDS.provincePlateCode}-error`}
               message={errors.provincePlateCode}
@@ -243,23 +240,19 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
             <Label htmlFor={IDS.districtId} className="text-xs font-bold text-foreground">
               {t("personal.district")}
             </Label>
-            <div className="relative">
-              <select
-                id={IDS.districtId}
-                value={districtId}
-                onChange={(e) => setDistrictId(e.target.value)}
-                disabled={submitting}
-                aria-invalid={Boolean(errors.districtId)}
-                className={SELECT_CLASS}
-              >
-                {districts.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nameTr}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="size-3.5 text-muted-foreground absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            </div>
+            <Select
+              id={IDS.districtId}
+              value={districtId}
+              onChange={(e) => setDistrictId(e.target.value)}
+              disabled={submitting}
+              isError={Boolean(errors.districtId)}
+            >
+              {districts.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.nameTr}
+                </option>
+              ))}
+            </Select>
             <SettingsFieldError id={`${IDS.districtId}-error`} message={errors.districtId} />
           </div>
         </div>
@@ -279,6 +272,3 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
     </SettingsCard>
   );
 }
-
-const SELECT_CLASS =
-  "w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:border-primary transition-all duration-150 disabled:opacity-50";

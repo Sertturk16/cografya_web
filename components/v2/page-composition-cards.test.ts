@@ -917,12 +917,13 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * than a themed surface. A map figure is an illustration, not a panel. The `ternary` and `call`
  * figures do not move; this conversion introduced neither.
  */
-// T-061: 198 → **200**. Two more elements carry a className that is a bare identifier rather
-// than a literal — the shared `SELECT_CLASS` constant in `education-fieldset.tsx` and the one
-// in `v2-settings-personal-card.tsx`. Both are select inputs, neither is a card surface; they
-// land in this population for the same reason every hoisted constant does, which is that the
-// scanner reads source text and cannot follow the binding.
-export const COMPUTED_CARD_CLASSNAMES = 200;
+// T-061: 198 → **192**. The direction is DOWN, and by more than this task added. The settings
+// page and the register wizard first hand-drew their `<select>` elements the way
+// `v2-profile-form.tsx` had — two copies of one twelve-class constant — and a design review
+// caught that `components/ui/select.tsx` already existed, with variants, a built-in chevron
+// and a showcase specimen. Adopting it removed both new constants AND the six hand-drawn
+// selects they dressed, each of which had been an element in this population.
+export const COMPUTED_CARD_CLASSNAMES = 192;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -938,9 +939,9 @@ export const COMPUTED_CARD_CLASSNAMES = 200;
  * task 9 closed the programme with. */
 const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   ["call", 1],
-  // 198 → 200 in T-061: two select inputs whose className is a hoisted `SELECT_CLASS`
-  // constant. See {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 200],
+  // 198 → 192 in T-061: six hand-drawn `<select>` elements moved onto the `Select`
+  // primitive. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 192],
   ["member", 9],
   ["ternary", 2],
 ];
