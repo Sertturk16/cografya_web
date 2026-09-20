@@ -206,7 +206,8 @@ export const PAGE_BODY_SPELLINGS = 0;
 describe("the scanner itself", () => {
   it("walked the product surface and nothing else", () => {
     const pages = walkPages().map(label);
-    expect(pages.length).toBe(37);
+    // 37 → 38 in T-073: `/kullanim-sartlari`, the terms page.
+    expect(pages.length).toBe(38);
     expect(pages).toContain("app/[locale]/(site)/araclar/page.tsx");
     expect(pages.some((p) => p.includes("design-system"))).toBe(false);
   });
@@ -706,7 +707,9 @@ describe("every render root's body sits inside a PageContainer", () => {
     // renamed export or a `return` Prettier stopped indenting at two spaces would all read as a
     // clean surface rather than as a failure, which is this programme's own founding mistake.
     const roots = walkRenderRoots();
-    expect(roots.length).toBe(39);
+    // 39 → 40 in T-073: `/kullanim-sartlari`, the 38th `(site)` page, plus the two special
+    // render roots this walk adds on top of the page list.
+    expect(roots.length).toBe(40);
     const empty = roots.filter((file) => topLevelRenderNodes(file).length === 0).map(label);
     expect(
       empty,

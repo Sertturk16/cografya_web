@@ -120,6 +120,48 @@ export function canonicalizePhone(input: string): string | null {
 }
 
 /**
+ * THE LIVE MASK behind the two phone fields (T-072): what belongs in the box after this
+ * keystroke. Its sibling {@link canonicalizePhone} answers a different question — "is this a
+ * phone number, and what is its one storable form" — and runs once, on submit; this one runs
+ * on every character, so anything it refuses is something the reader cannot type at all.
+ *
+ * Four rules, each of them a thing a reader did before the mask existed:
+ *
+ *  · NON-DIGITS ARE DROPPED. Letters, brackets and dashes, whatever gets pasted.
+ *  · A LEADING `0`, `90` OR `+90` IS SWALLOWED. The field asks for `5XX XXX XX XX` and says
+ *    so, but half of Türkiye writes the trunk `0` anyway — and the SETTINGS card is handed
+ *    `profile.phone` from the api in its `+905XXXXXXXXX` form, which without this branch
+ *    would read as a first digit of 9, be refused by the rule below, and blank a saved
+ *    number on first paint.
+ *  · THE FIRST DIGIT MUST BE 5, or nothing is accepted. Every Turkish mobile number begins
+ *    with one; accepting `212…` would mean a field that takes a shape it refuses on submit.
+ *    Ruled this way (T-072, owner answer) over the alternative of typing it and complaining.
+ *  · TEN DIGITS, AND THE GROUPS ARE 3-3-2-2. A separator is only ever emitted BEFORE a digit
+ *    that exists, so the box never ends in a space the reader did not type and backspace
+ *    never has to be pressed twice.
+ *
+ * Returns the display string; `maxLength={13}` on the input is that string at full length.
+ * The submit path is unchanged — {@link canonicalizePhone} reads the spaces out again.
+ */
+export function formatTurkishMobileInput(raw: string): string {
+  const digits = raw.replace(/[^0-9]/g, "");
+  const national = digits.startsWith("90")
+    ? digits.slice(2)
+    : digits.startsWith("0")
+      ? digits.slice(1)
+      : digits;
+  if (!national.startsWith("5")) return "";
+
+  const capped = national.slice(0, 10);
+  const groups = [capped.slice(0, 3), capped.slice(3, 6), capped.slice(6, 8), capped.slice(8, 10)];
+  return groups.filter((group) => group !== "").join(" ");
+}
+
+/** The full mask's length — `5XX XXX XX XX`, ten digits and three separators. The `maxLength`
+ *  both phone inputs carry, so the number is written once rather than in two components. */
+export const PHONE_INPUT_MAX_LENGTH = 13;
+
+/**
  * The register screens' one internal user-type identifier, spelled as a single union rather
  * than the contract's two axes (`accountRole` + `educationLevel`) because the CONTROL is one
  * field — see `buildRegisterPayload` below for the split. `lib/auth/profile-labels.ts` holds
