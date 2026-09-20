@@ -177,7 +177,6 @@ export function V2Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <Map className="size-3.5 text-primary" />
               <span>Atlas & Harita</span>
               <ChevronDown
                 className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "atlas" ? "rotate-180" : ""}`}
@@ -276,7 +275,6 @@ export function V2Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <Waves className="size-3.5 text-accent" />
               <span>Canlı Telemetri</span>
               <ChevronDown
                 className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "telemetry" ? "rotate-180" : ""}`}
@@ -341,7 +339,6 @@ export function V2Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <Gamepad2 className="size-3.5 text-secondary" />
               <span>Etkileşim & Araçlar</span>
               <ChevronDown
                 className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "interactive" ? "rotate-180" : ""}`}
@@ -400,7 +397,6 @@ export function V2Header() {
                 : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
             }`}
           >
-            <BookOpen className="size-3.5 text-primary" />
             <span>Kitaplar</span>
             <Badge variant="warning" className="text-[9px] py-0 px-1 font-bold">
               Video Çözümlü
@@ -560,15 +556,10 @@ export function V2Header() {
                         )) as HTMLElement;
                       searchBtn?.click();
                     }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
+                    className="w-full flex items-center gap-2 p-2.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer shadow-2xs"
                   >
-                    <div className="flex items-center gap-2">
-                      <Search className="size-4 text-primary" />
-                      <span>İl veya Ülke Ara...</span>
-                    </div>
-                    <kbd className="px-1.5 py-0.5 text-[10px] font-semibold bg-background border border-border rounded-md shadow-2xs">
-                      Ctrl K
-                    </kbd>
+                    <Search className="size-4 text-primary" />
+                    <span>İl veya Ülke Ara...</span>
                   </button>
 
                   {/* Category 1: Atlas */}
@@ -582,52 +573,54 @@ export function V2Header() {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Map className="size-4 text-primary" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Türkiye İlleri
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">81 İl</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">81 İl</span>
                       </Link>
                       <Link
                         href="/turkiye/bolge"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Boxes className="size-4 text-accent" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Coğrafi Bölgeler
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">7 Bölge</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">7 Bölge</span>
                       </Link>
                       <Link
                         href="/dunya"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Globe className="size-4 text-secondary" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Dünya Atlası
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">199 Ülke</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                          199 Ülke
+                        </span>
                       </Link>
                       <Link
                         href="/dunya/kita"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Compass className="size-4 text-secondary" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Kıtalar Atlası
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">7 Kıta</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">7 Kıta</span>
                       </Link>
                     </div>
                   </div>
@@ -643,26 +636,30 @@ export function V2Header() {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Waves className="size-4 text-accent" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Deniz Telemetrisi
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">Canlı Dalga/Isı</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                          Canlı Dalga/Isı
+                        </span>
                       </Link>
                       <Link
                         href="/deprem"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Flame className="size-4 text-destructive" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Canlı Deprem
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">AFAD TDVMS</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                          AFAD TDVMS
+                        </span>
                       </Link>
                     </div>
                   </div>
@@ -678,39 +675,43 @@ export function V2Header() {
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Gamepad2 className="size-4 text-secondary" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Harita Oyunu
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">İl Bulma</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                          İl Bulma
+                        </span>
                       </Link>
                       <Link
                         href="/araclar"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <Layers className="size-4 text-primary" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             CBS Araçları
                           </span>
                         </div>
-                        <span className="text-xs text-muted-foreground">Mesafe/Alan</span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                          Mesafe/Alan
+                        </span>
                       </Link>
                       <Link
                         href="/kitaplar"
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
                       >
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5">
                           <BookOpen className="size-4 text-primary" />
-                          <span className="text-sm font-semibold text-foreground">
+                          <span className="truncate text-sm font-semibold text-foreground">
                             Video Çözümlü Kitaplar
                           </span>
                         </div>
-                        <Badge variant="primary" size="sm">
+                        <Badge variant="primary" size="sm" className="ml-2 shrink-0">
                           20 Deneme
                         </Badge>
                       </Link>

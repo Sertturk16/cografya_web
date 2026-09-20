@@ -2,14 +2,14 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Monitor } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ThemeToggleProps {
   readonly className?: string;
 }
 
-type ThemeChoice = "light" | "dark" | "system";
+type ThemeChoice = "light" | "dark";
 
 /**
  * The cycle, and what the control PROMISES at each step.
@@ -32,24 +32,25 @@ const CYCLE: readonly {
   },
   {
     value: "dark",
-    next: "system",
-    label: "Sistem temasına geç (Tema: karanlık)",
-    announce: "Karanlık tema",
-  },
-  {
-    value: "system",
     next: "light",
-    label: "Aydınlık temaya geç (Tema: sistem)",
-    announce: "Sistem teması",
+    label: "Aydınlık temaya geç (Tema: karanlık)",
+    announce: "Karanlık tema",
   },
 ];
 
 /**
- * Three-state theme switcher: light → dark → system → light.
+ * Two-state theme switcher: light ⇄ dark.
  *
- * `system` is a real destination, not just the initial state. The previous version was
- * binary, so the first press pinned a choice in `localStorage` and the visitor could never
- * get back to following their OS.
+ * `system` used to be a third stop on the cycle. It is not one any more (T-066): a monitor
+ * icon between a sun and a moon answers a question nobody asked, and a visitor who lands on
+ * it cannot tell from the button which of the two colour schemes they are about to get.
+ *
+ * THE PROVIDER STILL FOLLOWS THE OS UNTIL THE FIRST PRESS. `ThemeProvider` keeps
+ * `defaultTheme="system"`, so a first-time visitor is served their OS preference rather
+ * than a hard-coded light. What changed is that `system` is no longer a DESTINATION: every
+ * press writes `light` or `dark`, and a returning visitor who stored `system` before this
+ * change is read through `resolvedTheme` — the button shows the scheme they are actually
+ * looking at, and one press pins the other one.
  *
  * The `mounted` guard is load-bearing: `useTheme()` returns `undefined` on the server and on
  * the first client render, so rendering an icon before then produces a hydration mismatch
@@ -61,7 +62,7 @@ const onClient = () => true;
 const onServer = () => false;
 
 export function ThemeToggle({ className }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   // `useSyncExternalStore` rather than `useState` + `useEffect`: the lint rule forbids
   // calling setState synchronously inside an effect, and this is the idiom the toggle this
   // file replaces already used for the same purpose — a value that is false while rendering
@@ -70,16 +71,20 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
 
   // The guard has to cover the LABEL, not just the icon. `next-themes` resolves the stored
   // theme synchronously, so the first client render already knows it is dark while the
-  // server rendered with `theme === undefined` — and React compared the two `aria-label`
-  // strings and threw a hydration mismatch. Pinning the pre-mount render to the same
-  // fallback the server used makes the two agree; the real label arrives a tick later.
-  const current = mounted ? (CYCLE.find((step) => step.value === theme) ?? CYCLE[2]!) : CYCLE[2]!;
+  // server rendered with `resolvedTheme === undefined` — and React compared the two
+  // `aria-label` strings and threw a hydration mismatch. Pinning the pre-mount render to one
+  // fixed step makes the two agree; the real label arrives a tick later.
+  //
+  // `resolvedTheme`, NOT `theme`: `theme` is still `"system"` for anyone who stored it before
+  // T-066 and for a visitor who has never pressed the button, and neither of those two may
+  // fall through to the light branch while the page is painted dark.
+  const current = mounted && resolvedTheme === "dark" ? CYCLE[1]! : CYCLE[0]!;
 
   const toggleTheme = React.useCallback(() => {
     setTheme(current.next);
   }, [current.next, setTheme]);
 
-  const Icon = current.value === "light" ? Sun : current.value === "dark" ? Moon : Monitor;
+  const Icon = current.value === "dark" ? Moon : Sun;
 
   return (
     <>

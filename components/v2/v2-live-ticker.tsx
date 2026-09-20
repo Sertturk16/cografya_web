@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Flame, Waves, MapPin, Clock, Layers } from "lucide-react";
+import { Flame, Waves, MapPin, Layers } from "lucide-react";
 
 export interface EarthquakeTickerData {
   readonly magnitude: number;
@@ -151,9 +151,6 @@ export function V2LiveTicker() {
           <Badge variant="primary" size="sm" dot className="shadow-2xs font-mono text-[10px] px-2">
             CANLI TELEMETRİ
           </Badge>
-          <span className="hidden md:inline-flex text-muted-foreground text-[11px]">
-            Copernicus &amp; AFAD Aktif
-          </span>
         </div>
 
         {/* Ticker Items */}
@@ -228,12 +225,6 @@ export function V2LiveTicker() {
             <span className="font-semibold text-foreground">CBS Araçları:</span>
             <span>WGS84 Jeodezik Hesaplama</span>
           </Link>
-        </div>
-
-        {/* Right Timestamp */}
-        <div className="hidden lg:flex items-center gap-1 text-[10px] font-mono text-muted-foreground shrink-0">
-          <Clock className="size-3 text-muted-foreground" />
-          <span>CANLI UTC+3</span>
         </div>
       </div>
     </aside>
