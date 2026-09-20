@@ -1138,3 +1138,117 @@ describe("T13 — body pass-through", () => {
     expect(JSON.parse(init.body as string)).toEqual({ refreshToken: "cookie-supplied-token" });
   });
 });
+
+// -----------------------------------------------------------------------------------------
+// T-061 — `password/change`: authenticated AND token-issuing, a combination no other action
+// on this table has. The cases below pin the three things that combination can get wrong.
+// -----------------------------------------------------------------------------------------
+
+describe("T-061 — password/change", () => {
+  const CHANGE_BODY = JSON.stringify({
+    currentPassword: "Current1",
+    newPassword: "Replacement2",
+  });
+
+  function changeRequest(cookie?: string): Request {
+    return makeRequest("POST", "/api/auth/password/change", {
+      origin: SITE_URL,
+      body: CHANGE_BODY,
+      ...(cookie === undefined ? {} : { cookie }),
+    });
+  }
+
+  it("forwards the access cookie as a bearer header — the api cannot identify the caller otherwise", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValueOnce(new Response(authResultBody(), { status: 200 }));
+
+    await handleAuthRequest(changeRequest(`${ACCESS_COOKIE_NAME}=live-access-token`), [
+      "password",
+      "change",
+    ]);
+
+    expect(mock).toHaveBeenCalledTimes(1);
+    const init = mock.mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(mock.mock.calls[0]?.[0]).toBe("http://api.test/api/auth/password/change");
+    expect(headers.Authorization).toBe("Bearer live-access-token");
+  });
+
+  it("writes the fresh pair into the cookies, so a successful change does not sign the caller out", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValueOnce(new Response(authResultBody(), { status: 200 }));
+
+    const result = await handleAuthRequest(
+      changeRequest(`${ACCESS_COOKIE_NAME}=live-access-token`),
+      ["password", "change"],
+    );
+
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({ ok: true });
+
+    // P1 still holds: the tokens reach the cookies and nothing else.
+    const serializedCookies = JSON.stringify(result.cookies);
+    expect(serializedCookies).toContain(SENTINEL_ACCESS);
+    expect(serializedCookies).toContain(SENTINEL_REFRESH);
+    expect(JSON.stringify(result.body)).not.toContain(SENTINEL_ACCESS);
+    expect(JSON.stringify(result.body)).not.toContain(SENTINEL_REFRESH);
+    expect(loggedText()).not.toContain(SENTINEL_ACCESS);
+    expect(loggedText()).not.toContain(SENTINEL_REFRESH);
+  });
+
+  it("answers 401 unauthenticated with no api call when there is no access cookie", async () => {
+    const mock = fetchMock();
+
+    const result = await handleAuthRequest(changeRequest(), ["password", "change"]);
+
+    expect(result.status).toBe(401);
+    expect(result.body).toEqual({ ok: false, code: "errors.auth.unauthenticated" });
+    expect(mock).not.toHaveBeenCalled();
+  });
+
+  it("passes the api's own key through on a wrong current password, and touches NO cookie", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValueOnce(jsonResponse(401, { message: "errors.password.currentInvalid" }));
+
+    const result = await handleAuthRequest(
+      changeRequest(`${ACCESS_COOKIE_NAME}=live-access-token`),
+      ["password", "change"],
+    );
+
+    expect(result.status).toBe(401);
+    expect(result.body).toEqual({ ok: false, code: "errors.password.currentInvalid" });
+    // A typo in one field must not end the session. This is the one 401 on the whole table
+    // that means "that field was wrong", not "your session is dead".
+    expect(result.cookies ?? []).toHaveLength(0);
+  });
+
+  it("passes errors.password.unchanged through as a 400", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValueOnce(jsonResponse(400, { message: "errors.password.unchanged" }));
+
+    const result = await handleAuthRequest(
+      changeRequest(`${ACCESS_COOKIE_NAME}=live-access-token`),
+      ["password", "change"],
+    );
+
+    expect(result.status).toBe(400);
+    expect(result.body).toEqual({ ok: false, code: "errors.password.unchanged" });
+    expect(result.cookies ?? []).toHaveLength(0);
+  });
+
+  it("refuses a cross-origin change before it reads a cookie or calls the api", async () => {
+    const mock = fetchMock();
+
+    const result = await handleAuthRequest(
+      makeRequest("POST", "/api/auth/password/change", {
+        origin: "https://evil.test",
+        body: CHANGE_BODY,
+        cookie: `${ACCESS_COOKIE_NAME}=live-access-token`,
+      }),
+      ["password", "change"],
+    );
+
+    expect(result.status).toBe(403);
+    expect(mock).not.toHaveBeenCalled();
+  });
+});

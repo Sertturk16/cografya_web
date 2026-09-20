@@ -1001,7 +1001,9 @@
       "unavailable": "We cannot connect right now. Try again in a little while.",
       "unauthenticated": "No session was found.",
       "sessionExpired": "Your session has expired. Log in again.",
-      "weakPassword": "The password does not meet the requirements."
+      "weakPassword": "The password does not meet the requirements.",
+      "passwordCurrentInvalid": "That is not your current password. Try again.",
+      "passwordUnchanged": "Your new password is the one you already use. Choose a different one."
     },
     "province": {
       "loading": "Loading…",

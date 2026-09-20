@@ -11,7 +11,7 @@ import {
 } from "@/lib/http/bff-helpers.server";
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
-import type { Profile, UpdateProfileRequest } from "@/lib/api/types";
+import type { Profile, UpdateAccountRequest, UpdateProfileRequest } from "@/lib/api/types";
 
 /**
  * Maximum allowable byte length for PUT /api/profile request bodies.
@@ -43,6 +43,17 @@ export interface ProfileBffResult {
 }
 
 export const profileSchema = z.object({
+  // The personal block (T-061). `GET /api/auth/profile` is the ONE response that carries a
+  // member's PII, so it is also the one guard that has to know these names.
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
+  phone: z.string(),
+  districtId: z.string(),
+  districtName: z.string(),
+  provincePlateCode: z.string(),
+  provinceName: z.string(),
+  createdAt: z.string(),
   accountRole: z.enum(["STUDENT", "TEACHER", "PARENT"]),
   educationLevel: z.enum(["SECONDARY", "UNDERGRADUATE", "GRADUATE"]).nullable(),
   gradeLevel: z
@@ -136,11 +147,50 @@ const _updateProfileShapeAgreesWithContract: [UpdateProfileShape, UpdateProfileR
 ];
 void _updateProfileShapeAgreesWithContract;
 
+/**
+ * `PUT /api/auth/account`'s request guard (T-061). `.strict()` like its sibling, so an extra
+ * key is a 400 here rather than something the api has to refuse.
+ *
+ * The field rules are shape-only on purpose. Phone canonicalisation and the
+ * district-belongs-to-province join are the api's, and duplicating either here would create a
+ * second place for them to drift — this guard's job is to refuse a body that is not the right
+ * SHAPE, not to re-decide what a valid Turkish mobile number is.
+ */
+const updateAccountRequestSchema = z
+  .object({
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    phone: z.string().min(1).max(32),
+    provincePlateCode: z.string().length(2),
+    districtId: z.string().min(1),
+  })
+  .strict();
+
+type UpdateAccountShape = z.infer<typeof updateAccountRequestSchema>;
+
+// Drift gate: runtime request guard must agree with contract UpdateAccountRequest DTO
+const _updateAccountShapeAgreesWithContract: [UpdateAccountShape, UpdateAccountRequest] = [
+  null as unknown as UpdateAccountRequest,
+  null as unknown as UpdateAccountShape,
+];
+void _updateAccountShapeAgreesWithContract;
+
 function bffResult(status: number, body: ProfileBffBody): ProfileBffResult {
   return { status, body, headers: bffHeaders() };
 }
 
-export async function handleReplaceProfile(request: Request): Promise<ProfileBffResult> {
+/**
+ * The eight clauses both replacement routes run, parameterised by the api path and the
+ * request guard. `PUT /api/profile` (education) and `PUT /api/account` (personal) differ in
+ * exactly those two things and in nothing else — same origin check, same bounded read, same
+ * cookie, same timeout, same status mapping, same response guard. Written once so a fix to
+ * any of those six lands on both.
+ */
+async function handleReplacement(
+  request: Request,
+  apiPath: "/api/auth/profile" | "/api/auth/account",
+  schema: typeof updateProfileRequestSchema | typeof updateAccountRequestSchema,
+): Promise<ProfileBffResult> {
   // Clause 1: Origin check
   if (!isSameOrigin(request, getSiteUrl())) {
     return bffResult(403, { ok: false, code: "errors.transport.forbidden" });
@@ -169,7 +219,7 @@ export async function handleReplaceProfile(request: Request): Promise<ProfileBff
     return bffResult(400, { ok: false, code: "errors.transport.invalidRequest" });
   }
 
-  const parsedBody = updateProfileRequestSchema.safeParse(rawJson);
+  const parsedBody = schema.safeParse(rawJson);
   if (!parsedBody.success) {
     return bffResult(400, { ok: false, code: "errors.transport.invalidRequest" });
   }
@@ -180,7 +230,7 @@ export async function handleReplaceProfile(request: Request): Promise<ProfileBff
 
   let res: Response;
   try {
-    res = await fetch(`${serverEnv.API_BASE_URL}/api/auth/profile`, {
+    res = await fetch(`${serverEnv.API_BASE_URL}${apiPath}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -223,4 +273,14 @@ export async function handleReplaceProfile(request: Request): Promise<ProfileBff
   }
 
   return bffResult(502, { ok: false, code: "errors.transport.unavailable" });
+}
+
+/** `PUT /api/profile` — the education block. */
+export async function handleReplaceProfile(request: Request): Promise<ProfileBffResult> {
+  return handleReplacement(request, "/api/auth/profile", updateProfileRequestSchema);
+}
+
+/** `PUT /api/account` — the personal block (T-061). */
+export async function handleReplaceAccount(request: Request): Promise<ProfileBffResult> {
+  return handleReplacement(request, "/api/auth/account", updateAccountRequestSchema);
 }

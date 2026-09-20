@@ -1055,7 +1055,9 @@
       "unavailable": "Şu an bağlanamıyoruz. Biraz sonra tekrar dene.",
       "unauthenticated": "Oturum bulunamadı.",
       "sessionExpired": "Oturumun süresi doldu. Tekrar giriş yap.",
-      "weakPassword": "Şifre gereksinimleri karşılanmadı."
+      "weakPassword": "Şifre gereksinimleri karşılanmadı.",
+      "passwordCurrentInvalid": "Mevcut şifren doğru değil. Tekrar dene.",
+      "passwordUnchanged": "Yeni şifren şu an kullandığın şifreyle aynı. Farklı bir şifre seç."
     },
     "province": {
       "loading": "Yükleniyor…",

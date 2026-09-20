@@ -154,7 +154,8 @@ function parseSession(rawBody: string): SessionShape | undefined {
 }
 
 // ---------------------------------------------------------------------------------------
-// The action table (plan §10, extended by UYE-P4-SIFIRLAMA) — a closed set of ten actions.
+// The action table (plan §10, extended by UYE-P4-SIFIRLAMA and T-061) — a closed set of
+// eleven actions.
 // An action not in it is a 404.
 // ---------------------------------------------------------------------------------------
 
@@ -177,9 +178,14 @@ const AUTH_ACTIONS: Readonly<Record<string, AuthAction>> = {
   // token_version bump, no session revocation on either outcome.
   "password-reset/verify": { method: "POST", apiPath: "/api/auth/password-reset/verify" },
   session: { method: "GET", apiPath: "/api/auth/session" },
+  // T-061: the authenticated password change. It is a TOKEN-ISSUING action, which is the part
+  // worth noticing — the api revokes every other session and hands back a fresh pair, so this
+  // response carries `Set-Cookie` exactly as `login` does. Without that, a member would change
+  // their password and be signed out by their own success.
+  "password/change": { method: "POST", apiPath: "/api/auth/password/change" },
 };
 
-/** The ten error keys the api publishes (plan §3), verbatim in `ApiErrorDto.message`. */
+/** The twelve error keys the api publishes (plan §3), verbatim in `ApiErrorDto.message`. */
 const API_ERROR_CODES = [
   "errors.auth.unauthenticated",
   "errors.auth.invalidCredentials",
@@ -191,10 +197,13 @@ const API_ERROR_CODES = [
   "errors.register.weakPassword",
   "errors.verify.codeInvalid",
   "errors.password.resetTokenInvalid",
+  // T-061, published by `POST /api/auth/password/change`.
+  "errors.password.currentInvalid",
+  "errors.password.unchanged",
 ] as const;
 
 /**
- * The closed union of exactly thirteen literals (plan §10): the api's ten error keys plus
+ * The closed union of exactly fifteen literals (plan §10): the api's twelve error keys plus
  * the three web-owned ones below — conditions purely the transport's, with no api key.
  * Nothing else is ever placed in a `code` field — this is what lets P1's closed-union
  * argument hold.
@@ -394,10 +403,14 @@ type AuthApiTokenOutcome =
  * where the two token strings exist as fields of a returned object. The only caller that
  * ever reads `.tokens` is `sessionCookieMutations()` (`./cookies.ts`) — never the body
  * builder, never the logger. Used by `login`, `verify-email`, and (behind the single-flight
- * below) `refresh`.
+ * below) `refresh`, and — with a bearer header — `password/change`.
  */
-async function callAuthApi(apiPath: string, body: string): Promise<AuthApiTokenOutcome> {
-  const outcome = await callAuthApiForStatus(apiPath, body);
+async function callAuthApi(
+  apiPath: string,
+  body: string,
+  extraHeaders?: Record<string, string>,
+): Promise<AuthApiTokenOutcome> {
+  const outcome = await callAuthApiForStatus(apiPath, body, "POST", extraHeaders);
   if (outcome.kind !== "ok") return outcome;
 
   const tokens = parseAuthResult(outcome.rawBody);
@@ -591,6 +604,51 @@ async function handleTokenIssuingAction(
 
   logAuthOutcome(actionKey, "ok");
   return bffResult(200, { ok: true, redirectTo }, cookies);
+}
+
+/**
+ * `password/change` (T-061) — authenticated, and token-issuing.
+ *
+ * It is its own handler rather than a third case on `handleTokenIssuingAction` for one
+ * reason that is not cosmetic: this action must forward the ACCESS COOKIE as a bearer
+ * header, and that function deliberately sends no credentials at all. Folding an
+ * authenticated call into it would make every anonymous action one typo away from
+ * forwarding a token.
+ *
+ * The api's success revokes every OTHER session and returns a fresh pair, so the pair is
+ * written into the cookies here. A member who changes their password stays signed in on the
+ * tab they did it from, and is signed out everywhere else — which is the whole point.
+ */
+async function handlePasswordChange(action: AuthAction, request: Request): Promise<AuthBffResult> {
+  const actionKey = "password/change";
+  const accessToken = readCookieValue(request, ACCESS_COOKIE_NAME);
+
+  if (!accessToken) {
+    logAuthOutcome(actionKey, "errors.auth.unauthenticated");
+    return bffResult(401, { ok: false, code: "errors.auth.unauthenticated" });
+  }
+
+  const read = await readClientBody(actionKey, request);
+  if (!read.ok) return read.result;
+
+  const outcome = await callAuthApi(action.apiPath, read.body, {
+    Authorization: `Bearer ${accessToken}`,
+  });
+
+  if (outcome.kind === "unavailable") {
+    logAuthOutcome(actionKey, "unavailable");
+    return bffResult(502, { ok: false, code: "errors.transport.unavailable" });
+  }
+  if (outcome.kind === "mapped-error") {
+    // No cookie mutation on ANY failure branch, including 401. A wrong current password is
+    // `errors.password.currentInvalid` on a perfectly live session; clearing the cookie
+    // because the status happens to be 401 would log a member out for a typo.
+    logAuthOutcome(actionKey, outcome.code);
+    return bffResult(outcome.status, { ok: false, code: outcome.code });
+  }
+
+  logAuthOutcome(actionKey, "ok");
+  return bffResult(200, { ok: true }, sessionCookieMutations(outcome.tokens, getSiteUrl()));
 }
 
 /** `refresh` (plan §10/§11 as amended). No `cg_refresh` cookie is a short-circuit — 401,
@@ -884,6 +942,8 @@ export async function handleAuthRequest(
       return handlePasswordResetVerify(actionKey, action, request);
     case "session":
       return handleSession(request);
+    case "password/change":
+      return handlePasswordChange(action, request);
     default:
       // Unreachable: every key in `AUTH_ACTIONS` is handled above, and an unmatched key
       // already returned 404 before this switch is reached.

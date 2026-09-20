@@ -46,7 +46,10 @@ export type AuthAction =
   | "logout"
   | "password-reset/request"
   | "password-reset/confirm"
-  | "password-reset/verify";
+  | "password-reset/verify"
+  // T-061. Authenticated, and token-issuing: the BFF forwards the access cookie as a bearer
+  // header and writes the fresh pair the api returns back into the cookies.
+  | "password/change";
 
 export type SubmitAuthResult =
   | { readonly ok: true; readonly redirectTo?: string }

@@ -2,7 +2,25 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Profile } from "@/lib/api/types";
 import { isProfileLike, submitProfileReplacement } from "./client";
 
+/**
+ * The personal block every profile response carries since T-061. Shared rather than repeated
+ * per fixture: what each case below is about is the EDUCATION axis, and nine identical strings
+ * in three places is nine chances for them to drift apart for no reason.
+ */
+const PERSONAL_BLOCK = {
+  firstName: "Ayşe",
+  lastName: "Yılmaz",
+  email: "reader@example.test",
+  phone: "+905551234567",
+  districtId: "6b3f6f5a-6f5a-4f5a-8f5a-6f5a6f5a6f5a",
+  districtName: "Kadıköy",
+  provincePlateCode: "34",
+  provinceName: "İstanbul",
+  createdAt: "2026-01-02T03:04:05.000Z",
+} as const;
+
 const VALID_STUDENT_PROFILE: Profile = {
+  ...PERSONAL_BLOCK,
   accountRole: "STUDENT",
   educationLevel: "SECONDARY",
   gradeLevel: "GRADE_12",
@@ -14,6 +32,7 @@ const VALID_STUDENT_PROFILE: Profile = {
 };
 
 const VALID_TEACHER_PROFILE: Profile = {
+  ...PERSONAL_BLOCK,
   accountRole: "TEACHER",
   educationLevel: null,
   gradeLevel: null,
@@ -25,6 +44,7 @@ const VALID_TEACHER_PROFILE: Profile = {
 };
 
 const VALID_MINIMAL_STUDENT_PROFILE: Profile = {
+  ...PERSONAL_BLOCK,
   accountRole: "STUDENT",
   educationLevel: null,
   gradeLevel: null,
@@ -62,6 +82,7 @@ describe("isProfileLike (CON128-I1 runtime contract validation)", () => {
 
   it("accepts valid undergraduate student profile with string university and department", () => {
     const ugProfile: Profile = {
+      ...PERSONAL_BLOCK,
       accountRole: "STUDENT",
       educationLevel: "UNDERGRADUATE",
       gradeLevel: null,
