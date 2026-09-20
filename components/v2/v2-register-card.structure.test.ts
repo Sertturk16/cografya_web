@@ -67,17 +67,50 @@ describe("V2RegisterCard structural contract", () => {
     expect(source).not.toContain("USER_TYPE_LABELS.graduate.tr");
   });
 
-  it("keeps registration minimal without university/department/grade inputs (DEC 2026-09-03a md.1, FU125SEC-I1)", () => {
-    // Form does not render university/department datalists or grade dropdowns
-    expect(source).not.toContain("v2-universities-list");
-    expect(source).not.toContain("v2-departments-list");
-    expect(source).not.toContain("v2-register-grade");
-    expect(source).not.toContain("v2-register-stream");
+  /**
+   * REVERSED BY T-061, deliberately, and rewritten rather than deleted.
+   *
+   * This case used to assert that registration stayed MINIMAL — no education inputs at all
+   * (`DEC 2026-09-03a` md.1, `FU125SEC-I1`). That decision produced an account that was
+   * always incomplete on day one and a "Profilini tamamla" screen to finish it, and the
+   * owner retired it: a student now declares their education in step 2 of the wizard.
+   *
+   * Note that the old assertions would still PASS today, vacuously — the fieldset's ids are
+   * `v2-register-education-grade-level`, not `v2-register-grade`. A test whose name claims
+   * the opposite of what the product does and stays green on a technicality is worse than
+   * no test, so what it pins now is the shape that replaced it.
+   */
+  it("asks a student for their education in step 2, through the shared fieldset (T-061)", () => {
+    expect(source).toContain('from "./education-fieldset"');
+    expect(source).toContain('idPrefix="v2-register-education"');
+    // The fields are not re-spelled here — the settings page renders the same component.
+    expect(source).not.toContain("UNIVERSITY_GROUP_LABELS");
+    expect(source).not.toContain("/api/reference/universities");
 
     // No hardcoded dummy strings in source
     expect(source).not.toContain('"Diğer"');
     expect(source).not.toContain('"Coğrafya"');
     expect(source).not.toContain('"KPSS"');
+  });
+
+  it("never shows the education step to a teacher, and never sends them an education field", () => {
+    // The API's profile matrix rejects a TEACHER carrying any education field, so the step
+    // is skipped AND the payload branch is empty — two separate guarantees, both pinned.
+    expect(source).toContain('if (selectedRole !== "teacher") {\n      setStep("education");');
+    expect(source).toContain('...(selectedRole === "teacher"\n          ? {}');
+    expect(source).toContain('if (role === "teacher") return "teacher";');
+  });
+
+  it("registers from ONE call site, so both steps build the payload the same way", () => {
+    // A second `submitAuth("register", …)` is a second chance for one path to send a shape
+    // the profile matrix refuses.
+    const registerCalls = source.match(/submitAuth\(\s*"register"/g) ?? [];
+    expect(registerCalls).toHaveLength(1);
+  });
+
+  it("lands a verified member on the hub, not on the retired profile page", () => {
+    expect(source).toContain('getPathname({ locale, href: "/hesabim" })');
+    expect(source).not.toContain('href: "/profil"');
   });
 
   it("enforces ASCII password policy and 6-char minimum requirement (CODE125-I1, FU125SEC-M2)", () => {

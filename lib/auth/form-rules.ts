@@ -166,6 +166,11 @@ export interface RegisterFormState {
   readonly districtId: string;
   readonly gradeLevel?: GradeLevel | "";
   readonly studyStream?: StudyStream | "";
+  /**
+   * T-061. Optional even inside the SECONDARY branch — the API's matrix accepts it present
+   * or absent there and forbids it everywhere else, so an empty string must not become a key.
+   */
+  readonly schoolName?: string;
   readonly universityName?: string;
   readonly departmentName?: string;
 }
@@ -221,8 +226,8 @@ export function buildRegisterPayload(
   };
 
   switch (formState.userType) {
-    case "secondary":
-      return {
+    case "secondary": {
+      const base: RegisterRequest = {
         ...common,
         accountRole: "STUDENT",
         ...(formState.gradeLevel
@@ -233,6 +238,12 @@ export function buildRegisterPayload(
             }
           : {}),
       };
+      // `schoolName` is the one optional field INSIDE an otherwise-required branch, and it is
+      // spread the same way `graduate`'s `departmentName` is: an empty string would be a key
+      // the matrix accepts here but rejects on every other branch, so it must not become one.
+      const school = formState.schoolName?.trim();
+      return school ? { ...base, schoolName: school } : base;
+    }
     case "undergraduate":
       return {
         ...common,
