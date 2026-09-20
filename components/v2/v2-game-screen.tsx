@@ -73,6 +73,39 @@ import { GAME_CONFIG, STAR_THRESHOLDS } from "@/lib/game/config";
 const MIN_ZOOM = 0.8;
 const MAX_ZOOM = 2.5;
 
+/**
+ * The landscape/fullscreen overrides for the map box and its caption wrapper, as INLINE STYLE
+ * rather than conditional Tailwind classes. Two reasons, and neither is taste.
+ *
+ * **They have to win.** `aspect-auto` beating `aspect-[2.33/1]`, or `min-h-0` beating
+ * `sm:min-h-[480px]`, is a question about the order Tailwind emits two utilities of equal
+ * specificity into the stylesheet — not something this file can state. An inline style beats
+ * both without depending on that.
+ *
+ * **A conditional className is unreadable to the composition scanner.** `lib/test-support/
+ * composition-scan.ts` reduces a template hole to `${…}`, and `page-composition-cards.test.ts`
+ * counts "card-shaped map viewports" by the `aspect-[…]` it can READ in a className. Moving the
+ * plate's geometry into a `${cond ? … : …}` dropped this surface out of that recorded population
+ * silently — the test caught it, which is the whole reason that pin is a recorded list. Keeping
+ * the base classes literal keeps the surface counted.
+ *
+ * Why the overrides are needed at all: in landscape the arena is EXACTLY viewport-tall with
+ * `overflow-hidden`, so a plate asserting a 480px floor on a 390px-tall screen pushed its own
+ * bottom, and everything after it, outside the box. Measured at 844x390 before this: arena
+ * 0→390, plate 25→505, credit 525→563 — the credit was not on screen at all.
+ */
+const LANDSCAPE_FILL: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  flex: "1 1 0%",
+  minHeight: 0,
+};
+const LANDSCAPE_PLATE: React.CSSProperties = {
+  flex: "1 1 0%",
+  minHeight: 0,
+  aspectRatio: "auto",
+};
+
 export type V2Difficulty = "klasik" | "zamana-karsi" | "alistirma";
 
 export interface V2GameScreenProps {
@@ -794,7 +827,13 @@ export function V2GameScreen({
             // The CSS-only fallback layout (no Fullscreen API, e.g. iOS Safari) is a
             // fixed-position box the hook sizes to the viewport — a fixed radius would clip
             // the arena's own corners against straight screen edges (T-015).
-            landscape.active ? "" : "rounded-3xl"
+            //
+            // `flex flex-col` in landscape because the arena is then EXACTLY viewport-tall with
+            // `overflow-hidden`, and its children have to be told to fit inside it. In normal
+            // flow the plate's `min-h-[480px]` is a floor; in a 390px-tall landscape viewport it
+            // is 90px taller than the whole box, so the plate's own bottom AND everything after
+            // it fell outside. Measured at 844x390: plate 25→505, credit 525→563, arena 0→390.
+            landscape.active ? "flex flex-col" : "rounded-3xl"
           }`}
         >
           {/* Fullscreen / landscape toggle (T-015) — ONE control for both directions. Placed
@@ -1038,64 +1077,71 @@ export function V2GameScreen({
             </div>
           )}
 
-          {/* 3. SVG INTERACTIVE MAP VIEWPORT */}
-          <div
-            ref={mapViewportRef}
-            className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
-          >
-            {/* Zoom / Pan Floating Toolbar */}
-            <div className="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-md">
-              <button
-                type="button"
-                onClick={() => setZoom((z) => Math.min(z + 0.3, 2.5))}
-                className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                aria-label="Yakınlaştır"
-              >
-                <ZoomIn className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setZoom((z) => Math.max(z - 0.3, 0.8))}
-                className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                aria-label="Uzaklaştır"
-              >
-                <ZoomOut className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setZoom(1);
-                  setPan({ x: 0, y: 0 });
-                }}
-                className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
-                aria-label="Görünümü Sıfırla"
-              >
-                <Maximize2 className="size-3.5" />
-              </button>
-            </div>
-
-            {/* SVG Map */}
-            <svg
-              ref={svgRef}
-              viewBox={viewBox}
-              className={`w-full h-full cursor-crosshair transition-transform select-none ${
-                // Zoomed in, this element owns one-finger dragging (pan); at rest a vertical
-                // swipe over the map should still scroll the PAGE. `pan-y` also leaves the
-                // browser's own pinch-zoom suppressed either way (T-015) — our handler above
-                // replaces it.
-                zoom > 1 ? "touch-none" : "touch-pan-y"
-              }`}
-              style={{
-                transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-                transformOrigin: "center center",
-              }}
-              onPointerDown={handleTouchPointerDown}
-              onPointerMove={handleTouchPointerMove}
-              onPointerUp={handleTouchPointerUp}
-              onPointerCancel={handleTouchPointerUp}
-              aria-label="Türkiye İnteraktif Oyun Haritası"
+          {/* 3. SVG INTERACTIVE MAP VIEWPORT, and its caption.
+              ONE BOX holds the plate and the credit, so the 8px between them says "this line
+              describes the map above it" and is not whatever `space-y-*` the surrounding
+              container happens to run. Read off the inherited rhythm instead, the same caption
+              sat 20px under its map here, 16px on the tool pages and `/deprem`, and 24px on
+              `/turkiye` — three gaps for one relationship. */}
+          <div className="space-y-2" style={landscape.active ? LANDSCAPE_FILL : undefined}>
+            <div
+              ref={mapViewportRef}
+              className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
+              style={landscape.active ? LANDSCAPE_PLATE : undefined}
             >
-              {/* Background Neighbor Countries. `--map-context-land`, NOT `--map-land`: the
+              {/* Zoom / Pan Floating Toolbar */}
+              <div className="absolute top-3 right-3 z-20 flex items-center gap-1 p-1 bg-card/90 backdrop-blur-md rounded-xl border border-border/80 shadow-md">
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.min(z + 0.3, 2.5))}
+                  className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Yakınlaştır"
+                >
+                  <ZoomIn className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setZoom((z) => Math.max(z - 0.3, 0.8))}
+                  className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Uzaklaştır"
+                >
+                  <ZoomOut className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setZoom(1);
+                    setPan({ x: 0, y: 0 });
+                  }}
+                  className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Görünümü Sıfırla"
+                >
+                  <Maximize2 className="size-3.5" />
+                </button>
+              </div>
+
+              {/* SVG Map */}
+              <svg
+                ref={svgRef}
+                viewBox={viewBox}
+                className={`w-full h-full cursor-crosshair transition-transform select-none ${
+                  // Zoomed in, this element owns one-finger dragging (pan); at rest a vertical
+                  // swipe over the map should still scroll the PAGE. `pan-y` also leaves the
+                  // browser's own pinch-zoom suppressed either way (T-015) — our handler above
+                  // replaces it.
+                  zoom > 1 ? "touch-none" : "touch-pan-y"
+                }`}
+                style={{
+                  transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
+                  transformOrigin: "center center",
+                }}
+                onPointerDown={handleTouchPointerDown}
+                onPointerMove={handleTouchPointerMove}
+                onPointerUp={handleTouchPointerUp}
+                onPointerCancel={handleTouchPointerUp}
+                aria-label="Türkiye İnteraktif Oyun Haritası"
+              >
+                {/* Background Neighbor Countries. `--map-context-land`, NOT `--map-land`: the
                   country fill on this board is `fill-card`, and `--map-land` against `--card`
                   measures 1.00:1 light / 1.01:1 dark -- Türkiye and its neighbours were ONE
                   tone here while the other five Türkiye maps kept the warm/white split this
@@ -1104,90 +1150,90 @@ export function V2GameScreen({
                   against that neighbour land (3.28:1 light / 3.18:1 dark) and against the
                   `--map-plate` it also borders (3.05:1 / 3.54:1), where `--province-stroke`
                   is the token for Türkiye's OWN coast. */}
-              {!region &&
-                CONTEXT_SHAPES.map((country) => (
+                {!region &&
+                  CONTEXT_SHAPES.map((country) => (
+                    <path
+                      key={country.iso}
+                      d={country.d}
+                      className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
+                    />
+                  ))}
+
+                {/* Turkey Context Casing Outline */}
+                {!region && trCasing && (
                   <path
-                    key={country.iso}
-                    d={country.d}
-                    className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
+                    d={trCasing.d}
+                    className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
                   />
-                ))}
+                )}
 
-              {/* Turkey Context Casing Outline */}
-              {!region && trCasing && (
-                <path
-                  d={trCasing.d}
-                  className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
-                />
-              )}
+                {/* Interactive Provinces / Regions */}
+                {shapes.map((prov) => {
+                  const isCorrectProvince = correctPlates.has(prov.plateCode);
+                  const isCorrectRegion = prov.target && correctRegions.has(prov.target.region);
+                  const isFlashingWrong = flashingWrongPlate === prov.plateCode;
+                  const isRevealed = revealedPlate === prov.plateCode;
 
-              {/* Interactive Provinces / Regions */}
-              {shapes.map((prov) => {
-                const isCorrectProvince = correctPlates.has(prov.plateCode);
-                const isCorrectRegion = prov.target && correctRegions.has(prov.target.region);
-                const isFlashingWrong = flashingWrongPlate === prov.plateCode;
-                const isRevealed = revealedPlate === prov.plateCode;
+                  // Base styling
+                  let fillClass = "fill-card hover:fill-primary/30";
+                  let strokeClass = "stroke-border/70 hover:stroke-primary stroke-[0.7]";
 
-                // Base styling
-                let fillClass = "fill-card hover:fill-primary/30";
-                let strokeClass = "stroke-border/70 hover:stroke-primary stroke-[0.7]";
-
-                if (mode === "regions") {
-                  // In the region round the map is painted BY region, which is the same
-                  // identity `/turkiye` and `/turkiye/bolge/[slug]` paint — one module spells
-                  // it (`lib/theme/region-identity.ts`), so this screen cannot drift from
-                  // them again. It used to keep its own table of raw Tailwind hues and paint
-                  // Marmara amber against those pages' blue.
-                  const regionFill = prov.target?.region
-                    ? regionIdentityOf(prov.target.region).fill
-                    : null;
-                  if (isCorrectRegion) {
-                    fillClass = CORRECT_FILL;
-                    strokeClass = CORRECT_STROKE;
+                  if (mode === "regions") {
+                    // In the region round the map is painted BY region, which is the same
+                    // identity `/turkiye` and `/turkiye/bolge/[slug]` paint — one module spells
+                    // it (`lib/theme/region-identity.ts`), so this screen cannot drift from
+                    // them again. It used to keep its own table of raw Tailwind hues and paint
+                    // Marmara amber against those pages' blue.
+                    const regionFill = prov.target?.region
+                      ? regionIdentityOf(prov.target.region).fill
+                      : null;
+                    if (isCorrectRegion) {
+                      fillClass = CORRECT_FILL;
+                      strokeClass = CORRECT_STROKE;
+                    } else {
+                      fillClass = regionFill ?? "fill-card";
+                      strokeClass = "stroke-border/60 stroke-[0.6]";
+                    }
                   } else {
-                    fillClass = regionFill ?? "fill-card";
-                    strokeClass = "stroke-border/60 stroke-[0.6]";
+                    if (isCorrectProvince) {
+                      fillClass = CORRECT_FILL;
+                      strokeClass = CORRECT_STROKE;
+                    } else if (isRevealed) {
+                      fillClass = "fill-[var(--game-reveal)]/80 animate-pulse";
+                      strokeClass = "stroke-[var(--game-reveal-edge)] stroke-[2]";
+                    }
                   }
-                } else {
-                  if (isCorrectProvince) {
-                    fillClass = CORRECT_FILL;
-                    strokeClass = CORRECT_STROKE;
-                  } else if (isRevealed) {
-                    fillClass = "fill-[var(--game-reveal)]/80 animate-pulse";
-                    strokeClass = "stroke-[var(--game-reveal-edge)] stroke-[2]";
+
+                  if (isFlashingWrong) {
+                    fillClass = "fill-[var(--game-wrong)]/80 animate-pulse";
+                    strokeClass = "stroke-[var(--game-wrong-edge)] stroke-[2]";
                   }
-                }
 
-                if (isFlashingWrong) {
-                  fillClass = "fill-[var(--game-wrong)]/80 animate-pulse";
-                  strokeClass = "stroke-[var(--game-wrong-edge)] stroke-[2]";
-                }
+                  const displayName = prov.target ? prov.target.name : prov.plateCode;
 
-                const displayName = prov.target ? prov.target.name : prov.plateCode;
+                  return (
+                    <path
+                      key={prov.plateCode}
+                      d={prov.d}
+                      id={`game-prov-${prov.plateCode}`}
+                      role="button"
+                      tabIndex={isPlaying && !isFinished ? 0 : -1}
+                      aria-label={displayName}
+                      className={`${fillClass} ${strokeClass} transition-colors duration-200 cursor-pointer outline-none focus-visible:stroke-primary focus-visible:stroke-[2]`}
+                      onClick={() => handleProvinceClick(prov.plateCode)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleProvinceClick(prov.plateCode);
+                        }
+                      }}
+                    >
+                      <title>{displayName}</title>
+                    </path>
+                  );
+                })}
 
-                return (
-                  <path
-                    key={prov.plateCode}
-                    d={prov.d}
-                    id={`game-prov-${prov.plateCode}`}
-                    role="button"
-                    tabIndex={isPlaying && !isFinished ? 0 : -1}
-                    aria-label={displayName}
-                    className={`${fillClass} ${strokeClass} transition-colors duration-200 cursor-pointer outline-none focus-visible:stroke-primary focus-visible:stroke-[2]`}
-                    onClick={() => handleProvinceClick(prov.plateCode)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleProvinceClick(prov.plateCode);
-                      }
-                    }}
-                  >
-                    <title>{displayName}</title>
-                  </path>
-                );
-              })}
-
-              {/* Inland Lakes & Water Bodies. Painted AFTER the province layer above (not
+                {/* Inland Lakes & Water Bodies. Painted AFTER the province layer above (not
                   before, as it was originally) because SVG paints in document order and the
                   province layer's fill is opaque or near-opaque in every state (fill-card,
                   the region fills, the correct/reveal/wrong fills): with the lakes underneath,
@@ -1201,185 +1247,188 @@ export function V2GameScreen({
                   handler and the answer was silently lost, in both rounds and on both input
                   types. `components/v2/inland-water-hit-testing.test.ts` holds the attribute on
                   every render site in the tree. */}
-              {INLAND_WATER_SHAPES.map((water) => (
-                <path
-                  key={water.id}
-                  d={water.d}
-                  className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
-                />
-              ))}
-            </svg>
+                {INLAND_WATER_SHAPES.map((water) => (
+                  <path
+                    key={water.id}
+                    d={water.d}
+                    className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
+                  />
+                ))}
+              </svg>
 
-            {/* Not Playing Overlay */}
-            {!isPlaying && !isFinished && (
-              <div className="absolute inset-0 bg-background/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center space-y-4">
-                <div className="size-16 rounded-3xl bg-primary/15 text-primary flex items-center justify-center shadow-lg">
-                  <Gamepad2 className="size-8" />
+              {/* Not Playing Overlay */}
+              {!isPlaying && !isFinished && (
+                <div className="absolute inset-0 bg-background/75 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center space-y-4">
+                  <div className="size-16 rounded-3xl bg-primary/15 text-primary flex items-center justify-center shadow-lg">
+                    <Gamepad2 className="size-8" />
+                  </div>
+                  <div className="max-w-md space-y-1">
+                    <h3 className="font-heading text-2xl font-bold text-foreground">
+                      {modeName} Başlamaya Hazır
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                      Seçtiğiniz zorluk seviyesine göre harita üzerinde doğru konumları en yüksek
+                      başarı yüzdesiyle işaretleyin.
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    onClick={handleStartGameClick}
+                    leftIcon={<Zap className="size-4" />}
+                  >
+                    Sınavı Başlat
+                  </Button>
                 </div>
-                <div className="max-w-md space-y-1">
-                  <h3 className="font-heading text-2xl font-bold text-foreground">
-                    {modeName} Başlamaya Hazır
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    Seçtiğiniz zorluk seviyesine göre harita üzerinde doğru konumları en yüksek
-                    başarı yüzdesiyle işaretleyin.
-                  </p>
-                </div>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onClick={handleStartGameClick}
-                  leftIcon={<Zap className="size-4" />}
-                >
-                  Sınavı Başlat
-                </Button>
-              </div>
-            )}
+              )}
 
-            {/* 4. GAME OVER / RESULT MODAL OVERLAY */}
-            {isFinished && (
-              <div className="absolute inset-0 bg-background/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-5 animate-in zoom-in-95 duration-300 overflow-y-auto max-h-full">
-                <div className="size-16 sm:size-20 rounded-full bg-primary/20 text-primary flex items-center justify-center shadow-xl shrink-0">
-                  {endedEarly ? (
-                    <Flag className="size-8 sm:size-10 text-primary" />
-                  ) : wrongCount >= 3 && difficulty === "klasik" ? (
-                    <ShieldCheck className="size-8 sm:size-10 text-destructive" />
-                  ) : (
-                    <Award className="size-8 sm:size-10 text-primary" />
-                  )}
-                </div>
+              {/* 4. GAME OVER / RESULT MODAL OVERLAY */}
+              {isFinished && (
+                <div className="absolute inset-0 bg-background/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-5 animate-in zoom-in-95 duration-300 overflow-y-auto max-h-full">
+                  <div className="size-16 sm:size-20 rounded-full bg-primary/20 text-primary flex items-center justify-center shadow-xl shrink-0">
+                    {endedEarly ? (
+                      <Flag className="size-8 sm:size-10 text-primary" />
+                    ) : wrongCount >= 3 && difficulty === "klasik" ? (
+                      <ShieldCheck className="size-8 sm:size-10 text-destructive" />
+                    ) : (
+                      <Award className="size-8 sm:size-10 text-primary" />
+                    )}
+                  </div>
 
-                <div className="space-y-1 max-w-md">
-                  <Badge
-                    variant={
-                      correctPlates.size + correctRegions.size === 0 ||
+                  <div className="space-y-1 max-w-md">
+                    <Badge
+                      variant={
+                        correctPlates.size + correctRegions.size === 0 ||
+                        normalizedAcademicScore === 0
+                          ? "destructive"
+                          : endedEarly
+                            ? "warning"
+                            : wrongCount >= 3 && difficulty === "klasik"
+                              ? "destructive"
+                              : "primary"
+                      }
+                      size="sm"
+                    >
+                      {correctPlates.size + correctRegions.size === 0 ||
                       normalizedAcademicScore === 0
-                        ? "destructive"
+                        ? "Puan Alınamadı"
                         : endedEarly
-                          ? "warning"
+                          ? "Yarım Tur Tamamlandı"
                           : wrongCount >= 3 && difficulty === "klasik"
-                            ? "destructive"
-                            : "primary"
-                    }
-                    size="sm"
-                  >
-                    {correctPlates.size + correctRegions.size === 0 || normalizedAcademicScore === 0
-                      ? "Puan Alınamadı"
-                      : endedEarly
-                        ? "Yarım Tur Tamamlandı"
-                        : wrongCount >= 3 && difficulty === "klasik"
-                          ? "3 Hata Limiti Doldu"
-                          : "Tur Tamamlandı"}
-                  </Badge>
-                  <h3
-                    ref={resultHeadingRef}
-                    tabIndex={-1}
-                    className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
-                  >
-                    {correctPlates.size + correctRegions.size === 0 || normalizedAcademicScore === 0
-                      ? "Tur Sona Erdi (Puan Alınamadı) — Tekrar Dene!"
-                      : endedEarly
-                        ? "Yarım Tur Sonuçları"
-                        : wrongCount >= 3 && difficulty === "klasik"
-                          ? "Tur Tamamlanamadı — Tekrar Dene!"
-                          : "Tebrikler, Harita Turunu Tamamladın!"}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    {correctPlates.size + correctRegions.size === 0 || normalizedAcademicScore === 0
-                      ? "Bu turda hiç puan kazanamadın. İpuçlarından yararlanarak tekrar dene!"
-                      : endedEarly
-                        ? `${questions.length} sorunun ${questionScores.length} tanesini oynadın.`
-                        : "Mekânsal hafıza sınavını bitirdin. İşte performans raporun:"}
-                  </p>
-                </div>
+                            ? "3 Hata Limiti Doldu"
+                            : "Tur Tamamlandı"}
+                    </Badge>
+                    <h3
+                      ref={resultHeadingRef}
+                      tabIndex={-1}
+                      className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+                    >
+                      {correctPlates.size + correctRegions.size === 0 ||
+                      normalizedAcademicScore === 0
+                        ? "Tur Sona Erdi (Puan Alınamadı) — Tekrar Dene!"
+                        : endedEarly
+                          ? "Yarım Tur Sonuçları"
+                          : wrongCount >= 3 && difficulty === "klasik"
+                            ? "Tur Tamamlanamadı — Tekrar Dene!"
+                            : "Tebrikler, Harita Turunu Tamamladın!"}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {correctPlates.size + correctRegions.size === 0 ||
+                      normalizedAcademicScore === 0
+                        ? "Bu turda hiç puan kazanamadın. İpuçlarından yararlanarak tekrar dene!"
+                        : endedEarly
+                          ? `${questions.length} sorunun ${questionScores.length} tanesini oynadın.`
+                          : "Mekânsal hafıza sınavını bitirdin. İşte performans raporun:"}
+                    </p>
+                  </div>
 
-                {/* Score & Metric Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg w-full">
-                  <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">
-                      Başarı Skoru
-                    </span>
-                    <span className="font-heading text-2xl font-bold text-primary font-mono">
-                      %{normalizedAcademicScore}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">
-                      Toplam XP
-                    </span>
-                    <span className="font-heading text-2xl font-bold text-foreground font-mono">
-                      {score}
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">
-                      En İyi Seri
-                    </span>
-                    <span className="font-heading text-2xl font-bold text-foreground font-mono">
-                      {bestStreak} 🔥
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-2xl bg-card border border-border">
-                    <span className="text-[10px] text-muted-foreground block font-bold">
-                      Derece
-                    </span>
-                    <div className="flex items-center justify-center gap-0.5 mt-1">
-                      {/* The COUNT of filled stars is the value; the gold is brand accent on an
+                  {/* Score & Metric Strip */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg w-full">
+                    <div className="p-3 rounded-2xl bg-card border border-border">
+                      <span className="text-[10px] text-muted-foreground block font-bold">
+                        Başarı Skoru
+                      </span>
+                      <span className="font-heading text-2xl font-bold text-primary font-mono">
+                        %{normalizedAcademicScore}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-card border border-border">
+                      <span className="text-[10px] text-muted-foreground block font-bold">
+                        Toplam XP
+                      </span>
+                      <span className="font-heading text-2xl font-bold text-foreground font-mono">
+                        {score}
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-card border border-border">
+                      <span className="text-[10px] text-muted-foreground block font-bold">
+                        En İyi Seri
+                      </span>
+                      <span className="font-heading text-2xl font-bold text-foreground font-mono">
+                        {bestStreak} 🔥
+                      </span>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-card border border-border">
+                      <span className="text-[10px] text-muted-foreground block font-bold">
+                        Derece
+                      </span>
+                      <div className="flex items-center justify-center gap-0.5 mt-1">
+                        {/* The COUNT of filled stars is the value; the gold is brand accent on an
                           earned mark, so `--primary` rather than a data token. A solid glyph,
                           so the 3:1 graphical floor applies. BACKDROP: this tile's own opaque
                           `bg-card`, NOT the overlay behind it — confirmed from painted pixels
                           as #ffffff light and #121e21 dark. `--primary` against it measures
                           5.13:1 light and 4.98:1 dark. */}
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`size-4 ${i < starCount ? "text-primary fill-primary" : "text-muted/40"}`}
-                        />
-                      ))}
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`size-4 ${i < starCount ? "text-primary fill-primary" : "text-muted/40"}`}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Review Missed Provinces Section */}
-                {missedItems.length > 0 && (
-                  <div className="max-w-md w-full p-3 rounded-2xl bg-card/90 border border-border text-left space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                      <BookOpen className="size-3.5 text-primary" />
-                      <span>Bilemediklerini Tekrar Et:</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
-                      {missedItems.map((item) => (
-                        <a
-                          key={item.name}
-                          href={
-                            item.slug
-                              ? provinceUrlTemplate.replace(SLUG_PLACEHOLDER, item.slug)
-                              : "/oyun"
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2.5 py-1 rounded-lg bg-muted text-[11px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors inline-flex items-center gap-1"
-                        >
-                          <span>{item.name}</span>
-                          <ArrowRight className="size-2.5 opacity-60" />
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Auto-Save Status Strip */}
-                <div className="pt-1 flex items-center justify-center">
-                  {saveStatus === "pending" && (
-                    <div
-                      role="status"
-                      className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium"
-                    >
-                      <Spinner size="sm" decorative className="text-primary" />
-                      <span>Skorunuz profilinize kaydediliyor...</span>
+                  {/* Review Missed Provinces Section */}
+                  {missedItems.length > 0 && (
+                    <div className="max-w-md w-full p-3 rounded-2xl bg-card/90 border border-border text-left space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                        <BookOpen className="size-3.5 text-primary" />
+                        <span>Bilemediklerini Tekrar Et:</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                        {missedItems.map((item) => (
+                          <a
+                            key={item.name}
+                            href={
+                              item.slug
+                                ? provinceUrlTemplate.replace(SLUG_PLACEHOLDER, item.slug)
+                                : "/oyun"
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2.5 py-1 rounded-lg bg-muted text-[11px] font-semibold text-foreground hover:bg-primary/10 hover:text-primary transition-colors inline-flex items-center gap-1"
+                          >
+                            <span>{item.name}</span>
+                            <ArrowRight className="size-2.5 opacity-60" />
+                          </a>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {/* BACKDROP: the finish overlay, `bg-background/95 backdrop-blur-md` over the
+
+                  {/* Auto-Save Status Strip */}
+                  <div className="pt-1 flex items-center justify-center">
+                    {saveStatus === "pending" && (
+                      <div
+                        role="status"
+                        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium"
+                      >
+                        <Spinner size="sm" decorative className="text-primary" />
+                        <span>Skorunuz profilinize kaydediliyor...</span>
+                      </div>
+                    )}
+                    {/* BACKDROP: the finish overlay, `bg-background/95 backdrop-blur-md` over the
                       play card. Its painted surface is #fbf8f4 light and #0b1417 dark, READ OFF
                       THE RENDERED OVERLAY at 320 and 1280 rather than modelled, because
                       `backdrop-blur-md` is not a blend any analytic model expresses. The model
@@ -1389,57 +1438,58 @@ export function V2GameScreen({
                       than an assumption either way. `--success-strong` on `--success/15` over
                       the PAINTED surface measures 5.76:1 light and 7.81:1 dark. Its `failed`
                       sibling below is already on `destructive`. */}
-                  {saveStatus === "saved" && (
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-success/15 border border-success/30 text-success-strong text-xs font-semibold">
-                      <CheckCircle2 className="size-3.5" />
-                      <span>Skor profilinize kaydedildi</span>
-                    </div>
-                  )}
-                  {saveStatus === "failed" && (
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive-strong text-xs font-semibold">
-                      <XCircle className="size-3.5" />
-                      <span>Skor kaydedilemedi</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSaveStatus("idle");
-                          void handleSaveRound();
-                        }}
-                        className="underline hover:opacity-80 ml-1 cursor-pointer font-bold"
-                      >
-                        Tekrar Dene
-                      </button>
-                    </div>
-                  )}
-                </div>
+                    {saveStatus === "saved" && (
+                      <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-success/15 border border-success/30 text-success-strong text-xs font-semibold">
+                        <CheckCircle2 className="size-3.5" />
+                        <span>Skor profilinize kaydedildi</span>
+                      </div>
+                    )}
+                    {saveStatus === "failed" && (
+                      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive-strong text-xs font-semibold">
+                        <XCircle className="size-3.5" />
+                        <span>Skor kaydedilemedi</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSaveStatus("idle");
+                            void handleSaveRound();
+                          }}
+                          className="underline hover:opacity-80 ml-1 cursor-pointer font-bold"
+                        >
+                          Tekrar Dene
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={handleStartGameClick}
-                    leftIcon={<RotateCcw className="size-4" />}
-                  >
-                    Tekrar Oyna
-                  </Button>
-                  <V2LeaderboardButton mode={submitModeTag} size="lg" />
-                  <Link href={region ? "/oyun/bolge-bolge-il" : "/oyun"}>
-                    <Button variant="outline" size="lg">
-                      Mod Seçimine Dön
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      onClick={handleStartGameClick}
+                      leftIcon={<RotateCcw className="size-4" />}
+                    >
+                      Tekrar Oyna
                     </Button>
-                  </Link>
+                    <V2LeaderboardButton mode={submitModeTag} size="lg" />
+                    <Link href={region ? "/oyun/bolge-bolge-il" : "/oyun"}>
+                      <Button variant="outline" size="lg">
+                        Mod Seçimine Dön
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* UNDER the plate, not in it. The plate above lays its children out in a row
-              (`flex items-center justify-center`), so a credit inside it is not a caption — it is
-              a sibling competing with the map for width, and it won 517px of 1166 while the map
-              drew at 647. `v2-map-credit-placement.test.ts` reads the JSX tree for this now; the
-              source-order check it used to make was satisfied by the broken shape. */}
-          <MapAttribution inlandWater context />
+            {/* UNDER the plate, not in it. The plate above lays its children out in a row
+                (`flex items-center justify-center`), so a credit inside it is not a caption — it
+                is a sibling competing with the map for width, and it won 517px of 1166 while the
+                map drew at 647. `v2-map-credit-placement.test.ts` reads the JSX tree for this
+                now; the source-order check it used to make was satisfied by the broken shape. */}
+            <MapAttribution inlandWater context />
+          </div>
         </div>
       </main>
     </div>

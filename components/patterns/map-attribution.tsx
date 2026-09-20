@@ -67,7 +67,23 @@ export function MapAttribution({
   return (
     <p
       className={cn(
-        "flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] leading-relaxed text-muted-foreground",
+        // `m-0` IS A RESET, not spacing. `app/globals.css` gives every `<p>` a `0 0 1rem` prose
+        // margin, and this element is the last child on five of its surfaces — where Tailwind's
+        // `space-y-*` writes no margin at all, since it targets `:not(:last-child)`. So the
+        // credit carried a 16px prose tail that belonged to body copy, invisible only while the
+        // element was clipped inside the map box. The caption's own gap is set by the wrapper
+        // that pairs it with its map, never from in here.
+        //
+        // `gap-x-4`, not `gap-x-2`: at desktop width the three clauses sit on ONE line, and 8px
+        // is 2.8 space-widths at this size — a reader scanning "…ODbL Mevsimlik göl sınırları:…"
+        // meets no boundary until the next colon arrives. This was hidden while the credit was
+        // squeezed to half a plate and therefore always wrapped. A `::before` separator glyph
+        // would read better still and is exactly what the `{" "}` note below forbids: it would
+        // separate the clauses on screen while leaving `textContent` welded.
+        //
+        // `leading-snug`, not `leading-relaxed`: 1.625 is a body-prose leading, and at 320px this
+        // footnote wraps to five lines and stands 93px tall under a 105px map on `/deprem`.
+        "m-0 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] leading-snug text-muted-foreground",
         className,
       )}
     >

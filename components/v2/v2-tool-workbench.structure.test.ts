@@ -114,9 +114,42 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
   });
 
   describe("landscape / fullscreen entry (T-015)", () => {
-    it("wires the shared landscape hook to the map's own container ref", () => {
+    /**
+     * The fullscreen target is the box holding the map AND its credit — `landscapeBoxRef`, not
+     * `mapContainerRef`.
+     *
+     * This assertion named `mapContainerRef` while the credit was rendered inside the plate, so
+     * the two refs were the same element and the distinction did not exist. Once the credit moved
+     * out of the plate (2026-09-20, the credit was taking 517px of a 1166px plate away from the
+     * map), targeting the plate would have taken the map fullscreen and left its attribution
+     * behind on the page underneath — the licence gap that change existed to close, reappearing
+     * in the one view where the map fills the screen.
+     *
+     * `mapContainerRef` still exists and still points at the plate, because the scale-bar
+     * `ResizeObserver` measures the DRAWING's width. Both are asserted: the hook must take the
+     * outer box, and the plate ref must not be what it takes.
+     */
+    it("wires the shared landscape hook to the box holding the map and its credit", () => {
       expect(source).toContain('from "@/lib/map/use-landscape-mode.client"');
-      expect(source).toContain("useLandscapeMode(mapContainerRef)");
+      expect(source).toContain("useLandscapeMode(landscapeBoxRef)");
+      expect(source, "the plate alone must not be the fullscreen target").not.toContain(
+        "useLandscapeMode(mapContainerRef)",
+      );
+    });
+
+    /**
+     * The credit has to be INSIDE the element that goes fullscreen. A placement test reading the
+     * page tree cannot see this: `v2-map-credit-placement.test.ts` asks that the credit is not
+     * inside the map BOX, which is satisfied either way, and fullscreen is a runtime state no
+     * static scan evaluates. What is checkable here is the nesting that makes it possible.
+     */
+    it("keeps the credit inside the fullscreen box", () => {
+      const box = source.indexOf("ref={landscapeBoxRef}");
+      expect(box, "landscapeBoxRef is not attached to anything").toBeGreaterThan(-1);
+      const credit = source.indexOf("<MapAttribution", box);
+      expect(credit, "the credit is not rendered after the fullscreen box opens").toBeGreaterThan(
+        -1,
+      );
     });
   });
 });

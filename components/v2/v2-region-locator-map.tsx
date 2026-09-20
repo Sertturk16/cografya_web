@@ -62,117 +62,126 @@ export function V2RegionLocatorMap({
         </div>
       </div>
 
-      {/* SVG Map Container */}
-      <div className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden select-none shadow-xs">
-        {/* Floating Tooltip Pill */}
-        <div className="absolute top-3 left-3 z-10 pointer-events-none transition-all duration-200">
-          {hoveredProvince ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/95 dark:bg-card/95 backdrop-blur-md border border-primary/40 shadow-lg text-xs animate-in fade-in zoom-in-95">
-              <span className="font-mono font-bold text-primary">#{hoveredProvince.plateCode}</span>
-              <span className="font-bold text-foreground">{hoveredProvince.nameTr}</span>
-              {hoveredProvince.population !== null && (
-                <span className="text-muted-foreground flex items-center gap-1 pl-1 border-l border-border">
-                  <Users className="size-3 text-muted-foreground" />
-                  {hoveredProvince.population.toLocaleString("tr-TR")}
+      {/* SVG Map Container and its caption, in ONE box — the 8px between them is the caption's
+          own, not whatever `space-y-*` this component is dropped into. */}
+      <div className="space-y-2">
+        <div className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden select-none shadow-xs">
+          {/* Floating Tooltip Pill */}
+          <div className="absolute top-3 left-3 z-10 pointer-events-none transition-all duration-200">
+            {hoveredProvince ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/95 dark:bg-card/95 backdrop-blur-md border border-primary/40 shadow-lg text-xs animate-in fade-in zoom-in-95">
+                <span className="font-mono font-bold text-primary">
+                  #{hoveredProvince.plateCode}
                 </span>
+                <span className="font-bold text-foreground">{hoveredProvince.nameTr}</span>
+                {hoveredProvince.population !== null && (
+                  <span className="text-muted-foreground flex items-center gap-1 pl-1 border-l border-border">
+                    <Users className="size-3 text-muted-foreground" />
+                    {hoveredProvince.population.toLocaleString("tr-TR")}
+                  </span>
+                )}
+                <span className="text-[10px] text-primary/80 font-medium pl-1">Tıkla →</span>
+              </div>
+            ) : (
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background/80 dark:bg-card/80 backdrop-blur-xs border border-border/80 text-[11px] text-muted-foreground">
+                <MapPin className="size-3 text-primary" />
+                <span>İllerin üzerine gelerek detayları görebilirsiniz</span>
+              </div>
+            )}
+          </div>
+
+          <svg
+            viewBox={TR_CONTEXT_VIEWBOX}
+            className="w-full h-full block"
+            aria-label={`${regionName} illerinin Türkiye haritasındaki konumu`}
+          >
+            {/* 1. Surrounding Foreign Countries */}
+            <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
+              {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
+                <path key={country.iso} d={country.d} />
+              ))}
+            </g>
+
+            {/* 2. Türkiye Casing Base Land */}
+            {trCasing && (
+              <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
+            )}
+
+            {/* 3. Non-Region Provinces (Dimmed background) */}
+            <g className="stroke-border/60 stroke-[0.5] fill-[var(--map-land)]">
+              {PROVINCE_SHAPES.filter((shape) => !regionPlateSet.has(shape.plateCode)).map(
+                (shape) => (
+                  <path
+                    key={shape.plateCode}
+                    d={shape.d}
+                    className="opacity-55 hover:opacity-75 transition-opacity"
+                  />
+                ),
               )}
-              <span className="text-[10px] text-primary/80 font-medium pl-1">Tıkla →</span>
-            </div>
-          ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background/80 dark:bg-card/80 backdrop-blur-xs border border-border/80 text-[11px] text-muted-foreground">
-              <MapPin className="size-3 text-primary" />
-              <span>İllerin üzerine gelerek detayları görebilirsiniz</span>
-            </div>
-          )}
+            </g>
+
+            {/* 4. Inland Lakes */}
+            <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
+              {INLAND_WATER_SHAPES.map((lake) => (
+                <path key={lake.id} d={lake.d} />
+              ))}
+            </g>
+
+            {/* 5. Region Provinces Glow Underlay */}
+            <g className="pointer-events-none">
+              {PROVINCE_SHAPES.filter((shape) => regionPlateSet.has(shape.plateCode)).map(
+                (shape) => (
+                  <path
+                    key={`glow-${shape.plateCode}`}
+                    d={shape.d}
+                    style={{ fill: fillColor }}
+                    className="opacity-30 blur-xs"
+                  />
+                ),
+              )}
+            </g>
+
+            {/* 6. Active Region Provinces (Interactive & Highlighted) */}
+            <g className="cursor-pointer">
+              {PROVINCE_SHAPES.filter((shape) => regionPlateSet.has(shape.plateCode)).map(
+                (shape) => {
+                  const prov = provinceByPlate.get(shape.plateCode);
+                  const isHovered = hoveredPlate === shape.plateCode;
+
+                  return (
+                    <Link
+                      key={shape.plateCode}
+                      href={{
+                        pathname: "/turkiye/[slug]",
+                        params: { slug: prov?.slugTr ?? shape.plateCode },
+                      }}
+                      onMouseEnter={() => setHoveredPlate(shape.plateCode)}
+                      onMouseLeave={() => setHoveredPlate(null)}
+                      onFocus={() => setHoveredPlate(shape.plateCode)}
+                      onBlur={() => setHoveredPlate(null)}
+                      aria-label={prov?.nameTr ?? shape.plateCode}
+                    >
+                      <path
+                        d={shape.d}
+                        style={{
+                          fill: isHovered ? "var(--color-primary-hover)" : fillColor,
+                          stroke: isHovered ? "#ffffff" : strokeColor,
+                          strokeWidth: isHovered ? 2.2 : 1.2,
+                        }}
+                        className="transition-all duration-150 filter drop-shadow-xs"
+                      />
+                    </Link>
+                  );
+                },
+              )}
+            </g>
+          </svg>
         </div>
 
-        <svg
-          viewBox={TR_CONTEXT_VIEWBOX}
-          className="w-full h-full block"
-          aria-label={`${regionName} illerinin Türkiye haritasındaki konumu`}
-        >
-          {/* 1. Surrounding Foreign Countries */}
-          <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
-            {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
-              <path key={country.iso} d={country.d} />
-            ))}
-          </g>
-
-          {/* 2. Türkiye Casing Base Land */}
-          {trCasing && (
-            <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
-          )}
-
-          {/* 3. Non-Region Provinces (Dimmed background) */}
-          <g className="stroke-border/60 stroke-[0.5] fill-[var(--map-land)]">
-            {PROVINCE_SHAPES.filter((shape) => !regionPlateSet.has(shape.plateCode)).map(
-              (shape) => (
-                <path
-                  key={shape.plateCode}
-                  d={shape.d}
-                  className="opacity-55 hover:opacity-75 transition-opacity"
-                />
-              ),
-            )}
-          </g>
-
-          {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
-            {INLAND_WATER_SHAPES.map((lake) => (
-              <path key={lake.id} d={lake.d} />
-            ))}
-          </g>
-
-          {/* 5. Region Provinces Glow Underlay */}
-          <g className="pointer-events-none">
-            {PROVINCE_SHAPES.filter((shape) => regionPlateSet.has(shape.plateCode)).map((shape) => (
-              <path
-                key={`glow-${shape.plateCode}`}
-                d={shape.d}
-                style={{ fill: fillColor }}
-                className="opacity-30 blur-xs"
-              />
-            ))}
-          </g>
-
-          {/* 6. Active Region Provinces (Interactive & Highlighted) */}
-          <g className="cursor-pointer">
-            {PROVINCE_SHAPES.filter((shape) => regionPlateSet.has(shape.plateCode)).map((shape) => {
-              const prov = provinceByPlate.get(shape.plateCode);
-              const isHovered = hoveredPlate === shape.plateCode;
-
-              return (
-                <Link
-                  key={shape.plateCode}
-                  href={{
-                    pathname: "/turkiye/[slug]",
-                    params: { slug: prov?.slugTr ?? shape.plateCode },
-                  }}
-                  onMouseEnter={() => setHoveredPlate(shape.plateCode)}
-                  onMouseLeave={() => setHoveredPlate(null)}
-                  onFocus={() => setHoveredPlate(shape.plateCode)}
-                  onBlur={() => setHoveredPlate(null)}
-                  aria-label={prov?.nameTr ?? shape.plateCode}
-                >
-                  <path
-                    d={shape.d}
-                    style={{
-                      fill: isHovered ? "var(--color-primary-hover)" : fillColor,
-                      stroke: isHovered ? "#ffffff" : strokeColor,
-                      strokeWidth: isHovered ? 2.2 : 1.2,
-                    }}
-                    className="transition-all duration-150 filter drop-shadow-xs"
-                  />
-                </Link>
-              );
-            })}
-          </g>
-        </svg>
-      </div>
-
-      {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
+        {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
           `overflow-hidden`, which meant the ODbL and JRC lines rendered to nobody. */}
-      <MapAttribution inlandWater context />
+        <MapAttribution inlandWater context />
+      </div>
 
       {/* Quick Province Pill Shortcuts */}
       <div className="space-y-2 pt-1">

@@ -98,6 +98,30 @@ const WORLD_VIEWBOX: ViewBox = parseViewBox(TR_CONTEXT_VIEWBOX);
  *  pinch below is clamped to the SAME ceiling, not `zoom-pan.ts`'s own (higher) `MAX_ZOOM`. */
 const MAX_TOOL_ZOOM = 8;
 
+/**
+ * Landscape/fullscreen overrides for the map box and the box that pairs it with its credit.
+ * Inline style, for the two reasons `v2-game-screen.tsx` states at length beside the same pair:
+ * they must beat the base utilities without relying on Tailwind's emit order, and a conditional
+ * className would reduce this plate's `aspect-[1270/580]` to `${…}` for the composition scanner,
+ * dropping the surface out of a recorded population without anyone noticing.
+ *
+ * `borderRadius: 0` because in this layout the box IS the screen, and a corner radius would cut
+ * the map against straight screen edges (T-015) — the same reason the className used to drop
+ * `rounded-2xl` when landscape was active.
+ */
+const LANDSCAPE_FILL: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  flex: "1 1 0%",
+  minHeight: 0,
+};
+const LANDSCAPE_PLATE: React.CSSProperties = {
+  flex: "1 1 0%",
+  minHeight: 0,
+  aspectRatio: "auto",
+  borderRadius: 0,
+};
+
 /** This component's `{ zoomLevel, panOffset }` pair, expressed as a `ViewBox` — the exact
  *  rectangle `currentViewBox` (below) already computes, in the shape `zoom-pan.ts`'s pure
  *  functions expect. Kept local rather than replacing `currentViewBox` itself: that memo is
@@ -174,10 +198,20 @@ export function V2ToolWorkbench({
 
   const svgRef = React.useRef<SVGSVGElement | null>(null);
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
+  /**
+   * The plate AND its credit, which is what goes fullscreen — not the plate alone.
+   *
+   * These were one ref until the credit moved out of the plate. Keeping the fullscreen target on
+   * the plate would have taken the map into fullscreen and left its attribution behind on the
+   * page underneath, which is the same licence gap this change exists to close, reappearing in
+   * the one view where the map fills the whole screen. `mapContainerRef` stays on the plate
+   * because the scale-bar `ResizeObserver` below measures the DRAWING's width, not this box's.
+   */
+  const landscapeBoxRef = React.useRef<HTMLDivElement | null>(null);
 
   // "Tam Ekran / Yatay Mod" (T-015) — fullscreen + best-effort landscape lock for the canvas
   // card itself, so the toolbar, scale bar and zoom cluster all come along.
-  const landscape = useLandscapeMode(mapContainerRef);
+  const landscape = useLandscapeMode(landscapeBoxRef);
 
   // Touch pinch-zoom + one-finger pan (T-015). Kept as refs, not state: a pinch/pan gesture
   // fires many times a frame and none of these values are ever read by render — only the
@@ -1186,155 +1220,159 @@ export function V2ToolWorkbench({
           </button>
         </div>
 
-        {/* Interactive SVG Canvas Container with Zero Top/Bottom Gaps */}
+        {/* Interactive SVG Canvas Container with Zero Top/Bottom Gaps, and its caption.
+            ONE BOX, so the 8px between map and credit states the caption relationship instead of
+            inheriting whatever `space-y-*` the surrounding container runs — and so fullscreen
+            carries the credit with the map. */}
         <div
-          ref={mapContainerRef}
-          className={`relative w-full aspect-[1270/580] bg-[var(--map-plate)] border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none ${
-            // The fallback (non-Fullscreen-API) landscape layout is a fixed-position box the
-            // hook sizes to the viewport itself — a fixed corner radius would clip the map's
-            // own corners against straight screen edges (T-015).
-            landscape.active ? "" : "rounded-2xl"
-          }`}
+          className="space-y-2"
+          ref={landscapeBoxRef}
+          style={landscape.active ? LANDSCAPE_FILL : undefined}
         >
-          {/* Fullscreen / landscape toggle — ONE control for both directions, kept INSIDE
+          <div
+            ref={mapContainerRef}
+            className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none"
+            style={landscape.active ? LANDSCAPE_PLATE : undefined}
+          >
+            {/* Fullscreen / landscape toggle — ONE control for both directions, kept INSIDE
               this container rather than in the toolbar above: once the real Fullscreen API
               engages, only this element's own subtree stays on screen, so an "exit" control
               living in the toolbar would be unreachable (T-015). */}
-          <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
-            <button
-              type="button"
-              onClick={landscape.toggle}
-              aria-pressed={landscape.active}
-              aria-label={
-                landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda görüntüle"
-              }
-              className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
-            >
-              {landscape.active ? (
-                <Minimize2 className="size-4" />
-              ) : (
-                <Maximize2 className="size-4" />
-              )}
-            </button>
-          </div>
+            <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+              <button
+                type="button"
+                onClick={landscape.toggle}
+                aria-pressed={landscape.active}
+                aria-label={
+                  landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda görüntüle"
+                }
+                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
+              >
+                {landscape.active ? (
+                  <Minimize2 className="size-4" />
+                ) : (
+                  <Maximize2 className="size-4" />
+                )}
+              </button>
+            </div>
 
-          {/* "Rotate your phone" (T-015) — only once landscape mode is on, the device is
+            {/* "Rotate your phone" (T-015) — only once landscape mode is on, the device is
               STILL portrait (no orientation-lock support, e.g. iOS Safari), and the pointer
               is coarse. Lives inside this same container for the identical reason as the
               toggle button above: it must stay visible under a real Fullscreen session. */}
-          {landscape.showRotateHint && (
-            <div
-              role="status"
-              aria-live="polite"
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
-            >
-              <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
-              <span>Daha geniş bir görünüm için telefonunu yatay çevir.</span>
-              <button
-                type="button"
-                onClick={landscape.exit}
-                className="shrink-0 px-2 py-1 rounded-lg border border-white/40 hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                Anladım
-              </button>
-            </div>
-          )}
-
-          {/* Absolute Floating Self-Intersection Warning Banner (Zero Layout Shift) */}
-          {isSelfIntersecting && (
-            <div
-              role="alert"
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-warning text-warning-foreground px-3.5 py-1.5 rounded-2xl border border-warning-foreground/25 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
-            >
-              <div className="flex items-center gap-1.5 overflow-hidden">
-                <AlertTriangle className="size-3.5 shrink-0" />
-                <span className="text-[11px] truncate">
-                  <strong>Kesişen Çokgen:</strong> Çapraz kenarlar alanı bozar.
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={handleSortConvexOrder}
-                className="px-2.5 py-1 rounded-xl bg-warning-foreground text-warning text-[11px] font-bold hover:bg-warning-foreground/90 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
-              >
-                <RefreshCw className="size-3" />
-                <span>Dış Hat Sırasına Diz</span>
-              </button>
-            </div>
-          )}
-
-          {/* Zoom & Pan Overlay Controls */}
-          <div className="absolute top-3 right-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
-            <button
-              type="button"
-              onClick={handleZoomIn}
-              disabled={zoomLevel >= 8}
-              className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              aria-label="Haritayı Yakınlaştır"
-            >
-              <ZoomIn className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleZoomOut}
-              disabled={zoomLevel <= 1}
-              className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              aria-label="Haritayı Uzaklaştır"
-            >
-              <ZoomOut className="size-4" />
-            </button>
-            <button
-              type="button"
-              onClick={handleResetZoom}
-              disabled={zoomLevel === 1 && panOffset.x === 0 && panOffset.y === 0}
-              className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-              aria-label="Harita Görünümünü Sıfırla"
-            >
-              <RotateCcw className="size-4" />
-            </button>
-          </div>
-
-          {/* Dynamic Metric Scale Bar (Çizgi Ölçek - V1 Klasik Kartografik Standart) */}
-          {dynamicScaleBar && (
-            <div
-              className="absolute bottom-3 left-3 z-30 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/80 shadow-md pointer-events-none flex flex-col gap-1 text-xs select-none"
-              aria-label={`Çizgi ölçek: ${dynamicScaleBar.km} km`}
-            >
-              <div className="flex items-center justify-between text-[11px] font-bold text-foreground font-mono leading-none">
-                <span>0</span>
-                <span>{dynamicScaleBar.km} km</span>
-              </div>
+            {landscape.showRotateHint && (
               <div
-                className="h-1.5 border-x-2 border-b-2 border-foreground"
-                style={{
-                  width: `${Math.max(36, Math.min(Math.round(dynamicScaleBar.px), 240))}px`,
-                }}
-              />
-            </div>
-          )}
+                role="status"
+                aria-live="polite"
+                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+              >
+                <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
+                <span>Daha geniş bir görünüm için telefonunu yatay çevir.</span>
+                <button
+                  type="button"
+                  onClick={landscape.exit}
+                  className="shrink-0 px-2 py-1 rounded-lg border border-white/40 hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  Anladım
+                </button>
+              </div>
+            )}
 
-          {/* SVG Map */}
-          <svg
-            ref={svgRef}
-            viewBox={currentViewBox}
-            className={`w-full h-full object-fill ${isPanning ? "cursor-grabbing" : "cursor-crosshair"} ${
-              // Zoomed in, the map itself owns one-finger dragging (pan); at 1× a vertical
-              // swipe over the map should still scroll the PAGE, and `pan-y` is what leaves
-              // that native behaviour intact while still suppressing the browser's own
-              // pinch-zoom (T-015) — our pinch handler above replaces it.
-              zoomLevel > 1 ? "touch-none" : "touch-pan-y"
-            }`}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onClick={handleMapClick}
-            onPointerDown={handleTouchPointerDown}
-            onPointerMove={handleTouchPointerMove}
-            onPointerUp={handleTouchPointerUp}
-            onPointerCancel={handleTouchPointerUp}
-            aria-label="Türkiye CBS Ölçüm Haritası"
-          >
-            {/* Background neighbor lands. `--map-context-land`, NOT `--map-land`: the country
+            {/* Absolute Floating Self-Intersection Warning Banner (Zero Layout Shift) */}
+            {isSelfIntersecting && (
+              <div
+                role="alert"
+                className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-warning text-warning-foreground px-3.5 py-1.5 rounded-2xl border border-warning-foreground/25 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
+              >
+                <div className="flex items-center gap-1.5 overflow-hidden">
+                  <AlertTriangle className="size-3.5 shrink-0" />
+                  <span className="text-[11px] truncate">
+                    <strong>Kesişen Çokgen:</strong> Çapraz kenarlar alanı bozar.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSortConvexOrder}
+                  className="px-2.5 py-1 rounded-xl bg-warning-foreground text-warning text-[11px] font-bold hover:bg-warning-foreground/90 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                >
+                  <RefreshCw className="size-3" />
+                  <span>Dış Hat Sırasına Diz</span>
+                </button>
+              </div>
+            )}
+
+            {/* Zoom & Pan Overlay Controls */}
+            <div className="absolute top-3 right-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+              <button
+                type="button"
+                onClick={handleZoomIn}
+                disabled={zoomLevel >= 8}
+                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
+                aria-label="Haritayı Yakınlaştır"
+              >
+                <ZoomIn className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleZoomOut}
+                disabled={zoomLevel <= 1}
+                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
+                aria-label="Haritayı Uzaklaştır"
+              >
+                <ZoomOut className="size-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleResetZoom}
+                disabled={zoomLevel === 1 && panOffset.x === 0 && panOffset.y === 0}
+                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
+                aria-label="Harita Görünümünü Sıfırla"
+              >
+                <RotateCcw className="size-4" />
+              </button>
+            </div>
+
+            {/* Dynamic Metric Scale Bar (Çizgi Ölçek - V1 Klasik Kartografik Standart) */}
+            {dynamicScaleBar && (
+              <div
+                className="absolute bottom-3 left-3 z-30 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/80 shadow-md pointer-events-none flex flex-col gap-1 text-xs select-none"
+                aria-label={`Çizgi ölçek: ${dynamicScaleBar.km} km`}
+              >
+                <div className="flex items-center justify-between text-[11px] font-bold text-foreground font-mono leading-none">
+                  <span>0</span>
+                  <span>{dynamicScaleBar.km} km</span>
+                </div>
+                <div
+                  className="h-1.5 border-x-2 border-b-2 border-foreground"
+                  style={{
+                    width: `${Math.max(36, Math.min(Math.round(dynamicScaleBar.px), 240))}px`,
+                  }}
+                />
+              </div>
+            )}
+
+            {/* SVG Map */}
+            <svg
+              ref={svgRef}
+              viewBox={currentViewBox}
+              className={`w-full h-full object-fill ${isPanning ? "cursor-grabbing" : "cursor-crosshair"} ${
+                // Zoomed in, the map itself owns one-finger dragging (pan); at 1× a vertical
+                // swipe over the map should still scroll the PAGE, and `pan-y` is what leaves
+                // that native behaviour intact while still suppressing the browser's own
+                // pinch-zoom (T-015) — our pinch handler above replaces it.
+                zoomLevel > 1 ? "touch-none" : "touch-pan-y"
+              }`}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onClick={handleMapClick}
+              onPointerDown={handleTouchPointerDown}
+              onPointerMove={handleTouchPointerMove}
+              onPointerUp={handleTouchPointerUp}
+              onPointerCancel={handleTouchPointerUp}
+              aria-label="Türkiye CBS Ölçüm Haritası"
+            >
+              {/* Background neighbor lands. `--map-context-land`, NOT `--map-land`: the country
                 fill here is `fill-card/90` over `--map-plate`, and `--map-land` against that
                 blend measures 1.02:1 light / 1.01:1 dark -- Türkiye and its neighbours were
                 one tone, while the other five Türkiye maps kept the warm/white split this
@@ -1342,34 +1380,34 @@ export function V2ToolWorkbench({
                 hairline moves with the fill to `--map-context-line` (3.28:1 / 3.18:1 on that
                 neighbour land, 3.05:1 / 3.54:1 on the `--map-plate` it also borders), leaving
                 `--province-stroke` to Türkiye's own coast. */}
-            {CONTEXT_SHAPES.map((country) => (
-              <path
-                key={country.iso}
-                d={country.d}
-                className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
-              />
-            ))}
+              {CONTEXT_SHAPES.map((country) => (
+                <path
+                  key={country.iso}
+                  d={country.d}
+                  className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
+                />
+              ))}
 
-            {/* Turkey Context Casing Outline */}
-            {trCasing && (
-              <path
-                d={trCasing.d}
-                className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
-              />
-            )}
+              {/* Turkey Context Casing Outline */}
+              {trCasing && (
+                <path
+                  d={trCasing.d}
+                  className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
+                />
+              )}
 
-            {/* 81 Turkish Provinces Base Layer (Hover highlight removed per feedback) */}
-            {PROVINCE_SHAPES.map((prov) => (
-              <path
-                key={prov.plateCode}
-                d={prov.d}
-                className="fill-card/90 stroke-border/60 stroke-[0.6]"
-              >
-                <title>{prov.geoName}</title>
-              </path>
-            ))}
+              {/* 81 Turkish Provinces Base Layer (Hover highlight removed per feedback) */}
+              {PROVINCE_SHAPES.map((prov) => (
+                <path
+                  key={prov.plateCode}
+                  d={prov.d}
+                  className="fill-card/90 stroke-border/60 stroke-[0.6]"
+                >
+                  <title>{prov.geoName}</title>
+                </path>
+              ))}
 
-            {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as
+              {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as
                 it was originally) because SVG paints in document order and the province
                 layer's fill-card/90 is ~90% opaque: with the lakes underneath, that fill
                 covered them almost entirely in both themes, independent of colour -- the same
@@ -1383,69 +1421,70 @@ export function V2ToolWorkbench({
                 exactly this (see `v2-game-screen.tsx`), and
                 `components/v2/inland-water-hit-testing.test.ts` now holds it on every render
                 site in the tree. */}
-            {INLAND_WATER_SHAPES.map((water) => (
-              <path
-                key={water.id}
-                d={water.d}
-                className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
-              />
-            ))}
+              {INLAND_WATER_SHAPES.map((water) => (
+                <path
+                  key={water.id}
+                  d={water.d}
+                  className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
+                />
+              ))}
 
-            {/* Drawn Area Polygon */}
-            {activeTool === "area" && points.length >= 3 && (
-              <polygon
-                points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
-                className="fill-accent/25 stroke-accent"
-                strokeWidth={2.5 / zoomLevel}
-                strokeDasharray="4 2"
-              />
-            )}
+              {/* Drawn Area Polygon */}
+              {activeTool === "area" && points.length >= 3 && (
+                <polygon
+                  points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
+                  className="fill-accent/25 stroke-accent"
+                  strokeWidth={2.5 / zoomLevel}
+                  strokeDasharray="4 2"
+                />
+              )}
 
-            {/* Drawn Distance Polyline */}
-            {activeTool === "distance" && points.length >= 2 && (
-              <polyline
-                points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
-                fill="none"
-                stroke="var(--color-primary, #b0522e)"
-                strokeWidth={3 / zoomLevel}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            )}
+              {/* Drawn Distance Polyline */}
+              {activeTool === "distance" && points.length >= 2 && (
+                <polyline
+                  points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
+                  fill="none"
+                  stroke="var(--color-primary, #b0522e)"
+                  strokeWidth={3 / zoomLevel}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
 
-            {/* Placed Waypoints Pins */}
-            {points.map((p, idx) => {
-              const radius = Math.max(5 / Math.sqrt(zoomLevel), 3);
-              return (
-                <g key={idx} className="transition-transform">
-                  <circle
-                    cx={p.svgX}
-                    cy={p.svgY}
-                    r={radius}
-                    className="fill-primary stroke-white dark:stroke-black stroke-[2] shadow-md"
-                  />
-                  <text
-                    x={p.svgX}
-                    y={p.svgY - (radius + 4)}
-                    textAnchor="middle"
-                    fontSize={Math.max(10 / Math.sqrt(zoomLevel), 8)}
-                    fontWeight="bold"
-                    fill="currentColor"
-                    className="fill-foreground font-sans drop-shadow-sm select-none pointer-events-none"
-                  >
-                    {p.label || idx + 1}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+              {/* Placed Waypoints Pins */}
+              {points.map((p, idx) => {
+                const radius = Math.max(5 / Math.sqrt(zoomLevel), 3);
+                return (
+                  <g key={idx} className="transition-transform">
+                    <circle
+                      cx={p.svgX}
+                      cy={p.svgY}
+                      r={radius}
+                      className="fill-primary stroke-white dark:stroke-black stroke-[2] shadow-md"
+                    />
+                    <text
+                      x={p.svgX}
+                      y={p.svgY - (radius + 4)}
+                      textAnchor="middle"
+                      fontSize={Math.max(10 / Math.sqrt(zoomLevel), 8)}
+                      fontWeight="bold"
+                      fill="currentColor"
+                      className="fill-foreground font-sans drop-shadow-sm select-none pointer-events-none"
+                    >
+                      {p.label || idx + 1}
+                    </text>
+                  </g>
+                );
+              })}
+            </svg>
+          </div>
+
+          {/* UNDER the plate, not in it: the plate is `flex items-center justify-center`, so a
+              credit nested inside it becomes a flex sibling of the `<svg>` and takes width the
+              map needs — 517px of 1166 on this surface, measured. See
+              `v2-map-credit-placement.test.ts`, which reads the tree rather than source order. */}
+          <MapAttribution inlandWater context />
         </div>
-
-        {/* UNDER the plate, not in it: the plate is `flex items-center justify-center`, so a
-            credit nested inside it becomes a flex sibling of the `<svg>` and takes width the map
-            needs — 517px of 1166 on this surface, measured. See
-            `v2-map-credit-placement.test.ts`, which now reads the tree rather than source order. */}
-        <MapAttribution inlandWater context />
       </div>
 
       {/* 3. TWO-COLUMN BALANCED DASHBOARD BELOW THE MAP */}

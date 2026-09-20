@@ -297,8 +297,17 @@ describe("the literal extractor's hole semantics", () => {
  * below is what the re-run on the merged tree reports, not a side taken from the conflict: each
  * branch's figure is correct for its own tree and wrong for this one, so picking either would
  * have been a pin stepped to make a suite green.
+ *
+ * 20 -> **19** on 2026-09-20. `v2-tool-workbench.tsx`'s map plate was
+ * `` `… ${landscape.active ? "" : "rounded-2xl"}` ``, and that hole cost more than readability:
+ * `page-composition-cards.test.ts` counts by className SPELLING, so with `rounded-*` inside the
+ * hole the element was invisible to three populations at once — the hand-drawn wells, the
+ * distinct spellings, and the map viewports — while being, in fact, a member of all three. The
+ * conditional is an inline style now, the base classes are literal, and the three counts each
+ * gained their missing element. This counter going DOWN is the same event those three going up
+ * is; it is worth reading them together.
  */
-const TEMPLATE_HOLE_DIVS = 20;
+const TEMPLATE_HOLE_DIVS = 19;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {

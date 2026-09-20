@@ -234,7 +234,7 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  * leaves a tally of 28 untouched and green. Membership names both halves of that trade.
  *
  *   - {@link CARD_SHAPED_PRIMITIVES} (8) — design-system primitives wearing card chrome.
- *   - {@link MAP_VIEWPORTS} (11) — a rounded, bordered box around an `aspect-[…]` canvas.
+ *   - {@link MAP_VIEWPORTS} (12) — a rounded, bordered box around an `aspect-[…]` canvas.
  *   - {@link INTERACTIVE_CARD_CARRIERS} (36) — `<Link>` ×27, `<a>` ×5, `<button>` ×4.
  *
  * ## SCOPE — what this scanner cannot see
@@ -561,10 +561,26 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // `Card` would have wrapped a link in a section surface.
 export const HAND_DRAWN_CARDS = 188;
 
-export const HAND_DRAWN_WELLS = 160;
+/**
+ * 160 → **161**, and nothing was drawn to cause it.
+ *
+ * `v2-tool-workbench.tsx`'s map plate is a `rounded-2xl … border border-border/80` well with no
+ * `bg-card`, and always has been. It was written as
+ * `` `… ${landscape.active ? "" : "rounded-2xl"}` ``, so the `rounded-*` half of this predicate
+ * sat inside a template hole and the element read as un-rounded — invisible to this count, to
+ * {@link HAND_DRAWN_CARD_SPELLINGS} and to {@link MAP_VIEWPORTS} at once. The landscape override
+ * moved to an inline style on 2026-09-20 (it had to beat the base utility without depending on
+ * Tailwind's emit order), the className became literal, and three populations each gained the
+ * one element they had been missing.
+ *
+ * Worth stating plainly, because it is the counting lesson and not a bookkeeping note: a
+ * className written as a conditional is not exempt from these predicates, it is INVISIBLE to
+ * them, and the two look identical from the green side.
+ */
+export const HAND_DRAWN_WELLS = 161;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why. */
-export const HAND_DRAWN_CARD_SPELLINGS = 231;
+export const HAND_DRAWN_CARD_SPELLINGS = 232;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1379,6 +1395,16 @@ const CARD_SHAPED_PRIMITIVES: ReadonlyArray<readonly [string, string]> = [
  * MUTATION-CHECKED 2026-09-18: `v2-region-thumb.tsx`'s `aspect-[2.33/1]` replaced with `h-40` —
  * RED, `expected [ …(10) ] to deeply equal [ …(11) ]`, the diff naming the missing row
  * `- "components/v2/v2-region-thumb.tsx <div>"`. Reverted.
+ *
+ * THE TWELFTH ARRIVED 2026-09-20, and it had been here all along. `v2-tool-workbench.tsx` draws
+ * the same rounded, bordered `aspect-[1270/580]` box the other eleven do, but wrote it as
+ * `` `… ${landscape.active ? "" : "rounded-2xl"}` `` — and this predicate reads the className
+ * SPELLING, where a template hole is `${…}`. The `aspect-*` token was readable; the `rounded-*`
+ * one was in the hole, so the shape never qualified. Moving the landscape override to an inline
+ * style made the base classes literal again and the surface joined the population it always
+ * belonged to. The docblock above promised a twelfth would enter rather than hide behind an
+ * exemption; it hid behind a template literal instead, which is the same thing wearing different
+ * clothes and is worth knowing about the next population that counts by spelling.
  */
 const MAP_VIEWPORTS: readonly string[] = [
   "app/[locale]/(site)/kitaplar/[slug]/page.tsx <div>",
@@ -1390,6 +1416,7 @@ const MAP_VIEWPORTS: readonly string[] = [
   "components/v2/v2-province-locator-map.tsx <div>",
   "components/v2/v2-region-locator-map.tsx <div>",
   "components/v2/v2-region-thumb.tsx <div>",
+  "components/v2/v2-tool-workbench.tsx <div>",
   "components/v2/v2-turkey-map-explorer.tsx <div>",
   "components/v2/v2-world-map-explorer.tsx <div>",
 ];
@@ -1477,7 +1504,7 @@ describe("the three card-shaped populations PR4 must not touch", () => {
     ).toEqual(CARD_SHAPED_PRIMITIVES.map(([file, tag]) => `${file} <${tag}>`).sort());
   });
 
-  it("the map viewports are exactly the recorded eleven, by file", () => {
+  it("the map viewports are exactly the recorded twelve, by file", () => {
     const found = cardsMatching((element) =>
       tokensOf(element.spelling).some((token) => token.startsWith("aspect-")),
     );

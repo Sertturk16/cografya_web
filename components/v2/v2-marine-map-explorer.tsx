@@ -335,105 +335,110 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
       </div>
 
       {/* EDGE-TO-EDGE VECTOR TURKEY & SEA MAP CANVAS */}
-      <div
-        onMouseMove={handleMouseMove}
-        onMouseLeave={() => {
-          setHoveredSlug(null);
-          setMousePos(null);
-        }}
-        className="relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
-      >
-        {/* Floating Top-Left Mode Indicator */}
-        <div className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none">
-          <Waves className="size-3.5 text-muted-foreground animate-pulse" />
-          <span className="text-foreground font-semibold">
-            {BASIN_FILTER_META[selectedBasin]?.name}
-          </span>
-          <span className="text-muted-foreground text-[11px]">
-            ({filteredPoints.length} İstasyon Aktif)
-          </span>
-        </div>
-
-        {/* SVG MAP */}
-        <svg
-          viewBox={TR_CONTEXT_VIEWBOX}
-          className="w-full h-full select-none block"
-          aria-label="Türkiye Deniz Telemetrisi ve Kıyılar Haritası"
+      {/* The map and its caption, in ONE box. As siblings of the section's `space-y-6` the credit
+          sat 24px below the map and 24px above the SST legend — equidistant from both, so it read
+          as an orphaned line between two cards rather than as the map's own caption, and it
+          separated the legend from the map the legend explains. */}
+      <div className="space-y-2">
+        <div
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => {
+            setHoveredSlug(null);
+            setMousePos(null);
+          }}
+          className="relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
         >
-          <defs></defs>
+          {/* Floating Top-Left Mode Indicator */}
+          <div className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none">
+            <Waves className="size-3.5 text-muted-foreground animate-pulse" />
+            <span className="text-foreground font-semibold">
+              {BASIN_FILTER_META[selectedBasin]?.name}
+            </span>
+            <span className="text-muted-foreground text-[11px]">
+              ({filteredPoints.length} İstasyon Aktif)
+            </span>
+          </div>
 
-          {/* 1. Surrounding Foreign Countries */}
-          <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
-            {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
-              <path key={country.iso} d={country.d} />
-            ))}
-          </g>
+          {/* SVG MAP */}
+          <svg
+            viewBox={TR_CONTEXT_VIEWBOX}
+            className="w-full h-full select-none block"
+            aria-label="Türkiye Deniz Telemetrisi ve Kıyılar Haritası"
+          >
+            <defs></defs>
 
-          {/* 2. Türkiye Casing Base Land */}
-          {trCasing && (
-            <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
-          )}
+            {/* 1. Surrounding Foreign Countries */}
+            <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
+              {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
+                <path key={country.iso} d={country.d} />
+              ))}
+            </g>
 
-          {/* 3. Türkiye 81 Provinces */}
-          <g className="stroke-border/70 stroke-[0.6] fill-[var(--map-land)] transition-colors pointer-events-none">
-            {PROVINCE_SHAPES.map((shape) => (
-              <path key={shape.plateCode} d={shape.d} />
-            ))}
-          </g>
+            {/* 2. Türkiye Casing Base Land */}
+            {trCasing && (
+              <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
+            )}
 
-          {/* 4. Inland Lakes */}
-          <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
-            {INLAND_WATER_SHAPES.map((lake) => (
-              <path key={lake.id} d={lake.d} />
-            ))}
-          </g>
+            {/* 3. Türkiye 81 Provinces */}
+            <g className="stroke-border/70 stroke-[0.6] fill-[var(--map-land)] transition-colors pointer-events-none">
+              {PROVINCE_SHAPES.map((shape) => (
+                <path key={shape.plateCode} d={shape.d} />
+              ))}
+            </g>
 
-          {/* 5. Sea Water Typography. FULL STRENGTH, no `opacity-*`: an opacity utility is
+            {/* 4. Inland Lakes */}
+            <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
+              {INLAND_WATER_SHAPES.map((lake) => (
+                <path key={lake.id} d={lake.d} />
+              ))}
+            </g>
+
+            {/* 5. Sea Water Typography. FULL STRENGTH, no `opacity-*`: an opacity utility is
               part of the rendered colour and has to be measured with `blendOver`. The
               `opacity-80` these labels shipped with put `fill-accent` at 3.35:1 light /
               3.85:1 dark on `--map-sea`, under TEXT_MIN, while the commit justified it with
               the UNBLENDED 4.85/5.19. At full strength those 4.85/5.19 are what renders. */}
-          <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
-            {SEA_LABELS.map((sea, i) => (
-              <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
-                {sea.name}
-              </text>
-            ))}
-          </g>
+            <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
+              {SEA_LABELS.map((sea, i) => (
+                <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
+                  {sea.name}
+                </text>
+              ))}
+            </g>
 
-          {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea labels
+            {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea labels
               above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1 dark on
               `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the token records
               in `app/globals.css`. */}
-          <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
-            {CONTEXT_SHAPES.filter(
-              (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
-            ).map((country) => {
-              const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
-              return (
-                <text
-                  key={country.iso}
-                  x={country.labelPoint.x}
-                  y={country.labelPoint.y}
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  className="tracking-tight select-none"
-                >
-                  {name}
-                </text>
-              );
-            })}
-          </g>
+            <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
+              {CONTEXT_SHAPES.filter(
+                (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
+              ).map((country) => {
+                const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
+                return (
+                  <text
+                    key={country.iso}
+                    x={country.labelPoint.x}
+                    y={country.labelPoint.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="tracking-tight select-none"
+                  >
+                    {name}
+                  </text>
+                );
+              })}
+            </g>
 
-          {/* 7. TELEMETRY STATIONS BUBBLES / PINS */}
-          <g>
-            {marinePoints.map((point) => {
-              const pt = projectToMapPoint(point.longitude, point.latitude);
-              const isHovered = hoveredSlug === point.slugTr;
-              const isSelected = selectedSlug === point.slugTr;
-              const matchesBasin = selectedBasin === "all" || point.seaBasin === selectedBasin;
+            {/* 7. TELEMETRY STATIONS BUBBLES / PINS */}
+            <g>
+              {marinePoints.map((point) => {
+                const pt = projectToMapPoint(point.longitude, point.latitude);
+                const isHovered = hoveredSlug === point.slugTr;
+                const isSelected = selectedSlug === point.slugTr;
+                const matchesBasin = selectedBasin === "all" || point.seaBasin === selectedBasin;
 
-              /* THE PIN AND THE TABLE CHIP ARE ONE RAMP, so they come from one function.
+                /* THE PIN AND THE TABLE CHIP ARE ONE RAMP, so they come from one function.
                  This block used to classify `sst` itself, into three raw hexes that were
                  Tailwind v3 values, while the `Su Sıcaklığı` chip ~450 lines
                  below classified the same reading into three v4 utility classes. Same
@@ -459,313 +464,314 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                  almost no room in it: anyone retuning either `--primary` or `--sst-band-hot`
                  has to re-run this pair. amber-500 scored 25.3, and 11.7 points of that
                  headroom is what clearing the graphical floor cost. */
-              const sst = point.sst ?? 25;
-              const strokeCol = "#ffffff";
-              const pinFill = isSelected ? "var(--primary)" : sstBandStyleOf(sst).fillValue;
+                const sst = point.sst ?? 25;
+                const strokeCol = "#ffffff";
+                const pinFill = isSelected ? "var(--primary)" : sstBandStyleOf(sst).fillValue;
 
-              if (!matchesBasin) {
-                return null;
-              }
+                if (!matchesBasin) {
+                  return null;
+                }
 
-              return (
-                <g
-                  key={point.slugTr}
-                  transform={`translate(${pt.x}, ${pt.y})`}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`İstasyon: ${point.nameTr}, Sıcaklık: ${point.sst ? point.sst.toFixed(1) + " °C" : "Bilinmiyor"}`}
-                  onClick={() => handleSelectPoint(point.slugTr)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      handleSelectPoint(point.slugTr);
-                    }
-                  }}
-                  onMouseEnter={() => setHoveredSlug(point.slugTr)}
-                  onMouseLeave={() => setHoveredSlug(null)}
-                  className="transition-transform duration-200 group/pin cursor-pointer outline-none focus-visible:scale-125"
+                return (
+                  <g
+                    key={point.slugTr}
+                    transform={`translate(${pt.x}, ${pt.y})`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`İstasyon: ${point.nameTr}, Sıcaklık: ${point.sst ? point.sst.toFixed(1) + " °C" : "Bilinmiyor"}`}
+                    onClick={() => handleSelectPoint(point.slugTr)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSelectPoint(point.slugTr);
+                      }
+                    }}
+                    onMouseEnter={() => setHoveredSlug(point.slugTr)}
+                    onMouseLeave={() => setHoveredSlug(null)}
+                    className="transition-transform duration-200 group/pin cursor-pointer outline-none focus-visible:scale-125"
+                  >
+                    {/* Radar Pulse Effect */}
+                    <circle
+                      r={isSelected ? 22 : isHovered ? 18 : 10}
+                      fill={pinFill}
+                      opacity={isSelected ? 0.5 : isHovered ? 0.35 : 0.2}
+                      className={isSelected ? "animate-pulse" : "animate-ping"}
+                    />
+                    {/* Outer Ring */}
+                    <circle
+                      r={isSelected ? 12 : isHovered ? 10 : 7}
+                      fill={pinFill}
+                      stroke={strokeCol}
+                      strokeWidth={isSelected ? 2.5 : 1.5}
+                      className="shadow-md transition-all"
+                    />
+                    {/* Inner Core */}
+                    <circle r={isSelected ? 3.5 : 2.5} fill="#ffffff" />
+
+                    {/* Temperature Floating Label */}
+                    {point.sst && (
+                      <g transform="translate(10, 3)" className="pointer-events-none">
+                        <rect
+                          x={-2}
+                          y={-10}
+                          width={32}
+                          height={13}
+                          rx={4}
+                          className="fill-ink-dark/85"
+                          stroke="rgba(255, 255, 255, 0.3)"
+                          strokeWidth={0.5}
+                        />
+                        <text
+                          x={14}
+                          y={-1}
+                          textAnchor="middle"
+                          fontSize={8.5}
+                          fill="#ffffff"
+                          fontWeight="bold"
+                          fontFamily="monospace"
+                        >
+                          {point.sst.toFixed(1)}°
+                        </text>
+                      </g>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
+
+          {/* SELECTED STATION SPOTLIGHT MODAL / CARD OVERLAY */}
+          {selectedPoint && (
+            <div className="absolute top-4 right-4 z-20 w-80 sm:w-96 rounded-3xl bg-card/95 backdrop-blur-xl border border-primary/40 p-5 shadow-2xl space-y-4 animate-in fade-in-50 zoom-in-95 duration-150">
+              <div className="flex items-start justify-between gap-3 border-b border-border/80 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="primary" size="sm" icon={<MapPin className="size-3" />}>
+                      Seçili İstasyon
+                    </Badge>
+                    <span className="text-[11px] font-mono text-muted-foreground">
+                      TR-{selectedPoint.plateCode}
+                    </span>
+                  </div>
+                  <h3 className="font-heading font-bold text-lg text-foreground mt-1 leading-tight">
+                    {selectedPoint.nameTr}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedPoint.coastLabelTr} • {selectedPoint.provinceName}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSlug(null)}
+                  className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+                  aria-label="Kapat"
                 >
-                  {/* Radar Pulse Effect */}
-                  <circle
-                    r={isSelected ? 22 : isHovered ? 18 : 10}
-                    fill={pinFill}
-                    opacity={isSelected ? 0.5 : isHovered ? 0.35 : 0.2}
-                    className={isSelected ? "animate-pulse" : "animate-ping"}
-                  />
-                  {/* Outer Ring */}
-                  <circle
-                    r={isSelected ? 12 : isHovered ? 10 : 7}
-                    fill={pinFill}
-                    stroke={strokeCol}
-                    strokeWidth={isSelected ? 2.5 : 1.5}
-                    className="shadow-md transition-all"
-                  />
-                  {/* Inner Core */}
-                  <circle r={isSelected ? 3.5 : 2.5} fill="#ffffff" />
+                  <X className="size-4" />
+                </button>
+              </div>
 
-                  {/* Temperature Floating Label */}
-                  {point.sst && (
-                    <g transform="translate(10, 3)" className="pointer-events-none">
-                      <rect
-                        x={-2}
-                        y={-10}
-                        width={32}
-                        height={13}
-                        rx={4}
-                        className="fill-ink-dark/85"
-                        stroke="rgba(255, 255, 255, 0.3)"
-                        strokeWidth={0.5}
+              {/* Straits Low-Confidence Caution Badge */}
+              {selectedPoint.isStraits && (
+                <div className="flex items-start gap-2 p-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-warning-strong text-xs">
+                  <ShieldAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
+                  <p className="leading-tight text-[11px]">
+                    <strong>Boğaz &amp; Dar Su Yolu:</strong> Açık deniz modellerinin kaba grid
+                    çözünürlüğü ve iki tabakalı akıntı rejimi nedeniyle kıyı bandında yerel sapmalar
+                    olabilir.
+                  </p>
+                </div>
+              )}
+
+              {/* Telemetry Metrics Grid */}
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 space-y-1">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Thermometer className="size-3.5 text-primary" /> Su Sıcaklığı
+                  </span>
+                  <div className="font-mono font-bold text-base text-primary">
+                    {selectedPoint.sst ? `${selectedPoint.sst.toFixed(1)} °C` : "—"}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Waves className="size-3.5 text-muted-foreground" /> Dalga Boyu
+                  </span>
+                  <div className="font-mono font-bold text-base text-foreground flex items-center gap-1.5">
+                    <span>
+                      {selectedPoint.waveHeight ? `${selectedPoint.waveHeight.toFixed(2)} m` : "—"}
+                    </span>
+                    {selectedPoint.waveDirection && (
+                      <DirectionArrow
+                        deg={selectedPoint.waveDirection}
+                        className="size-3.5 text-muted-foreground"
                       />
-                      <text
-                        x={14}
-                        y={-1}
-                        textAnchor="middle"
-                        fontSize={8.5}
-                        fill="#ffffff"
-                        fontWeight="bold"
-                        fontFamily="monospace"
-                      >
-                        {point.sst.toFixed(1)}°
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-          </g>
-        </svg>
-
-        {/* SELECTED STATION SPOTLIGHT MODAL / CARD OVERLAY */}
-        {selectedPoint && (
-          <div className="absolute top-4 right-4 z-20 w-80 sm:w-96 rounded-3xl bg-card/95 backdrop-blur-xl border border-primary/40 p-5 shadow-2xl space-y-4 animate-in fade-in-50 zoom-in-95 duration-150">
-            <div className="flex items-start justify-between gap-3 border-b border-border/80 pb-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="primary" size="sm" icon={<MapPin className="size-3" />}>
-                    Seçili İstasyon
-                  </Badge>
-                  <span className="text-[11px] font-mono text-muted-foreground">
-                    TR-{selectedPoint.plateCode}
-                  </span>
+                    )}
+                  </div>
                 </div>
-                <h3 className="font-heading font-bold text-lg text-foreground mt-1 leading-tight">
-                  {selectedPoint.nameTr}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {selectedPoint.coastLabelTr} • {selectedPoint.provinceName}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedSlug(null)}
-                className="p-1.5 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-                aria-label="Kapat"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
 
-            {/* Straits Low-Confidence Caution Badge */}
-            {selectedPoint.isStraits && (
-              <div className="flex items-start gap-2 p-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-warning-strong text-xs">
-                <ShieldAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
-                <p className="leading-tight text-[11px]">
-                  <strong>Boğaz &amp; Dar Su Yolu:</strong> Açık deniz modellerinin kaba grid
-                  çözünürlüğü ve iki tabakalı akıntı rejimi nedeniyle kıyı bandında yerel sapmalar
-                  olabilir.
-                </p>
-              </div>
-            )}
-
-            {/* Telemetry Metrics Grid */}
-            <div className="grid grid-cols-2 gap-2.5 text-xs">
-              <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 space-y-1">
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Thermometer className="size-3.5 text-primary" /> Su Sıcaklığı
-                </span>
-                <div className="font-mono font-bold text-base text-primary">
-                  {selectedPoint.sst ? `${selectedPoint.sst.toFixed(1)} °C` : "—"}
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Waves className="size-3.5 text-muted-foreground" /> Dalga Boyu
-                </span>
-                <div className="font-mono font-bold text-base text-foreground flex items-center gap-1.5">
-                  <span>
-                    {selectedPoint.waveHeight ? `${selectedPoint.waveHeight.toFixed(2)} m` : "—"}
+                <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Wind className="size-3.5 text-muted-foreground" /> 10m Rüzgâr
                   </span>
-                  {selectedPoint.waveDirection && (
-                    <DirectionArrow
-                      deg={selectedPoint.waveDirection}
-                      className="size-3.5 text-muted-foreground"
-                    />
+                  <div className="font-mono font-bold text-xs text-foreground flex items-center gap-1">
+                    <span>
+                      {selectedPoint.windSpeed10m
+                        ? `${selectedPoint.windSpeed10m.toFixed(1)} m/s`
+                        : "—"}
+                    </span>
+                    {selectedPoint.windDirection10m && (
+                      <DirectionArrow
+                        deg={selectedPoint.windDirection10m}
+                        className="size-3.5 text-muted-foreground"
+                      />
+                    )}
+                  </div>
+                  {selectedPoint.windSpeedKmh && (
+                    <span className="text-[10px] text-muted-foreground block">
+                      ~{selectedPoint.windSpeedKmh.toFixed(0)} km/h •{" "}
+                      {getDirectionLabel(selectedPoint.windDirection10m)}
+                    </span>
                   )}
                 </div>
-              </div>
 
-              <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Wind className="size-3.5 text-muted-foreground" /> 10m Rüzgâr
-                </span>
-                <div className="font-mono font-bold text-xs text-foreground flex items-center gap-1">
-                  <span>
-                    {selectedPoint.windSpeed10m
-                      ? `${selectedPoint.windSpeed10m.toFixed(1)} m/s`
-                      : "—"}
+                <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-1">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="size-3.5 text-muted-foreground" /> Model Zamanı
                   </span>
-                  {selectedPoint.windDirection10m && (
-                    <DirectionArrow
-                      deg={selectedPoint.windDirection10m}
-                      className="size-3.5 text-muted-foreground"
-                    />
-                  )}
-                </div>
-                {selectedPoint.windSpeedKmh && (
-                  <span className="text-[10px] text-muted-foreground block">
-                    ~{selectedPoint.windSpeedKmh.toFixed(0)} km/h •{" "}
-                    {getDirectionLabel(selectedPoint.windDirection10m)}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-1">
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Clock className="size-3.5 text-muted-foreground" /> Model Zamanı
-                </span>
-                <div className="font-mono font-medium text-[11px] text-foreground">
-                  {/* "—", never "Canlı Analiz". The label above this value reads "Model
+                  <div className="font-mono font-medium text-[11px] text-foreground">
+                    {/* "—", never "Canlı Analiz". The label above this value reads "Model
                       Zamanı", so a fallback string here is read as an ANSWER to it: the page
                       states a freshness it does not have. `validAt` is null exactly when no
                       cycle has been ingested for this point, which is the case where the
                       platform knows least about how current the numbers are. Every other cell
                       in this panel already uses the neutral dash for a missing value; this one
                       was the exception. */}
-                  {selectedPoint.validAt ?? "—"}
+                    {selectedPoint.validAt ?? "—"}
+                  </div>
+                  {selectedPoint.gridDistanceKm && (
+                    <span className="text-[10px] text-muted-foreground block">
+                      Grid: &le; {selectedPoint.gridDistanceKm.toFixed(1)} km
+                    </span>
+                  )}
                 </div>
-                {selectedPoint.gridDistanceKm && (
-                  <span className="text-[10px] text-muted-foreground block">
-                    Grid: &le; {selectedPoint.gridDistanceKm.toFixed(1)} km
-                  </span>
+              </div>
+
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs rounded-xl"
+                  onClick={() => scrollToStationRow(selectedPoint.slugTr)}
+                >
+                  <List className="size-3.5 mr-1" />
+                  Tabloda Göster
+                </Button>
+                {selectedPoint.provinceSlug && (
+                  <Link
+                    href={{
+                      pathname: "/turkiye/[slug]",
+                      params: { slug: selectedPoint.provinceSlug },
+                    }}
+                    className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-8 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"
+                  >
+                    <span className="text-white">İl Detayına Git</span>
+                    <ArrowRight className="size-3.5 ml-1 text-white" />
+                  </Link>
                 )}
               </div>
             </div>
+          )}
 
-            <div className="flex items-center justify-between gap-2 pt-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-xs rounded-xl"
-                onClick={() => scrollToStationRow(selectedPoint.slugTr)}
-              >
-                <List className="size-3.5 mr-1" />
-                Tabloda Göster
-              </Button>
-              {selectedPoint.provinceSlug && (
-                <Link
-                  href={{
-                    pathname: "/turkiye/[slug]",
-                    params: { slug: selectedPoint.provinceSlug },
-                  }}
-                  className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-8 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"
-                >
-                  <span className="text-white">İl Detayına Git</span>
-                  <ArrowRight className="size-3.5 ml-1 text-white" />
-                </Link>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* DYNAMIC FLOATING TOOLTIP (MOUSE TRACKER ON PIN HOVER) */}
-        {!selectedSlug && hoveredPoint && mousePos && (
-          <div
-            className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[240px] max-w-[290px] animate-in fade-in-50 zoom-in-95 duration-100"
-            style={{
-              top: `${Math.min(mousePos.y + 20, 380)}px`,
-              left: `${Math.min(mousePos.x + 20, 950)}px`,
-            }}
-          >
-            <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
-              <div>
-                <span className="font-heading font-bold text-foreground text-sm block leading-tight">
-                  {hoveredPoint.nameTr}
-                </span>
-                <span className="text-[10px] text-muted-foreground block">
-                  {hoveredPoint.coastLabelTr} • {hoveredPoint.provinceName}
-                </span>
+          {/* DYNAMIC FLOATING TOOLTIP (MOUSE TRACKER ON PIN HOVER) */}
+          {!selectedSlug && hoveredPoint && mousePos && (
+            <div
+              className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[240px] max-w-[290px] animate-in fade-in-50 zoom-in-95 duration-100"
+              style={{
+                top: `${Math.min(mousePos.y + 20, 380)}px`,
+                left: `${Math.min(mousePos.x + 20, 950)}px`,
+              }}
+            >
+              <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
+                <div>
+                  <span className="font-heading font-bold text-foreground text-sm block leading-tight">
+                    {hoveredPoint.nameTr}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground block">
+                    {hoveredPoint.coastLabelTr} • {hoveredPoint.provinceName}
+                  </span>
+                </div>
+                <Badge variant="outline" size="sm" className="text-[10px] font-mono">
+                  TR-{hoveredPoint.plateCode}
+                </Badge>
               </div>
-              <Badge variant="outline" size="sm" className="text-[10px] font-mono">
-                TR-{hoveredPoint.plateCode}
-              </Badge>
-            </div>
 
-            <div className="space-y-1.5 text-[11px]">
-              {hoveredPoint.sst !== undefined && hoveredPoint.sst !== null && (
-                <div className="flex items-center justify-between p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-                  <span className="text-muted-foreground flex items-center gap-1">
-                    <Thermometer className="size-3 text-primary" /> Su Sıcaklığı:
-                  </span>
-                  <span className="font-mono font-bold text-primary text-xs">
-                    {hoveredPoint.sst.toFixed(1)} °C
+              <div className="space-y-1.5 text-[11px]">
+                {hoveredPoint.sst !== undefined && hoveredPoint.sst !== null && (
+                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Thermometer className="size-3 text-primary" /> Su Sıcaklığı:
+                    </span>
+                    <span className="font-mono font-bold text-primary text-xs">
+                      {hoveredPoint.sst.toFixed(1)} °C
+                    </span>
+                  </div>
+                )}
+
+                {hoveredPoint.waveHeight !== undefined && hoveredPoint.waveHeight !== null && (
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Waves className="size-3 text-muted-foreground" /> Dalga Boyu:
+                    </span>
+                    <span className="font-mono font-medium text-foreground flex items-center gap-1">
+                      {hoveredPoint.waveHeight.toFixed(2)} m
+                      {hoveredPoint.waveDirection && (
+                        <DirectionArrow
+                          deg={hoveredPoint.waveDirection}
+                          className="size-3 text-muted-foreground"
+                        />
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {hoveredPoint.windSpeed10m !== undefined && hoveredPoint.windSpeed10m !== null && (
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Wind className="size-3 text-muted-foreground" /> 10m Rüzgâr:
+                    </span>
+                    <span className="font-mono font-medium text-foreground flex items-center gap-1">
+                      {hoveredPoint.windSpeed10m.toFixed(1)} m/s
+                      {hoveredPoint.windDirection10m && (
+                        <DirectionArrow
+                          deg={hoveredPoint.windDirection10m}
+                          className="size-3 text-muted-foreground"
+                        />
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-muted-foreground text-[10px]">
+                  <span>Konum:</span>
+                  <span className="font-mono">
+                    {hoveredPoint.latitude.toFixed(2)}°K, {hoveredPoint.longitude.toFixed(2)}°D
                   </span>
                 </div>
-              )}
+              </div>
 
-              {hoveredPoint.waveHeight !== undefined && hoveredPoint.waveHeight !== null && (
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Waves className="size-3 text-muted-foreground" /> Dalga Boyu:
-                  </span>
-                  <span className="font-mono font-medium text-foreground flex items-center gap-1">
-                    {hoveredPoint.waveHeight.toFixed(2)} m
-                    {hoveredPoint.waveDirection && (
-                      <DirectionArrow
-                        deg={hoveredPoint.waveDirection}
-                        className="size-3 text-muted-foreground"
-                      />
-                    )}
-                  </span>
-                </div>
-              )}
-
-              {hoveredPoint.windSpeed10m !== undefined && hoveredPoint.windSpeed10m !== null && (
-                <div className="flex items-center justify-between text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Wind className="size-3 text-muted-foreground" /> 10m Rüzgâr:
-                  </span>
-                  <span className="font-mono font-medium text-foreground flex items-center gap-1">
-                    {hoveredPoint.windSpeed10m.toFixed(1)} m/s
-                    {hoveredPoint.windDirection10m && (
-                      <DirectionArrow
-                        deg={hoveredPoint.windDirection10m}
-                        className="size-3 text-muted-foreground"
-                      />
-                    )}
-                  </span>
-                </div>
-              )}
-
-              <div className="flex items-center justify-between text-muted-foreground text-[10px]">
-                <span>Konum:</span>
-                <span className="font-mono">
-                  {hoveredPoint.latitude.toFixed(2)}°K, {hoveredPoint.longitude.toFixed(2)}°D
-                </span>
+              <div className="pt-1 text-[10px] text-muted-foreground flex items-center justify-between border-t border-border/60">
+                <span>Tıklayarak detayları aç</span>
+                <span className="font-mono">#{hoveredPoint.displayOrder}</span>
               </div>
             </div>
+          )}
+        </div>
 
-            <div className="pt-1 text-[10px] text-muted-foreground flex items-center justify-between border-t border-border/60">
-              <span>Tıklayarak detayları aç</span>
-              <span className="font-mono">#{hoveredPoint.displayOrder}</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
+        {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
           `overflow-hidden` and rendered to nobody. */}
-      <MapAttribution inlandWater context />
+        <MapAttribution inlandWater context />
+      </div>
 
       {/* Map Legend Footer Strip.
           THE RAMP'S THIRD SPELLING, and the one that mattered most: this strip is what tells a
