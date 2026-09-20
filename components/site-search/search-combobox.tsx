@@ -9,6 +9,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { nextActiveIndex } from "@/lib/search/active-option";
 import { prepareSearchIndex, type PreparedEntry, searchPrepared } from "@/lib/search/match";
@@ -589,13 +590,10 @@ export function SearchCombobox({
           aria-haspopup="listbox"
           onClick={() => openAndFocus()}
           onFocus={() => void ensureIndex()}
-          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs group"
+          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs"
         >
           <SearchIcon />
           <span>{t("triggerLabel")}...</span>
-          <kbd className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-semibold bg-background border border-border rounded-md shadow-2xs text-muted-foreground group-hover:text-foreground pointer-events-none">
-            Ctrl K
-          </kbd>
         </button>
 
         {/* Mobile trigger: icon button */}
@@ -612,125 +610,140 @@ export function SearchCombobox({
           <SearchIcon />
         </button>
 
-        {/* Modal dialog when open */}
-        {open ? (
-          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4 sm:px-0">
-            <div
-              className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in-0 duration-150"
-              onClick={() => close(true)}
-              aria-hidden="true"
-            />
-            <div
-              className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  e.stopPropagation();
-                  close(true);
-                }
-              }}
-            >
-              <label className="sr-only" htmlFor={inputId}>
-                {t("label")}
-              </label>
-              <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
-                <SearchIcon />
-                <input
-                  ref={inputRef}
-                  id={inputId}
-                  /* No `outline-none`, unlike the `INPUT` constant above: that one sits in a row
+        {/* THE COMMAND DIALOG, AND IT IS PORTALLED OUT OF THE HEADER ON PURPOSE (T-067).
+            The trigger above lives inside `<nav>`, and that `<nav>` paints itself with
+            `backdrop-blur-xl`. A `backdrop-filter` makes its element a CONTAINING BLOCK for
+            every `position: fixed` descendant (CSS Filter Effects §2.2, the same rule
+            `transform` and `filter` carry), so this dialog's `fixed inset-0` resolved
+            against the 64px header box rather than the viewport: measured at
+            `{top: 0, left: 0, width: 1467, height: 64}`. What a reader saw was a dark band
+            across the top of the page and nothing over the content the palette covers.
+            Widening the box would not fix it and removing the header's blur would cost the
+            header its own look, so the dialog is rendered into `document.body`, which has no
+            filtered ancestor. `open` is only ever true after a press, so there is no server
+            render of this branch — the `mounted` guard is belt and braces for a future
+            caller that opens it from state.
+            The backdrop that band came from is now TRANSPARENT rather than `bg-black/60`:
+            it exists to catch the click that closes the palette, not to dim the page. */}
+        {open && mounted
+          ? createPortal(
+              <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4 sm:px-0">
+                <div className="fixed inset-0" onClick={() => close(true)} aria-hidden="true" />
+                <div
+                  className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.stopPropagation();
+                      close(true);
+                    }
+                  }}
+                >
+                  <label className="sr-only" htmlFor={inputId}>
+                    {t("label")}
+                  </label>
+                  <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
+                    <SearchIcon />
+                    <input
+                      ref={inputRef}
+                      id={inputId}
+                      /* No `outline-none`, unlike the `INPUT` constant above: that one sits in a row
                      that owns the ring (`has-[input:focus]:outline-3`), this one's row does not,
                      so suppressing here would leave the command dialog's only control with no
                      visible focus once T-053 made suppression work. Site default applies. */
-                  className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
-                  type="text"
-                  role="combobox"
-                  autoComplete="off"
-                  placeholder={t("placeholder")}
-                  value={query}
-                  aria-expanded={hits.length > 0}
-                  aria-controls={listboxId}
-                  aria-autocomplete="list"
-                  aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
-                  onChange={(event) => updateQuery(event.target.value)}
-                  onKeyDown={onKeyDown}
-                />
-                <button
-                  type="button"
-                  className="size-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => close(true)}
-                >
-                  <span className="sr-only">{t("closeLabel")}</span>
-                  <kbd className="text-[10px] font-semibold border border-border px-1.5 py-0.5 rounded bg-muted/50">
-                    ESC
-                  </kbd>
-                </button>
-              </div>
+                      className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
+                      type="text"
+                      role="combobox"
+                      autoComplete="off"
+                      placeholder={t("placeholder")}
+                      value={query}
+                      aria-expanded={hits.length > 0}
+                      aria-controls={listboxId}
+                      aria-autocomplete="list"
+                      aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
+                      onChange={(event) => updateQuery(event.target.value)}
+                      onKeyDown={onKeyDown}
+                    />
+                    <button
+                      type="button"
+                      className="size-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => close(true)}
+                    >
+                      <span className="sr-only">{t("closeLabel")}</span>
+                      <CloseIcon />
+                    </button>
+                  </div>
 
-              {indexUnavailable ? (
-                <p className="p-4 text-center text-xs text-muted-foreground">{t("loadFailed")}</p>
-              ) : null}
+                  {indexUnavailable ? (
+                    <p className="p-4 text-center text-xs text-muted-foreground">
+                      {t("loadFailed")}
+                    </p>
+                  ) : null}
 
-              {hits.length > 0 ? (
-                <ul
-                  ref={listRef}
-                  id={listboxId}
-                  role="listbox"
-                  aria-label={t("label")}
-                  data-combobox-items="true"
-                  className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
-                >
-                  {hits.map((hit, index) => {
-                    const resolvedPath = resolvePath(hit.path);
-                    return (
-                      <li key={hit.path} role="presentation">
-                        <a
-                          id={optionId(index)}
-                          role="option"
-                          tabIndex={-1}
-                          aria-selected={index === activeIndex}
-                          href={resolvedPath}
-                          className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                            index === activeIndex
-                              ? "bg-primary/10 text-primary"
-                              : "text-foreground hover:bg-muted"
-                          }`}
-                          onMouseEnter={() => setActiveIndex(index)}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            window.location.assign(resolvedPath);
-                          }}
-                        >
-                          <span className="font-bold">{hit.name}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
-                            {hit.kind === "p" ? t("province") : t("country")}
-                          </span>
-                        </a>
-                      </li>
-                    );
-                  })}
-                </ul>
-              ) : null}
+                  {hits.length > 0 ? (
+                    <ul
+                      ref={listRef}
+                      id={listboxId}
+                      role="listbox"
+                      aria-label={t("label")}
+                      data-combobox-items="true"
+                      className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
+                    >
+                      {hits.map((hit, index) => {
+                        const resolvedPath = resolvePath(hit.path);
+                        return (
+                          <li key={hit.path} role="presentation">
+                            <a
+                              id={optionId(index)}
+                              role="option"
+                              tabIndex={-1}
+                              aria-selected={index === activeIndex}
+                              href={resolvedPath}
+                              className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                                index === activeIndex
+                                  ? "bg-primary/10 text-primary"
+                                  : "text-foreground hover:bg-muted"
+                              }`}
+                              onMouseEnter={() => setActiveIndex(index)}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                window.location.assign(resolvedPath);
+                              }}
+                            >
+                              <span className="font-bold">{hit.name}</span>
+                              <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
+                                {hit.kind === "p" ? t("province") : t("country")}
+                              </span>
+                            </a>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
 
-              {showNoResults ? (
-                <p className="p-6 text-center text-xs text-muted-foreground">{t("noResults")}</p>
-              ) : null}
+                  {showNoResults ? (
+                    <p className="p-6 text-center text-xs text-muted-foreground">
+                      {t("noResults")}
+                    </p>
+                  ) : null}
 
-              <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs font-medium text-muted-foreground">
-                <a href={provinceIndexHref} className="hover:text-primary transition-colors">
-                  {t("seeAllProvinces")} →
-                </a>
-                <a href={countryIndexHref} className="hover:text-primary transition-colors">
-                  {t("seeAllCountries")} →
-                </a>
-              </div>
+                  <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                    <a href={provinceIndexHref} className="hover:text-primary transition-colors">
+                      {t("seeAllProvinces")} →
+                    </a>
+                    <a href={countryIndexHref} className="hover:text-primary transition-colors">
+                      {t("seeAllCountries")} →
+                    </a>
+                  </div>
 
-              <div role="status" aria-live="polite" className="sr-only">
-                {announcement}
-              </div>
-            </div>
-          </div>
-        ) : null}
+                  <div role="status" aria-live="polite" className="sr-only">
+                    {announcement}
+                  </div>
+                </div>
+              </div>,
+              document.body,
+            )
+          : null}
       </div>
     );
   }
@@ -846,6 +859,27 @@ export function SearchCombobox({
 }
 
 /** Decorative magnifier; every control that uses it carries its own accessible name. */
+/**
+ * The command dialog's close glyph. An `X`, not the `ESC` legend it replaced (T-067): the
+ * legend named a key a touch reader does not have, and it sat in a control whose accessible
+ * name already says "close" — two different promises in one 28px box. Escape still closes.
+ */
+function CloseIcon() {
+  return (
+    <svg
+      className={ICON}
+      viewBox="0 0 20 20"
+      width="16"
+      height="16"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <line x1="5" y1="5" x2="15" y2="15" stroke="currentColor" strokeWidth="2" />
+      <line x1="15" y1="5" x2="5" y2="15" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg
