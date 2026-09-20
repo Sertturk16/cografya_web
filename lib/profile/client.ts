@@ -42,7 +42,24 @@ export function isProfileLike(value: unknown): value is Profile {
   const isValidUniversityName = p.universityName === null || typeof p.universityName === "string";
   const isValidDepartmentName = p.departmentName === null || typeof p.departmentName === "string";
 
+  // The personal block (T-061) — nine required strings. Checked as a group rather than one
+  // clause each: none of them is a closed set, so the only thing to assert is that the server
+  // sent a string where the settings form will render one.
+  const PERSONAL_STRING_KEYS = [
+    "firstName",
+    "lastName",
+    "email",
+    "phone",
+    "districtId",
+    "districtName",
+    "provincePlateCode",
+    "provinceName",
+    "createdAt",
+  ] as const;
+  const hasPersonalBlock = PERSONAL_STRING_KEYS.every((key) => typeof p[key] === "string");
+
   return (
+    hasPersonalBlock &&
     isValidRole &&
     typeof p.isComplete === "boolean" &&
     isValidEducationLevel &&

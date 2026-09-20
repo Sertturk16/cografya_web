@@ -721,6 +721,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the authenticated caller's password (T-061).
+         * @description Mevcut şifre doğrulanır, yeni şifre politikadan geçer. Başarıda üyenin DİĞER tüm oturumları düşer (token_version artar, canlı refresh aileleri iptal edilir) ve çağırana yeni bir token çifti döner — yani kendi oturumu hayatta kalır. Bu, posta kutusu kanıtına dayanan `password-reset/*` ile karıştırılmamalıdır.
+         */
+        post: operations["AuthController_changePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace the personal block of the authenticated caller (full replacement).
+         * @description Ad, soyad, telefon ve ilçe/il — hepsi zorunlu, kısmi güncelleme yoktur (T-061). accountRole ve email bilerek dışarıdadır; ikisi de bu uçtan değiştirilemez.
+         */
+        put: operations["AuthController_replaceAccount"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/video-progress/books/{slug}": {
         parameters: {
             query?: never;
@@ -3468,6 +3508,53 @@ export interface components {
         };
         ProfileDto: {
             /**
+             * @description Ad.
+             * @example Ayşe
+             */
+            firstName: string;
+            /**
+             * @description Soyad.
+             * @example Yılmaz
+             */
+            lastName: string;
+            /**
+             * @description E-posta — canonical (trim + küçük harf) biçimde. Bu uçtan salt-okunurdur.
+             * @example reader@example.test
+             */
+            email: string;
+            /**
+             * @description Türkiye cep telefonu, E.164 biçiminde.
+             * @example +905551234567
+             */
+            phone: string;
+            /**
+             * Format: uuid
+             * @description Üyenin ilçesi — `GET /api/reference/districts?plateCode=…`'ün döndürdüğü id.
+             * @example 6b3f6f5a-6f5a-4f5a-8f5a-6f5a6f5a6f5a
+             */
+            districtId: string;
+            /**
+             * @description İlçenin adı — districtId üzerinden çözülür.
+             * @example Kadıköy
+             */
+            districtName: string;
+            /**
+             * @description İlin plaka kodu — ilçenin bağlı olduğu ilden türetilir, ayrıca saklanmaz.
+             * @example 34
+             */
+            provincePlateCode: string;
+            /**
+             * @description İlin adı.
+             * @example İstanbul
+             */
+            provinceName: string;
+            /**
+             * Format: date-time
+             * @description Üyeliğin oluşturulma anı (ISO 8601, UTC).
+             * @example 2026-01-02T03:04:05.000Z
+             */
+            createdAt: string;
+            /**
              * @description Beyan edilen hesap rolü — yetki değildir (`GLOSSARY.md` §7.1).
              * @example STUDENT
              * @enum {string}
@@ -3534,6 +3621,40 @@ export interface components {
             universityName: string | null;
             /** @description Bölüm adı (UNDERGRADUATE / GRADUATE için). null değeri alanı temizlemek için kullanılır. */
             departmentName: string | null;
+        };
+        PasswordChangeRequestDto: {
+            /** @description Üyenin bugünkü şifresi. Politika denetiminden GEÇMEZ — bugünkü politikadan eski bir şifre de sunulabilmelidir. Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            currentPassword: string;
+            /** @description En az bir küçük harf, bir büyük harf ve bir rakam içermeli (`DEC 2026-08-20g` md.1 #5). Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            newPassword: string;
+        };
+        UpdateAccountRequestDto: {
+            /**
+             * @description Ad — trim edilir, boş olamaz.
+             * @example Ayşe
+             */
+            firstName: string;
+            /**
+             * @description Soyad — trim edilir, boş olamaz.
+             * @example Yılmaz
+             */
+            lastName: string;
+            /**
+             * @description Türkiye cep telefonu, E.164. Yaygın yazımlar (0532…, 90532…, boşluk/tire/parantezli) kabul edilip +90 biçimine katlanır; sonuç bu biçime uymuyorsa 400.
+             * @example +905551234567
+             */
+            phone: string;
+            /**
+             * @description İlin plaka kodu, iki hane ve başı sıfırla dolgulu — districtId ile birlikte doğrulanır.
+             * @example 34
+             */
+            provincePlateCode: string;
+            /**
+             * Format: uuid
+             * @description `GET /api/reference/districts?plateCode=…`'ün döndürdüğü id. Var olduğu ve provincePlateCode ile ait olduğu tek sorguyla doğrulanır (D15).
+             * @example 6b3f6f5a-6f5a-4f5a-8f5a-6f5a6f5a6f5a
+             */
+            districtId: string;
         };
         BookProgressResumeDto: {
             /**
@@ -4967,6 +5088,106 @@ export interface operations {
             };
             /** @description errors.auth.unauthenticated. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_changePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordChangeRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthResultDto"];
+                };
+            };
+            /** @description errors.register.weakPassword ya da errors.password.unchanged. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated ya da errors.password.currentInvalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.rateLimited (IP ekseni) ya da errors.auth.tooManyAttempts (kimlik ekseni). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_replaceAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAccountRequestDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileDto"];
+                };
+            };
+            /** @description Missing required key, unknown property, or districtId not in the named province. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.rateLimited — IP ekseni tavanı aşıldı. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

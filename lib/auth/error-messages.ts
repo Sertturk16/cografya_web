@@ -7,7 +7,7 @@ import type { AuthBffCode } from "./transport.server";
  * the `Auth` namespace — a caller resolves one with `useTranslations("Auth")` then
  * `t(AUTH_ERROR_MESSAGE_KEYS[code])`.
  *
- * `AuthBffCode` is a closed thirteen-member union exported by `transport.server.ts`, so a
+ * `AuthBffCode` is a closed fifteen-member union exported by `transport.server.ts`, so a
  * member added there makes this object literal fail to satisfy the `Record` type at compile
  * time — the map IS the gate (this file's own docblock in the plan calls it exactly that).
  * `error-messages.test.ts` (gate G3) covers what `tsc` cannot: that every mapped key
@@ -50,4 +50,9 @@ export const AUTH_ERROR_MESSAGE_KEYS: Record<AuthBffCode, string> = {
   // rendered UI is a measured property of the api, not a bug to "clean up" — do not delete
   // this row.
   "errors.register.weakPassword": "errors.weakPassword",
+  // T-061, and unlike the three rows above these two ARE rendered: the settings page's
+  // security card is the first surface where a member can be told "that is not your current
+  // password" or "choose a password you are not already using".
+  "errors.password.currentInvalid": "errors.passwordCurrentInvalid",
+  "errors.password.unchanged": "errors.passwordUnchanged",
 };

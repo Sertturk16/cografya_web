@@ -318,10 +318,15 @@ export type RegionFaq = components["schemas"]["RegionFaqDto"];
 
 // ---- Profile (post-registration completion — DEC 2026-09-03a md.1) ----------
 /**
- * Full profile payload returned by `GET /api/auth/profile` and `PUT /api/auth/profile`.
- * All seven properties are required on the wire, but the education-axis fields
- * may be `null`. `isComplete` is the API's published completion flag,
+ * Full profile payload returned by `GET /api/auth/profile`, `PUT /api/auth/profile` and
+ * `PUT /api/auth/account`. Since T-061 it carries the PERSONAL block (name, surname, e-mail,
+ * phone, district and the province resolved from it, created-at) beside the education axis,
+ * whose fields may still be `null`. `isComplete` is the API's published completion flag,
  * never re-derived on the web (C-5, C-9).
+ *
+ * This is the only shape that carries a member's PII. `Session` stays the minimum set —
+ * id, firstName, accountRole — so anything reaching for an e-mail or a phone belongs on a
+ * surface that reads the profile, not one that reads the session.
  */
 export type Profile = components["schemas"]["ProfileDto"];
 
@@ -330,3 +335,16 @@ export type Profile = components["schemas"]["ProfileDto"];
  * Exactly five properties on every call (explicit `null` for fields the active branch clears).
  */
 export type UpdateProfileRequest = components["schemas"]["UpdateProfileRequestDto"];
+
+/**
+ * Full replacement payload sent to `PUT /api/auth/account` (T-061) — the personal block.
+ * Five properties on every call, none of them nullable: a member always has a name, a phone
+ * and a district. `email` and `accountRole` are absent by design; neither is changeable here.
+ */
+export type UpdateAccountRequest = components["schemas"]["UpdateAccountRequestDto"];
+
+/**
+ * Body of `POST /api/auth/password/change` (T-061). The response is an `AuthResultDto` the
+ * BFF consumes to reset the session cookies — a client never sees a token.
+ */
+export type PasswordChangeRequest = components["schemas"]["PasswordChangeRequestDto"];

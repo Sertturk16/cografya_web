@@ -23,13 +23,15 @@ function resolve(catalogue: Record<string, unknown>, dottedKey: string): unknown
 const CODES = Object.keys(AUTH_ERROR_MESSAGE_KEYS) as AuthBffCode[];
 
 describe("AUTH_ERROR_MESSAGE_KEYS", () => {
-  it("covers all thirteen AuthBffCode members, each exactly once", () => {
+  it("covers all fifteen AuthBffCode members, each exactly once", () => {
     // The number is a positive control on the compile-time exhaustiveness `tsc` already
-    // enforces: if a fourteenth member existed without a key, the `Record` assignment above
+    // enforces: if a sixteenth member existed without a key, the `Record` assignment above
     // would fail to compile before this test ever ran; this line makes the count legible to
     // a human reading a red CI job rather than a TypeScript diagnostic.
-    expect(CODES).toHaveLength(13);
-    expect(new Set(CODES).size).toBe(13);
+    // Thirteen until T-061, which published `errors.password.currentInvalid` and
+    // `errors.password.unchanged` for the signed-in password change.
+    expect(CODES).toHaveLength(15);
+    expect(new Set(CODES).size).toBe(15);
   });
 
   it.each(CODES)("%s resolves to a non-empty string in BOTH catalogues", (code) => {
