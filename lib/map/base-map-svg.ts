@@ -3,6 +3,7 @@ import trMessages from "@/messages/tr.json";
 import type { Locale } from "@/i18n/routing";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "./tr-provinces.generated";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "./world-countries.generated";
+import { OSM_COPYRIGHT_URL, plainAttribution } from "./osm-credit";
 
 /**
  * The SHARED BASE SILHOUETTES behind every locator mini-map — one static file per map per
@@ -112,8 +113,8 @@ const TR_PAINT = { fill: PROVINCE_FILL, stroke: COLOR_TAUPE, strokeWidth: 0.8 } 
 
 const MESSAGES = { tr: trMessages, en: enMessages } as const;
 
-/** The OSM copyright page the drawn credit links to. */
-const OSM_COPYRIGHT_URL = "https://www.openstreetmap.org/copyright";
+/* The OSM copyright page the drawn credit links to, and the markup stripper the drawn form
+   needs, both from `osm-credit.ts` — the HTML renderer reads the same two. */
 
 /* ── Producers ──────────────────────────────────────────────────────────────────────── */
 
@@ -137,7 +138,7 @@ function escapeXml(value: string): string {
 export function buildTrBaseMapSvg(locale: Locale): string {
   const messages = MESSAGES[locale];
   const title = escapeXml(messages.Map.mapTitle);
-  const credit = escapeXml(messages.Map.attribution);
+  const credit = escapeXml(plainAttribution(messages.Map.attribution));
   const paint = TR_PAINT;
   const d = PROVINCE_SHAPES.map((shape) => shape.d).join("");
 

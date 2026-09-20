@@ -64,7 +64,11 @@ export function V2RegionLocatorMap({
 
       {/* SVG Map Container and its caption, in ONE box — the 8px between them is the caption's
           own, not whatever `space-y-*` this component is dropped into. */}
-      <div className="space-y-2">
+      {/* A map and the line that credits it are a FIGURE and its CAPTION — the relationship
+          `v2-province-locator-map.tsx` has always expressed and the other six did not, so a screen
+          reader heard a figure caption on a province page and a loose paragraph on `/turkiye`.
+          `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
+      <figure className="m-0 space-y-2">
         <div className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden select-none shadow-xs">
           {/* Floating Tooltip Pill */}
           <div className="absolute top-3 left-3 z-10 pointer-events-none transition-all duration-200">
@@ -180,8 +184,10 @@ export function V2RegionLocatorMap({
 
         {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
           `overflow-hidden`, which meant the ODbL and JRC lines rendered to nobody. */}
-        <MapAttribution inlandWater context />
-      </div>
+        <figcaption>
+          <MapAttribution inlandWater context />
+        </figcaption>
+      </figure>
 
       {/* Quick Province Pill Shortcuts */}
       <div className="space-y-2 pt-1">

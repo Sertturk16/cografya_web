@@ -1083,7 +1083,11 @@ export function V2GameScreen({
               container happens to run. Read off the inherited rhythm instead, the same caption
               sat 20px under its map here, 16px on the tool pages and `/deprem`, and 24px on
               `/turkiye` — three gaps for one relationship. */}
-          <div className="space-y-2" style={landscape.active ? LANDSCAPE_FILL : undefined}>
+          {/* A map and the line that credits it are a FIGURE and its CAPTION — the relationship
+              `v2-province-locator-map.tsx` has always expressed and the other six did not, so a
+              screen reader heard a figure caption on a province page and a loose paragraph here.
+              `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
+          <figure className="m-0 space-y-2" style={landscape.active ? LANDSCAPE_FILL : undefined}>
             <div
               ref={mapViewportRef}
               className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
@@ -1488,8 +1492,10 @@ export function V2GameScreen({
                 is a sibling competing with the map for width, and it won 517px of 1166 while the
                 map drew at 647. `v2-map-credit-placement.test.ts` reads the JSX tree for this
                 now; the source-order check it used to make was satisfied by the broken shape. */}
-            <MapAttribution inlandWater context />
-          </div>
+            <figcaption>
+              <MapAttribution inlandWater context />
+            </figcaption>
+          </figure>
         </div>
       </main>
     </div>

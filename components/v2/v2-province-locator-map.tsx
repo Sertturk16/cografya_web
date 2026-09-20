@@ -40,7 +40,7 @@ export async function V2ProvinceLocatorMap({ plateCode, provinceName }: V2Provin
   const trCasing = CONTEXT_SHAPES.find((c) => c.iso === "TR");
 
   return (
-    <figure className="m-0 space-y-1.5">
+    <figure className="m-0 space-y-2">
       <div
         className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden select-none shadow-sm"
         role="img"

@@ -338,8 +338,13 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
       {/* The map and its caption, in ONE box. As siblings of the section's `space-y-6` the credit
           sat 24px below the map and 24px above the SST legend — equidistant from both, so it read
           as an orphaned line between two cards rather than as the map's own caption, and it
-          separated the legend from the map the legend explains. */}
-      <div className="space-y-2">
+          separated the legend from the map the legend explains.
+
+          A map and the line that credits it are a FIGURE and its CAPTION — the relationship
+          `v2-province-locator-map.tsx` has always expressed and the other six did not, so a
+          screen reader heard a figure caption on a province page and a loose paragraph here.
+          `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
+      <figure className="m-0 space-y-2">
         <div
           onMouseMove={handleMouseMove}
           onMouseLeave={() => {
@@ -770,8 +775,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
         {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
           `overflow-hidden` and rendered to nobody. */}
-        <MapAttribution inlandWater context />
-      </div>
+        <figcaption>
+          <MapAttribution inlandWater context />
+        </figcaption>
+      </figure>
 
       {/* Map Legend Footer Strip.
           THE RAMP'S THIRD SPELLING, and the one that mattered most: this strip is what tells a

@@ -102,7 +102,7 @@
   "Map": {
     "mapTitle": "Türkiye il haritası",
     "plateLabel": "Plaka {code}",
-    "attribution": "© OpenStreetMap katkıcıları, ODbL",
+    "attribution": "© <osm>OpenStreetMap</osm> katkıcıları, ODbL",
     "attributionJrcLabel": "Mevsimlik göl sınırları:",
     "attributionJrcEnglish": "JRC Global Surface Water v1.5 (1984–2024) — Source: EC JRC/Google",
     "attributionProvinceLabel": "İl sınırları:",

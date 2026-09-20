@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { OSM_COPYRIGHT_URL } from "@/lib/map/osm-credit";
 import { cn } from "@/lib/utils";
 
 /**
@@ -103,7 +104,27 @@ export function MapAttribution({
       {boundaries && (
         <span>
           {(inlandWater || context || world) && `${t("attributionProvinceLabel")} `}
-          {t("attribution")}
+          {/* THE CREDIT IS A LINK, because ODbL asks for one in an interactive medium and this
+              line was plain text on all ten surfaces. The href is OSM's own copyright page,
+              which is the target its guidance names and which explains ODbL — so one link does
+              the whole job and a second one on "ODbL" would only add noise to an 11px footnote.
+              Same tab, no `target="_blank"`: that is what Leaflet's own attribution control does,
+              it keeps the back button meaningful, and it avoids an unannounced new window.
+
+              `underline` IS EXPLICIT, and it is the accessibility half of this change. Tailwind's
+              preflight resets `text-decoration` on anchors, so `globals.css`'s `a` rule was
+              setting a thickness for an underline that was never drawn. Measured on `/deprem`:
+              the link clears its background comfortably (8.36:1 light, 8.20:1 dark) but sits at
+              **1.05:1 against the muted text around it** — nowhere near the 3:1 that would let
+              hue alone carry it, which is WCAG 1.4.1. The underline is the non-colour cue that
+              makes it a link; it lifts on hover, this repo's usual direction. */}
+          {t.rich("attribution", {
+            osm: (chunks) => (
+              <a href={OSM_COPYRIGHT_URL} className="underline hover:no-underline">
+                {chunks}
+              </a>
+            ),
+          })}
         </span>
       )}{" "}
       {inlandWater && (

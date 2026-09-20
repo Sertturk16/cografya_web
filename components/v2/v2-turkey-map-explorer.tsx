@@ -535,7 +535,11 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
         {/* EDGE-TO-EDGE Map Panel with Zoom & Mouse Tracker, and its caption in ONE box — so the
             gap under the map is the caption's 8px, not this container's `space-y-6`. */}
-        <div className="space-y-2">
+        {/* A map and the line that credits it are a FIGURE and its CAPTION — the relationship
+            `v2-province-locator-map.tsx` has always expressed and the other six did not, so a screen
+            reader heard a figure caption on a province page and a loose paragraph on `/turkiye`.
+            `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
+        <figure className="m-0 space-y-2">
           <div
             ref={mapContainerRef}
             onPointerDown={handlePointerDown}
@@ -869,8 +873,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
           {/* UNDER the plate, and outside it. The credit used to sit beside the `<svg>` in the
             plate's inner `w-full h-full` box, which put it below a full-height map and inside the
             plate's `overflow-hidden` — clipped, so the credit was on no screen. */}
-          <MapAttribution inlandWater context />
-        </div>
+          <figcaption>
+            <MapAttribution inlandWater context />
+          </figcaption>
+        </figure>
       </div>
 
       {/* OPTIONAL REGIONS SECTION (7 COĞRAFİ BÖLGE REHBERİ) */}

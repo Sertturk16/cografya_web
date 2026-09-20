@@ -477,7 +477,11 @@ export function V2EarthquakeExplorer({
             ONE BOX for the two, so the gap under the map is the caption's own 8px rather than
             the section's `space-y-*` — which set it to 16px here, 20px on the game screens and
             24px on `/turkiye`, three spacings for one relationship. */}
-        <div className="space-y-2">
+        {/* A map and the line that credits it are a FIGURE and its CAPTION — the relationship
+            `v2-province-locator-map.tsx` has always expressed and the other six did not, so a screen
+            reader heard a figure caption on a province page and a loose paragraph on `/turkiye`.
+            `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
+        <figure className="m-0 space-y-2">
           <div
             onMouseMove={handleMouseMove}
             onMouseLeave={() => {
@@ -767,8 +771,10 @@ export function V2EarthquakeExplorer({
           {/* UNDER the plate. Inside it the credit flowed below a `h-full` map and the plate's
             `overflow-hidden` cut it off: on `/deprem` it sat at y=532 of a 533px box, so the
             ODbL and JRC lines this component publishes reached no reader at all. */}
-          <MapAttribution inlandWater context />
-        </div>
+          <figcaption>
+            <MapAttribution inlandWater context />
+          </figcaption>
+        </figure>
       </div>
 
       {/* Accessible Live Region for Selected Earthquake Announcement (WCAG 4.1.3, A11Y126-I4) */}

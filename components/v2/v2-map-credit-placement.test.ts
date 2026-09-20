@@ -99,6 +99,49 @@ describe("the map credit sits under the map box, never on it", () => {
     return chain;
   };
 
+  /**
+   * A map and the line crediting it are a FIGURE and its CAPTION.
+   *
+   * `v2-province-locator-map.tsx` expressed this from the start; the six surfaces that got the
+   * credit moved out of their map box in `6b40007` did not, so the same relationship was a
+   * `<figcaption>` on a province page and a loose `<p>` after a `<div>` on `/turkiye` — a screen
+   * reader heard two different things about one arrangement. Pinned here rather than left to the
+   * next person to notice, because nothing about a bare `<p>` sibling LOOKS wrong.
+   *
+   * What this asserts is the nesting, not the tag names in isolation: the credit's ancestors must
+   * include a `figcaption`, and that `figcaption`'s ancestors must include the `figure` that also
+   * holds the map. A `<figcaption>` outside a `<figure>`, or a `<figure>` around the caption but
+   * not the map, would satisfy a tag-counting check and mean nothing.
+   */
+  it.each(surfaces)(
+    "$name captions its map with a figcaption inside the map's figure",
+    ({ file }) => {
+      const elements = jsxElementsOf(file);
+      const credits = elements.flatMap((el, i) => (el.tag === "MapAttribution" ? [i] : []));
+      const maps = elements.flatMap((el, i) => (el.tag === "svg" ? [i] : []));
+      expect(credits.length, `${label(file)}: scanner found no <MapAttribution>`).toBeGreaterThan(
+        0,
+      );
+
+      for (const credit of credits) {
+        const enclosing = ancestorsOf(elements, credit);
+        const caption = enclosing.find((i) => elements[i]?.tag === "figcaption");
+        expect(caption, `${label(file)}: the credit is not inside a <figcaption>`).toBeDefined();
+
+        const figure = ancestorsOf(elements, caption as number).find(
+          (i) => elements[i]?.tag === "figure",
+        );
+        expect(figure, `${label(file)}: that <figcaption> is not inside a <figure>`).toBeDefined();
+
+        // The same figure has to hold the map, or the caption captions nothing.
+        const captionsAMap = maps.some((map) =>
+          ancestorsOf(elements, map).includes(figure as number),
+        );
+        expect(captionsAMap, `${label(file)}: the credit's <figure> holds no <svg>`).toBe(true);
+      }
+    },
+  );
+
   it.each(surfaces)("$name renders the credit outside the map box", ({ file }) => {
     const elements = jsxElementsOf(file);
     const credits = elements.flatMap((el, i) => (el.tag === "MapAttribution" ? [i] : []));

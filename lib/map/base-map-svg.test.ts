@@ -11,6 +11,7 @@ import {
 } from "./base-map-svg";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "./tr-provinces.generated";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "./world-countries.generated";
+import { plainAttribution } from "./osm-credit";
 
 /**
  * Three obligations are pinned here, and each one is a rule that would otherwise go missing
@@ -76,7 +77,7 @@ describe("buildTrBaseMapSvg", () => {
     const svg = buildTrBaseMapSvg("tr");
     const drawn = svg.match(/<a [^>]*>\s*<text[^>]*>([^<]*)<\/text>\s*<\/a>/);
     expect(drawn, "the credit must be a <text> node wrapped in an <a>").not.toBeNull();
-    expect(drawn?.[1]).toBe(trMessages.Map.attribution);
+    expect(drawn?.[1]).toBe(plainAttribution(trMessages.Map.attribution));
     expect(svg).toContain("https://www.openstreetmap.org/copyright");
   });
 
@@ -91,8 +92,10 @@ describe("buildTrBaseMapSvg", () => {
 
   it("draws the EN credit on the EN file — the reason four routes exist", () => {
     const drawn = buildTrBaseMapSvg("en").match(/<text[^>]*>([^<]*)<\/text>/);
-    expect(drawn?.[1]).toBe(enMessages.Map.attribution);
-    expect(enMessages.Map.attribution).not.toBe(trMessages.Map.attribution);
+    expect(drawn?.[1]).toBe(plainAttribution(enMessages.Map.attribution));
+    expect(plainAttribution(enMessages.Map.attribution)).not.toBe(
+      plainAttribution(trMessages.Map.attribution),
+    );
   });
 
   it("does not satisfy the obligation with metadata alone", () => {
@@ -100,7 +103,7 @@ describe("buildTrBaseMapSvg", () => {
     const svg = buildTrBaseMapSvg("tr");
     const withoutDesc = svg.replace(/<desc>[\s\S]*?<\/desc>/, "");
     expect(withoutDesc).toContain("<text");
-    expect(withoutDesc).toContain(trMessages.Map.attribution);
+    expect(withoutDesc).toContain(plainAttribution(trMessages.Map.attribution));
   });
 
   it("keeps the artifact's own viewBox, so the figure's aspect ratio is unchanged", () => {

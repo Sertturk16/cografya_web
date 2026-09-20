@@ -207,7 +207,7 @@ export function V2ToolWorkbench({
    * the one view where the map fills the whole screen. `mapContainerRef` stays on the plate
    * because the scale-bar `ResizeObserver` below measures the DRAWING's width, not this box's.
    */
-  const landscapeBoxRef = React.useRef<HTMLDivElement | null>(null);
+  const landscapeBoxRef = React.useRef<HTMLElement | null>(null);
 
   // "Tam Ekran / Yatay Mod" (T-015) — fullscreen + best-effort landscape lock for the canvas
   // card itself, so the toolbar, scale bar and zoom cluster all come along.
@@ -1224,8 +1224,12 @@ export function V2ToolWorkbench({
             ONE BOX, so the 8px between map and credit states the caption relationship instead of
             inheriting whatever `space-y-*` the surrounding container runs — and so fullscreen
             carries the credit with the map. */}
-        <div
-          className="space-y-2"
+        {/* A map and the line that credits it are a FIGURE and its CAPTION — the relationship
+            `v2-province-locator-map.tsx` has always expressed and the other six did not, so a
+            screen reader heard a figure caption on a province page and a loose paragraph here.
+            `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
+        <figure
+          className="m-0 space-y-2"
           ref={landscapeBoxRef}
           style={landscape.active ? LANDSCAPE_FILL : undefined}
         >
@@ -1483,8 +1487,10 @@ export function V2ToolWorkbench({
               credit nested inside it becomes a flex sibling of the `<svg>` and takes width the
               map needs — 517px of 1166 on this surface, measured. See
               `v2-map-credit-placement.test.ts`, which reads the tree rather than source order. */}
-          <MapAttribution inlandWater context />
-        </div>
+          <figcaption>
+            <MapAttribution inlandWater context />
+          </figcaption>
+        </figure>
       </div>
 
       {/* 3. TWO-COLUMN BALANCED DASHBOARD BELOW THE MAP */}
