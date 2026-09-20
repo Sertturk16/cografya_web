@@ -22,7 +22,15 @@ import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { BookOpen, Video, Home, ExternalLink, ShoppingBag, PlayCircle } from "lucide-react";
+import {
+  BookOpen,
+  Video,
+  Home,
+  ExternalLink,
+  ShoppingBag,
+  PlayCircle,
+  ChevronDown,
+} from "lucide-react";
 export const revalidate = 86400;
 
 /**
@@ -133,11 +141,35 @@ const INDEX = "min-w-0";
  * the four pixels a side the accordion used to carry decided whether three question cells fit on
  * a line or two (three cells at the 88px floor need 276px; the inset left 272px).
  */
-const DENEME = "block border-t border-border pt-2.5 pb-3 last-of-type:border-b";
+const DENEME = "group block border-t border-border pt-2.5 pb-3 last-of-type:border-b";
 
 /** THE ROW HEAD — heading and fact strip on one wrapping line. `gap-x-3`/`gap-y-0.5` are the
- *  stylesheet's 12px column gap and 2px row gap. */
-const DENEME_HEAD = "flex flex-wrap items-baseline gap-x-3 gap-y-0.5";
+ *  stylesheet's 12px column gap and 2px row gap. `min-w-0` since T-070 put it inside a flex
+ *  `<summary>` beside the chevron: without it the head's own min-content width would push the
+ *  chevron off the row at 320px. */
+const DENEME_HEAD = "flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5";
+
+/**
+ * THE DISCLOSURE ROW (T-070). `list-none` plus the WebKit pseudo-element kills the native
+ * marker: the row already has a heading, a fact strip and now a chevron, and a triangle in
+ * front of all three reads as a fourth thing rather than as the control.
+ *
+ * `cursor-pointer` because a `<summary>` is a control and does not get one by default.
+ * `lg:cursor-default` for the same reason the chevron is `lg:hidden` — above the breakpoint the
+ * island never closes a row, so pointing at one would promise a state change that does not
+ * come. The element stays a `<summary>` at every width (swapping the tag by breakpoint is not a
+ * thing markup can do), which costs a desktop reader one collapsible row they will not use and
+ * keeps ONE tree for the scanner, the tests and the delegated listener.
+ */
+const DENEME_SUMMARY =
+  "flex list-none cursor-pointer items-baseline justify-between gap-2 lg:cursor-default " +
+  "[&::-webkit-details-marker]:hidden";
+
+/** The chevron, rotated by the row's own open state. `group-open:` reads the `open` attribute
+ *  on the `<details>` this sits in, which is the attribute the island writes — so the glyph
+ *  cannot disagree with the row. `shrink-0` so it survives a heading that wraps to two lines. */
+const DENEME_CHEVRON =
+  "mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180 lg:hidden";
 
 /**
  * `m-0` IS LOAD-BEARING HERE, unlike on `JUMP_HEADING`: `@layer base` gives every heading
@@ -525,28 +557,47 @@ export default async function V2BookDetailPage({ params }: PageProps) {
               {videoStates.map(({ video, state }) => {
                 const playable = isPlayable(state);
                 return (
-                  <article
+                  /* A `<details>` SINCE T-070, AND THE OPEN ATTRIBUTE IS THE SERVER'S ANSWER.
+                     Every row ships OPEN, so the markup a crawler and a reader with no
+                     JavaScript get is byte-for-byte the page that was here before — 31 rows,
+                     186 links, all painted. Below `lg` the bench island closes every row but
+                     the selected one after hydration (`video-bench.tsx`'s accordion effect);
+                     above it, nothing is closed and the index reads as the list it always was.
+                     This is NOT the thirty-island accordion the bench replaced: `<details>`
+                     needs no island, the one delegated listener still owns every press inside
+                     it (a `<summary>` carries neither `data-second` nor `data-player-open`, so
+                     it falls through untouched), and the row is not `position: sticky`, which
+                     is what made the old one cost a second `scroll-mt` addend. */
+                  <details
                     key={video.orderNo}
+                    open
                     className={DENEME}
                     aria-labelledby={videoFragment(video.orderNo)}
                     data-deneme={video.orderNo}
                   >
-                    <div className={DENEME_HEAD}>
-                      <h3 id={videoFragment(video.orderNo)} className={DENEME_HEADING}>
-                        {videoTitle(t, locale, video)}
-                      </h3>
-                      <span className={DENEME_FACTS}>
-                        <span>{t("videoTagCount", { count: video.tags.length })}</span>
-                        {state.kind === "rich" && (
-                          <>
-                            <span className={FACT_SEPARATOR} aria-hidden="true">
-                              ·
-                            </span>
-                            <DenemeMeta state={state} />
-                          </>
-                        )}
-                      </span>
-                    </div>
+                    <summary className={DENEME_SUMMARY}>
+                      <div className={DENEME_HEAD}>
+                        <h3 id={videoFragment(video.orderNo)} className={DENEME_HEADING}>
+                          {videoTitle(t, locale, video)}
+                        </h3>
+                        <span className={DENEME_FACTS}>
+                          <span>{t("videoTagCount", { count: video.tags.length })}</span>
+                          {state.kind === "rich" && (
+                            <>
+                              <span className={FACT_SEPARATOR} aria-hidden="true">
+                                ·
+                              </span>
+                              <DenemeMeta state={state} />
+                            </>
+                          )}
+                        </span>
+                      </div>
+                      {/* The disclosure affordance, drawn by us because the native marker is
+                          suppressed (see `DENEME_SUMMARY`). `lg:hidden`: above the breakpoint
+                          nothing is ever closed, so a chevron there would promise a state the
+                          index does not have. */}
+                      <ChevronDown className={DENEME_CHEVRON} aria-hidden="true" />
+                    </summary>
 
                     <ul role="list" className={QUESTION_GRID}>
                       {video.tags.map((tag) => {
@@ -573,7 +624,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                         );
                       })}
                     </ul>
-                  </article>
+                  </details>
                 );
               })}
             </VideoBench>
