@@ -205,6 +205,17 @@ export function V2Footer() {
                   Ücretsiz Kayıt Ol
                 </Link>
               </li>
+              {/* The terms are reachable from outside the register form too (T-073): a member
+                  who has already agreed to them is the reader most likely to want to re-read
+                  them, and the register card is the one place they would no longer look. */}
+              <li>
+                <Link
+                  href="/kullanim-sartlari"
+                  className="hover:text-accent transition-colors block"
+                >
+                  Kullanım Şartları
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

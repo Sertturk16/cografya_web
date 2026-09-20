@@ -74,6 +74,7 @@ const PAGE_FOR: Record<string, string> = {
   "/deprem": "app/[locale]/(site)/deprem/page.tsx",
   "/dunya/kita": "app/[locale]/(site)/dunya/kita/page.tsx",
   "/hakkimizda": "app/[locale]/(site)/hakkimizda/page.tsx",
+  "/kullanim-sartlari": "app/[locale]/(site)/kullanim-sartlari/page.tsx",
   "/turkiye/bolge": "app/[locale]/(site)/turkiye/bolge/page.tsx",
   "/deniz/marmara": "app/[locale]/(site)/deniz/marmara/page.tsx",
   "/deniz/ege": "app/[locale]/(site)/deniz/ege/page.tsx",
@@ -371,8 +372,11 @@ const pairs = sitePages.flatMap(pairsIn);
  * assumed every remaining page renders `<Breadcrumbs>`. Four do not — the `deniz` basin pages go
  * through `breadcrumbListSchema` — so the JSX-prop figure is 29 and the total is 33 only because
  * the four come back in through the other spelling.
+ *
+ * T-073: 29 → **30**, and 34 `(site)` pages → 35. `/kullanim-sartlari` renders `<Breadcrumbs>`
+ * the way `/hakkimizda` does, with the same surface its `buildMetadata` declares (`trOnly`).
  */
-const BREADCRUMB_SURFACE_PAIRS = 29;
+const BREADCRUMB_SURFACE_PAIRS = 30;
 const SCHEMA_SURFACE_PAIRS = 4;
 
 describe("the page's metadata surface and its breadcrumb surface", () => {
