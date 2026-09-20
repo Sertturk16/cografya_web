@@ -784,7 +784,6 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 })}
               </g>
             </svg>
-            <MapAttribution inlandWater context />
           </div>
 
           {/* DYNAMIC FLOATING TOOLTIP */}
@@ -864,6 +863,11 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             </div>
           )}
         </div>
+
+        {/* UNDER the plate, and outside it. The credit used to sit beside the `<svg>` in the
+            plate's inner `w-full h-full` box, which put it below a full-height map and inside the
+            plate's `overflow-hidden` — clipped, so the credit was on no screen. */}
+        <MapAttribution inlandWater context />
       </div>
 
       {/* OPTIONAL REGIONS SECTION (7 COĞRAFİ BÖLGE REHBERİ) */}

@@ -1078,7 +1078,7 @@ export function V2GameScreen({
             <svg
               ref={svgRef}
               viewBox={viewBox}
-              className={`w-full h-full object-contain cursor-crosshair transition-transform select-none ${
+              className={`w-full h-full cursor-crosshair transition-transform select-none ${
                 // Zoomed in, this element owns one-finger dragging (pan); at rest a vertical
                 // swipe over the map should still scroll the PAGE. `pan-y` also leaves the
                 // browser's own pinch-zoom suppressed either way (T-015) — our handler above
@@ -1209,7 +1209,6 @@ export function V2GameScreen({
                 />
               ))}
             </svg>
-            <MapAttribution inlandWater context />
 
             {/* Not Playing Overlay */}
             {!isPlaying && !isFinished && (
@@ -1434,6 +1433,13 @@ export function V2GameScreen({
               </div>
             )}
           </div>
+
+          {/* UNDER the plate, not in it. The plate above lays its children out in a row
+              (`flex items-center justify-center`), so a credit inside it is not a caption — it is
+              a sibling competing with the map for width, and it won 517px of 1166 while the map
+              drew at 647. `v2-map-credit-placement.test.ts` reads the JSX tree for this now; the
+              source-order check it used to make was satisfied by the broken shape. */}
+          <MapAttribution inlandWater context />
         </div>
       </main>
     </div>

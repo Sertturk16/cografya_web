@@ -46,15 +46,12 @@ export function V2RegionThumb({ region, members }: V2RegionThumbProps) {
       <svg
         style={style}
         viewBox={MAP_VIEWBOX}
-        className="w-full h-full object-contain select-none"
+        className="w-full h-full select-none"
         aria-hidden="true"
         focusable="false"
         data-region={region}
       >
-        <use
-          href={`#${COUNTRY_ID}`}
-          className="fill-muted/60 stroke-border/50 stroke-[0.8]"
-        />
+        <use href={`#${COUNTRY_ID}`} className="fill-muted/60 stroke-border/50 stroke-[0.8]" />
         {members.map((plateCode) => (
           <use
             key={plateCode}

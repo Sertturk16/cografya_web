@@ -534,7 +534,6 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             })}
           </g>
         </svg>
-        <MapAttribution inlandWater context />
 
         {/* SELECTED STATION SPOTLIGHT MODAL / CARD OVERLAY */}
         {selectedPoint && (
@@ -763,6 +762,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           </div>
         )}
       </div>
+
+      {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
+          `overflow-hidden` and rendered to nobody. */}
+      <MapAttribution inlandWater context />
 
       {/* Map Legend Footer Strip.
           THE RAMP'S THIRD SPELLING, and the one that mattered most: this strip is what tells a

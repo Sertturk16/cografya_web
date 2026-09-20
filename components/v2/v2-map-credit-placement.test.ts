@@ -1,8 +1,13 @@
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import {
+  jsxElementsOf,
+  label,
+  readSource,
+  type ScannedElement,
+} from "@/lib/test-support/composition-scan";
 
 /**
  * The credit sits UNDER the map box, never on it.
@@ -21,6 +26,27 @@ import { join } from "node:path";
  * What survives is the part that was never about V1: a credit nested INSIDE the map box is a
  * credit drawn over the map. Asserted across every surface that renders the component, derived
  * rather than listed — the same reason `lib/map/tr-inland-water-jrc.test.ts` derives its list.
+ *
+ * ## Why source order was not the rule
+ *
+ * The first version of this file asked only that `<MapAttribution` appear AFTER a `</svg>` in the
+ * file's text, with no `<svg` opening in between. Every surface satisfied that while six of them
+ * rendered the credit as a CHILD of the map box, because closing a tag and leaving an element are
+ * different things: `</svg>` closes the map, the plate `</div>` that follows it does not.
+ *
+ * What that cost, measured on production rather than argued: on the two plates that are
+ * `flex items-center justify-center` — `v2-game-screen.tsx` (three game modes) and
+ * `v2-tool-workbench.tsx` (three GIS tools) — the credit `<p>` became a FLEX ITEM beside the
+ * `<svg>` and took 517px of a 1166px plate. The map drew at 647px, a little over half the box it
+ * was given. On the four plates that are plain blocks with `overflow-hidden`, the credit flowed
+ * below a `h-full` map and was clipped away entirely: on `/deprem` it sat at y=532 in a 533px
+ * box, so the ODbL and JRC credits this component exists to publish were on no screen at all.
+ * One misplacement, two opposite symptoms, neither visible to a source-order check.
+ *
+ * So the rule is now read off the JSX TREE, through the one scanner (`composition-scan.ts`, per
+ * T-045's single-reader rule): the element that holds the `<svg>` may not also hold the credit.
+ * The source-order check stays below it — it is cheap, and it still catches the different mistake
+ * of crediting a map that has not been drawn yet.
  */
 
 const roots = [
@@ -34,11 +60,17 @@ const walk = (dir: string): string[] =>
     return entry.name.endsWith(".tsx") && !entry.name.includes(".test.") ? [full] : [];
   });
 
+// COMMENT-STRIPPED, through the same reader the scanner uses. The first version of this file read
+// the raw bytes, so a docblock saying "a flex sibling of the `<svg>`" was markup as far as the
+// source-order check was concerned — and the rule's own explanation could fail the rule. That is
+// the third time in this repo a comment has been read as JSX; `composition-scan.ts` exists partly
+// because of the other two.
 const surfaces = roots
   .flatMap(walk)
   .map((file) => ({
     name: file.slice(file.lastIndexOf("/") + 1),
-    source: readFileSync(file, "utf8"),
+    file,
+    source: readSource(file),
   }))
   .filter(
     ({ source, name }) => source.includes("<MapAttribution") && name !== "map-attribution.tsx",
@@ -56,6 +88,42 @@ describe("the map credit sits under the map box, never on it", () => {
     // Anti-vacuity: an empty list would pass every assertion below for free, and the whole point
     // of deriving the list is that a new map surface joins it without anyone remembering.
     expect(surfaces.length, "surfaces rendering MapAttribution").toBeGreaterThan(4);
+  });
+
+  /** The chain of enclosing elements, innermost first. Indices into `elements`. */
+  const ancestorsOf = (elements: readonly ScannedElement[], index: number): number[] => {
+    const chain: number[] = [];
+    for (let at = elements[index]?.parent ?? null; at !== null; at = elements[at]?.parent ?? null) {
+      chain.push(at);
+    }
+    return chain;
+  };
+
+  it.each(surfaces)("$name renders the credit outside the map box", ({ file }) => {
+    const elements = jsxElementsOf(file);
+    const credits = elements.flatMap((el, i) => (el.tag === "MapAttribution" ? [i] : []));
+    const maps = elements.flatMap((el, i) => (el.tag === "svg" ? [i] : []));
+
+    // Anti-vacuity per file: the walk above selected this file BECAUSE it writes both tags, so a
+    // scan that finds neither means the scanner and the filter disagree — a broken test reading
+    // as a pass, which is the failure mode this suite is least able to notice.
+    expect(credits.length, `${label(file)}: scanner found no <MapAttribution>`).toBeGreaterThan(0);
+    expect(maps.length, `${label(file)}: scanner found no <svg>`).toBeGreaterThan(0);
+
+    for (const credit of credits) {
+      const enclosing = ancestorsOf(elements, credit);
+      for (const map of maps) {
+        // The map box is whatever element holds the `<svg>`. A credit anywhere below that element
+        // is drawn ON the map: squeezing it when the box lays its children out in a row, clipped
+        // by the box when it does not.
+        const box = elements[map]?.parent;
+        if (box === null || box === undefined) continue;
+        expect(
+          enclosing,
+          `${label(file)}: the credit is inside <${elements[box]?.tag}>, which holds the map`,
+        ).not.toContain(box);
+      }
+    }
   });
 
   it.each(surfaces)("$name emits the credit after the map closes", ({ source }) => {

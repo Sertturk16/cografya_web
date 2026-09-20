@@ -79,7 +79,7 @@ export function V2ContinentLocatorMap({
           viewBox={WORLD_MAP_VIEWBOX}
           role="img"
           aria-label={`${continentName} kıtası dünya haritasındaki konumu`}
-          className="w-full h-full object-contain"
+          className="w-full h-full"
         >
           {/* Base / Background shapes */}
           {COUNTRY_SHAPES.map((shape) => {

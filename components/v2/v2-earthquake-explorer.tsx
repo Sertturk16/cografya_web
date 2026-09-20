@@ -731,7 +731,6 @@ export function V2EarthquakeExplorer({
               );
             })}
           </svg>
-          <MapAttribution inlandWater context />
 
           {/* FLOATING TOOLTIP ON PIN HOVER */}
           {hoveredEvent && mousePos && (
@@ -760,6 +759,11 @@ export function V2EarthquakeExplorer({
             </div>
           )}
         </div>
+
+        {/* UNDER the plate. Inside it the credit flowed below a `h-full` map and the plate's
+            `overflow-hidden` cut it off: on `/deprem` it sat at y=532 of a 533px box, so the
+            ODbL and JRC lines this component publishes reached no reader at all. */}
+        <MapAttribution inlandWater context />
       </div>
 
       {/* Accessible Live Region for Selected Earthquake Announcement (WCAG 4.1.3, A11Y126-I4) */}

@@ -1439,8 +1439,13 @@ export function V2ToolWorkbench({
               );
             })}
           </svg>
-          <MapAttribution inlandWater context />
         </div>
+
+        {/* UNDER the plate, not in it: the plate is `flex items-center justify-center`, so a
+            credit nested inside it becomes a flex sibling of the `<svg>` and takes width the map
+            needs — 517px of 1166 on this surface, measured. See
+            `v2-map-credit-placement.test.ts`, which now reads the tree rather than source order. */}
+        <MapAttribution inlandWater context />
       </div>
 
       {/* 3. TWO-COLUMN BALANCED DASHBOARD BELOW THE MAP */}

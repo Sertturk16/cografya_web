@@ -168,8 +168,11 @@ export function V2RegionLocatorMap({
             })}
           </g>
         </svg>
-        <MapAttribution inlandWater context />
       </div>
+
+      {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
+          `overflow-hidden`, which meant the ODbL and JRC lines rendered to nobody. */}
+      <MapAttribution inlandWater context />
 
       {/* Quick Province Pill Shortcuts */}
       <div className="space-y-2 pt-1">
