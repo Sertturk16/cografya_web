@@ -96,7 +96,7 @@ describe("buildRegisterPayload key sets agree with the committed contract", () =
 
   const COMMON: Omit<
     RegisterFormState,
-    "userType" | "gradeLevel" | "studyStream" | "universityName" | "departmentName"
+    "userType" | "gradeLevel" | "studyStream" | "schoolName" | "universityName" | "departmentName"
   > = {
     firstName: "Ayşe",
     lastName: "Yılmaz",
@@ -116,6 +116,33 @@ describe("buildRegisterPayload key sets agree with the committed contract", () =
       studyStream: "SAYISAL",
       universityName: "",
       departmentName: "",
+    },
+    // T-061: `schoolName` is optional INSIDE the SECONDARY branch and forbidden on every
+    // other one, so both spellings need a fixture — present, and absent-as-empty-string.
+    "secondary (with school)": {
+      ...COMMON,
+      userType: "secondary",
+      gradeLevel: "GRADE_12",
+      studyStream: "SAYISAL",
+      schoolName: "Synthetic Lisesi",
+      universityName: "",
+      departmentName: "",
+    },
+    "secondary (school left blank)": {
+      ...COMMON,
+      userType: "secondary",
+      gradeLevel: "GRADE_12",
+      studyStream: "SAYISAL",
+      schoolName: "   ",
+      universityName: "",
+      departmentName: "",
+    },
+    // A teacher's form state can carry a stale `schoolName` if someone flips the role after
+    // filling the student branch; the payload must still not have the key.
+    "teacher (stale schoolName in form state)": {
+      ...COMMON,
+      userType: "teacher",
+      schoolName: "Synthetic Lisesi",
     },
     undergraduate: {
       ...COMMON,
@@ -209,10 +236,40 @@ describe("buildRegisterPayload key sets agree with the committed contract", () =
     expect(payload).toMatchObject({ gradeLevel: "GRADE_12", studyStream: "SAYISAL" });
   });
 
+  it("secondary carries a trimmed schoolName when one is given, and no key when it is blank", () => {
+    const withSchool = buildRegisterPayload(
+      FIXTURES["secondary (with school)"] as RegisterFormState,
+      locale,
+    );
+    expect(withSchool).toMatchObject({ schoolName: "Synthetic Lisesi" });
+
+    // Whitespace is not a school name. An empty-string key would be a value the matrix
+    // accepts on this branch and rejects on every other, which is how it leaks.
+    const blank = buildRegisterPayload(
+      FIXTURES["secondary (school left blank)"] as RegisterFormState,
+      locale,
+    );
+    expect(Object.hasOwn(blank, "schoolName")).toBe(false);
+  });
+
+  it("a teacher carries no schoolName even when the form state still holds one", () => {
+    // Flipping the role after filling the student branch leaves the value in state. The
+    // payload builder switches on `userType`, so the teacher branch never reads it.
+    const payload = buildRegisterPayload(
+      FIXTURES["teacher (stale schoolName in form state)"] as RegisterFormState,
+      locale,
+    );
+    expect(Object.hasOwn(payload, "schoolName")).toBe(false);
+  });
+
   const EDUCATION_KEYS = [
     "educationLevel",
     "gradeLevel",
     "studyStream",
+    // T-061 added the sixth. It belongs in this list for the same reason the other five do:
+    // the profile matrix forbids it outside the SECONDARY branch, and a subset check alone
+    // would not notice it leaking — `schoolName` IS a declared contract property.
+    "schoolName",
     "universityName",
     "departmentName",
   ] as const;

@@ -18,6 +18,13 @@ import { USER_TYPE_LABELS } from "@/lib/auth/profile-labels";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  EducationFieldset,
+  EMPTY_EDUCATION_SELECTION,
+  missingEducationFields,
+  type EducationFieldKey,
+  type EducationSelection,
+} from "./education-fieldset";
 import { Label } from "@/components/ui/label";
 import {
   User,
@@ -85,6 +92,37 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
+/**
+ * `identity` collects who the member is; `education` (students only) collects what they
+ * study; `verify` is the e-mail code step that already existed.
+ */
+type RegisterStep = "identity" | "education" | "verify";
+
+/**
+ * The account role and the declared level together pick the `UserType`
+ * `buildRegisterPayload` branches on. It already carried `secondary` /
+ * `undergraduate` / `graduate` for exactly this and nothing had ever sent them — the form
+ * only ever passed `student` or `teacher`, which is why every registration landed with an
+ * empty education profile and a "profili tamamla" screen waiting for it.
+ *
+ * `student` (the bare, education-less branch) survives as the fallback for a level that is
+ * somehow unset. It cannot be reached from the wizard, whose education step refuses to
+ * advance without one, but the matrix has a row for it and this function stays total.
+ */
+function userTypeFor(role: UserType, education: EducationSelection): UserType {
+  if (role === "teacher") return "teacher";
+  switch (education.educationLevel) {
+    case "SECONDARY":
+      return "secondary";
+    case "UNDERGRADUATE":
+      return "undergraduate";
+    case "GRADUATE":
+      return "graduate";
+    default:
+      return "student";
+  }
+}
+
 export function V2RegisterCard({
   locale = "tr",
   provinces = [],
@@ -95,8 +133,18 @@ export function V2RegisterCard({
   const router = useRouter();
   const [, setSessionState] = useAuthSession();
 
-  // Step 1: Registration Form, Step 2: Verification Code
-  const [step, setStep] = React.useState<"form" | "verify">("form");
+  /**
+   * T-061: three steps, not two. A STUDENT declares their education before the account is
+   * created rather than after it, which is what retires the "profili tamamla" screen that
+   * used to sit between verification and the hub. A TEACHER never sees the middle step —
+   * the API's profile matrix forbids a teacher carrying any education field at all — so for
+   * them the flow is unchanged and the counter reads 1/1.
+   */
+  const [step, setStep] = React.useState<RegisterStep>("identity");
+  const [education, setEducation] = React.useState<EducationSelection>(EMPTY_EDUCATION_SELECTION);
+  const [educationErrors, setEducationErrors] = React.useState<
+    Partial<Record<EducationFieldKey, string>>
+  >({});
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("");
@@ -222,25 +270,56 @@ export function V2RegisterCard({
       return;
     }
 
+    // A student's account is not created yet — the education step comes first, and the API
+    // call happens once from there with the whole declaration in one body.
+    if (selectedRole !== "teacher") {
+      setStep("education");
+      return;
+    }
+
+    await sendRegistration({ cleanFirst, cleanLast, cleanPhone: cleanPhone!, cleanEmail });
+  };
+
+  /**
+   * The ONE place that calls `register`. Both steps route through it so the payload is built
+   * once: a second call site is a second chance for one of them to send a shape the profile
+   * matrix refuses.
+   */
+  const sendRegistration = async (identity: {
+    cleanFirst: string;
+    cleanLast: string;
+    cleanPhone: string;
+    cleanEmail: string;
+  }) => {
+    setGeneralError(null);
     setLoading(true);
     try {
       const formState: RegisterFormState = {
-        firstName: cleanFirst,
-        lastName: cleanLast,
-        phone: cleanPhone!,
-        email: cleanEmail,
+        firstName: identity.cleanFirst,
+        lastName: identity.cleanLast,
+        phone: identity.cleanPhone,
+        email: identity.cleanEmail,
         password,
         passwordConfirm: password,
-        userType: selectedRole,
+        userType: userTypeFor(selectedRole, education),
         provincePlateCode: selectedPlate,
         districtId: selectedDistrictId,
+        ...(selectedRole === "teacher"
+          ? {}
+          : {
+              gradeLevel: education.gradeLevel,
+              studyStream: education.studyStream,
+              schoolName: education.schoolName,
+              universityName: education.universityName,
+              departmentName: education.departmentName,
+            }),
       };
 
       const payload = buildRegisterPayload(formState, locale);
       const result = await submitAuth("register", payload);
 
       if (result.ok) {
-        setRegisteredEmail(cleanEmail);
+        setRegisteredEmail(identity.cleanEmail);
         setStep("verify");
         setSuccessMsg(
           "Kayıt oluşturuldu! E-posta adresine gönderilen 6 haneli doğrulama kodunu gir.",
@@ -264,6 +343,40 @@ export function V2RegisterCard({
     }
   };
 
+  /**
+   * Step 2 (students only). It re-reads the step-1 values from state rather than carrying
+   * them forward in a ref: the inputs are unmounted while this step is open, so state is the
+   * only copy, and re-deriving `cleanPhone` here keeps one canonicaliser on the path.
+   */
+  const handleEducationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGeneralError(null);
+
+    const missing = missingEducationFields(education);
+    if (missing.length > 0) {
+      const next: Partial<Record<EducationFieldKey, string>> = {};
+      for (const key of missing) next[key] = "Bu alan zorunlu.";
+      setEducationErrors(next);
+      const first = missing[0];
+      if (first) {
+        document
+          .getElementById(
+            `v2-register-education-${first.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`,
+          )
+          ?.focus();
+      }
+      return;
+    }
+
+    setEducationErrors({});
+    await sendRegistration({
+      cleanFirst: firstName.trim(),
+      cleanLast: lastName.trim(),
+      cleanPhone: canonicalizePhone(phone) as string,
+      cleanEmail: email.trim(),
+    });
+  };
+
   const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
@@ -277,7 +390,11 @@ export function V2RegisterCard({
 
     setLoading(true);
     try {
-      const profilePath = getPathname({ locale, href: "/profil" });
+      // T-061: the hub, not `/profil`. The profile-completion screen this used to land on
+      // no longer exists — a student has already declared their education two steps ago, and
+      // `/profil` itself is a redirect now. Sending a brand-new member through a 308 on their
+      // very first navigation would be a hop with nothing behind it.
+      const landingPath = getPathname({ locale, href: "/hesabim" });
       const result = await submitAuth(
         "verify-email",
         {
@@ -287,7 +404,7 @@ export function V2RegisterCard({
           email: registeredEmail || email.trim(),
           code: cleanCode,
         },
-        inModal ? {} : { returnTo: profilePath },
+        inModal ? {} : { returnTo: landingPath },
       );
 
       if (result.ok) {
@@ -300,7 +417,7 @@ export function V2RegisterCard({
           router.replace(result.redirectTo);
         } else {
           setTimeout(() => {
-            router.push(profilePath);
+            router.push(landingPath);
           }, 1000);
         }
       } else {
@@ -354,15 +471,17 @@ export function V2RegisterCard({
       {!inModal && (
         <div className="text-center space-y-2 mb-6">
           <Badge variant="primary" size="sm" className="mb-1">
-            {step === "form" ? "Coğrafya Gurmesi" : "Doğrulama Adımı"}
+            {step === "verify" ? "Doğrulama Adımı" : "Coğrafya Gurmesi"}
           </Badge>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {step === "form" ? "Hesap Oluştur" : "E-posta Doğrulama"}
+            {step === "verify" ? "E-posta Doğrulama" : "Hesap Oluştur"}
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            {step === "form"
+            {step === "identity"
               ? "Müfredat haritaları, soru bankası ve interaktif araçlara anında erişin."
-              : `${email} adresine gönderilen 6 haneli kodu giriniz.`}
+              : step === "education"
+                ? "Son bir adım: ne okuduğunu söyle, içerikleri ona göre gösterelim."
+                : `${email} adresine gönderilen 6 haneli kodu giriniz.`}
           </p>
         </div>
       )}
@@ -379,8 +498,8 @@ export function V2RegisterCard({
         </div>
       )}
 
-      {/* STEP 1: Registration Form */}
-      {step === "form" && (
+      {/* STEP 1: who you are */}
+      {step === "identity" && (
         <form onSubmit={handleRegisterSubmit} className="space-y-4" noValidate>
           {/* Accessible Status Announcement for Client Validation Errors */}
           <div role="status" aria-live="polite" className="sr-only">
@@ -647,7 +766,8 @@ export function V2RegisterCard({
             </div>
           </div>
 
-          {/* Submit Button */}
+          {/* A student has one more step to go, so this button must not promise the account
+              is being created. A teacher's flow is unchanged and the button still says so. */}
           <Button
             type="submit"
             variant="primary"
@@ -656,7 +776,7 @@ export function V2RegisterCard({
             leftIcon={<UserPlus className="size-4" />}
             className="w-full h-11 rounded-xl shadow-md font-bold text-sm mt-3"
           >
-            Ücretsiz Kayıt Ol
+            {selectedRole === "teacher" ? "Ücretsiz Kayıt Ol" : "Devam Et"}
           </Button>
 
           {/* Switch to Login footer */}
@@ -681,7 +801,67 @@ export function V2RegisterCard({
         </form>
       )}
 
-      {/* STEP 2: Email Verification */}
+      {/* STEP 2 (students only): what you study */}
+      {step === "education" && (
+        <form onSubmit={handleEducationSubmit} className="space-y-4" noValidate>
+          <div role="status" aria-live="polite" className="sr-only">
+            {Object.keys(educationErrors).length > 0 &&
+              `Eğitim adımında ${Object.keys(educationErrors).length} adet düzeltilmesi gereken alan var.`}
+          </div>
+
+          {generalError && (
+            <div
+              role="alert"
+              aria-live="polite"
+              className="p-3.5 rounded-2xl bg-destructive/10 border border-destructive/25 flex items-start gap-2.5 text-xs text-destructive-strong animate-in fade-in-50 duration-200"
+            >
+              <AlertCircle className="size-4 shrink-0 mt-0.5" />
+              <span className="leading-relaxed font-medium">{generalError}</span>
+            </div>
+          )}
+
+          <EducationFieldset
+            locale={locale}
+            value={education}
+            onChange={(next) => {
+              setEducation(next);
+              setEducationErrors({});
+              setGeneralError(null);
+            }}
+            errors={educationErrors}
+            idPrefix="v2-register-education"
+            disabled={loading}
+          />
+
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                setStep("identity");
+                setGeneralError(null);
+              }}
+              disabled={loading}
+              className="h-11 rounded-xl font-bold text-sm sm:w-auto"
+            >
+              ← Geri
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={loading}
+              leftIcon={<UserPlus className="size-4" />}
+              className="flex-1 h-11 rounded-xl shadow-md font-bold text-sm"
+            >
+              Ücretsiz Kayıt Ol
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {/* STEP 3: Email Verification */}
       {step === "verify" && (
         <form onSubmit={handleVerifySubmit} className="space-y-4" noValidate>
           {inModal && (
@@ -735,7 +915,7 @@ export function V2RegisterCard({
           <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
             <button
               type="button"
-              onClick={() => setStep("form")}
+              onClick={() => setStep("identity")}
               className="hover:text-foreground transition-colors"
             >
               ← Bilgileri Düzenle
