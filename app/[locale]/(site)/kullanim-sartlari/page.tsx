@@ -8,6 +8,7 @@ import { H1, H2, Lede } from "@/components/patterns/typography";
 import { PageContainer } from "@/components/patterns/page-container";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
 import { PRIVACY_FRAGMENT } from "@/lib/legal/terms-anchor";
+import { env } from "@/lib/env";
 
 interface TermsPageProps {
   params: Promise<{ locale: Locale }>;
@@ -112,11 +113,11 @@ export default async function TermsPage({ params }: TermsPageProps) {
           {/* The same address, the same shape and the same 320px rationale as the one on
               `/hakkimizda`: an `inline-flex` box does not shrink, so the span is what breaks. */}
           <a
-            href="mailto:info.cografyagurmesi@gmail.com"
+            href={`mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`}
             className="inline-flex max-w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-muted"
           >
             <Mail className="size-4 shrink-0" aria-hidden="true" />
-            <span className="min-w-0 break-all">info.cografyagurmesi@gmail.com</span>
+            <span className="min-w-0 break-all">{env.NEXT_PUBLIC_CONTACT_EMAIL}</span>
           </a>
         </section>
       </article>

@@ -10,6 +10,8 @@ const clientEnvSchema = z.object({
   // Absolute site origin, used for metadataBase + canonical/sitemap URLs.
   // Falls back to localhost for local dev; MUST be set to the real domain in prod.
   NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
+  // Contact and support email address published across the site.
+  NEXT_PUBLIC_CONTACT_EMAIL: z.email().default("info@cografyagurmesi.com"),
   // Analytics / Search Console placeholders — declared, not wired yet.
   NEXT_PUBLIC_GA_ID: z.string().optional(),
   NEXT_PUBLIC_GSC_VERIFICATION: z.string().optional(),
@@ -17,6 +19,7 @@ const clientEnvSchema = z.object({
 
 const parsed = clientEnvSchema.safeParse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+  NEXT_PUBLIC_CONTACT_EMAIL: process.env.NEXT_PUBLIC_CONTACT_EMAIL,
   NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
   NEXT_PUBLIC_GSC_VERIFICATION: process.env.NEXT_PUBLIC_GSC_VERIFICATION,
 });
