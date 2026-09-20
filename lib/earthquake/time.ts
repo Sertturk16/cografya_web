@@ -1,3 +1,5 @@
+import { SITE_TIME_ZONE } from "@/lib/text/format-date";
+
 /**
  * The web's single UTC→Turkish-time conversion point for `occurredAtUtc` (`GLOSSARY.md` §4's
  * "oluş zamanı" row: "Yerel saate çevirme tek katmanda yapılır" — converting to local time
@@ -27,7 +29,13 @@
  * through props.
  */
 
-export const EARTHQUAKE_TIME_ZONE = "Europe/Istanbul";
+/**
+ * The site's zone, not a second spelling of it (T-064). This module's own reasoning below — a
+ * wall-clock fact a reader in Türkiye reasons about in Türkiye time — turned out to apply to
+ * every other reader-facing date on the site too, so the string now lives in `lib/text/
+ * format-date.ts` and this name stays as the one this surface's docblock refers to.
+ */
+export const EARTHQUAKE_TIME_ZONE = SITE_TIME_ZONE;
 
 /** `dateStyle`/`timeStyle` shared by every rendering of `occurredAtUtc` on this surface. */
 export const EARTHQUAKE_OCCURRED_AT_FORMAT: Intl.DateTimeFormatOptions = {

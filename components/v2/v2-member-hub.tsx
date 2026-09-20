@@ -53,6 +53,7 @@ import {
   Calendar,
   BookOpen,
 } from "lucide-react";
+import { formatDay } from "@/lib/text/format-date";
 
 export interface MemberHubProvince {
   readonly plateCode: string;
@@ -905,11 +906,7 @@ export function V2MemberHub({
                     <div className="pt-2 border-t border-border flex items-center justify-between">
                       <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                         <Calendar className="size-3" />
-                        {new Date(meas.createdAt).toLocaleDateString("tr-TR", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
+                        {formatDay(meas.createdAt, "tr")}
                       </span>
                       <Link
                         href="/araclar"

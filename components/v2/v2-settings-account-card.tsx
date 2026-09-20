@@ -5,6 +5,7 @@ import { IdCard } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import type { Profile } from "@/lib/api/types";
 import { SettingsCard, SettingsReadOnlyField } from "./v2-settings-card";
+import { formatDay } from "@/lib/text/format-date";
 
 export interface V2SettingsAccountCardProps {
   readonly locale: Locale;
@@ -30,11 +31,11 @@ export function V2SettingsAccountCard({ locale, profile }: V2SettingsAccountCard
         ? t("account.roleParent")
         : t("account.roleStudent");
 
-  const memberSince = new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "tr-TR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(profile.createdAt));
+  // ONE zone, not the runtime's (T-064). This line formatted `createdAt` with no `timeZone`, so
+  // the UTC container and the reader's Europe/Istanbul browser produced different calendar days
+  // for any account created after 21:00 UTC — the server wrote `19 Eylül 2026`, the browser wrote
+  // `20 Eylül 2026`, and React threw #418 and re-rendered the tree on every single load.
+  const memberSince = formatDay(profile.createdAt, locale);
 
   return (
     <SettingsCard

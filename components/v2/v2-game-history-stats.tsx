@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Trophy, Award, Flame, Zap, ShieldCheck, Lock, Calendar } from "lucide-react";
 import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
+import { formatDay } from "@/lib/text/format-date";
 
 export function V2GameHistoryStats() {
   const [authState] = useAuthSession();
@@ -211,11 +212,7 @@ export function V2GameHistoryStats() {
                     <span>Hata: {rec.totalWrongs}</span>
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    {new Date(rec.createdAt).toLocaleDateString("tr-TR", {
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
+                    {formatDay(rec.createdAt, "tr")}
                   </div>
                 </div>
               ))}

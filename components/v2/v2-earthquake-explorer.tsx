@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { MapAttribution } from "@/components/patterns/map-attribution";
+import { formatDayTime } from "@/lib/text/format-date";
 
 export interface V2EarthquakeItem {
   id: string;
@@ -257,17 +258,10 @@ export function V2EarthquakeExplorer({
     });
   };
 
-  // Date/Time formatting helper
-  const formatTime = (utcString: string) => {
-    const d = new Date(utcString);
-    return `${d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" })} ${d.toLocaleTimeString(
-      "tr-TR",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      },
-    )}`;
-  };
+  // ONE zone, not the runtime's (T-064). AFAD publishes `occurredAtUtc`; formatting it without a
+  // `timeZone` told a reader an event happened at 21:30 "yesterday" when the people who felt it
+  // were already past midnight — and made the server and the browser disagree about the text.
+  const formatTime = (utcString: string) => formatDayTime(utcString, "tr");
 
   /* THE MAGNITUDE RAMP IS NOT DEFINED HERE ANY MORE (T-031c). `getMagnitudeStyle` used to sit
      at this point and return a four-step traffic-light scale in the red/orange/amber/emerald

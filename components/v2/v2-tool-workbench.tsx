@@ -68,6 +68,7 @@ import {
   Minimize2,
 } from "lucide-react";
 import { MapAttribution } from "@/components/patterns/map-attribution";
+import { formatDay } from "@/lib/text/format-date";
 
 export type ToolMode = "distance" | "coordinates" | "area";
 
@@ -1670,12 +1671,7 @@ export function V2ToolWorkbench({
                         {item.title || "İsimsiz Ölçüm"}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
-                        {new Date(item.createdAt).toLocaleDateString("tr-TR", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}{" "}
-                        &bull; {item.points.length} Nokta
+                        {formatDay(item.createdAt, "tr", "short")} &bull; {item.points.length} Nokta
                       </span>
                     </div>
                     <button

@@ -20,6 +20,7 @@ import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth } from "@/lib/auth/auth-modal.client";
 import { Trophy, ChevronLeft, ChevronRight, Lock, Sparkles } from "lucide-react";
+import { formatDay } from "@/lib/text/format-date";
 
 interface V2LeaderboardModalProps {
   readonly mode: string;
@@ -235,10 +236,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
 
                           {/* Date */}
                           <td className="py-2.5 px-3 text-right text-muted-foreground hidden md:table-cell">
-                            {new Date(entry.achievedAt).toLocaleDateString("tr-TR", {
-                              day: "numeric",
-                              month: "short",
-                            })}
+                            {formatDay(entry.achievedAt, "tr", "dayMonth")}
                           </td>
                         </tr>
                       );
