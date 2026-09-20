@@ -65,8 +65,8 @@
   "Home": {
     "metaTitle": "Coğrafya Gurmesi — Türkiye ve Dünya Coğrafyası",
     "metaDescription": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları ve haritalar. Öğrendiklerini harita oyunuyla sına.",
-    "heading": "Türkiye ve dünya <accent>coğrafyası</accent>,<br></br> tek platformda",
-    "lede": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları.",
+    "heading": "Coğrafya İçin İhtiyacın Olan Her Şey Tek Platformda",
+    "lede": "Türkiye ve Dünya atlası, video çözümlü branş denemeleri, canlı deprem & deniz telemetrisi, CBS analiz araçları ve interaktif harita oyunları — YKS hazırlığından genel coğrafyaya, hepsi tek ekranda.",
     "ctaMap": "Türkiye Haritası",
     "ctaAbout": "Platform Hakkında",
     "statProvincesLabel": "İl",
@@ -231,7 +231,7 @@
   "GameRounds": {
     "saveLabel": "Kaydet",
     "savedLabel": "Kaydedildi",
-    "signInRequiredAria": "Kaydetmek için üye ol",
+    "signInRequiredAria": "Kaydetmek için giriş yap",
     "saveError": "Kaydedilemedi. Tekrar dene.",
     "historyHeading": "Kaydettiğin Turlar",
     "historyEmpty": "Henüz kaydedilmiş bir tur yok."
@@ -239,7 +239,7 @@
   "Measurements": {
     "saveLabel": "Kaydet",
     "savedLabel": "Kaydedildi",
-    "signInRequiredAria": "Kaydetmek için üye ol",
+    "signInRequiredAria": "Kaydetmek için giriş yap",
     "saveError": "Kaydedilemedi. Tekrar dene.",
     "saveQuotaError": "Kayıtlı ölçüm sınırına ulaştın. Herhangi bir aracının listesinden bir ölçüm sil.",
     "saveTitleMismatch": "Bu ölçüm ilk kaydettiğin başlıkla kayıtlı kaldı; son düzenlemen kaydedilmedi. Şekli hafifçe değiştirip tekrar kaydetmeyi dene.",
@@ -557,7 +557,7 @@
     "label": "Favori",
     "addAria": "Favorilere ekle",
     "removeAria": "Favorilerden çıkar",
-    "signInRequiredAria": "Favorilere eklemek için üye ol",
+    "signInRequiredAria": "Favorilere eklemek için giriş yap",
     "saveError": "Kaydedilemedi. Tekrar dene.",
     "savedStatus": "Favorilere eklendi."
   },
@@ -794,8 +794,8 @@
     "examLabel": "Sınav",
     "sourcesLabel": "Kaynaklar",
     "sourceNewTab": ", yeni sekmede açılır",
-    "signInCta": "Bu videoyu izlemek için üye ol.",
-    "watchAriaSignedOut": "İzle — Deneme {no} video çözümü, üyelik gerekir",
+    "signInCta": "Bu videoyu izlemek için giriş yap.",
+    "watchAriaSignedOut": "İzle — Deneme {no} video çözümü, giriş gerekir",
     "sessionReadyAnnounce": "Giriş yaptın, videoyu izleyebilirsin.",
     "resumeLine": "Kaldığın yerden devam et — {time}",
     "watchedToggle": "İzledim",

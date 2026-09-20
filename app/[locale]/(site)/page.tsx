@@ -159,7 +159,8 @@ export default async function V2HomePage({ params }: V2PageProps) {
         <V2Hero
           provinceCount={totalProvinces}
           countryCount={totalCountries}
-          locale={locale}
+          title={t("heading")}
+          lede={t("lede")}
           provinceStatLabel={t("statProvincesLabel", { count: totalProvinces })}
           countryStatLabel={t("statCountriesLabel", { count: totalCountries })}
           modeCount={V2_GAME_MODE_COUNT}

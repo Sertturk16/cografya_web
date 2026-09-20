@@ -905,7 +905,10 @@ function pagesWithMultipleH1(): string[] {
  *      FLOOR TOKEN Ruling V spent a decision refusing to concede — so converging this page means
  *      accepting the floor, which is a decision and not a rename. Still the cheapest of the nine;
  *      not free, and the next task should be told which half is which.
- *  12. `…text-4xl sm:text-5xl lg:text-6xl font-bold …leading-[1.12]` — `v2-hero.tsx`, the home page.
+ *  12. `…text-3xl sm:text-5xl lg:text-6xl font-bold …leading-[1.12] text-balance` — `v2-hero.tsx`,
+ *      the home page. T-068 dropped the smallest step a size and added `text-balance`: the new
+ *      slogan is one long sentence rather than two short clauses, and at 320px the old 4xl set it
+ *      as six lines and 242px of heading.
  *  13. `text-xl font-bold tracking-tight text-foreground` ×2 — `profil` and `v2-profile-form`, the
  *      two branches of the `MULTIPLE_H1_EXEMPTIONS` entry below; card headings, not heroes.
  *

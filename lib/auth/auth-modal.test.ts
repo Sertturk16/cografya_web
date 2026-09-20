@@ -7,19 +7,19 @@ import { createAuthModalStore } from "./auth-modal.client";
  */
 
 describe("createAuthModalStore", () => {
-  it("starts closed, in the default register mode, with no request", () => {
+  it("starts closed, in the default login mode, with no request", () => {
     const store = createAuthModalStore();
     expect(store.getSnapshot()).toEqual({
       open: false,
       intent: "generic",
-      mode: "register",
+      mode: "login",
       requestId: null,
       resolvedRequestId: null,
     });
     expect(store.getServerSnapshot()).toEqual(store.getSnapshot());
   });
 
-  it("requestAuth opens the dialog in register mode for the given intent and returns a fresh id", () => {
+  it("requestAuth opens the dialog in login mode for the given intent and returns a fresh id", () => {
     const store = createAuthModalStore();
     const id = store.requestAuth("favorite");
     expect(typeof id).toBe("string");
@@ -27,7 +27,7 @@ describe("createAuthModalStore", () => {
     const snapshot = store.getSnapshot();
     expect(snapshot.open).toBe(true);
     expect(snapshot.intent).toBe("favorite");
-    expect(snapshot.mode).toBe("register");
+    expect(snapshot.mode).toBe("login");
     expect(snapshot.requestId).toBe(id);
     expect(snapshot.resolvedRequestId).toBeNull();
   });
@@ -45,7 +45,7 @@ describe("createAuthModalStore", () => {
     expect(store.getServerSnapshot()).toEqual({
       open: false,
       intent: "generic",
-      mode: "register",
+      mode: "login",
       requestId: null,
       resolvedRequestId: null,
     });
@@ -67,27 +67,32 @@ describe("createAuthModalStore", () => {
     expect(store.getSnapshot().intent).toBe("generic");
   });
 
-  it("requestAuth still defaults to register when no mode is given", () => {
+  /**
+   * T-071 flipped this default from `"register"` to `"login"`. Every gated control in the
+   * tree (`favorite`, `video`, `gameRound`, `measurement`) calls `requestAuth` with no mode,
+   * so this one line is what the reader meets after pressing any of them.
+   */
+  it("requestAuth defaults to login when no mode is given", () => {
     const store = createAuthModalStore();
     store.requestAuth("gameRound");
-    expect(store.getSnapshot().mode).toBe("register");
+    expect(store.getSnapshot().mode).toBe("login");
   });
 
-  it("requestAuth in login mode does not inherit a register mode left by an earlier request", () => {
+  it("requestAuth in register mode does not inherit a login mode left by an earlier request", () => {
     const store = createAuthModalStore();
     store.requestAuth("favorite");
-    expect(store.getSnapshot().mode).toBe("register");
-    store.dismissAuth();
-    store.requestAuth("generic", "login");
     expect(store.getSnapshot().mode).toBe("login");
+    store.dismissAuth();
+    store.requestAuth("generic", "register");
+    expect(store.getSnapshot().mode).toBe("register");
   });
 
   it("setMode changes only the mode, leaving the rest of the request untouched", () => {
     const store = createAuthModalStore();
     const id = store.requestAuth("favorite");
-    store.setMode("login");
+    store.setMode("register");
     const snapshot = store.getSnapshot();
-    expect(snapshot.mode).toBe("login");
+    expect(snapshot.mode).toBe("register");
     expect(snapshot.requestId).toBe(id);
     expect(snapshot.open).toBe(true);
   });
@@ -107,7 +112,7 @@ describe("createAuthModalStore", () => {
     expect(store.getSnapshot()).toEqual({
       open: false,
       intent: "generic",
-      mode: "register",
+      mode: "login",
       requestId: null,
       resolvedRequestId: null,
     });
