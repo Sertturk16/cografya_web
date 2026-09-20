@@ -65,8 +65,8 @@
   "Home": {
     "metaTitle": "Coğrafya Gurmesi — Geography of Türkiye and the World",
     "metaDescription": "Free, sourced geography pages and maps for the 81 provinces of Türkiye and the countries of the world. Test yourself with the free map game.",
-    "heading": "Türkiye and <accent>world geography</accent>,<br></br> on one platform",
-    "lede": "Free, sourced geography pages for the 81 provinces of Türkiye and the countries of the world.",
+    "heading": "Everything You Need for Geography, on One Platform",
+    "lede": "The Türkiye and world atlas, video-solved practice exams, live earthquake & sea telemetry, GIS analysis tools and interactive map games — from exam preparation to geography itself, all on one screen.",
     "ctaMap": "Explore the Map",
     "ctaAbout": "About the Platform",
     "statProvincesLabel": "{count, plural, one {Province} other {Provinces}}",
@@ -231,7 +231,7 @@
   "GameRounds": {
     "saveLabel": "Save",
     "savedLabel": "Saved",
-    "signInRequiredAria": "Sign up to save",
+    "signInRequiredAria": "Sign in to save",
     "saveError": "Couldn't save. Try again.",
     "historyHeading": "Your Saved Rounds",
     "historyEmpty": "No saved rounds yet."
@@ -239,7 +239,7 @@
   "Measurements": {
     "saveLabel": "Save",
     "savedLabel": "Saved",
-    "signInRequiredAria": "Sign up to save",
+    "signInRequiredAria": "Sign in to save",
     "saveError": "Couldn't save. Try again.",
     "saveQuotaError": "You've reached your saved-measurement limit. Delete a measurement from any of your tools' lists.",
     "saveTitleMismatch": "This measurement kept its first saved title — your latest edit wasn't saved. Adjust the shape slightly and save again.",
@@ -557,7 +557,7 @@
     "label": "Favorite",
     "addAria": "Add to favorites",
     "removeAria": "Remove from favorites",
-    "signInRequiredAria": "Sign up to add to favorites",
+    "signInRequiredAria": "Sign in to add to favorites",
     "saveError": "Couldn't save. Try again.",
     "savedStatus": "Added to your favorites."
   },
@@ -778,8 +778,8 @@
     "examLabel": "Exam",
     "sourcesLabel": "Sources",
     "sourceNewTab": ", opens in a new tab",
-    "signInCta": "Sign up to watch this video.",
-    "watchAriaSignedOut": "Watch — video solution for Practice Exam {no}, sign-up required",
+    "signInCta": "Sign in to watch this video.",
+    "watchAriaSignedOut": "Watch — video solution for Practice Exam {no}, sign-in required",
     "sessionReadyAnnounce": "Signed in — you can watch this video.",
     "resumeLine": "Continue where you left off — {time}",
     "watchedToggle": "I watched this",

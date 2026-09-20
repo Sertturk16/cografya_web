@@ -11,8 +11,10 @@ import { foldForSearch } from "@/lib/search/normalize";
 interface V2HeroProps {
   provinceCount: number;
   countryCount: number;
-  /** Locale-aware copy for the description line (TR/EN both authored below, T-026). */
-  locale: "tr" | "en";
+  /** The `<h1>`. `Home.heading`, resolved on the server — see this file's hero docblock. */
+  title: string;
+  /** The value proposition under it. `Home.lede`, same source. */
+  lede: string;
   /** "İl" / "Provinces" — reuses the Home namespace's existing bilingual stat labels. */
   provinceStatLabel: string;
   /** "Ülke" / "Countries" — same source of truth as the country-count fallback below. */
@@ -100,7 +102,8 @@ const STATIC_SHORTCUTS: SearchEntry[] = [
 export function V2Hero({
   provinceCount,
   countryCount,
-  locale,
+  title,
+  lede,
   provinceStatLabel,
   countryStatLabel,
   modeCount,
@@ -292,20 +295,22 @@ export function V2Hero({
 
         {/* Heading & Value Proposition */}
         <div className="space-y-3">
-          <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-primary leading-[1.12]">
-            Coğrafyayı Ezberleme, <br className="hidden sm:inline" />
-            <span className="text-primary bg-gradient-to-r from-primary via-primary to-primary bg-clip-text text-transparent">
-              Haritada Keşfet.
-            </span>
+          {/* THE PROMISE IS THE WHOLE PLATFORM NOW, NOT THE MAP (T-068). "Coğrafyayı
+              Ezberleme, Haritada Keşfet." named one of the six things behind it, and a reader
+              arriving for the video-solved practice exams, the live telemetry or the GIS tools
+              read a map site. The line no longer carries a hand-placed `<br>` either: the old
+              one split a two-clause slogan at its comma, and a single sentence of this length
+              has no such seam — `text-balance` evens the lines the browser chooses at every
+              width instead. */}
+          <h1 className="font-heading text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-primary leading-[1.12] text-balance">
+            {title}
           </h1>
-          {/* A single template-literal expression, not mixed JSX text + `{totalCountries}`:
-              wrapping plain JSX text across a line break right after an expression drops the
-              leading space at build time (rendered as "199dünya", T-017) — the template
-              literal sidesteps that JSX-whitespace trap entirely regardless of line wrapping. */}
-          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-            {locale === "en"
-              ? `${totalProvinces} provinces of Türkiye, ${totalCountries} countries of the world, real-time sea & earthquake telemetry, and interactive GIS map tools — all on one screen.`
-              : `Türkiye'nin ${totalProvinces} ili, ${totalCountries} dünya ülkesi, anlık deniz & deprem telemetrisi ve interaktif CBS harita araçları tek ekranda.`}
+          {/* The counts left this line with T-068 and the copy came off the two inline
+              locale branches onto `Home.lede`. The counts are not lost: the stat trio right
+              below still prints all three, live, and a sentence that lists six product areas
+              has no room to spell two of them out again. */}
+          <p className="text-muted-foreground text-base sm:text-lg leading-relaxed max-w-2xl mx-auto text-pretty">
+            {lede}
           </p>
           {/* Hero stat trio (T-026): reuses the Home namespace's existing bilingual
               statProvincesLabel/statCountriesLabel/statGameModesLabel copy (already correct in
