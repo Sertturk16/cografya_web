@@ -39,6 +39,8 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
+import { contextLabelLayout, sliceScale, viewBoxSize } from "@/lib/map/context-label-fit";
+import { parseSubpaths } from "@/lib/map/shape-geometry";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 
 export interface ProvinceItem {
@@ -159,6 +161,21 @@ const WIDE_FRAME_ISOS = new Set([
  */
 const NEW_CONTEXT_LABEL_MIN_RADIUS = 30;
 
+const TALL_VIEWBOX_SIZE = viewBoxSize(TR_CONTEXT_TALL_VIEWBOX);
+
+/** The neighbour countries that may carry a label; which of them do is decided per render scale. */
+const CONTEXT_LABEL_CANDIDATES = TALL_CONTEXT_SHAPES.filter(
+  (c) =>
+    c.iso !== "TR" &&
+    !["MK", "RS", "LB", "QN", "CY"].includes(c.iso) &&
+    (WIDE_FRAME_ISOS.has(c.iso) ||
+      (c.labelRadius >= NEW_CONTEXT_LABEL_MIN_RADIUS && c.iso in COUNTRY_NAMES_TR)),
+).map((country) => ({
+  country,
+  name: COUNTRY_NAMES_TR[country.iso] || country.geoName,
+  target: { rings: parseSubpaths(country.d), x: country.labelPoint.x, y: country.labelPoint.y },
+}));
+
 const SEA_LABELS = [
   { name: "KARADENİZ", x: 480, y: -20, fontSize: 18 },
   { name: "MARMARA DENİZİ", x: 145, y: 108, fontSize: 9.5 },
@@ -208,7 +225,8 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
    * so their `aria-label` is their only accessible name — and this page is reached in EN too.
    * A Turkish literal in an `aria-label` is a name half the readers cannot read, which is why
    * these six strings go through the catalogue while the rest of this component's inline
-   * Turkish prose does not (T-036).
+   * Turkish prose does not (T-036). The selection card's strings do too, because
+   * `MapSelectionCard` is shared with `/dunya`, whose EN card read "kişi" (T-082).
    */
   const t = useTranslations("MapExplorer");
   const [hoveredPlate, setHoveredPlate] = React.useState<string | null>(null);
@@ -235,6 +253,37 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   const dragResetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
+
+  /**
+   * CSS px per viewBox unit at zoom 1, measured from the box (T-082). `null` until the observer
+   * reports, so the server render and the first client render agree and draw the desktop labels.
+   * The observer fires once on `observe` and then only on a size change, so this costs no layout
+   * read per frame; a sub-0.1% change is not worth a render.
+   */
+  const [boxScale, setBoxScale] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    const box = mapContainerRef.current;
+    if (!box || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      const next = sliceScale(
+        box.clientWidth,
+        box.clientHeight,
+        TALL_VIEWBOX_SIZE.width,
+        TALL_VIEWBOX_SIZE.height,
+      );
+      if (!(next > 0)) return;
+      setBoxScale((prev) => (prev !== null && Math.abs(prev - next) / next < 0.001 ? prev : next));
+    });
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, []);
+  const contextLabels = React.useMemo(() => {
+    const layout = contextLabelLayout(boxScale === null ? null : boxScale * zoomLevel);
+    return {
+      fontSize: layout.fontSize,
+      items: CONTEXT_LABEL_CANDIDATES.filter(({ name, target }) => layout.fits(name, target)),
+    };
+  }, [boxScale, zoomLevel]);
 
   const provinceMap = React.useMemo(() => {
     const map = new Map<string, ProvinceItem>();
@@ -763,30 +812,27 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   labels above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1
                   dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the
                   token records in `app/globals.css` — which is the figure at full strength
-                  and the figure that renders now. */}
-                  <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
-                    {TALL_CONTEXT_SHAPES.filter(
-                      (c) =>
-                        c.iso !== "TR" &&
-                        !["MK", "RS", "LB", "QN", "CY"].includes(c.iso) &&
-                        (WIDE_FRAME_ISOS.has(c.iso) ||
-                          (c.labelRadius >= NEW_CONTEXT_LABEL_MIN_RADIUS &&
-                            c.iso in COUNTRY_NAMES_TR)),
-                    ).map((country) => {
-                      const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
-                      return (
-                        <text
-                          key={country.iso}
-                          x={country.labelPoint.x}
-                          y={country.labelPoint.y}
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          className="tracking-tight select-none"
-                        >
-                          {name}
-                        </text>
-                      );
-                    })}
+                  and the figure that renders now.
+                  Counter-scaled to a constant on-screen size, and a label is drawn only when its
+                  country can hold it at that size (T-082): a fixed 12 units measured 2.2-2.8px
+                  on a phone. `fontSize` is in viewBox units and already divides out the zoom
+                  transform on the wrapper above. */}
+                  <g
+                    fontSize={contextLabels.fontSize}
+                    className="fill-[var(--map-label)] font-sans font-bold pointer-events-none select-none"
+                  >
+                    {contextLabels.items.map(({ country, name }) => (
+                      <text
+                        key={country.iso}
+                        x={country.labelPoint.x}
+                        y={country.labelPoint.y}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        className="tracking-tight select-none"
+                      >
+                        {name}
+                      </text>
+                    ))}
                   </g>
                 </svg>
               </div>
@@ -886,11 +932,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 }
                 stats={[
                   activeProvince.population
-                    ? `${activeProvince.population.toLocaleString("tr-TR")} kişi`
+                    ? t("statPopulation", { count: activeProvince.population })
                     : null,
-                  activeProvince.areaKm2
-                    ? `${activeProvince.areaKm2.toLocaleString("tr-TR")} km²`
-                    : null,
+                  activeProvince.areaKm2 ? t("statArea", { area: activeProvince.areaKm2 }) : null,
                 ].filter((stat): stat is string => stat !== null)}
                 href={activeProvince.path as unknown as React.ComponentProps<typeof Link>["href"]}
                 exploreLabel={t("explore")}

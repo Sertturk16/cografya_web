@@ -44,6 +44,21 @@ describe("/turkiye fills a squarer box with real geography (T-079)", () => {
     }
   });
 
+  it("sizes and filters the neighbour labels by the measured render scale (T-082)", () => {
+    // A fixed `text-[12px]` in viewBox units measured 2.2-2.8px on a phone. The layout comes
+    // from `lib/map/context-label-fit.ts`, fed by a ResizeObserver on the box and the zoom level;
+    // the state starts `null` so the server render is today's desktop labels.
+    expect(turkey).toMatch(/from "@\/lib\/map\/context-label-fit"/);
+    expect(turkey).toMatch(/new ResizeObserver\(/);
+    expect(turkey).toMatch(/useState<number \| null>\(null\)/);
+    expect(turkey).toMatch(
+      /contextLabelLayout\(boxScale === null \? null : boxScale \* zoomLevel\)/,
+    );
+    expect(turkey).toMatch(/<g\s+fontSize=\{contextLabels\.fontSize\}/);
+    expect(turkey).toMatch(/layout\.fits\(name, target\)/);
+    expect(turkey).not.toMatch(/fill-\[var\(--map-label\)\][^"]*text-\[12px\]/);
+  });
+
   it("keeps WIDE_FRAME_ISOS equal to the wide artifact's countries", () => {
     // Hand-listed so the explorer does not ship the wide artifact's geometry just to read its
     // keys; this is what stops the list drifting when the wide frame is regenerated.

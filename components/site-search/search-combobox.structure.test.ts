@@ -86,6 +86,15 @@ describe("the search overlay is the repo's modal Dialog primitive", () => {
     expect(source).not.toMatch(/\btriggerRef\b/);
   });
 
+  it("reports the open state on both triggers, however the dialog was opened (T-082)", () => {
+    // Base UI sets `aria-expanded` only on the trigger that OPENED the dialog; Ctrl/Cmd+K opens
+    // it through the controlled `open` with no trigger, so both reported `false` while it was
+    // open. The explicit prop comes after Base UI's in the merge and follows `open` itself.
+    const triggers = source.match(/<DialogTrigger\b[\s\S]*?>/g) ?? [];
+    expect(triggers).toHaveLength(2);
+    for (const trigger of triggers) expect(trigger).toMatch(/aria-expanded=\{open\}/);
+  });
+
   it("closes through Base UI's Close part, and leaves Escape to the primitive", () => {
     expect(source).toMatch(/<DialogClose\b/);
     // A hand-rolled Escape handler would duplicate the primitive's and, with a

@@ -857,11 +857,9 @@ export function V2WorldMapExplorer({
                 }
                 stats={[
                   activeCountry.population
-                    ? `${activeCountry.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi`
+                    ? t("statPopulation", { count: activeCountry.population })
                     : null,
-                  activeCountry.areaKm2
-                    ? `${activeCountry.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²`
-                    : null,
+                  activeCountry.areaKm2 ? t("statArea", { area: activeCountry.areaKm2 }) : null,
                 ].filter((stat): stat is string => stat !== null)}
                 href={activeCountry.path as unknown as React.ComponentProps<typeof Link>["href"]}
                 exploreLabel={t("explore")}
@@ -1167,9 +1165,7 @@ export function V2WorldMapExplorer({
                           </div>
                           <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-2 mt-0.5">
                             {country.population && (
-                              <span>
-                                {country.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi
-                              </span>
+                              <span>{t("statPopulation", { count: country.population })}</span>
                             )}
                           </div>
                         </div>

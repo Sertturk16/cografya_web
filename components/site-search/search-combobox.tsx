@@ -374,11 +374,14 @@ export function SearchCombobox({
         open={open}
         onOpenChange={(next, details) => (next ? openSearch(details.trigger) : close())}
       >
-        {/* Desktop trigger: command bar button */}
+        {/* Desktop trigger: command bar button. Base UI marks only the trigger that OPENED the
+            dialog as expanded, and Ctrl/Cmd+K opens it with no trigger, so both triggers state
+            `aria-expanded` from `open` themselves (T-082); the explicit prop wins the merge. */}
         <DialogTrigger
           ref={desktopTriggerRef}
           data-testid="global-search"
           aria-label={t("openLabel")}
+          aria-expanded={open}
           onFocus={prefetchIndex}
           className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs"
         >
@@ -391,6 +394,7 @@ export function SearchCombobox({
           ref={mobileTriggerRef}
           data-testid="global-search-mobile"
           aria-label={t("openLabel")}
+          aria-expanded={open}
           onFocus={prefetchIndex}
           className="sm:hidden size-9 rounded-xl border border-border/80 bg-card hover:bg-muted flex items-center justify-center text-foreground transition-colors cursor-pointer shadow-2xs"
         >
