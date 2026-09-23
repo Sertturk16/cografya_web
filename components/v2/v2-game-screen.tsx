@@ -472,7 +472,7 @@ export function V2GameScreen({
           Math.round(GAME_CONFIG.fullQuestionPoints / GAME_CONFIG.halvingBase ** questionWrongs),
         );
         const finalQuestionPoints = showHint
-          ? Math.round(baseQuestionPoints * 0.5)
+          ? Math.round(baseQuestionPoints * GAME_CONFIG.hintMultiplier)
           : baseQuestionPoints;
 
         // XP bonus with streak multiplier
@@ -532,9 +532,14 @@ export function V2GameScreen({
       if (isCorrect) {
         // Correct Region Click!
         playSuccessSound(soundEnabled);
-        const earnedXP = 150 + streak * 30;
+        // Region scoring is flat per question; the hint costs the same share as in province mode.
+        const hintMultiplier = showHint ? GAME_CONFIG.hintMultiplier : 1;
+        const earnedXP = Math.round(150 * hintMultiplier) + streak * 30;
         setScore((prev) => prev + earnedXP);
-        setQuestionScores((prev) => [...prev, 100]);
+        setQuestionScores((prev) => [
+          ...prev,
+          Math.round(GAME_CONFIG.fullQuestionPoints * hintMultiplier),
+        ]);
         const newStreak = streak + 1;
         setStreak(newStreak);
         if (newStreak > bestStreak) setBestStreak(newStreak);
@@ -1041,16 +1046,10 @@ export function V2GameScreen({
                 <div className="w-full p-3 rounded-xl bg-warning/15 border border-warning/30 text-warning-strong text-xs flex items-center gap-2 animate-in fade-in duration-200">
                   <Sparkles className="size-4 text-warning-strong shrink-0" />
                   <span>
-                    {getSmartHint()}
-                    {/* Only the province ladder halves on a hint; region scoring is flat. */}
-                    {mode === "provinces" && (
-                      <>
-                        {" "}
-                        <em className="opacity-80">
-                          (İpucu kullanıldığı için bu sorunun maksimum puanı %50&apos;ye düşürüldü)
-                        </em>
-                      </>
-                    )}
+                    {getSmartHint()}{" "}
+                    <em className="opacity-80">
+                      (İpucu kullanıldığı için bu sorunun maksimum puanı %50&apos;ye düşürüldü)
+                    </em>
                   </span>
                 </div>
               )}
