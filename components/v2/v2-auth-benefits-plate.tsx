@@ -12,22 +12,22 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
     {
       icon: <Star className="size-4 text-primary" />,
       title: "Favoriler",
-      desc: "İl, ülke ve bölge sayfalarını favorilerine ekle. Hepsi Hesabım sayfasında tek listede durur.",
+      desc: "81 ilin, 199 ülkenin ve 7 bölgenin sayfalarını favorilerine ekle. Hepsi Hesabım sayfasında tek listede durur.",
     },
     {
       icon: <Trophy className="size-4 text-primary" />,
       title: "Oyun geçmişi ve rozetler",
-      desc: "Harita oyunlarında bitirdiğin turları kaydet, rozet topla, lider tablosunda nerede olduğuna bak.",
+      desc: "81 il ve bölge bulma oyunlarında bitirdiğin turları kaydet, rozet topla, lider tablosunda nerede olduğuna bak.",
     },
     {
       icon: <Layers className="size-4 text-primary" />,
       title: "Kayıtlı ölçümler",
-      desc: "Harita araçlarıyla ölçtüğün mesafeleri ve alanları hesabına kaydet, istediğin zaman listeden bul.",
+      desc: "Harita araçlarıyla Haversine formülüyle ölçtüğün mesafeleri ve küre üstünde hesaplanan alanları hesabına kaydet, istediğin zaman listeden bul.",
     },
     {
       icon: <Video className="size-4 text-primary" />,
       title: "Kitap çözüm videoları",
-      desc: "Deneme kitaplarının çözüm videolarını izle. Nerede kaldığın kaydedilir, bitirdiğin denemeyi işaretleyebilirsin.",
+      desc: "AYT Coğrafya branş denemelerinin çözüm videolarını izle. Nerede kaldığın kaydedilir, bitirdiğin denemeyi işaretleyebilirsin.",
     },
   ];
 
@@ -64,6 +64,10 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
             </div>
           ))}
         </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Şifren geri çözülemeyecek biçimde saklanır; reklam ya da takip çerezi kullanılmaz.
+        </p>
       </div>
     </div>
   );

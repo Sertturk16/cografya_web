@@ -486,6 +486,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 <span>Birinci Türk Coğrafya Kongresi</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
+                Türkiye&apos;nin bölgeleri ilk kez ulusal bir kongrede, ortak kararla belirlendi.
                 Kongre, Türkiye&apos;yi yer şekillerine, iklimine ve insanların nasıl yaşadığına
                 bakarak bölgelere ayırdı. Sınırları aşağıdaki üç ölçüt belirledi.
               </p>

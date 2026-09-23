@@ -17,6 +17,7 @@ import {
 import type { EarthquakeEvent, EarthquakeList } from "@/lib/api/types";
 import { buildEarthquakeQuery } from "@/lib/earthquake/query";
 import { bindingSentenceKey } from "@/lib/earthquake/binding-sentence";
+import { magnitudeTypeName } from "@/lib/earthquake/magnitude";
 import {
   MAGNITUDE_BUCKETS,
   MAGNITUDE_IDENTITY,
@@ -55,6 +56,7 @@ export interface V2EarthquakeItem {
   id: string;
   magnitude: number;
   magnitudeType: string;
+  magnitudeTypeRaw?: string;
   depthKm: number;
   latitude: number;
   longitude: number;
@@ -150,6 +152,7 @@ export function V2EarthquakeExplorer({
         id: item.id,
         magnitude: item.magnitude,
         magnitudeType: item.magnitudeType,
+        magnitudeTypeRaw: item.magnitudeTypeRaw,
         depthKm: item.depthKm,
         latitude: item.latitude,
         longitude: item.longitude,
@@ -193,6 +196,7 @@ export function V2EarthquakeExplorer({
             id: item.id,
             magnitude: item.magnitude,
             magnitudeType: item.magnitudeType,
+            magnitudeTypeRaw: item.magnitudeTypeRaw,
             depthKm: item.depthKm,
             latitude: item.latitude,
             longitude: item.longitude,
@@ -822,10 +826,18 @@ export function V2EarthquakeExplorer({
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">
                   <span className="text-[10px] text-muted-foreground block">Büyüklük Türü</span>
                   <span className="font-mono font-bold text-foreground sm:text-sm">
-                    {selectedEvent.magnitudeType === "Mw"
-                      ? "Moment Büyüklüğü (Mw)"
-                      : "Yerel Büyüklük (ML)"}
+                    {magnitudeTypeName(selectedEvent)}
                   </span>
+                  {selectedEvent.magnitudeType === "Mw" && (
+                    <span className="text-[9px] text-muted-foreground block">
+                      Büyük depremleri doğru ölçer
+                    </span>
+                  )}
+                  {selectedEvent.magnitudeType === "ML" && (
+                    <span className="text-[9px] text-muted-foreground block">
+                      Bilinen adıyla Richter ölçeği
+                    </span>
+                  )}
                 </div>
 
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">

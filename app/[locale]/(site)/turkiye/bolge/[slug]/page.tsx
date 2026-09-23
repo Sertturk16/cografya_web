@@ -1401,8 +1401,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             </div>
             <p className="text-xs text-muted-foreground/80 italic">
               * Nüfus: TÜİK ADNKS, 31 Aralık 2025. Yüzölçümü: Harita Genel Müdürlüğü (HGM) il
-              toplamları. Paylar, 86.092.168 kişilik Türkiye nüfusuna ve 81 ilin toplamı olan
-              780.040 km²&apos;ye göre hesaplandı.
+              toplamları; HGM bu değerleri 2014&apos;te üretilen 1:1.000.000 ölçekli haritadan
+              hesaplamıştır ve resmî nitelik taşımaz. Paylar, 86.092.168 kişilik Türkiye nüfusuna ve
+              81 ilin toplamı olan 780.040 km²&apos;ye göre hesaplandı.
             </p>
           </Card>
         </section>

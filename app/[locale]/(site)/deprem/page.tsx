@@ -119,7 +119,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
               lede={
                 <>
                   Türkiye ve yakın çevresinde son günlerde olan depremler haritada. Bir depreme
-                  tıkla; nerede, ne zaman, kaç büyüklüğünde ve ne kadar derinde olduğunu gör.
+                  tıkla; nerede, ne zaman, kaç büyüklüğünde ve ne kadar derinde olduğunu gör. Her
+                  depremin yanında hangi ilde olduğu yazar; denizdeyse hangi ilin açıklarında,
+                  Türkiye dışındaysa en yakın il. İl adıyla da arayabilirsin.
                 </>
               }
             />
@@ -264,8 +266,8 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 1. Çök - Kapan - Tutun
               </span>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Sağlam bir eşyanın yanında yere çök, başını ve enseni kapat, eşyaya tutun. Sarsıntı
-                geçene kadar böyle bekle.
+                Sağlam bir eşyanın yanında yere çök, hayat üçgeni oluştur; başını ve enseni kapat,
+                eşyaya tutun. Sarsıntı geçene kadar böyle bekle.
               </p>
             </div>
             <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1">

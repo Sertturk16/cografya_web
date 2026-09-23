@@ -797,7 +797,8 @@ export function V2MemberHub({
                 Oyun Geçmişin
               </h2>
               <p className="text-xs text-muted-foreground">
-                Harita oyunlarında bitirip kaydettiğin turlar ve kazandığın rozetler.
+                81 il ve 7 bölge harita oyunlarında bitirip kaydettiğin turlar ve kazandığın
+                rozetler.
               </p>
             </div>
 

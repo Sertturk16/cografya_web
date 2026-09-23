@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getProvincesResilient, getMapSummaryResilient } from "@/lib/api/provinces";
-import { getMarinePointsSafe } from "@/lib/api/marine";
-import { coastalPlateCodes } from "@/lib/marine/coastal";
+import { hasSeaCoast } from "@/lib/geo/coastal-provinces";
 import { regionSlug } from "@/lib/game/region-slug";
 import type { ProvinceListItem, ProvinceMapSummary } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
@@ -72,13 +71,10 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Turkiye" });
 
-  const [rawProvinces, rawSummary, rawMarinePoints] = await Promise.all([
+  const [rawProvinces, rawSummary] = await Promise.all([
     getProvincesResilient(),
     getMapSummaryResilient(),
-    getMarinePointsSafe(),
   ]);
-
-  const coastalSet = coastalPlateCodes(rawMarinePoints);
 
   const summaryMap = new Map<string, ProvinceMapSummary>();
   for (const s of rawSummary) {
@@ -101,7 +97,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
       populationYear: sum?.populationYear ?? null,
       areaKm2: sum?.areaKm2 ?? null,
       districtCount: sum?.districtCount ?? null,
-      coastal: coastalSet.has(prov.plateCode),
+      coastal: hasSeaCoast(prov.plateCode),
     };
   });
 
@@ -251,7 +247,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                   <CardTitle className="text-xl">Dilsiz Haritada İl Bul</CardTitle>
                   <CardDescription className="text-xs leading-relaxed">
                     Sorulan yeri haritada bulup puan topla. Üç mod var: bölgeleri bul, 81 ili bul ya
-                    da bir bölge seçip yalnız onun illerini bul.
+                    da bir bölge seçip yalnız onun illerini bul. İstersen 60 saniyeye karşı oyna.
                   </CardDescription>
                   <div className="pt-3 flex items-center text-xs font-semibold text-secondary group-hover:translate-x-1 transition-transform">
                     <span>Oyunu Aç</span>
@@ -270,8 +266,9 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                   </div>
                   <CardTitle className="text-xl">Denizler ve Kıyılar</CardTitle>
                   <CardDescription className="text-xs leading-relaxed">
-                    Dört denizi karşılaştır. Kıyı illerinin açığında seçilen 30 noktada su
-                    sıcaklığı, dalga ve rüzgâr izlenir; sıcaklık verisi Copernicus&apos;tan gelir.
+                    Dört denizi karşılaştır. Türkiye&apos;nin 28 kıyı ilinden 27&apos;sinin açığında
+                    seçilen 30 noktada su sıcaklığı, dalga ve rüzgâr izlenir; sıcaklık verisi
+                    Copernicus&apos;tan gelir.
                   </CardDescription>
                   <div className="pt-3 flex items-center text-xs font-semibold text-accent group-hover:translate-x-1 transition-transform">
                     <span>Denizlere Bak</span>

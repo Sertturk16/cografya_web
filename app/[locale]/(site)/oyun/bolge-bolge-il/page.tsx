@@ -105,8 +105,8 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
             Bir Bölge Seç
           </h1>
           <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-            Harita yalnız seçtiğin bölgeyi gösterir; komşu bölgeler ve Türkiye dışı ekrandan çıkar.
-            Sorular da o bölgenin illerinden gelir.
+            Harita yalnız seçtiğin bölgeyi gösterir ve onu ekranı dolduracak kadar büyütür; komşu
+            bölgeler ve Türkiye dışı ekrandan çıkar. Sorular da o bölgenin illerinden gelir.
           </p>
         </div>
 

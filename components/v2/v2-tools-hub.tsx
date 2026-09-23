@@ -193,8 +193,9 @@ export function V2ToolsHub() {
             Ne İşine Yarar?
           </h3>
           <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed max-w-3xl">
-            Ders kitabındaki hesapları haritada kendin sına ya da bir gezi rotasını çıkar. Birkaç
-            örnek:
+            Harita, ölçek, enlem-boylam ve Türkiye&apos;nin coğrafi konumu 9. sınıf coğrafya
+            dersinde işlenir. Ders kitabındaki hesapları haritada kendin sına ya da bir gezi
+            rotasını çıkar. Birkaç örnek:
           </p>
         </div>
 
@@ -215,7 +216,9 @@ export function V2ToolsHub() {
               111 ile çarp, sonucu aracınkiyle karşılaştır.
               <br />
               &bull; <strong>Yerel saat farkı:</strong> İki ilin boylamını oku. Her 1° fark 4 dakika
-              eder.
+              eder. Ders kitabındaki örnekte Ankara 33°, Iğdır 45° doğu boylamında alınır: 12 × 4 =
+              48 dakika. İl merkezlerini araçla ölçersen fark yaklaşık 11°, yani yaklaşık 45 dakika
+              çıkar.
               <br />
               &bull; <strong>Sınırın ayrıntısı:</strong> Bir gölü önce 4, sonra 12 noktayla çiz;
               alanın ve çevrenin nasıl değiştiğine bak.

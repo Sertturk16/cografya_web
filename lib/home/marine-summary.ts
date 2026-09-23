@@ -1,6 +1,6 @@
 import type { MarineOverview, MarinePointListItem, MarineValue } from "@/lib/api/types";
 import { basinLabel, groupPointsByBasin, type SeaBasin } from "@/lib/marine/basins";
-import { coastalPlateCodes } from "@/lib/marine/coastal";
+import { marinePointPlateCodes } from "@/lib/marine/coastal";
 import { marinePublishableBlocks } from "@/lib/marine/overview";
 
 /**
@@ -163,16 +163,16 @@ export function buildMarineHomeSummary(
  * An empty list yields all zeroes, and the caller then prints its count-less sentence rather
  * than "0 denizde 0 nokta".
  *
- * The province count is `coastalPlateCodes()` — the SAME function the province pages' coastal
- * gate reads — rather than a second `new Set(…plateCode)` written here. "How many provinces
- * have a coast" is one question, and two independent derivations of it would drift the day
- * that rule changes (`lib/marine/coastal.ts` owns it).
+ * The province count is `marinePointPlateCodes()` — the SAME function the province pages'
+ * marine gate reads — rather than a second `new Set(…plateCode)` written here. It counts the
+ * provinces that HAVE A POINT (27), not the provinces with a coast (28, Edirne has no point;
+ * see `lib/geo/coastal-provinces.ts`), so the sentence that prints it says "açığında".
  */
 export function marineScope(points: readonly MarinePointListItem[]): MarineScope {
   return {
     basinCount: new Set(points.map((point) => point.seaBasin)).size,
     pointCount: points.length,
-    provinceCount: coastalPlateCodes(points).size,
+    provinceCount: marinePointPlateCodes(points).size,
   };
 }
 

@@ -381,9 +381,10 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
             <div className="text-sm text-muted-foreground space-y-3 leading-relaxed">
               <p>
                 <strong>Kıta</strong>, çevresi çoğunlukla okyanus ve denizlerle çevrili, altında
-                kalın ve eski bir kıtasal kabuk bulunan büyük kara parçasıdır. Yine de kaç kıta
-                olduğu yalnız jeolojiyle belirlenmez. Sayı biraz da tarihin, kültürün ve okulda
-                nasıl öğretildiğinin sonucudur.
+                kalın ve eski bir kıtasal kabuk bulunan büyük kara parçasıdır. Kıtaların çoğunun
+                çekirdeğinde, çok eski ve sağlam kayalardan oluşan kalkanlar, yani kratonlar
+                bulunur. Yine de kaç kıta olduğu yalnız jeolojiyle belirlenmez. Sayı biraz da
+                tarihin, kültürün ve okulda nasıl öğretildiğinin sonucudur.
               </p>
 
               <p>

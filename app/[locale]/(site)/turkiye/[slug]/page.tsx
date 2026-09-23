@@ -13,6 +13,7 @@ import { V2ProvinceLocatorMap } from "@/components/v2/v2-province-locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,8 @@ import {
   getProvincesResilient,
 } from "@/lib/api/provinces";
 import type { ProvinceDetail, ProvinceListItem } from "@/lib/api/types";
-import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
+import { hasMarinePoint, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
+import { hasSeaCoast } from "@/lib/geo/coastal-provinces";
 import { Link } from "@/i18n/navigation";
 import { routing, type AppPathname, type Locale } from "@/i18n/routing";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
@@ -258,8 +260,11 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
   }
 
   const marinePoints = await marinePointsPromise;
-  const isCoastal = isCoastalPlate(marinePoints, province.plateCode);
-  const [marineLayers, marineConditions] = isCoastal
+  // Marine data is fetched only for provinces with a reference point; the "Kıyı İli" badge
+  // reads the fixed coastal list instead, because Edirne has a coast but no point.
+  const provinceHasMarinePoint = hasMarinePoint(marinePoints, province.plateCode);
+  const isCoastal = hasSeaCoast(province.plateCode);
+  const [marineLayers, marineConditions] = provinceHasMarinePoint
     ? await Promise.all([
         getMarineLayersSafe(),
         getMarineProvinceConditionsSafe(province.plateCode),
@@ -455,7 +460,11 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {/* 1. Nüfus */}
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Nüfus</span>
+                <span className="text-xs font-medium">
+                  {province.populationYear !== null
+                    ? `Nüfus (${province.populationYear})`
+                    : "Nüfus"}
+                </span>
                 <Users className="size-4 text-primary" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
@@ -523,6 +532,19 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               </div>
             </Card>
           </div>
+
+          {/* The providers behind the four cards above. Only the base figures and, when the
+              Köppen row is on screen, MGM's classification: the other sections carry their own
+              source lines (ERA5-Land, ACAG, AFAD, Copernicus) where they render. */}
+          <p className={SOURCE_NOTE}>
+            <span className="font-semibold text-foreground">{t("sourcesLabel")}: </span>
+            {t("sources", {
+              year: province.populationYear !== null ? String(province.populationYear) : "none",
+            })}
+            {climate.citeClassSource && (
+              <> {t("sourcesExtra", { list: t("sourcesClimateClass") })}</>
+            )}
+          </p>
         </PageContainer>
       </section>
 

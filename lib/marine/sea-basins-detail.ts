@@ -216,7 +216,7 @@ export const SEA_BASINS_DETAIL: Record<
     humanGeography: {
       title: "Dağla Deniz Arasına Sıkışan Şehirler",
       content:
-        "Kuzey Anadolu Dağları kıyının hemen arkasından dik yükseldiği için tarım alanları ve yerleşmeye uygun düzlükler dar bir şeride sıkışmıştır. Bu yüzden Trabzon, Rize, Giresun ve Ordu gibi şehir merkezleri kıyı boyunca dizilir. Kırsalda ise eğimli arazi ve bol su, Türkiye'nin en tipik dağınık köy yerleşmesini ortaya çıkarmıştır.",
+        "Kuzey Anadolu Dağları kıyının hemen arkasından dik yükseldiği için tarım alanları ve yerleşmeye uygun düzlükler dar bir şeride sıkışmıştır. Bu yüzden Trabzon, Rize, Giresun ve Ordu gibi şehir merkezleri kıyı boyunca dizilir. 2025'te Karadeniz Bölgesi nüfusunun yaklaşık %72'si denize kıyısı olan 11 ilde yaşıyordu. Kırsalda ise eğimli arazi ve bol su, Türkiye'nin en tipik dağınık köy yerleşmesini ortaya çıkarmıştır.",
       points: [
         "Şehir merkezleri ve sanayi, denizden doldurulan alanlara ve vadi tabanlarına yığılmış.",
         "Karadeniz Sahil Yolu kıyı boyunca ulaşımı sağlar ama doğal kıyı çizgisini de değiştirmiştir.",
@@ -364,7 +364,7 @@ export const SEA_BASINS_DETAIL: Record<
     environmentalIssues: {
       title: "Atıkla Yüklenen Kapalı Deniz",
       content:
-        "Marmara'nın iki katlı yapısı, yüzeyle dip arasında oksijen alışverişini zaten sınırlar. Buna çevresindeki büyük şehirlerin ve sanayinin arıtılmadan ya da yetersiz arıtılarak denize bırakılan atıkları eklenince deniz azot ve fosforla aşırı yüklendi. En çarpıcı sonuç 2021'de görüldü: müsilaj, yani deniz salyası, denizin büyük bölümünü kapladı ve tabandaki canlı çeşitliliğini boğdu.",
+        "Marmara'nın iki katlı yapısı, yüzeyle dip arasında oksijen alışverişini zaten sınırlar. Buna, 2025'te yaklaşık 25 milyon kişinin yaşadığı yedi kıyı ilindeki şehirlerin ve sanayinin arıtılmadan ya da yetersiz arıtılarak denize bırakılan atıkları eklenince deniz azot ve fosforla aşırı yüklendi. En çarpıcı sonuç 2021'de görüldü: müsilaj, yani deniz salyası, denizin büyük bölümünü kapladı ve tabandaki canlı çeşitliliğini boğdu.",
       risks: [
         "Müsilaj: kirlilik ve ısınan suyla birlikte bitkisel plankton aşırı çoğalır.",
         "Dipte oksijensizlik: derin çukurlarda oksijen, canlıların zorlandığı düzeye iner.",
@@ -407,11 +407,12 @@ export const SEA_BASINS_DETAIL: Record<
       salinity: "‰33 – ‰37",
       coastalLengthTr: "2.805 km",
       coastalLengthWithIslandsTr: "3.484 km",
-      provincesCount: 5,
+      provincesCount: 6,
       stationsCount: 5,
     },
     stationSlugs: ["canakkale-ege", "balikesir-ege", "izmir", "aydin", "mugla"],
     coastalProvinces: [
+      { plate: "22", name: "Edirne (Enez/Saros)", slug: "edirne" },
       { plate: "17", name: "Çanakkale (Ege/Bozcaada)", slug: "canakkale" },
       { plate: "10", name: "Balıkesir (Ayvalık/Edremit)", slug: "balikesir" },
       { plate: "35", name: "İzmir (Çeşme/Karaburun)", slug: "izmir" },
@@ -545,11 +546,12 @@ export const SEA_BASINS_DETAIL: Record<
       salinity: "‰38 – ‰39 (en yüksek)",
       coastalLengthTr: "1.577 km",
       coastalLengthWithIslandsTr: "1.707 km",
-      provincesCount: 4,
+      provincesCount: 5,
       stationsCount: 4,
     },
     stationSlugs: ["antalya", "mersin", "adana", "hatay"],
     coastalProvinces: [
+      { plate: "48", name: "Muğla (Fethiye/Dalaman)", slug: "mugla" },
       { plate: "07", name: "Antalya (Alanya/Kaş)", slug: "antalya" },
       { plate: "33", name: "Mersin (Silifke/Anamur)", slug: "mersin" },
       { plate: "01", name: "Adana (Karataş/Yumurtalık)", slug: "adana" },
