@@ -14,6 +14,8 @@ import {
   type RegionLabels,
 } from "@/lib/game/target";
 import { SLUG_PLACEHOLDER } from "@/lib/game/province-url";
+import { regionHint } from "@/lib/game/region-hints";
+import { REGION_KEYS } from "@/lib/game/region-slug";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
@@ -612,7 +614,9 @@ export function V2GameScreen({
   const getSmartHint = () => {
     if (!currentTarget) return "";
     if (mode === "regions") {
-      return `İpucu: Bu coğrafi bölgenin doğru sınırlarını bulmak için kıyı şeritleri ve komşu havzaları referans alın.`;
+      // Region mode's target id IS the region key (see `buildRegionTargetSet`).
+      const region = REGION_KEYS.find((key) => key === currentTarget.id);
+      return region ? regionHint(region, regionLabels) : "";
     }
 
     const shapeEntry = targetEntries.find((s) => s.plateCode === currentTarget.id);

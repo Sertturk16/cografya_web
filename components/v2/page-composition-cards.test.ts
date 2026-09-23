@@ -586,7 +586,8 @@ export const HAND_DRAWN_CARDS = 188;
 // 161 → **162** in T-073: the terms page's English-reader notice
 // (`rounded-2xl border border-border bg-muted`), a well and not a card — it states which
 // language of the text binds, it is not a panel the page offers.
-export const HAND_DRAWN_WELLS = 162;
+// 162 → **161** in T-089: `/oyun`'s "Yeni Oyun Özellikleri" strip, a `bg-muted/40` well, deleted.
+export const HAND_DRAWN_WELLS = 161;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -598,8 +599,10 @@ export const HAND_DRAWN_WELLS = 162;
  * 233 → **234** in T-079, net of three moves: the two explorers' shared selection-card spelling
  * is gone (−1), `MapSelectionCard`'s grid is a new one (+1), and `/dunya`'s toolbar no longer
  * matches `/turkiye`'s (+1) — below `sm` it is a row above the map (`mb-2 ml-auto w-fit`)
- * rather than a bar floating on it, which `/turkiye` still is. */
-export const HAND_DRAWN_CARD_SPELLINGS = 234;
+ * rather than a bar floating on it, which `/turkiye` still is.
+ *
+ * 234 → **233** in T-089: the deleted `/oyun` feature strip was the only element with its spelling. */
+export const HAND_DRAWN_CARD_SPELLINGS = 233;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
