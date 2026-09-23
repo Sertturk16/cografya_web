@@ -190,4 +190,92 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       expect(code).toContain('tMeasurements("minPointsHint", { count: minPointsToSave })');
     });
   });
+
+  /**
+   * T-077: a failed save used to be dropped (`if (res.ok)` and nothing else), and a measurement
+   * with more points than the api's flat bound failed the same silent way. The mapping from the
+   * BFF answer to an error kind lives in `lib/measurements/save-error.ts` and is tested there;
+   * this pins that the workbench actually wires it up.
+   */
+  describe("save failures and the upper point bound (T-077)", () => {
+    const code = stripComments(source);
+
+    function sliceFrom(start: string, end: string): string {
+      const from = code.indexOf(start);
+      expect(from, `${start} not found`).toBeGreaterThan(-1);
+      const to = code.indexOf(end, from);
+      expect(to, `${end} not found after ${start}`).toBeGreaterThan(from);
+      return code.slice(from, to);
+    }
+
+    const handler = (): string => sliceFrom("const handleSaveMeasurement = ", "\n  };");
+
+    it("records a failed save, including a thrown one, instead of dropping it", () => {
+      const body = handler();
+      expect(body).toContain("await saveMeasurement(");
+      expect(body).toMatch(
+        /if \(res\.ok\) \{[\s\S]*\} else \{\s*setSaveFailure\(\{ code: res\.code,/,
+      );
+      expect(body).toMatch(/catch \{\s*setSaveFailure\(\{ code: "failed",/);
+    });
+
+    it("renders the failure through the shared message map, as an alert", () => {
+      expect(code).toContain('from "@/lib/measurements/save-error"');
+      const at = code.indexOf("tMeasurements(SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure])");
+      expect(at, "the failure copy is not rendered").toBeGreaterThan(-1);
+      const element = code.slice(code.lastIndexOf("<p", at), at);
+      expect(element).toContain('role="alert"');
+    });
+
+    it("hides a failure once the points or the tool change, and clears it on retry", () => {
+      expect(code).toMatch(
+        /saveFailure !== null &&\s*saveFailure\.points === points &&\s*saveFailure\.type === measurementType/,
+      );
+      expect(handler()).toContain("setSaveFailure(null);");
+    });
+
+    it("cannot double-submit while a save is in flight", () => {
+      const body = handler();
+      expect(body).toContain("if (saveInFlightRef.current) return;");
+      expect(body).toContain("saveInFlightRef.current = true;");
+      expect(body).toMatch(
+        /finally \{\s*saveInFlightRef\.current = false;\s*setIsSaving\(false\);/,
+      );
+      expect(sliceFrom("onClick={handleSaveMeasurement}", ">")).toContain("isLoading={isSaving}");
+    });
+
+    it("replays the same clientMeasurementId when retrying the unchanged measurement", () => {
+      const body = handler();
+      expect(body).toContain("pendingSaveRef.current");
+      expect(body).toContain("crypto.randomUUID()");
+      expect(body).toMatch(/if \(res\.ok\) \{\s*pendingSaveRef\.current = null;/);
+    });
+
+    it("explains an over-limit shape with its own hint", () => {
+      expect(code).toContain("measurementPointCountIssue(measurementType, points.length)");
+      expect(code).toContain('tMeasurements("maxPointsHint", { count: maxPointsToSave })');
+    });
+
+    it("takes every save-row string from the Measurements catalogue", () => {
+      for (const key of [
+        "saveLabel",
+        "savedLabel",
+        "savingLabel",
+        "saveSuccess",
+        "signInHint",
+        "titleLabel",
+      ]) {
+        expect(code, key).toContain(`tMeasurements("${key}")`);
+      }
+      for (const literal of [
+        '"Kaydet"',
+        '"Kaydedildi!"',
+        "Ölçüm bulut arşivine başarıyla kaydedildi.",
+        "Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın.",
+        "Ölçüm Başlığı (Opsiyonel)...",
+      ]) {
+        expect(code, literal).not.toContain(literal);
+      }
+    });
+  });
 });

@@ -44,7 +44,16 @@ import {
   removeMeasurement,
   type MeasurementRecord,
 } from "@/lib/measurements/client";
-import { MEASUREMENT_MIN_POINTS, canSaveMeasurement } from "@/lib/measurements/shape";
+import {
+  MEASUREMENT_MAX_POINTS,
+  MEASUREMENT_MIN_POINTS,
+  canSaveMeasurement,
+  measurementPointCountIssue,
+} from "@/lib/measurements/shape";
+import {
+  SAVE_ERROR_MESSAGE_KEY,
+  type SaveMeasurementErrorCode,
+} from "@/lib/measurements/save-error";
 import {
   Compass,
   MapPin,
@@ -190,14 +199,42 @@ export function V2ToolWorkbench({
   const [saveTitle, setSaveTitle] = React.useState<string>("");
   const [savedList, setSavedList] = React.useState<readonly MeasurementRecord[]>([]);
   const [saveSuccess, setSaveSuccess] = React.useState<boolean>(false);
+  const [isSaving, setIsSaving] = React.useState<boolean>(false);
+  // State flips on the next render; the ref closes the window in which a second click could
+  // still reach the handler before the button disables.
+  const saveInFlightRef = React.useRef(false);
+  // A failure is pinned to the exact points array and type it was about. Any edit (a new point,
+  // undo, clear, a preset, a tool switch) replaces `points` or the type, so the message goes away
+  // without an effect having to watch for it.
+  const [saveFailure, setSaveFailure] = React.useState<{
+    readonly code: SaveMeasurementErrorCode;
+    readonly points: readonly PointWithSvg[];
+    readonly type: MeasurementType;
+  } | null>(null);
+  // The idempotency key of the last attempt, reused when the same unchanged measurement is
+  // retried: a save that timed out on the client may still have landed, and the api answers a
+  // replayed `clientMeasurementId` with the existing row instead of a duplicate.
+  const pendingSaveRef = React.useRef<{
+    readonly id: string;
+    readonly points: readonly PointWithSvg[];
+    readonly type: MeasurementType;
+    readonly title: string;
+  } | null>(null);
   const tMeasurements = useTranslations("Measurements");
   const saveHintId = React.useId();
   const measurementType: MeasurementType =
     activeTool === "distance" ? "distance" : activeTool === "area" ? "area" : "coordinate";
-  // The api refuses an under-count shape (a one-point distance, a two-point area) with a 400,
-  // so the save button is bound to the same per-type rule instead of failing after the click.
+  // The api refuses an under-count shape (a one-point distance, a two-point area) with a 400, and
+  // the BFF refuses more than MEASUREMENT_POINTS_MAX points, so the save button is bound to the
+  // same per-type rule instead of failing after the click.
   const canSave = canSaveMeasurement(measurementType, points.length);
+  const pointCountIssue = measurementPointCountIssue(measurementType, points.length);
   const minPointsToSave = MEASUREMENT_MIN_POINTS[measurementType];
+  const maxPointsToSave = MEASUREMENT_MAX_POINTS[measurementType];
+  const visibleSaveFailure =
+    saveFailure !== null && saveFailure.points === points && saveFailure.type === measurementType
+      ? saveFailure.code
+      : null;
 
   // Zoom & Pan state
   const [zoomLevel, setZoomLevel] = React.useState<number>(1);
@@ -848,6 +885,7 @@ export function V2ToolWorkbench({
   // Save measurement to cloud archive (/api/measurements)
   const handleSaveMeasurement = async () => {
     if (!canSave) return;
+    if (saveInFlightRef.current) return;
 
     if (authState !== "authenticated") {
       requestAuth("measurement");
@@ -858,19 +896,46 @@ export function V2ToolWorkbench({
       saveTitle.trim() ||
       `${activeTool === "distance" ? "Mesafe" : activeTool === "area" ? "Alan" : "Koordinat"} Ölçümü`;
 
-    const payload = {
-      type: measurementType,
-      points: points.map((p) => ({ lon: p.geo.lon, lat: p.geo.lat })),
-      title,
-      clientMeasurementId: crypto.randomUUID(),
-    };
+    saveInFlightRef.current = true;
+    setIsSaving(true);
+    setSaveFailure(null);
+    setSaveSuccess(false);
+    try {
+      const pending = pendingSaveRef.current;
+      const clientMeasurementId =
+        pending !== null &&
+        pending.points === points &&
+        pending.type === measurementType &&
+        pending.title === title
+          ? pending.id
+          : crypto.randomUUID();
+      pendingSaveRef.current = { id: clientMeasurementId, points, type: measurementType, title };
 
-    const res = await saveMeasurement(payload);
-    if (res.ok) {
-      setSavedList((prev) => [res.measurement, ...prev.slice(0, 19)]);
-      setSaveTitle("");
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2500);
+      const res = await saveMeasurement({
+        type: measurementType,
+        points: points.map((p) => ({ lon: p.geo.lon, lat: p.geo.lat })),
+        title,
+        clientMeasurementId,
+      });
+      if (res.ok) {
+        pendingSaveRef.current = null;
+        // A replayed id returns the row the first attempt already created; never list it twice.
+        setSavedList((prev) => [
+          res.measurement,
+          ...prev.filter((item) => item.id !== res.measurement.id).slice(0, 19),
+        ]);
+        setSaveTitle("");
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2500);
+      } else {
+        setSaveFailure({ code: res.code, points, type: measurementType });
+      }
+    } catch {
+      // `saveMeasurement` never throws; `crypto.randomUUID` does outside a secure context.
+      setSaveFailure({ code: "failed", points, type: measurementType });
+    } finally {
+      saveInFlightRef.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -1601,7 +1666,8 @@ export function V2ToolWorkbench({
                   type="text"
                   value={saveTitle}
                   onChange={(e) => setSaveTitle(e.target.value)}
-                  placeholder="Ölçüm Başlığı (Opsiyonel)..."
+                  placeholder={tMeasurements("titleLabel")}
+                  aria-label={tMeasurements("titleLabel")}
                   className="h-10 text-xs rounded-xl"
                 />
                 <Button
@@ -1609,6 +1675,7 @@ export function V2ToolWorkbench({
                   className="h-10 px-4 text-xs font-bold text-white shrink-0 shadow-xs"
                   onClick={handleSaveMeasurement}
                   disabled={!canSave}
+                  isLoading={isSaving}
                   aria-describedby={canSave ? undefined : saveHintId}
                   leftIcon={
                     saveSuccess ? (
@@ -1618,12 +1685,23 @@ export function V2ToolWorkbench({
                     )
                   }
                 >
-                  {saveSuccess ? "Kaydedildi!" : "Kaydet"}
+                  {isSaving
+                    ? tMeasurements("savingLabel")
+                    : saveSuccess
+                      ? tMeasurements("savedLabel")
+                      : tMeasurements("saveLabel")}
                 </Button>
               </div>
               {!canSave && (
                 <p id={saveHintId} className="text-[11px] text-muted-foreground">
-                  {tMeasurements("minPointsHint", { count: minPointsToSave })}
+                  {pointCountIssue === "tooMany"
+                    ? tMeasurements("maxPointsHint", { count: maxPointsToSave })
+                    : tMeasurements("minPointsHint", { count: minPointsToSave })}
+                </p>
+              )}
+              {visibleSaveFailure && (
+                <p role="alert" className="text-[11px] text-destructive font-medium">
+                  {tMeasurements(SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure])}
                 </p>
               )}
               {saveSuccess && (
@@ -1632,12 +1710,12 @@ export function V2ToolWorkbench({
                   aria-live="polite"
                   className="text-[11px] text-success-strong font-medium"
                 >
-                  Ölçüm bulut arşivine başarıyla kaydedildi.
+                  {tMeasurements("saveSuccess")}
                 </p>
               )}
               {authState !== "authenticated" && (
                 <p className="text-[11px] text-muted-foreground mt-1.5">
-                  Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın.
+                  {tMeasurements("signInHint")}
                 </p>
               )}
             </div>

@@ -13,6 +13,7 @@ import {
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { CreateMeasurementRequest, Measurement } from "@/lib/api/types";
+import { MEASUREMENT_POINTS_MAX } from "./shape";
 
 /**
  * The web half of the measurements BFF proxy (UYELIK-12 plan §5.2) — a FIFTH small
@@ -57,22 +58,17 @@ const measurementPointSchema = z.object({
  * every request-side mirror in this repo mirrors a DTO's own flat per-field bounds and
  * never a business rule the api enforces server-side.
  *
- * WHAT THE UI ACTUALLY GUARANTEES, corrected. This used to say the UI "can never construct
- * an under-count payload by construction", citing a `minExportPoints` gate in
- * `components/tools/tool-island.tsx`. That component was deleted (T-042, unreachable from any
- * route) and the identifier died with it; the live save path is `handleSaveMeasurement` in
- * `components/v2/v2-tool-workbench.tsx`, whose only guard is an empty-list early return. That
- * enforces ≥ 1 point — exactly what `.min(1)` below already enforces — and NOTHING about the
- * per-type minimum, so a one-point `distance` or a two-point `area` IS constructible from the
- * UI today. The cross-field minimum is therefore enforced by the API ALONE, which answers it
- * with `errors.measurements.invalidShape` as a 400; this schema's job is only to keep a
- * malformed or oversized body (`.min(1).max(20)`, the per-field bounds) from becoming an
- * outbound request at all. Stated plainly because the old sentence read as a second line of
- * defence that does not exist.
+ * WHAT THE UI GUARANTEES. The live save path (`handleSaveMeasurement` in
+ * `components/v2/v2-tool-workbench.tsx`) gates on `canSaveMeasurement` from
+ * `lib/measurements/shape.ts`, which carries both the per-type minimum and the maximum. The
+ * upper bound below is imported from that same module (`MEASUREMENT_POINTS_MAX`), so the UI
+ * cannot offer a save this schema would refuse. The minimum is still not re-checked here: the
+ * api owns it and answers a violation with `errors.measurements.invalidShape` as a 400. This
+ * schema's job is only to keep a malformed or oversized body from becoming an outbound request.
  */
 const createMeasurementRequestSchema = z.object({
   type: z.enum(["distance", "area", "coordinate"]),
-  points: z.array(measurementPointSchema).min(1).max(20),
+  points: z.array(measurementPointSchema).min(1).max(MEASUREMENT_POINTS_MAX),
   title: z.string().max(200).nullable().optional(),
   clientMeasurementId: z
     .string()
