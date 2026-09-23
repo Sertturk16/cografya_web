@@ -26,6 +26,7 @@ import {
   Info,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 
 export const revalidate = 86400;
 
@@ -149,7 +150,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 <span
                   className={`font-heading text-2xl sm:text-3xl font-bold block ${FAULT_IDENTITY.daf.label}`}
                 >
-                  550 km
+                  580 km
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
                   DAF&apos;ın uzunluğu
@@ -159,10 +160,10 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 <span
                   className={`font-heading text-2xl sm:text-3xl font-bold block ${FAULT_IDENTITY.bafs.label}`}
                 >
-                  ~800 km
+                  ~10
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  BAFS kuşağının uzunluğu
+                  BAFS&apos;taki büyük graben sayısı
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
@@ -204,10 +205,10 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 </div>
                 <div className="px-4 py-2 rounded-2xl bg-muted/50 border border-border/80 text-right">
                   <span className="text-[10px] text-muted-foreground font-medium block">
-                    Uzunluğu
+                    {fault.lengthKm !== null ? "Uzunluğu" : fault.extent?.label}
                   </span>
                   <span className="font-heading text-xl font-bold text-foreground">
-                    ~{fault.lengthKm} km
+                    {fault.lengthKm !== null ? `~${fault.lengthKm} km` : fault.extent?.value}
                   </span>
                 </div>
               </div>
@@ -352,6 +353,11 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             </article>
           ))}
         </div>
+
+        <p className={SOURCE_NOTE}>
+          Kaynaklar: fayların uzunluğu ve parçaları MTA; 2020 ve 2023 depremlerinin büyüklüğü ve can
+          kaybı AFAD; 1999 ve 2023 depremlerinin kırıkları USGS.
+        </p>
 
         {/* Back to Live Monitor CTA */}
         <div className="p-6 rounded-3xl border border-border bg-gradient-to-r from-card via-muted/30 to-card flex flex-col sm:flex-row items-center justify-between gap-4">

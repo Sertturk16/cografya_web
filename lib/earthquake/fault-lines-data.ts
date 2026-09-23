@@ -28,7 +28,13 @@ export interface FaultLineItem {
   shortName: string;
   type: string;
   riskLevel: "Çok Yüksek" | "Yüksek";
-  lengthKm: number;
+  /**
+   * Approximate length in km, or `null` for a zone that is a network rather than one line.
+   * BAFS has no published single length; `extent` says what it has instead.
+   */
+  lengthKm: number | null;
+  /** What the header box shows when `lengthKm` is `null`: a label and a value. */
+  extent?: { label: string; value: string };
   badgeClass: string;
   borderClass: string;
   accentColor: string;
@@ -107,7 +113,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 1939,
         place: "Erzincan",
         magnitude: "Ms 7.9",
-        note: "2023 depremlerine kadar Cumhuriyet döneminin en çok can alan depremiydi. 33 binden fazla kişi hayatını kaybetti. Yerde yaklaşık 350 km uzunluğunda bir kırık açıldı.",
+        note: "2023 depremlerine kadar Cumhuriyet döneminin en çok can alan depremiydi. Yaklaşık 33 bin kişi hayatını kaybetti. Yerde yaklaşık 360 km uzunluğunda bir kırık açıldı.",
       },
       {
         year: 1942,
@@ -131,7 +137,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 1999,
         place: "Kocaeli (Gölcük)",
         magnitude: "Mw 7.4",
-        note: "17 Ağustos 1999. Sanayinin yoğun olduğu Marmara'da 17 binden fazla can kaybı oldu. Fay yüzeyde 120 km boyunca kırıldı, iki yan 5,5 metreye kadar kaydı.",
+        note: "17 Ağustos 1999. Sanayinin yoğun olduğu Marmara'da 17 binden fazla can kaybı oldu. Fay yüzeyde yaklaşık 145 km boyunca kırıldı, iki yan 5,2 metreye kadar kaydı.",
       },
       {
         year: 1999,
@@ -141,7 +147,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
       },
     ],
     seismicGapAndRisk:
-      "1999 Gölcük depreminde boşalan gerilimin bir kısmı Marmara Denizi'nin altındaki kuzey parçaya aktarıldı. Prens Adaları ile Silivri açıkları arasındaki bölüm 1766'dan beri kırılmadı. Uzun süredir kırılmayan böyle parçalara sismik boşluk denir.",
+      "1999 Gölcük depreminde boşalan gerilimin bir kısmı Marmara Denizi'nin altındaki kuzey parçaya aktarıldı. Prens Adaları ile Silivri açıkları arasındaki bölüm 1766'dan beri kırılmadı. Uzun süredir kırılmayan böyle parçalara sismik boşluk denir. KAF'ın doğu ucundaki Yedisu parçası (Erzincan ile Karlıova arası) da 1784'ten beri kırılmadı; o da bir sismik boşluk.",
     marineConnection: {
       seaName: "Marmara Denizi",
       href: "/deniz/marmara",
@@ -155,7 +161,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
     shortName: "DAF",
     type: "Sol Yanal Doğrultu Atımlı Fay",
     riskLevel: "Çok Yüksek",
-    lengthKm: 550,
+    lengthKm: 580,
     badgeClass: FAULT_IDENTITY.daf.badge,
     borderClass: FAULT_IDENTITY.daf.articleEdge,
     accentColor: FAULT_IDENTITY.daf.label,
@@ -169,18 +175,19 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         detail: "İki fayın buluştuğu Karlıova'dan Murat Nehri vadisini izleyerek güneybatıya iner.",
       },
       {
-        name: "Palu – Hazar Gölü – Sivrice Parçası",
+        name: "Palu – Hazar Gölü Parçası",
         detail:
-          "Elazığ'daki Hazar Gölü'nün oturduğu çukuru boydan boya geçer. 24 Ocak 2020 depreminde kırıldı ve gerilimini güneybatıya aktardı.",
+          "Elazığ'daki Hazar Gölü'nün oturduğu çukuru boydan boya geçer. 24 Ocak 2020 depreminde kırılmadı; kırılma hemen güneybatısındaki Pütürge parçasında oldu.",
       },
       {
-        name: "Doğanyol – Pütürge – Erkenek Parçası",
-        detail: "Malatya ile Adıyaman arasındaki dağlık bölgeyi keser.",
+        name: "Sivrice – Pütürge – Erkenek Parçası",
+        detail:
+          "Hazar Gölü'nün güneyinden Malatya ile Adıyaman arasındaki dağlık bölgeyi keser. 24 Ocak 2020'deki Mw 6,8 Sivrice depremi bu kesimin Pütürge parçasında oldu.",
       },
       {
         name: "Pazarcık – Türkoğlu – Gölbaşı Parçası",
         detail:
-          "6 Şubat 2023'te sabaha karşı 04:17'de olan Mw 7.7 büyüklüğündeki depremin merkez üssü bu parçadaydı.",
+          "6 Şubat 2023'te sabaha karşı 04:17'de olan Mw 7,7 büyüklüğündeki deprem, bu parçanın hemen güneyinde DAF'tan ayrılan küçük bir kol olan Narlı Fayı'nda başladı. Kırılma oradan bu parçaya, yani DAF'ın ana hattına geçti.",
       },
       {
         name: "Amanos – Hatay – Samandağ Parçası",
@@ -227,7 +234,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 2023,
         place: "Pazarcık (Kahramanmaraş)",
         magnitude: "Mw 7.7",
-        note: "6 Şubat 2023, saat 04:17. DAF'ın yaklaşık 300 kilometrelik ana hattında dokuz saat arayla olan iki büyük depremin ilki. 11 ilde 53 binden fazla kişi hayatını kaybetti.",
+        note: "6 Şubat 2023, saat 04:17. Narlı Fayı'nda başladı, sonra DAF'ın ana hattına geçti ve onu yaklaşık 350 km boyunca kırdı. Dokuz saat arayla olan iki büyük depremin ilki. 11 ilde 53 binden fazla kişi hayatını kaybetti.",
       },
       {
         year: 2023,
@@ -237,7 +244,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
       },
     ],
     seismicGapAndRisk:
-      "6 Şubat 2023 depremleri, DAF'ın güneybatı kollarında yüzlerce yıldır biriken gerilimin büyük kısmını boşalttı. Kuzey uçtaki Yedisu Fayı (Erzincan ile Bingöl arası) ise 1784'ten beri kırılmadı; hâlâ bir sismik boşluk.",
+      "6 Şubat 2023 depremleri, DAF'ın güneybatı kollarında yüzlerce yıldır biriken gerilimin büyük kısmını boşalttı. Kuzeydoğudaki Palu–Hazar Gölü parçası ise 2020'de de kırılmadı; 2021'de yayımlanan bir çalışmaya göre bu parça, DAF'ın 145 yıldır kırılmamış ve gerilim biriktiren son kesimi.",
     marineConnection: {
       seaName: "Akdeniz (İskenderun Körfezi)",
       href: "/deniz/akdeniz",
@@ -251,7 +258,8 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
     shortName: "BAFS",
     type: "Normal Faylar, Horst ve Graben",
     riskLevel: "Yüksek",
-    lengthKm: 800,
+    lengthKm: null,
+    extent: { label: "Ana graben", value: "~10" },
     badgeClass: FAULT_IDENTITY.bafs.badge,
     borderClass: FAULT_IDENTITY.bafs.articleEdge,
     accentColor: FAULT_IDENTITY.bafs.label,
@@ -329,7 +337,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
       },
     ],
     seismicGapAndRisk:
-      "BAFS, KAF gibi tek bir hat değildir; yüzlerce parçalı, birbirine paralel kırıktan oluşan bir ağdır. Bu yüzden 5.0 ile 6.5 arası orta büyüklükte depremler çok sık olur. Ovaların yumuşak alüvyon zemini sarsıntıyı büyütür, bu yüzden oradaki binalar daha büyük risk altındadır.",
+      "BAFS, KAF gibi tek bir hat değildir; Batı Anadolu'da yaklaşık on büyük grabeni (Gediz, Büyük Menderes, Küçük Menderes, Bakırçay, Simav ve diğerleri) sınırlayan, yüzlerce parçalı ve birbirine paralel kırıktan oluşan bir ağdır. Bu yüzden 5,0 ile 6,5 arası orta büyüklükte depremler çok sık olur. Ovaların yumuşak alüvyon zemini sarsıntıyı büyütür, bu yüzden oradaki binalar daha büyük risk altındadır.",
     marineConnection: {
       seaName: "Ege Denizi",
       href: "/deniz/ege",
