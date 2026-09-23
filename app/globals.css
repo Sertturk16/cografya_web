@@ -1436,6 +1436,14 @@
   :where([tabindex="-1"]):focus-visible {
     outline: none;
   }
+
+  /* SVG text is laid out at its viewBox size and then scaled, and with hinting on Chrome lays
+     it out on hinted advances rounded at that pre-scale size. Scaled down, the rounding shows as
+     a gap: every map label read "Bulgarist an", "Yunanist an" (T-086). Unhinted advances are the
+     glyphs' real widths at any scale, which is also what the label-fit width tables measure. */
+  svg text {
+    text-rendering: geometricPrecision;
+  }
 }
 
 /* T-041 removed the unlayered "shared layout utilities"/"Buttons" region that used to sit here

@@ -5,6 +5,7 @@ import {
   SEA_LINE_WIDTH_EM,
   seaLabelLayout,
   seaPlacementFits,
+  seaPlacementRect,
 } from "@/lib/map/sea-label-layout";
 import { parseSubpaths, pointInPolygon } from "@/lib/map/shape-geometry";
 import { TALL_CONTEXT_SHAPES } from "@/lib/map/tr-context-tall.generated";
@@ -20,6 +21,8 @@ const isLand = (x: number, y: number) => LAND.some((ring) => pointInPolygon({ x,
 
 const byName = (scale: number | null) =>
   Object.fromEntries(seaLabelLayout(scale).map((label) => [label.name, label]));
+const byNameBlocked = (scale: number | null, blocked: Parameters<typeof seaLabelLayout>[1]) =>
+  Object.fromEntries(seaLabelLayout(scale, blocked).map((label) => [label.name, label]));
 
 describe("seaLabelLayout", () => {
   it("draws all four seas on one line, unrotated, at the desktop box", () => {
@@ -71,6 +74,28 @@ describe("seaLabelLayout", () => {
 
   it("brings Marmara back, stacked, on a phone map at its 3× maximum zoom", () => {
     expect(byName(PHONE_360 * 3)["MARMARA DENİZİ"]?.lines).toEqual(["MARMARA", "DENİZİ"]);
+  });
+});
+
+describe("toolbar exclusion (T-086)", () => {
+  const ege = SEA_LABELS.find((sea) => sea.name === "EGE DENİZİ")!;
+
+  it("turns a -90° label's box on its side", () => {
+    const vertical = ege.placements[1]!;
+    const rect = seaPlacementRect(vertical, 10);
+    // 6.62em long at 10 units runs down y, centred on the anchor; the ink sits left of x.
+    expect(rect.bottom - rect.top).toBeCloseTo(66.2, 1);
+    expect((rect.top + rect.bottom) / 2).toBeCloseTo(vertical.y, 5);
+    expect(rect.right).toBeLessThan(vertical.x + 5);
+  });
+
+  it("skips a blocked placement for the next one, and drops a label with none left", () => {
+    const first = SEA_LABELS.find((sea) => sea.name === "AKDENİZ")!.placements[0]!;
+    const blockFirst = (rect: { left: number; top: number }) =>
+      rect.top < first.y && rect.top > first.y - 40;
+    const moved = byNameBlocked(null, blockFirst)["AKDENİZ"];
+    expect(moved?.y).toBe(565);
+    expect(byNameBlocked(null, () => true)).toEqual({});
   });
 });
 

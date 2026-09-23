@@ -23,7 +23,7 @@
  * open water, so a regenerated artifact that moves a coast reds instead of drifting.
  */
 
-import { DESKTOP_SCALE } from "@/lib/map/context-label-fit";
+import { DESKTOP_SCALE, type Rect } from "@/lib/map/context-label-fit";
 
 export interface SeaPlacement {
   /** Anchor in viewBox units: the text's horizontal centre and first baseline, pre-rotation. */
@@ -60,16 +60,17 @@ export interface SeaLabelDraw {
 
 /**
  * Advance widths in em of the sea labels' face (Fraunces Bold, `tracking-wider` 0.05em, trailing
- * spacing included), measured in the browser with `getComputedTextLength()` at 100 units. Keyed by
- * line, because the lines are a closed set; the test asserts every placement's lines are here.
+ * spacing included), measured in the browser with `getComputedTextLength()` at 100 units under
+ * `svg text { text-rendering: geometricPrecision }` (T-086). Keyed by line, because the lines are a
+ * closed set; the test asserts every placement's lines are here.
  */
 export const SEA_LINE_WIDTH_EM: Readonly<Record<string, number>> = {
-  KARADENİZ: 6.922,
-  AKDENİZ: 5.273,
-  "EGE DENİZİ": 6.607,
-  "MARMARA DENİZİ": 10.446,
-  MARMARA: 6.114,
-  DENİZİ: 4.072,
+  KARADENİZ: 6.941,
+  AKDENİZ: 5.289,
+  "EGE DENİZİ": 6.62,
+  "MARMARA DENİZİ": 10.467,
+  MARMARA: 6.122,
+  DENİZİ: 4.084,
 };
 
 /** Baseline-to-baseline distance of a stacked label, in em. */
@@ -131,6 +132,36 @@ function widthEm(line: string): number {
   return em;
 }
 
+/** Fraunces' descent in em below the last baseline (the tail of Ç and Ş). */
+const DESCENT_EM = 0.25;
+
+/** The ink box of `placement` at `fontSize` viewBox units, rotation applied. */
+export function seaPlacementRect(placement: SeaPlacement, fontSize: number): Rect {
+  const halfWidth = (Math.max(...placement.lines.map(widthEm)) * fontSize) / 2;
+  const top = -CAP_HEIGHT_EM * fontSize;
+  const bottom = (SEA_LINE_HEIGHT_EM * (placement.lines.length - 1) + DESCENT_EM) * fontSize;
+  const angle = ((placement.rotate ?? 0) * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const [dx, dy] of [
+    [-halfWidth, top],
+    [halfWidth, top],
+    [-halfWidth, bottom],
+    [halfWidth, bottom],
+  ] as const) {
+    xs.push(placement.x + dx * cos - dy * sin);
+    ys.push(placement.y + dx * sin + dy * cos);
+  }
+  return {
+    left: Math.min(...xs),
+    top: Math.min(...ys),
+    right: Math.max(...xs),
+    bottom: Math.max(...ys),
+  };
+}
+
 /** Whether `placement` holds its text at `fontSize` viewBox units. */
 export function seaPlacementFits(placement: SeaPlacement, fontSize: number): boolean {
   const along = Math.max(...placement.lines.map(widthEm)) * fontSize;
@@ -142,14 +173,21 @@ export function seaPlacementFits(placement: SeaPlacement, fontSize: number): boo
 
 /**
  * `scale` is CSS px per viewBox unit as rendered, zoom included; `null` before the box has been
- * measured (server render and first paint), which lays out the desktop box.
+ * measured (server render and first paint), which lays out the desktop box. `blocked` names the
+ * viewBox area something is drawn over (the map's toolbar, T-086): a placement whose ink falls
+ * in it is skipped like one that does not fit.
  */
-export function seaLabelLayout(scale: number | null): SeaLabelDraw[] {
+export function seaLabelLayout(
+  scale: number | null,
+  blocked?: (rect: Rect) => boolean,
+): SeaLabelDraw[] {
   const s = scale !== null && scale > 0 ? scale : DESKTOP_SCALE;
   const out: SeaLabelDraw[] = [];
   for (const label of SEA_LABELS) {
     const fontSize = Math.round((Math.max(label.fontUnits * s, label.minPx) / s) * 100) / 100;
-    const placement = label.placements.find((p) => seaPlacementFits(p, fontSize));
+    const placement = label.placements.find(
+      (p) => seaPlacementFits(p, fontSize) && !blocked?.(seaPlacementRect(p, fontSize)),
+    );
     if (!placement) continue;
     out.push({
       name: label.name,

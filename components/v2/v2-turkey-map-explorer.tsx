@@ -39,7 +39,16 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
-import { contextLabelLayout, sliceScale, viewBoxSize } from "@/lib/map/context-label-fit";
+import {
+  boxRectToViewBox,
+  contextLabelLayout,
+  contextLabelRect,
+  rectsOverlap,
+  sliceScale,
+  viewBoxRect,
+  viewBoxSize,
+  type Rect,
+} from "@/lib/map/context-label-fit";
 import { SEA_LINE_HEIGHT_EM, seaLabelLayout } from "@/lib/map/sea-label-layout";
 import { parseSubpaths } from "@/lib/map/shape-geometry";
 import { MapAttribution } from "@/components/patterns/map-attribution";
@@ -163,6 +172,10 @@ const WIDE_FRAME_ISOS = new Set([
 const NEW_CONTEXT_LABEL_MIN_RADIUS = 30;
 
 const TALL_VIEWBOX_SIZE = viewBoxSize(TR_CONTEXT_TALL_VIEWBOX);
+const TALL_VIEWBOX_RECT = viewBoxRect(TR_CONTEXT_TALL_VIEWBOX);
+
+/** Clearance in CSS px kept between a map label and the toolbar floating over the map. */
+const TOOLBAR_CLEARANCE_PX = 4;
 
 /** The neighbour countries that may carry a label; which of them do is decided per render scale. */
 const CONTEXT_LABEL_CANDIDATES = TALL_CONTEXT_SHAPES.filter(
@@ -255,10 +268,43 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
    * read per frame; a sub-0.1% change is not worth a render.
    */
   const [boxScale, setBoxScale] = React.useState<number | null>(null);
+  /**
+   * The toolbar floats over the map's top-right corner, so a label drawn there is covered: at
+   * 1440px "Gürcistan" sat under it (T-086). Its box, in the map box's own px, plus the box's
+   * size, are what turn it into a viewBox area no label may use. Same observer, same cadence.
+   */
+  const toolbarRef = React.useRef<HTMLDivElement | null>(null);
+  const [toolbarBox, setToolbarBox] = React.useState<{
+    rect: Rect;
+    box: { width: number; height: number };
+  } | null>(null);
   React.useEffect(() => {
     const box = mapContainerRef.current;
     if (!box || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => {
+      const bar = toolbarRef.current;
+      if (bar) {
+        const next = {
+          rect: {
+            left: bar.offsetLeft - TOOLBAR_CLEARANCE_PX,
+            top: bar.offsetTop - TOOLBAR_CLEARANCE_PX,
+            right: bar.offsetLeft + bar.offsetWidth + TOOLBAR_CLEARANCE_PX,
+            bottom: bar.offsetTop + bar.offsetHeight + TOOLBAR_CLEARANCE_PX,
+          },
+          box: { width: box.clientWidth, height: box.clientHeight },
+        };
+        setToolbarBox((prev) =>
+          prev &&
+          prev.box.width === next.box.width &&
+          prev.box.height === next.box.height &&
+          prev.rect.left === next.rect.left &&
+          prev.rect.top === next.rect.top &&
+          prev.rect.right === next.rect.right &&
+          prev.rect.bottom === next.rect.bottom
+            ? prev
+            : next,
+        );
+      }
       const next = sliceScale(
         box.clientWidth,
         box.clientHeight,
@@ -269,18 +315,40 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
       setBoxScale((prev) => (prev !== null && Math.abs(prev - next) / next < 0.001 ? prev : next));
     });
     observer.observe(box);
+    if (toolbarRef.current) observer.observe(toolbarRef.current);
     return () => observer.disconnect();
   }, []);
+  /** The viewBox area under the toolbar at the current zoom and pan; `null` until measured. */
+  const toolbarArea = React.useMemo(
+    () =>
+      toolbarBox &&
+      boxRectToViewBox(toolbarBox.rect, toolbarBox.box, TALL_VIEWBOX_RECT, zoomLevel, panOffset),
+    [toolbarBox, zoomLevel, panOffset],
+  );
   const contextLabels = React.useMemo(() => {
     const layout = contextLabelLayout(boxScale === null ? null : boxScale * zoomLevel);
     return {
       fontSize: layout.fontSize,
-      items: CONTEXT_LABEL_CANDIDATES.filter(({ name, target }) => layout.fits(name, target)),
+      items: CONTEXT_LABEL_CANDIDATES.filter(
+        ({ country, name, target }) =>
+          layout.fits(name, target) &&
+          !(
+            toolbarArea &&
+            rectsOverlap(
+              contextLabelRect(name, country.labelPoint.x, country.labelPoint.y, layout.fontSize),
+              toolbarArea,
+            )
+          ),
+      ),
     };
-  }, [boxScale, zoomLevel]);
+  }, [boxScale, zoomLevel, toolbarArea]);
   const seaLabels = React.useMemo(
-    () => seaLabelLayout(boxScale === null ? null : boxScale * zoomLevel),
-    [boxScale, zoomLevel],
+    () =>
+      seaLabelLayout(
+        boxScale === null ? null : boxScale * zoomLevel,
+        toolbarArea ? (rect) => rectsOverlap(rect, toolbarArea) : undefined,
+      ),
+    [boxScale, zoomLevel, toolbarArea],
   );
 
   const provinceMap = React.useMemo(() => {
@@ -645,6 +713,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             >
               {/* Map Controls Floating Bar */}
               <div
+                ref={toolbarRef}
                 onPointerDown={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg"

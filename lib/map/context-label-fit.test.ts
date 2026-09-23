@@ -3,10 +3,14 @@ import { TALL_CONTEXT_SHAPES, TR_CONTEXT_TALL_VIEWBOX } from "@/lib/map/tr-conte
 import { parseSubpaths } from "@/lib/map/shape-geometry";
 import {
   CONTEXT_LABEL_PX,
+  boxRectToViewBox,
   contextLabelLayout,
+  contextLabelRect,
   horizontalRoom,
   labelWidthEm,
+  rectsOverlap,
   sliceScale,
+  viewBoxRect,
   viewBoxSize,
   type LabelTarget,
 } from "@/lib/map/context-label-fit";
@@ -133,5 +137,75 @@ describe("the fit rule's parts", () => {
     expect(horizontalRoom(square, 5, 5)).toBe(5);
     expect(horizontalRoom(square, 12, 5)).toBe(0);
     expect(horizontalRoom(square, 5, 11)).toBe(0);
+  });
+});
+
+/**
+ * T-086. The toolbar floats over the map, so the area under it is handed to the label layouts in
+ * viewBox units. The mapping has to follow the `slice` fit AND the wrapper's zoom/pan transform,
+ * or a label is dropped for a toolbar that is not over it.
+ */
+describe("boxRectToViewBox", () => {
+  const VB = viewBoxRect(TR_CONTEXT_TALL_VIEWBOX);
+  /** The 1440px desktop box, border excluded (measured). */
+  const DESKTOP = { width: 1148, height: 523 };
+
+  it("reads the viewBox origin as well as its size", () => {
+    expect(VB).toEqual({ x: -150, y: -405, width: 1270, height: 1270 });
+  });
+
+  it("maps the box's own corners onto the sliced frame at zoom 1", () => {
+    const whole = boxRectToViewBox(
+      { left: 0, top: 0, right: DESKTOP.width, bottom: DESKTOP.height },
+      DESKTOP,
+      VB,
+      1,
+      { x: 0, y: 0 },
+    );
+    // `slice` fills the width: all 1270 units across, and a centred band of the height.
+    expect(whole.left).toBeCloseTo(-150, 5);
+    expect(whole.right).toBeCloseTo(1120, 5);
+    const band = DESKTOP.height / sliceScale(DESKTOP.width, DESKTOP.height, 1270, 1270);
+    expect(whole.bottom - whole.top).toBeCloseTo(band, 5);
+    expect((whole.top + whole.bottom) / 2).toBeCloseTo(-405 + 635, 5);
+  });
+
+  it("undoes zoom about the centre, then pan", () => {
+    const centre = { left: 574, top: 261.5, right: 574, bottom: 261.5 };
+    const still = boxRectToViewBox(centre, DESKTOP, VB, 1, { x: 0, y: 0 });
+    const zoomed = boxRectToViewBox(centre, DESKTOP, VB, 2, { x: 0, y: 0 });
+    // The centre is the transform origin: zoom alone does not move it.
+    expect(zoomed.left).toBeCloseTo(still.left, 5);
+    // Panned 100px right, the map moved right, so the same screen point shows 50 box px (at 2x)
+    // further left in the drawing.
+    const panned = boxRectToViewBox(centre, DESKTOP, VB, 2, { x: 100, y: 0 });
+    const s = sliceScale(DESKTOP.width, DESKTOP.height, 1270, 1270);
+    expect(still.left - panned.left).toBeCloseTo(50 / s, 5);
+  });
+
+  it("puts the desktop toolbar over Georgia's label and nowhere near Bulgaria's", () => {
+    // The toolbar's measured box at 1440 (offsetLeft/Top 919/12, 217x42) plus the 4px clearance.
+    const toolbar = boxRectToViewBox(
+      { left: 915, top: 8, right: 1140, bottom: 58 },
+      DESKTOP,
+      VB,
+      1,
+      { x: 0, y: 0 },
+    );
+    const labelFor = (iso: string, name: string) => {
+      const c = TALL_CONTEXT_SHAPES.find((shape) => shape.iso === iso)!;
+      return contextLabelRect(name, c.labelPoint.x, c.labelPoint.y, 12);
+    };
+    expect(rectsOverlap(labelFor("GE", "Gürcistan"), toolbar)).toBe(true);
+    expect(rectsOverlap(labelFor("BG", "Bulgaristan"), toolbar)).toBe(false);
+    expect(rectsOverlap(labelFor("AZ", "Azerbaycan"), toolbar)).toBe(false);
+  });
+});
+
+describe("rectsOverlap", () => {
+  const a = { left: 0, top: 0, right: 10, bottom: 10 };
+  it("is true for a shared area and false for a shared edge", () => {
+    expect(rectsOverlap(a, { left: 5, top: 5, right: 15, bottom: 15 })).toBe(true);
+    expect(rectsOverlap(a, { left: 10, top: 0, right: 20, bottom: 10 })).toBe(false);
   });
 });

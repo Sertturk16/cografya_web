@@ -136,6 +136,14 @@ describe("the stylesheet that ships is the one being asserted", () => {
     expect(compiled).toContain("--color-primary");
   });
 
+  it("lays out SVG text on unhinted advances — T-086's 'Bulgarist an' gap", () => {
+    // Chrome places viewBox-scaled text on advances hinted at the pre-scale size; the map
+    // labels showed the rounding as a gap after "t". Asserted on the compiled sheet, because
+    // a rule Tailwind drops or re-layers would leave the source looking right.
+    // Lightning CSS lowercases the keyword; CSS keywords are case-insensitive.
+    expect(compiled).toMatch(/svg text\s*\{\s*text-rendering:\s*geometricprecision/i);
+  });
+
   it("emits no invalid CSS — this is T-056, and it is what 500'd every route four times", () => {
     expect(
       warnings,
