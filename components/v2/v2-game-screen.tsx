@@ -1041,10 +1041,16 @@ export function V2GameScreen({
                 <div className="w-full p-3 rounded-xl bg-warning/15 border border-warning/30 text-warning-strong text-xs flex items-center gap-2 animate-in fade-in duration-200">
                   <Sparkles className="size-4 text-warning-strong shrink-0" />
                   <span>
-                    {getSmartHint()}{" "}
-                    <em className="opacity-80">
-                      (İpucu kullanıldığı için bu sorunun maksimum puanı %50&apos;ye düşürüldü)
-                    </em>
+                    {getSmartHint()}
+                    {/* Only the province ladder halves on a hint; region scoring is flat. */}
+                    {mode === "provinces" && (
+                      <>
+                        {" "}
+                        <em className="opacity-80">
+                          (İpucu kullanıldığı için bu sorunun maksimum puanı %50&apos;ye düşürüldü)
+                        </em>
+                      </>
+                    )}
                   </span>
                 </div>
               )}
