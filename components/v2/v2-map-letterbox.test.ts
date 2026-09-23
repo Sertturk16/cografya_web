@@ -113,3 +113,38 @@ describe("/deniz and /deprem draw their names through the same layout (T-085)", 
     expect(marine).toMatch(/blocked=\{mapBlocked\}/);
   });
 });
+
+describe("marker values move to the card where they are illegible (T-087)", () => {
+  // On a phone the 8.5-unit values measured 2-3px (4-6px on a tablet) and a marker's hit area
+  // 4-6px. The rule and the numbers live in `lib/map/marker-legibility.ts`; these pin that both
+  // maps use it. The measured behaviour (no values, 24x24 targets, card under the map, a tap that
+  // opens no hover tooltip) is recorded in the T-087 PR from the browser.
+  const marine = read("v2-marine-map-explorer.tsx");
+  const quake = read("v2-earthquake-explorer.tsx");
+
+  it("draws a marker's value only when it is legible", () => {
+    expect(marine).toMatch(/markerTextLegible\(PIN_VALUE_FONT_UNITS, mapScale\)/);
+    expect(marine).toMatch(/\{showPinValues && point\.sst && \(/);
+    expect(quake).toMatch(/markerTextLegible\(DISC_VALUE_FONT_UNITS, mapScale\)/);
+    expect(quake).toMatch(/\{showDiscValues && eq\.magnitude >= 3\.5 && \(/);
+  });
+
+  it("gives every marker a touch target of at least 24px", () => {
+    expect(marine).toMatch(/<circle r=\{pinHitRadius\}/);
+    expect(quake).toMatch(/r=\{markerHitRadius\(baseRadius \+ 9, mapScale\)\}/);
+  });
+
+  it("opens hover tooltips for a mouse only, never for a tap", () => {
+    for (const source of [marine, quake]) {
+      expect(source).not.toMatch(/onMouseEnter=/);
+      expect(source).toMatch(/e\.pointerType === "mouse"/);
+    }
+  });
+
+  it("puts /deniz's station card under the map below lg, over it from lg", () => {
+    expect(marine).toMatch(
+      /className="relative mt-2 w-full lg:absolute lg:top-4 lg:right-4 lg:mt-0 lg:w-96/,
+    );
+    expect(marine).not.toMatch(/absolute top-4 right-4 z-20 w-80/);
+  });
+});

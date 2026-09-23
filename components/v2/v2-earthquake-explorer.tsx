@@ -8,6 +8,7 @@ import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { projectToMapPoint } from "@/lib/map/projection";
 import { sliceScale, viewBoxRect } from "@/lib/map/context-label-fit";
 import { UNLABELLED_CONTEXT_ISOS } from "@/lib/map/map-country-names";
+import { markerHitRadius, markerTextLegible } from "@/lib/map/marker-legibility";
 import {
   MapContextLabels,
   contextLabelCandidates,
@@ -83,6 +84,9 @@ const CONTEXT_LABEL_CANDIDATES = contextLabelCandidates(
   CONTEXT_SHAPES.filter((c) => c.iso !== "TR" && !UNLABELLED_CONTEXT_ISOS.has(c.iso)),
 );
 
+/** The magnitude printed on a disc, in viewBox units (9.5 when selected). */
+const DISC_VALUE_FONT_UNITS = 8.5;
+
 /** The wide artifact fills its box exactly (same 1270:580 aspect), so the frame is the viewBox. */
 const WIDE_VIEWBOX = viewBoxRect(TR_CONTEXT_VIEWBOX);
 const WIDE_FRAME = {
@@ -131,6 +135,11 @@ export function V2EarthquakeExplorer({
   const mapBox = useMapBoxMetrics(mapBoxRef);
   const mapScale =
     mapBox && sliceScale(mapBox.width, mapBox.height, WIDE_VIEWBOX.width, WIDE_VIEWBOX.height);
+  /**
+   * Whether the magnitude printed on a disc is legible (T-087). Below that it is not drawn: the
+   * selected event's magnitude is the headline of the card under the map.
+   */
+  const showDiscValues = markerTextLegible(DISC_VALUE_FONT_UNITS, mapScale);
   const [displayCount, setDisplayCount] = React.useState<number>(50);
 
   // Live client-side fetch state
@@ -576,8 +585,12 @@ export function V2EarthquakeExplorer({
                     className="cursor-pointer outline-none select-none transition-transform duration-150 focus-visible:scale-125"
                     role="button"
                     aria-label={`Deprem M ${eq.magnitude.toFixed(1)} - ${eq.placeNameTr}`}
-                    onMouseEnter={() => setHoveredEventId(eq.id)}
-                    onMouseLeave={() => setHoveredEventId(null)}
+                    onPointerEnter={(e) => {
+                      // A mouse only (T-087): a tap fires the mouse events too, and pinned this
+                      // tooltip over a phone map with nothing to dismiss it.
+                      if (e.pointerType === "mouse") setHoveredEventId(eq.id);
+                    }}
+                    onPointerLeave={() => setHoveredEventId(null)}
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedEventId(eq.id);
@@ -620,11 +633,12 @@ export function V2EarthquakeExplorer({
                       }
                     }}
                   >
-                    {/* Fixed invisible hit circle to prevent DOM detach/flickering */}
+                    {/* Fixed invisible hit circle to prevent DOM detach/flickering; never under
+                      a 24px touch target, which at a phone's scale is ~53 units (T-087). */}
                     <circle
                       cx={pt.x}
                       cy={pt.y}
-                      r={baseRadius + 9}
+                      r={markerHitRadius(baseRadius + 9, mapScale)}
                       className="fill-transparent"
                       pointerEvents="all"
                     />
@@ -696,12 +710,12 @@ export function V2EarthquakeExplorer({
                       cannot shadow, so it had to be deleted rather than overridden (T-031d
                       Task 13; see MAGNITUDE_LABEL's docblock in lib/theme/magnitude-identity.ts
                       for the measurement). */}
-                    {eq.magnitude >= 3.5 && (
+                    {showDiscValues && eq.magnitude >= 3.5 && (
                       <text
                         x={pt.x}
                         y={pt.y + (isSelected ? 3.5 : 3)}
                         textAnchor="middle"
-                        fontSize={isSelected ? "9.5" : "8.5"}
+                        fontSize={isSelected ? 9.5 : DISC_VALUE_FONT_UNITS}
                         fontWeight="bold"
                         className={`${MAGNITUDE_LABEL} pointer-events-none select-none font-mono`}
                       >

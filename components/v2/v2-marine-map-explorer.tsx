@@ -8,6 +8,7 @@ import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { projectToMapPoint } from "@/lib/map/projection";
 import { sliceScale, viewBoxRect } from "@/lib/map/context-label-fit";
 import { UNLABELLED_CONTEXT_ISOS } from "@/lib/map/map-country-names";
+import { markerHitRadius, markerTextLegible } from "@/lib/map/marker-legibility";
 import {
   MapContextLabels,
   contextLabelCandidates,
@@ -127,6 +128,10 @@ const BASIN_FILTER_META: Record<
 const CONTEXT_LABEL_CANDIDATES = contextLabelCandidates(
   CONTEXT_SHAPES.filter((c) => c.iso !== "TR" && !UNLABELLED_CONTEXT_ISOS.has(c.iso)),
 );
+
+/** A pin's temperature tag size and its resting ring radius, in viewBox units. */
+const PIN_VALUE_FONT_UNITS = 8.5;
+const PIN_RING_UNITS = 7;
 
 /** The wide artifact fills its box exactly (same 1270:580 aspect), so the frame is the viewBox. */
 const WIDE_VIEWBOX = viewBoxRect(TR_CONTEXT_VIEWBOX);
@@ -278,6 +283,13 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
       });
   }, [marinePoints, selectedBasin, searchQuery, sortBy]);
 
+  /**
+   * Whether a station's temperature tag is legible on its pin (T-087). Below that the tag is not
+   * drawn and the reading is taken from the station card, which sits under the map there.
+   */
+  const showPinValues = markerTextLegible(PIN_VALUE_FONT_UNITS, mapScale);
+  /** The pins' shared hit radius: the authored ring, or a 24px touch target if larger. */
+  const pinHitRadius = markerHitRadius(PIN_RING_UNITS, mapScale);
   const hoveredPoint = hoveredSlug ? pointMap.get(hoveredSlug) : null;
   const selectedPoint = selectedSlug ? pointMap.get(selectedSlug) : null;
 
@@ -367,81 +379,84 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           screen reader heard a figure caption on a province page and a loose paragraph here.
           `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
       <figure className="m-0 space-y-2">
-        <div
-          onMouseMove={handleMouseMove}
-          onMouseLeave={() => {
-            setHoveredSlug(null);
-            setMousePos(null);
-          }}
-          ref={mapBoxRef}
-          className="relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
-        >
-          {/* Floating Top-Left Mode Indicator */}
+        {/* Positioning context for the station card, which sits under the map box below `lg`
+          and floats over it from `lg`. */}
+        <div className="relative">
           <div
-            ref={modeChipRef}
-            className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none"
+            onMouseMove={handleMouseMove}
+            onMouseLeave={() => {
+              setHoveredSlug(null);
+              setMousePos(null);
+            }}
+            ref={mapBoxRef}
+            className="relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
           >
-            <Waves className="size-3.5 text-muted-foreground animate-pulse" />
-            <span className="text-foreground font-semibold">
-              {BASIN_FILTER_META[selectedBasin]?.name}
-            </span>
-            <span className="text-muted-foreground text-[11px]">
-              ({filteredPoints.length} İstasyon Aktif)
-            </span>
-          </div>
+            {/* Floating Top-Left Mode Indicator */}
+            <div
+              ref={modeChipRef}
+              className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none"
+            >
+              <Waves className="size-3.5 text-muted-foreground animate-pulse" />
+              <span className="text-foreground font-semibold">
+                {BASIN_FILTER_META[selectedBasin]?.name}
+              </span>
+              <span className="text-muted-foreground text-[11px]">
+                ({filteredPoints.length} İstasyon Aktif)
+              </span>
+            </div>
 
-          {/* SVG MAP */}
-          <svg
-            viewBox={TR_CONTEXT_VIEWBOX}
-            className="w-full h-full select-none block"
-            aria-label="Türkiye Deniz Telemetrisi ve Kıyılar Haritası"
-          >
-            <defs></defs>
+            {/* SVG MAP */}
+            <svg
+              viewBox={TR_CONTEXT_VIEWBOX}
+              className="w-full h-full select-none block"
+              aria-label="Türkiye Deniz Telemetrisi ve Kıyılar Haritası"
+            >
+              <defs></defs>
 
-            {/* 1. Surrounding Foreign Countries */}
-            <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
-              {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
-                <path key={country.iso} d={country.d} />
-              ))}
-            </g>
+              {/* 1. Surrounding Foreign Countries */}
+              <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
+                {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
+                  <path key={country.iso} d={country.d} />
+                ))}
+              </g>
 
-            {/* 2. Türkiye Casing Base Land */}
-            {trCasing && (
-              <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
-            )}
+              {/* 2. Türkiye Casing Base Land */}
+              {trCasing && (
+                <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
+              )}
 
-            {/* 3. Türkiye 81 Provinces */}
-            <g className="stroke-border/70 stroke-[0.6] fill-[var(--map-land)] transition-colors pointer-events-none">
-              {PROVINCE_SHAPES.map((shape) => (
-                <path key={shape.plateCode} d={shape.d} />
-              ))}
-            </g>
+              {/* 3. Türkiye 81 Provinces */}
+              <g className="stroke-border/70 stroke-[0.6] fill-[var(--map-land)] transition-colors pointer-events-none">
+                {PROVINCE_SHAPES.map((shape) => (
+                  <path key={shape.plateCode} d={shape.d} />
+                ))}
+              </g>
 
-            {/* 4. Inland Lakes */}
-            <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
-              {INLAND_WATER_SHAPES.map((lake) => (
-                <path key={lake.id} d={lake.d} />
-              ))}
-            </g>
+              {/* 4. Inland Lakes */}
+              <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
+                {INLAND_WATER_SHAPES.map((lake) => (
+                  <path key={lake.id} d={lake.d} />
+                ))}
+              </g>
 
-            {/* 5–6. Sea and neighbour-country names, legible at every box size and dropped
+              {/* 5–6. Sea and neighbour-country names, legible at every box size and dropped
               where they do not fit or sit under the basin chip (T-085). */}
-            <MapContextLabels
-              candidates={CONTEXT_LABEL_CANDIDATES}
-              scale={mapScale}
-              blocked={mapBlocked}
-              frame={WIDE_FRAME}
-            />
+              <MapContextLabels
+                candidates={CONTEXT_LABEL_CANDIDATES}
+                scale={mapScale}
+                blocked={mapBlocked}
+                frame={WIDE_FRAME}
+              />
 
-            {/* 7. TELEMETRY STATIONS BUBBLES / PINS */}
-            <g>
-              {marinePoints.map((point) => {
-                const pt = projectToMapPoint(point.longitude, point.latitude);
-                const isHovered = hoveredSlug === point.slugTr;
-                const isSelected = selectedSlug === point.slugTr;
-                const matchesBasin = selectedBasin === "all" || point.seaBasin === selectedBasin;
+              {/* 7. TELEMETRY STATIONS BUBBLES / PINS */}
+              <g>
+                {marinePoints.map((point) => {
+                  const pt = projectToMapPoint(point.longitude, point.latitude);
+                  const isHovered = hoveredSlug === point.slugTr;
+                  const isSelected = selectedSlug === point.slugTr;
+                  const matchesBasin = selectedBasin === "all" || point.seaBasin === selectedBasin;
 
-                /* THE PIN AND THE TABLE CHIP ARE ONE RAMP, so they come from one function.
+                  /* THE PIN AND THE TABLE CHIP ARE ONE RAMP, so they come from one function.
                  This block used to classify `sst` itself, into three raw hexes that were
                  Tailwind v3 values, while the `Su Sıcaklığı` chip ~450 lines
                  below classified the same reading into three v4 utility classes. Same
@@ -467,85 +482,179 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                  almost no room in it: anyone retuning either `--primary` or `--sst-band-hot`
                  has to re-run this pair. amber-500 scored 25.3, and 11.7 points of that
                  headroom is what clearing the graphical floor cost. */
-                const sst = point.sst ?? 25;
-                const strokeCol = "#ffffff";
-                const pinFill = isSelected ? "var(--primary)" : sstBandStyleOf(sst).fillValue;
+                  const sst = point.sst ?? 25;
+                  const strokeCol = "#ffffff";
+                  const pinFill = isSelected ? "var(--primary)" : sstBandStyleOf(sst).fillValue;
 
-                if (!matchesBasin) {
-                  return null;
-                }
+                  if (!matchesBasin) {
+                    return null;
+                  }
 
-                return (
-                  <g
-                    key={point.slugTr}
-                    transform={`translate(${pt.x}, ${pt.y})`}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`İstasyon: ${point.nameTr}, Sıcaklık: ${point.sst ? point.sst.toFixed(1) + " °C" : "Bilinmiyor"}`}
-                    onClick={() => handleSelectPoint(point.slugTr)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        handleSelectPoint(point.slugTr);
-                      }
-                    }}
-                    onMouseEnter={() => setHoveredSlug(point.slugTr)}
-                    onMouseLeave={() => setHoveredSlug(null)}
-                    className="transition-transform duration-200 group/pin cursor-pointer outline-none focus-visible:scale-125"
-                  >
-                    {/* Radar Pulse Effect */}
-                    <circle
-                      r={isSelected ? 22 : isHovered ? 18 : 10}
-                      fill={pinFill}
-                      opacity={isSelected ? 0.5 : isHovered ? 0.35 : 0.2}
-                      className={isSelected ? "animate-pulse" : "animate-ping"}
-                    />
-                    {/* Outer Ring */}
-                    <circle
-                      r={isSelected ? 12 : isHovered ? 10 : 7}
-                      fill={pinFill}
-                      stroke={strokeCol}
-                      strokeWidth={isSelected ? 2.5 : 1.5}
-                      className="shadow-md transition-all"
-                    />
-                    {/* Inner Core */}
-                    <circle r={isSelected ? 3.5 : 2.5} fill="#ffffff" />
+                  return (
+                    <g
+                      key={point.slugTr}
+                      transform={`translate(${pt.x}, ${pt.y})`}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`İstasyon: ${point.nameTr}, Sıcaklık: ${point.sst ? point.sst.toFixed(1) + " °C" : "Bilinmiyor"}`}
+                      onClick={() => handleSelectPoint(point.slugTr)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleSelectPoint(point.slugTr);
+                        }
+                      }}
+                      onPointerEnter={(e) => {
+                        // A mouse only (T-087): a tap fires the mouse events too, and pinned this
+                        // tooltip over a phone map with nothing to dismiss it.
+                        if (e.pointerType === "mouse") setHoveredSlug(point.slugTr);
+                      }}
+                      onPointerLeave={() => setHoveredSlug(null)}
+                      className="transition-transform duration-200 group/pin cursor-pointer outline-none focus-visible:scale-125"
+                    >
+                      {/* Touch target: at least 24px across at every scale (T-087). */}
+                      <circle r={pinHitRadius} className="fill-transparent" pointerEvents="all" />
+                      {/* Radar Pulse Effect */}
+                      <circle
+                        r={isSelected ? 22 : isHovered ? 18 : 10}
+                        fill={pinFill}
+                        opacity={isSelected ? 0.5 : isHovered ? 0.35 : 0.2}
+                        className={isSelected ? "animate-pulse" : "animate-ping"}
+                      />
+                      {/* Outer Ring */}
+                      <circle
+                        r={isSelected ? 12 : isHovered ? 10 : 7}
+                        fill={pinFill}
+                        stroke={strokeCol}
+                        strokeWidth={isSelected ? 2.5 : 1.5}
+                        className="shadow-md transition-all"
+                      />
+                      {/* Inner Core */}
+                      <circle r={isSelected ? 3.5 : 2.5} fill="#ffffff" />
 
-                    {/* Temperature Floating Label */}
-                    {point.sst && (
-                      <g transform="translate(10, 3)" className="pointer-events-none">
-                        <rect
-                          x={-2}
-                          y={-10}
-                          width={32}
-                          height={13}
-                          rx={4}
-                          className="fill-ink-dark/85"
-                          stroke="rgba(255, 255, 255, 0.3)"
-                          strokeWidth={0.5}
-                        />
-                        <text
-                          x={14}
-                          y={-1}
-                          textAnchor="middle"
-                          fontSize={8.5}
-                          fill="#ffffff"
-                          fontWeight="bold"
-                          fontFamily="monospace"
-                        >
-                          {point.sst.toFixed(1)}°
-                        </text>
-                      </g>
+                      {/* Temperature Floating Label, only where it is legible (T-087) */}
+                      {showPinValues && point.sst && (
+                        <g transform="translate(10, 3)" className="pointer-events-none">
+                          <rect
+                            x={-2}
+                            y={-10}
+                            width={32}
+                            height={13}
+                            rx={4}
+                            className="fill-ink-dark/85"
+                            stroke="rgba(255, 255, 255, 0.3)"
+                            strokeWidth={0.5}
+                          />
+                          <text
+                            x={14}
+                            y={-1}
+                            textAnchor="middle"
+                            fontSize={PIN_VALUE_FONT_UNITS}
+                            fill="#ffffff"
+                            fontWeight="bold"
+                            fontFamily="monospace"
+                          >
+                            {point.sst.toFixed(1)}°
+                          </text>
+                        </g>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+            </svg>
+
+            {/* DYNAMIC FLOATING TOOLTIP (MOUSE TRACKER ON PIN HOVER) */}
+            {!selectedSlug && hoveredPoint && mousePos && (
+              <div
+                className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[240px] max-w-[290px] animate-in fade-in-50 zoom-in-95 duration-100"
+                style={{
+                  top: `${Math.min(mousePos.y + 20, 380)}px`,
+                  left: `${Math.min(mousePos.x + 20, 950)}px`,
+                }}
+              >
+                <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
+                  <div>
+                    <span className="font-heading font-bold text-foreground text-sm block leading-tight">
+                      {hoveredPoint.nameTr}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground block">
+                      {hoveredPoint.coastLabelTr} • {hoveredPoint.provinceName}
+                    </span>
+                  </div>
+                  <Badge variant="outline" size="sm" className="text-[10px] font-mono">
+                    TR-{hoveredPoint.plateCode}
+                  </Badge>
+                </div>
+
+                <div className="space-y-1.5 text-[11px]">
+                  {hoveredPoint.sst !== undefined && hoveredPoint.sst !== null && (
+                    <div className="flex items-center justify-between p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                      <span className="text-muted-foreground flex items-center gap-1">
+                        <Thermometer className="size-3 text-primary" /> Su Sıcaklığı:
+                      </span>
+                      <span className="font-mono font-bold text-primary text-xs">
+                        {hoveredPoint.sst.toFixed(1)} °C
+                      </span>
+                    </div>
+                  )}
+
+                  {hoveredPoint.waveHeight !== undefined && hoveredPoint.waveHeight !== null && (
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Waves className="size-3 text-muted-foreground" /> Dalga Boyu:
+                      </span>
+                      <span className="font-mono font-medium text-foreground flex items-center gap-1">
+                        {hoveredPoint.waveHeight.toFixed(2)} m
+                        {hoveredPoint.waveDirection && (
+                          <DirectionArrow
+                            deg={hoveredPoint.waveDirection}
+                            className="size-3 text-muted-foreground"
+                          />
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {hoveredPoint.windSpeed10m !== undefined &&
+                    hoveredPoint.windSpeed10m !== null && (
+                      <div className="flex items-center justify-between text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Wind className="size-3 text-muted-foreground" /> 10m Rüzgâr:
+                        </span>
+                        <span className="font-mono font-medium text-foreground flex items-center gap-1">
+                          {hoveredPoint.windSpeed10m.toFixed(1)} m/s
+                          {hoveredPoint.windDirection10m && (
+                            <DirectionArrow
+                              deg={hoveredPoint.windDirection10m}
+                              className="size-3 text-muted-foreground"
+                            />
+                          )}
+                        </span>
+                      </div>
                     )}
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
 
-          {/* SELECTED STATION SPOTLIGHT MODAL / CARD OVERLAY */}
+                  <div className="flex items-center justify-between text-muted-foreground text-[10px]">
+                    <span>Konum:</span>
+                    <span className="font-mono">
+                      {hoveredPoint.latitude.toFixed(2)}°K, {hoveredPoint.longitude.toFixed(2)}°D
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-1 text-[10px] text-muted-foreground flex items-center justify-between border-t border-border/60">
+                  <span>Tıklayarak detayları aç</span>
+                  <span className="font-mono">#{hoveredPoint.displayOrder}</span>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* SELECTED STATION CARD. Under the map below `lg`, where it used to cover the whole
+            map (a 320px card over a 326x148 phone map) and, from `sm`, be cut off by the box's
+            `overflow-hidden`; over the map's top-right corner from `lg`, where it fits. Below the
+            legible pin size it is also where a station's readings are read (T-087). */}
           {selectedPoint && (
-            <div className="absolute top-4 right-4 z-20 w-80 sm:w-96 rounded-3xl bg-card/95 backdrop-blur-xl border border-primary/40 p-5 shadow-2xl space-y-4 animate-in fade-in-50 zoom-in-95 duration-150">
+            <div className="relative mt-2 w-full lg:absolute lg:top-4 lg:right-4 lg:mt-0 lg:w-96 z-20 rounded-3xl bg-card/95 backdrop-blur-xl border border-primary/40 p-5 shadow-2xl space-y-4 animate-in fade-in-50 zoom-in-95 duration-150">
               <div className="flex items-start justify-between gap-3 border-b border-border/80 pb-3">
                 <div>
                   <div className="flex items-center gap-2">
@@ -686,88 +795,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             </div>
           )}
 
-          {/* DYNAMIC FLOATING TOOLTIP (MOUSE TRACKER ON PIN HOVER) */}
-          {!selectedSlug && hoveredPoint && mousePos && (
-            <div
-              className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[240px] max-w-[290px] animate-in fade-in-50 zoom-in-95 duration-100"
-              style={{
-                top: `${Math.min(mousePos.y + 20, 380)}px`,
-                left: `${Math.min(mousePos.x + 20, 950)}px`,
-              }}
-            >
-              <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
-                <div>
-                  <span className="font-heading font-bold text-foreground text-sm block leading-tight">
-                    {hoveredPoint.nameTr}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground block">
-                    {hoveredPoint.coastLabelTr} • {hoveredPoint.provinceName}
-                  </span>
-                </div>
-                <Badge variant="outline" size="sm" className="text-[10px] font-mono">
-                  TR-{hoveredPoint.plateCode}
-                </Badge>
-              </div>
-
-              <div className="space-y-1.5 text-[11px]">
-                {hoveredPoint.sst !== undefined && hoveredPoint.sst !== null && (
-                  <div className="flex items-center justify-between p-1.5 rounded-lg bg-primary/10 border border-primary/20">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Thermometer className="size-3 text-primary" /> Su Sıcaklığı:
-                    </span>
-                    <span className="font-mono font-bold text-primary text-xs">
-                      {hoveredPoint.sst.toFixed(1)} °C
-                    </span>
-                  </div>
-                )}
-
-                {hoveredPoint.waveHeight !== undefined && hoveredPoint.waveHeight !== null && (
-                  <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Waves className="size-3 text-muted-foreground" /> Dalga Boyu:
-                    </span>
-                    <span className="font-mono font-medium text-foreground flex items-center gap-1">
-                      {hoveredPoint.waveHeight.toFixed(2)} m
-                      {hoveredPoint.waveDirection && (
-                        <DirectionArrow
-                          deg={hoveredPoint.waveDirection}
-                          className="size-3 text-muted-foreground"
-                        />
-                      )}
-                    </span>
-                  </div>
-                )}
-
-                {hoveredPoint.windSpeed10m !== undefined && hoveredPoint.windSpeed10m !== null && (
-                  <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Wind className="size-3 text-muted-foreground" /> 10m Rüzgâr:
-                    </span>
-                    <span className="font-mono font-medium text-foreground flex items-center gap-1">
-                      {hoveredPoint.windSpeed10m.toFixed(1)} m/s
-                      {hoveredPoint.windDirection10m && (
-                        <DirectionArrow
-                          deg={hoveredPoint.windDirection10m}
-                          className="size-3 text-muted-foreground"
-                        />
-                      )}
-                    </span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between text-muted-foreground text-[10px]">
-                  <span>Konum:</span>
-                  <span className="font-mono">
-                    {hoveredPoint.latitude.toFixed(2)}°K, {hoveredPoint.longitude.toFixed(2)}°D
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-1 text-[10px] text-muted-foreground flex items-center justify-between border-t border-border/60">
-                <span>Tıklayarak detayları aç</span>
-                <span className="font-mono">#{hoveredPoint.displayOrder}</span>
-              </div>
-            </div>
+          {!selectedPoint && !showPinValues && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Sıcaklık, dalga ve rüzgâr değerleri için haritada bir istasyona dokun.
+            </p>
           )}
         </div>
 
@@ -960,8 +991,10 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         }
                       }}
                       onClick={() => handleSelectPoint(point.slugTr)}
-                      onMouseEnter={() => setHoveredSlug(point.slugTr)}
-                      onMouseLeave={() => setHoveredSlug(null)}
+                      onPointerEnter={(e) => {
+                        if (e.pointerType === "mouse") setHoveredSlug(point.slugTr);
+                      }}
+                      onPointerLeave={() => setHoveredSlug(null)}
                     >
                       <TableCell className="font-mono text-xs text-muted-foreground text-center">
                         {point.displayOrder}
