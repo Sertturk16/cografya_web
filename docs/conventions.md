@@ -52,7 +52,9 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   block-comment regex eat everything to the next delimiter — 220 lines of `v2-sources-section.tsx`,
   including the scope a `not.toContain` was asserting about — and swapping the two replaces only
   moves the hole. A stylesheet gets `stripCssComments` from the same module instead: `//` is not a
-  comment in CSS, so the JS scanner would eat the rest of any `url(https://…)` line. Exclude
+  comment in CSS, so the JS scanner would eat the rest of any `url(https://…)` line. A check that
+  reports `file:line` or an offset reads `maskComments` (same module, comments blanked in place)
+  instead: `stripComments` collapses a block comment to one space, so its line numbers drift. Exclude
   routing and config modules from an import-graph walk; then **mutation-check it** — break the
   thing the test exists to catch and watch it go red, because a source-text assertion that has
   never failed has not been shown to work.

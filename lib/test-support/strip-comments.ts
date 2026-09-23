@@ -38,16 +38,43 @@
  * character, the standard heuristic; `<` and `>` are deliberately NOT treated as regex-opening, so
  * JSX text containing a slash stays division. A misread regex bails at the newline rather than
  * running to EOF, so the worst case is a few characters copied through, never a swallowed scope.
+ *
+ * Line numbers and offsets computed from this output are WRONG after any multi-line block comment
+ * (the block became one space). A check that reports `file:line` reads `maskComments` instead.
  */
 export function stripComments(source: string): string {
-  return scan(source, 0, false).out;
+  return scan(source, 0, false, false).out;
+}
+
+/**
+ * `stripComments` for a check that reports where it found something. Same lexer, so exactly the
+ * same characters count as comment, but each comment character is blanked in place instead of the
+ * comment collapsing to one space: `\n` and `\r` are kept, everything else in the comment
+ * (delimiters included) becomes a space. The result is the same length as `source`, every
+ * non-comment character sits at its original offset, and so every line and column computed from
+ * it matches the file. Collapse whitespace runs in both and it equals `stripComments(source)`.
+ */
+export function maskComments(source: string): string {
+  return scan(source, 0, false, true).out;
+}
+
+/** What a comment spanning `source[from, to)` becomes: one space, or its own shape in blanks. */
+function replaceComment(source: string, from: number, to: number, mask: boolean): string {
+  if (!mask) return " ";
+  return source.slice(from, Math.min(to, source.length)).replace(/[^\r\n]/g, " ");
 }
 
 /**
  * Scans from `start`, returning the stripped text and the index it stopped at. With
  * `untilCloseBrace` it is reading a `${…}` interpolation and returns on the brace that closes it.
+ * With `mask` comments are blanked in place (`maskComments`) rather than collapsed.
  */
-function scan(source: string, start: number, untilCloseBrace: boolean): { out: string; i: number } {
+function scan(
+  source: string,
+  start: number,
+  untilCloseBrace: boolean,
+  mask: boolean,
+): { out: string; i: number } {
   let out = "";
   let i = start;
   let depth = 0;
@@ -67,17 +94,19 @@ function scan(source: string, start: number, untilCloseBrace: boolean): { out: s
 
     // Line comment: to end of line, newline kept so line-anchored assertions still line up.
     if (ch === "/" && next === "/") {
-      out += " ";
+      const from = i;
       while (i < source.length && source[i] !== "\n") i += 1;
+      out += replaceComment(source, from, i, mask);
       continue;
     }
 
     // Block comment, JSX `{/* … */}` included — the surrounding braces are harmless punctuation.
     if (ch === "/" && next === "*") {
+      const from = i;
       i += 2;
       while (i < source.length && !(source[i] === "*" && source[i + 1] === "/")) i += 1;
       i += 2; // past the closing delimiter; an unterminated block just runs to EOF
-      out += " ";
+      out += replaceComment(source, from, i, mask);
       continue;
     }
 
@@ -101,7 +130,7 @@ function scan(source: string, start: number, untilCloseBrace: boolean): { out: s
         }
         if (ch === "`" && inner === "$" && source[i + 1] === "{") {
           out += "${";
-          const hole = scan(source, i + 2, true);
+          const hole = scan(source, i + 2, true, mask);
           out += hole.out;
           i = hole.i;
           continue;
@@ -170,8 +199,8 @@ const REGEX_PRECEDING_KEYWORDS = new Set([
 
 /**
  * Whether the `/` about to be read opens a regex literal, judged from the last significant
- * character already emitted. Comments emit a space, so the lookback lands on the token before
- * them. `<` and `>` are absent on purpose: `<br />` and `km/h` in JSX text are not regexes.
+ * character already emitted. Comments emit only whitespace, so the lookback lands on the token
+ * before them — in both modes, which is why `maskComments` lexes exactly like `stripComments`. `<` and `>` are absent on purpose: `<br />` and `km/h` in JSX text are not regexes.
  */
 function opensRegex(out: string): boolean {
   let j = out.length - 1;
