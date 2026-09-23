@@ -6,6 +6,13 @@ import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { projectToMapPoint } from "@/lib/map/projection";
+import { sliceScale, viewBoxRect } from "@/lib/map/context-label-fit";
+import { UNLABELLED_CONTEXT_ISOS } from "@/lib/map/map-country-names";
+import {
+  MapContextLabels,
+  contextLabelCandidates,
+  useMapBoxMetrics,
+} from "@/components/v2/map-context-labels";
 import type { EarthquakeEvent, EarthquakeList } from "@/lib/api/types";
 import { buildEarthquakeQuery } from "@/lib/earthquake/query";
 import { bindingSentenceKey } from "@/lib/earthquake/binding-sentence";
@@ -71,26 +78,19 @@ interface V2EarthquakeExplorerProps {
   defaultWindowDays?: number;
 }
 
-const COUNTRY_NAMES_TR: Record<string, string> = {
-  GR: "Yunanistan",
-  BG: "Bulgaristan",
-  GE: "Gürcistan",
-  AM: "Ermenistan",
-  AZ: "Azerbaycan",
-  IR: "İran",
-  IQ: "Irak",
-  SY: "Suriye",
-  RU: "Rusya",
-  CY: "Güney Kıbrıs Rum Yönetimi",
-  LB: "Lübnan",
-};
+/** The wide frame's neighbours that may carry a label; which of them do is decided per render scale. */
+const CONTEXT_LABEL_CANDIDATES = contextLabelCandidates(
+  CONTEXT_SHAPES.filter((c) => c.iso !== "TR" && !UNLABELLED_CONTEXT_ISOS.has(c.iso)),
+);
 
-const SEA_LABELS = [
-  { name: "KARADENİZ", x: 480, y: -20, fontSize: 18 },
-  { name: "MARMARA DENİZİ", x: 145, y: 108, fontSize: 9.5 },
-  { name: "EGE DENİZİ", x: -25, y: 240, fontSize: 14 },
-  { name: "AKDENİZ", x: 228, y: 480, fontSize: 18 },
-];
+/** The wide artifact fills its box exactly (same 1270:580 aspect), so the frame is the viewBox. */
+const WIDE_VIEWBOX = viewBoxRect(TR_CONTEXT_VIEWBOX);
+const WIDE_FRAME = {
+  left: WIDE_VIEWBOX.x,
+  top: WIDE_VIEWBOX.y,
+  right: WIDE_VIEWBOX.x + WIDE_VIEWBOX.width,
+  bottom: WIDE_VIEWBOX.y + WIDE_VIEWBOX.height,
+};
 
 const MAGNITUDE_PRESETS = [
   { label: "Tümü (1.0+)", val: 1.0 },
@@ -123,6 +123,14 @@ export function V2EarthquakeExplorer({
   );
   const [hoveredEventId, setHoveredEventId] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
+  /**
+   * The map box, measured on resize (T-085): CSS px per viewBox unit, `null` until measured so the
+   * server render and first paint agree and draw the desktop labels.
+   */
+  const mapBoxRef = React.useRef<HTMLDivElement | null>(null);
+  const mapBox = useMapBoxMetrics(mapBoxRef);
+  const mapScale =
+    mapBox && sliceScale(mapBox.width, mapBox.height, WIDE_VIEWBOX.width, WIDE_VIEWBOX.height);
   const [displayCount, setDisplayCount] = React.useState<number>(50);
 
   // Live client-side fetch state
@@ -482,6 +490,7 @@ export function V2EarthquakeExplorer({
               setHoveredEventId(null);
               setMousePos(null);
             }}
+            ref={mapBoxRef}
             className="relative w-full aspect-[1270/580] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
           >
             <svg
@@ -496,45 +505,15 @@ export function V2EarthquakeExplorer({
                 ))}
               </g>
 
-              {/* Neighbor Country Name Labels. FULL STRENGTH, the same fix this file's SEA
-                labels already took: `opacity-75` put `--map-label` at 3.36:1 light / 3.80:1
-                dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the token
-                records in `app/globals.css`. */}
-              <g className="fill-[var(--map-label)] font-sans font-bold text-[11px] pointer-events-none select-none">
-                {CONTEXT_SHAPES.filter(
-                  (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
-                ).map((country) => {
-                  const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
-                  return (
-                    <text
-                      key={country.iso}
-                      x={country.labelPoint.x}
-                      y={country.labelPoint.y}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      className="tracking-tight select-none"
-                    >
-                      {name}
-                    </text>
-                  );
-                })}
-              </g>
-
-              {/* Surrounding Sea Names */}
-              <g className="fill-accent font-sans font-bold tracking-widest pointer-events-none select-none">
-                {SEA_LABELS.map((sea) => (
-                  <text
-                    key={sea.name}
-                    x={sea.x}
-                    y={sea.y}
-                    fontSize={sea.fontSize}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                  >
-                    {sea.name}
-                  </text>
-                ))}
-              </g>
+              {/* Neighbour-country and sea names, legible at every box size and dropped where
+                they do not fit (T-085). Painted here, under the provinces and the markers, in
+                the order `lib/theme/magnitude-ramp.test.ts` enumerates. */}
+              <MapContextLabels
+                candidates={CONTEXT_LABEL_CANDIDATES}
+                scale={mapScale}
+                frame={WIDE_FRAME}
+                neighboursFirst
+              />
 
               {/* Turkey Context Casing Outline */}
               {trCasing && (

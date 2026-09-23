@@ -6,6 +6,13 @@ import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { projectToMapPoint } from "@/lib/map/projection";
+import { sliceScale, viewBoxRect } from "@/lib/map/context-label-fit";
+import { UNLABELLED_CONTEXT_ISOS } from "@/lib/map/map-country-names";
+import {
+  MapContextLabels,
+  contextLabelCandidates,
+  useMapBoxMetrics,
+} from "@/components/v2/map-context-labels";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,26 +123,19 @@ const BASIN_FILTER_META: Record<
   },
 };
 
-const COUNTRY_NAMES_TR: Record<string, string> = {
-  GR: "Yunanistan",
-  BG: "Bulgaristan",
-  GE: "Gürcistan",
-  AM: "Ermenistan",
-  AZ: "Azerbaycan",
-  IR: "İran",
-  IQ: "Irak",
-  SY: "Suriye",
-  RU: "Rusya",
-  CY: "Güney Kıbrıs Rum Yönetimi",
-  LB: "Lübnan",
-};
+/** The wide frame's neighbours that may carry a label; which of them do is decided per render scale. */
+const CONTEXT_LABEL_CANDIDATES = contextLabelCandidates(
+  CONTEXT_SHAPES.filter((c) => c.iso !== "TR" && !UNLABELLED_CONTEXT_ISOS.has(c.iso)),
+);
 
-const SEA_LABELS = [
-  { name: "KARADENİZ", x: 480, y: -20, fontSize: 18 },
-  { name: "MARMARA DENİZİ", x: 145, y: 108, fontSize: 9.5 },
-  { name: "EGE DENİZİ", x: -25, y: 240, fontSize: 14 },
-  { name: "AKDENİZ", x: 228, y: 480, fontSize: 18 },
-];
+/** The wide artifact fills its box exactly (same 1270:580 aspect), so the frame is the viewBox. */
+const WIDE_VIEWBOX = viewBoxRect(TR_CONTEXT_VIEWBOX);
+const WIDE_FRAME = {
+  left: WIDE_VIEWBOX.x,
+  top: WIDE_VIEWBOX.y,
+  right: WIDE_VIEWBOX.x + WIDE_VIEWBOX.width,
+  bottom: WIDE_VIEWBOX.y + WIDE_VIEWBOX.height,
+};
 
 function getDirectionLabel(deg: number | null | undefined): string {
   if (deg === null || deg === undefined) return "—";
@@ -184,6 +184,28 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
     "order",
   );
   const [hoveredSlug, setHoveredSlug] = React.useState<string | null>(null);
+  /**
+   * The map box, measured on resize (T-085): CSS px per viewBox unit, `null` until measured so the
+   * server render and first paint agree and draw the desktop labels.
+   */
+  const mapBoxRef = React.useRef<HTMLDivElement | null>(null);
+  /** The basin chip floating over the map's top-left corner from `sm`. */
+  const modeChipRef = React.useRef<HTMLDivElement | null>(null);
+  const mapBox = useMapBoxMetrics(mapBoxRef, modeChipRef);
+  const mapScale =
+    mapBox && sliceScale(mapBox.width, mapBox.height, WIDE_VIEWBOX.width, WIDE_VIEWBOX.height);
+  const mapBlocked = React.useMemo(
+    () =>
+      mapBox && mapScale
+        ? mapBox.overlays.map((r) => ({
+            left: r.left / mapScale + WIDE_VIEWBOX.x,
+            top: r.top / mapScale + WIDE_VIEWBOX.y,
+            right: r.right / mapScale + WIDE_VIEWBOX.x,
+            bottom: r.bottom / mapScale + WIDE_VIEWBOX.y,
+          }))
+        : [],
+    [mapBox, mapScale],
+  );
   const [selectedSlug, setSelectedSlug] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
 
@@ -351,10 +373,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             setHoveredSlug(null);
             setMousePos(null);
           }}
+          ref={mapBoxRef}
           className="relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
         >
           {/* Floating Top-Left Mode Indicator */}
-          <div className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none">
+          <div
+            ref={modeChipRef}
+            className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none"
+          >
             <Waves className="size-3.5 text-muted-foreground animate-pulse" />
             <span className="text-foreground font-semibold">
               {BASIN_FILTER_META[selectedBasin]?.name}
@@ -398,42 +424,14 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               ))}
             </g>
 
-            {/* 5. Sea Water Typography. FULL STRENGTH, no `opacity-*`: an opacity utility is
-              part of the rendered colour and has to be measured with `blendOver`. The
-              `opacity-80` these labels shipped with put `fill-accent` at 3.35:1 light /
-              3.85:1 dark on `--map-sea`, under TEXT_MIN, while the commit justified it with
-              the UNBLENDED 4.85/5.19. At full strength those 4.85/5.19 are what renders. */}
-            <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
-              {SEA_LABELS.map((sea, i) => (
-                <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
-                  {sea.name}
-                </text>
-              ))}
-            </g>
-
-            {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea labels
-              above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1 dark on
-              `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the token records
-              in `app/globals.css`. */}
-            <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
-              {CONTEXT_SHAPES.filter(
-                (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
-              ).map((country) => {
-                const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
-                return (
-                  <text
-                    key={country.iso}
-                    x={country.labelPoint.x}
-                    y={country.labelPoint.y}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    className="tracking-tight select-none"
-                  >
-                    {name}
-                  </text>
-                );
-              })}
-            </g>
+            {/* 5–6. Sea and neighbour-country names, legible at every box size and dropped
+              where they do not fit or sit under the basin chip (T-085). */}
+            <MapContextLabels
+              candidates={CONTEXT_LABEL_CANDIDATES}
+              scale={mapScale}
+              blocked={mapBlocked}
+              frame={WIDE_FRAME}
+            />
 
             {/* 7. TELEMETRY STATIONS BUBBLES / PINS */}
             <g>

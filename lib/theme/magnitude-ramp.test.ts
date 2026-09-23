@@ -261,9 +261,10 @@ describe("the ramp's three label consumers read --eq-mag-fg, not a bare white", 
  *   2. `fill-[var(--map-label)]` (neighbour-country name labels, :501) — an opaque `<text>` at
  *      11px bold, painted right after #1 and before the marker group. A GLYPH ground, not a
  *      fill one — see below for why it gets no floor assertion here.
- *   3. `fill-accent` (surrounding sea names, :522) — the other opaque `<text>` layer, up to 18px
- *      bold and `tracking-widest` ("AKDENİZ", "EGE DENİZİ"), painted right after #2 and before
- *      the marker group. Also a glyph ground, same treatment as #2.
+ *   3. `fill-accent` (surrounding sea names) — the other opaque `<text>` layer, Fraunces bold
+ *      `tracking-wider` from the shared `MapContextLabels` (T-085), 11–21px on screen ("AKDENİZ",
+ *      "EGE DENİZİ"), painted right after #2 and before the marker group. Also a glyph ground,
+ *      same treatment as #2.
  *   4. `fill-card/90` (the 81 provinces, :546) — a COMPOSITE, `--card` at 90% over whatever is
  *      beneath, which for Turkish territory is `--map-plate` (nothing else paints there first).
  *   5. `hover:fill-muted/70` (the hovered province, :551) — a COMPOSITE, `--muted` at 70% over
