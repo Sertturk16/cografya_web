@@ -44,7 +44,7 @@ export const PREPAREDNESS_DATA: PreparednessPhase[] = [
           "Kimlik, tapu, sigorta poliçesi gibi belgelerin fotokopileri, su geçirmez bir poşette.",
         ],
         callout:
-          "Çantadaki yiyecek ve suların son kullanma tarihine yılda iki kez mutlaka bak, eskiyenleri yenile.",
+          "Çantadaki yiyecek, su ve ilaçların son kullanma tarihine altı ayda bir mutlaka bak, eskiyenleri yenile. Bunu ailecek yaptığın deprem tatbikatıyla aynı güne koyarsan unutmazsın.",
       },
       {
         title: "Ailenle Bir Buluşma Planı Yap",
@@ -78,7 +78,7 @@ export const PREPAREDNESS_DATA: PreparednessPhase[] = [
         title: "Sarsıntı Sırasında Asla Yapma",
         summary: "Merdiven, asansör ve balkon binanın en dayanıksız yerleridir.",
         content:
-          "Binanın en zayıf yeri merdiven boşluklarıdır; sarsıntıda ilk kırılan ve çöken yerler merdiven sahanlıklarıdır. Asansör, halatı koparsa ya da elektrik kesilirse boşluğa düşebilir veya iki kat arasında kalabilir. Balkondan atlamak ağır yaralanmayla ya da ölümle sonuçlanır. Sarsıntı tamamen durana kadar olduğun güvenli yerde kal.",
+          "Binanın en zayıf yeri merdiven boşluklarıdır; sarsıntıda ilk kırılan ve çöken yerler merdiven sahanlıklarıdır. Asansör, halatı koparsa ya da elektrik kesilirse boşluğa düşebilir veya iki kat arasında kalabilir. Balkondan atlamak ağır yaralanmayla ya da ölümle sonuçlanır. Deprem araştırmaları, yaralanmaların önemli bir bölümünün sarsıntı sürerken yerinden kalkıp hareket eden insanlarda, çoğunlukla düşme ve tökezleme yüzünden olduğunu gösteriyor. Sarsıntı tamamen durana kadar olduğun güvenli yerde kal.",
         actionPoints: [
           "Merdivenlere ve yangın merdivenlerine asla koşma.",
           "Asansörü kesinlikle kullanma. Asansördeysen en yakın katın düğmesine bas ve hemen kabinden çık.",

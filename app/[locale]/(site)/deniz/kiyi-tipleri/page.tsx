@@ -232,7 +232,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
               Türkiye kıyılarında fiyort, skyer, haliç ve watt yok. İlk ikisini enlem, son ikisini
-              denizlerimizin kapalı olması açıklıyor.
+              denizlerimizin kapalı olması açıklıyor. Bu konu KPSS gibi sınavlarda da sorulur.
             </p>
           </div>
 

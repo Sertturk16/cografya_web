@@ -14,7 +14,9 @@ export function V2GameHub() {
         <div className="border-b border-border pb-5">
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">Bir Oyun Seç</h2>
           <p className="text-xs text-muted-foreground font-medium mt-1">
-            Üç oyun da Türkiye haritasında oynanır.
+            Üç oyun da Türkiye haritasında oynanır. Doğru ve yanlış cevaplarda ses çıkar, istersen
+            sesi kapatırsın. Haritayı yakınlaştırıp kaydırabilirsin. Tur bitince bilemediğin
+            yerlerin listesini görürsün.
           </p>
         </div>
 

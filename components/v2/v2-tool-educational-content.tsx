@@ -47,6 +47,8 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Karayolu dağı aşmak için viraj çizer, vadiyi izler, köprüden ve tünelden geçer. Bu
                 yüzden iki şehir arasındaki yol, kuş uçuşu mesafeden hemen her zaman uzundur.
+                Türkiye&apos;de iki il merkezi arasındaki karayolu, kuş uçuşu mesafeden genellikle
+                yaklaşık %25 ile %40 daha uzundur.
               </p>
               <div className="p-3 rounded-xl bg-muted/40 border border-border text-xs text-foreground">
                 Aracın verdiği karayolu tahmini kabadır: kuş uçuşu mesafeyi 1,28 ile çarpar. Gerçek
@@ -110,6 +112,9 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
                 51&apos; 36.0&quot; D
                 <br />
                 &bull; <strong>Ondalık derece:</strong> 39.920000° K &bull; 32.860000° D
+                <br />
+                Ondalık derecede dördüncü ondalık basamak, enlemde yaklaşık 11 metreye karşılık
+                gelir.
               </p>
             </div>
 
@@ -132,10 +137,11 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
                 <h4>UTM dilimi ne demek?</h4>
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                GPS&apos;in kullandığı WGS84 konumu derece olarak verir. UTM ise Dünya&apos;yı
-                6&apos;şar derecelik dilimlere böler ve her dilimde konumu metreyle yazar. Türkiye
-                dört dilime düşer: 35, 36, 37 ve 38. Kuzey yarımkürede numaranın yanına N eklenir
-                (36N gibi). Araç, tıkladığın noktanın dilimini gösterir.
+                GPS&apos;in kullandığı WGS84 konumu derece olarak verir; harita yazılımları bu
+                sistemi EPSG:4326 koduyla anar. UTM ise Dünya&apos;yı 6&apos;şar derecelik dilimlere
+                böler ve her dilimde konumu metreyle yazar. Türkiye dört dilime düşer: 35, 36, 37 ve
+                38. Kuzey yarımkürede numaranın yanına N eklenir (36N gibi). Araç, tıkladığın
+                noktanın dilimini gösterir.
               </p>
             </div>
           </div>
@@ -187,8 +193,9 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Köşeleri çapraz sırayla koyarsan kenarlar birbirini keser ve papyona benzeyen bir
-                şekil çıkar. Böyle bir şeklin tek bir alanı olmaz; araç uyarı verir ve o sırada
-                yazan sayı doğru değildir. Köşeleri sınır boyunca sırayla koy ya da uyarıdaki
+                şekil çıkar. Papyonun iki yarısı ters yönde dolaşılır; hesap bu yüzden birinin
+                alanını ötekinden düşer. Böyle bir şeklin tek bir alanı olmaz; araç uyarı verir ve o
+                sırada yazan sayı doğru değildir. Köşeleri sınır boyunca sırayla koy ya da uyarıdaki
                 düğmeyle dizdir.
               </p>
             </div>

@@ -826,6 +826,16 @@ export function V2EarthquakeExplorer({
                       ? "Moment Büyüklüğü (Mw)"
                       : "Yerel Büyüklük (ML)"}
                   </span>
+                  {selectedEvent.magnitudeType === "Mw" && (
+                    <span className="text-[9px] text-muted-foreground block">
+                      Büyük depremleri doğru ölçer
+                    </span>
+                  )}
+                  {selectedEvent.magnitudeType === "ML" && (
+                    <span className="text-[9px] text-muted-foreground block">
+                      Bilinen adıyla Richter ölçeği
+                    </span>
+                  )}
                 </div>
 
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">

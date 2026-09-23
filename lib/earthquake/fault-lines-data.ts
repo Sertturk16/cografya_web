@@ -57,7 +57,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
     borderClass: FAULT_IDENTITY.kaf.articleEdge,
     accentColor: FAULT_IDENTITY.kaf.label,
     formation:
-      "Kuzeye ilerleyen Arap Levhası Anadolu'yu sıkıştırıyor. Kuzeyde Avrasya Levhası'na dayanan Anadolu bu baskıdan batıya doğru kaçıyor, yılda yaklaşık 20-25 milimetre. KAF, bu kaymanın Anadolu ile Avrasya arasındaki sınırıdır. Doğuda Karlıova'dan başlar, Marmara Denizi ve Saros Körfezi'nden geçerek Kuzey Ege'deki çukurlara kadar uzanır. Dünyanın karada en etkin doğrultu atımlı faylarından biridir.",
+      "Kuzeye ilerleyen Arap Levhası Anadolu'yu sıkıştırıyor. Kuzeyde Avrasya Levhası'na dayanan Anadolu bu baskıdan batıya doğru kaçıyor, yılda yaklaşık 20-25 milimetre. KAF, bu kaymanın Anadolu ile Avrasya arasındaki sınırıdır. Doğuda, Kuzey Anadolu Fayı ile Doğu Anadolu Fayı'nın buluştuğu Karlıova üçlü ekleminden başlar, Marmara Denizi ve Saros Körfezi'nden geçerek Kuzey Ege'deki çukurlara kadar uzanır. Dünyanın karada en etkin doğrultu atımlı faylarından biridir.",
     movementMechanism:
       "Sağ yanal doğrultu atım: fayın bir yanında durup karşıya baktığında, karşı taraf sağa doğru kayar. Hareket yataydır. Fayın iki yanı pürüzlü yüzeylerinden birbirine takılır ve bu sırada gerilim birikir. Gerilim sürtünmeyi yendiğinde iki yan bir anda kayar; deprem bu ani kaymadır.",
     segments: [
@@ -107,7 +107,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 1939,
         place: "Erzincan",
         magnitude: "Ms 7.9",
-        note: "33 binden fazla kişi hayatını kaybetti. Yerde yaklaşık 350 km uzunluğunda bir kırık açıldı.",
+        note: "2023 depremlerine kadar Cumhuriyet döneminin en çok can alan depremiydi. 33 binden fazla kişi hayatını kaybetti. Yerde yaklaşık 350 km uzunluğunda bir kırık açıldı.",
       },
       {
         year: 1942,
@@ -278,7 +278,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
       {
         name: "Büyük Menderes Grabeni",
         detail:
-          "Dinar'dan başlayıp Nazilli, Aydın ve Söke üzerinden Ege Denizi'ne kadar uzanan uzun bir çöküntü vadisi.",
+          "Denizli'nin Sarayköy yöresinden başlayıp Nazilli, Aydın ve Söke üzerinden Ege Denizi'ne kadar uzanan, yaklaşık 150-200 km uzunluğunda bir çöküntü vadisi. Büyük Menderes Nehri bu vadiyi izler.",
       },
       {
         name: "Gökova & Muğla Fay Kuşağı",
@@ -313,7 +313,7 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 1995,
         place: "Dinar (Afyonkarahisar)",
         magnitude: "Ms 6.1",
-        note: "Büyük Menderes grabeninin doğu ucunda, yere yakın (sığ odaklı) bir depremdi ve yıkıma yol açtı.",
+        note: "Büyük Menderes Nehri'nin doğduğu yörede, Dinar Fayı'nda oldu. Yere yakın (sığ odaklı) bir depremdi ve yıkıma yol açtı.",
       },
       {
         year: 2017,

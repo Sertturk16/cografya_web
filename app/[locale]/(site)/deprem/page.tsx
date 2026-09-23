@@ -119,7 +119,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
               lede={
                 <>
                   Türkiye ve yakın çevresinde son günlerde olan depremler haritada. Bir depreme
-                  tıkla; nerede, ne zaman, kaç büyüklüğünde ve ne kadar derinde olduğunu gör.
+                  tıkla; nerede, ne zaman, kaç büyüklüğünde ve ne kadar derinde olduğunu gör. Her
+                  depremin yanında hangi ilde olduğu yazar; denizdeyse hangi ilin açıklarında,
+                  Türkiye dışındaysa en yakın il. İl adıyla da arayabilirsin.
                 </>
               }
             />

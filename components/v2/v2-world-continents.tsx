@@ -68,7 +68,7 @@ export const CONTINENTS_DATA: ContinentData[] = [
     dominantClimate: "Muson, Çöl, Step ve Sibirya Tundra İklimi",
     keyFeatures: [
       "Everest ve en yüksek zirveler Himalayalarda",
-      "Dünyanın en kalabalık kıtası",
+      "Dünyanın en kalabalık ve nüfusu en yoğun kıtası",
       "Ortalama 4.500 m yükseklikte Tibet Platosu",
     ],
   },
@@ -134,7 +134,7 @@ export const CONTINENTS_DATA: ContinentData[] = [
     countryCount: 14,
     population: "45 milyon",
     areaKm2: "8.525.000 km²",
-    highestPoint: { name: "Puncak Jaya", elevation: "4.884 m", country: "Endonezya / Okyanusya" },
+    highestPoint: { name: "Wilhelm Dağı", elevation: "4.509 m", country: "Papua Yeni Gine" },
     longestRiver: { name: "Murray-Darling", length: "3.672 km" },
     largestLake: { name: "Eyre Gölü", area: "9.500 km²" },
     dominantClimate: "Tropikal, Çöl ve Ilıman Okyanusal",

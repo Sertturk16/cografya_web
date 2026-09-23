@@ -251,7 +251,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                   <CardTitle className="text-xl">Dilsiz Haritada İl Bul</CardTitle>
                   <CardDescription className="text-xs leading-relaxed">
                     Sorulan yeri haritada bulup puan topla. Üç mod var: bölgeleri bul, 81 ili bul ya
-                    da bir bölge seçip yalnız onun illerini bul.
+                    da bir bölge seçip yalnız onun illerini bul. İstersen 60 saniyeye karşı oyna.
                   </CardDescription>
                   <div className="pt-3 flex items-center text-xs font-semibold text-secondary group-hover:translate-x-1 transition-transform">
                     <span>Oyunu Aç</span>
@@ -270,8 +270,9 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                   </div>
                   <CardTitle className="text-xl">Denizler ve Kıyılar</CardTitle>
                   <CardDescription className="text-xs leading-relaxed">
-                    Dört denizi karşılaştır. Kıyı illerinin açığında seçilen 30 noktada su
-                    sıcaklığı, dalga ve rüzgâr izlenir; sıcaklık verisi Copernicus&apos;tan gelir.
+                    Dört denizi karşılaştır. Türkiye&apos;nin 28 kıyı ilinden 27&apos;sinin açığında
+                    seçilen 30 noktada su sıcaklığı, dalga ve rüzgâr izlenir; sıcaklık verisi
+                    Copernicus&apos;tan gelir.
                   </CardDescription>
                   <div className="pt-3 flex items-center text-xs font-semibold text-accent group-hover:translate-x-1 transition-transform">
                     <span>Denizlere Bak</span>

@@ -185,7 +185,7 @@ export function V2SeaBasinDetailView({
                   <th className="p-3 sm:p-4">Nokta ve Kıyı</th>
                   <th className="p-3 sm:p-4">İl</th>
                   <th className="p-3 sm:p-4">Su Sıcaklığı</th>
-                  <th className="p-3 sm:p-4">Dalga Yüksekliği</th>
+                  <th className="p-3 sm:p-4">Belirgin Dalga Yüksekliği</th>
                   <th className="p-3 sm:p-4">10 m&apos;de Rüzgâr</th>
                   <th className="p-3 sm:p-4">Geçerlilik Anı</th>
                 </tr>

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Compass, MapPin, Layers } from "lucide-react";
+import { Compass, MapPin, Layers, Target } from "lucide-react";
 
 export function V2GamePedagogyGuide() {
   const techniques = [
@@ -18,17 +18,22 @@ export function V2GamePedagogyGuide() {
       desc: "Plaka kodları verildiğinde Türkiye'de 67 il vardı ve 1'den 67'ye adlarının alfabetik sırasıyla numaralandı. 68 Aksaray'dan 81 Düzce'ye kadar 14 il sonradan kuruldu ve sıradaki numaraları aldı. İl oyunundaki ipucu plaka kodunu da söylediği için bu sıra işine yarar.",
       icon: <MapPin className="size-5 text-accent" />,
     },
+    {
+      title: "Bakmakla Yetinme, Kendini Dene",
+      desc: "Haritaya yalnızca bakmak yerine dilsiz haritada yeri kendin bulmaya çalış. Hatırlamaya çalışarak öğrendiğin yer, tekrar tekrar baktığın yerden daha kalıcı olur.",
+      icon: <Target className="size-5 text-primary" />,
+    },
   ];
 
   return (
     <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-lg space-y-6">
       <div className="border-b border-border pb-4">
         <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-          Haritayı Daha Kolay Öğrenmek İçin Üç Öneri
+          Haritayı Daha Kolay Öğrenmek İçin Dört Öneri
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {techniques.map((tech) => (
           <div
             key={tech.title}
