@@ -1,8 +1,27 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
+/** What a render-function child is told about the panel it is being rendered into. */
+export interface ThemePanel {
+  readonly theme: "light" | "dark";
+  /**
+   * Scopes an element id to this panel: the light panel keeps `base` as written, the dark panel
+   * gets `${base}-dark`. Derive every id a specimen writes — and every `for` / `aria-*` reference
+   * to it — through this, so the two copies never share one.
+   */
+  readonly id: (base: string) => string;
+}
+
+const LIGHT_PANEL: ThemePanel = { theme: "light", id: (base) => base };
+const DARK_PANEL: ThemePanel = { theme: "dark", id: (base) => `${base}-dark` };
+
 interface ThemePairProps {
-  readonly children: React.ReactNode;
+  /**
+   * The specimen. A plain node is rendered as-is in both panels; a FUNCTION is called once per
+   * panel with that panel's {@link ThemePanel}, which is the form any specimen carrying an `id`
+   * must use. See "Ids" below.
+   */
+  readonly children: React.ReactNode | ((panel: ThemePanel) => React.ReactNode);
   /**
    * Set for a specimen whose content renders through a portal — Dialog, Sheet, Popover,
    * Tooltip, DropdownMenu, toasts. Their markup lands on `document.body`, outside this
@@ -45,6 +64,24 @@ interface ThemePairProps {
  * not do. It is the same token, chosen for the same "make this shape visible" reason, as the
  * legend swatch outline.
  *
+ * ## Ids
+ *
+ * Rendering the child twice prints every id it carries twice, and every IDREF (`for`,
+ * `aria-labelledby`, `aria-describedby`) then resolves to the FIRST copy — the dark panel's
+ * `FaqSection` was named by the light panel's heading, and a dark panel's label focused the light
+ * panel's input. The fix lives here, at the harness, because the harness is what duplicates:
+ *
+ *   - A child that takes its ids from `React.useId()` needs nothing: each panel is its own tree
+ *     position, so React already hands the two copies different ids.
+ *   - A child that is GIVEN an id (`<Input id>`, `<FaqSection id>`) must be passed as a render
+ *     function and build the id with `panel.id("...")`. A render prop rather than a context
+ *     because `FaqSection` is a Server Component (it imports `server-only`), and a Server
+ *     Component cannot read context — the prop reaches both sides of that boundary; a context
+ *     would only reach the client half and leave the pattern that raised this uncovered.
+ *
+ * `data-theme-panel` marks each panel so `panel-ids.test.tsx` can attribute every id in the
+ * rendered registry to one, and fail on a duplicate or on a reference that crosses panels.
+ *
  * ## Why it lives here and not in `components/patterns`
  *
  * T-042 moved it. `components/showcase/specimen.tsx` wraps EVERY specimen in this component, so
@@ -55,6 +92,9 @@ interface ThemePairProps {
  * design-system route reaches as live BY that route, which is the true statement about this one.
  */
 export function ThemePair({ children, portals = false, className }: ThemePairProps) {
+  const render = (panel: ThemePanel) =>
+    typeof children === "function" ? children(panel) : children;
+
   return (
     <div className="space-y-2">
       <div className={cn("grid gap-3 sm:grid-cols-2", className)}>
@@ -62,8 +102,11 @@ export function ThemePair({ children, portals = false, className }: ThemePairPro
           <figcaption className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             Aydınlık
           </figcaption>
-          <div className="light rounded-xl border border-muted-foreground bg-card p-5 text-foreground">
-            {children}
+          <div
+            data-theme-panel="light"
+            className="light rounded-xl border border-muted-foreground bg-card p-5 text-foreground"
+          >
+            {render(LIGHT_PANEL)}
           </div>
         </figure>
 
@@ -71,8 +114,11 @@ export function ThemePair({ children, portals = false, className }: ThemePairPro
           <figcaption className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
             Karanlık
           </figcaption>
-          <div className="dark rounded-xl border border-muted-foreground bg-card p-5 text-foreground">
-            {children}
+          <div
+            data-theme-panel="dark"
+            className="dark rounded-xl border border-muted-foreground bg-card p-5 text-foreground"
+          >
+            {render(DARK_PANEL)}
           </div>
         </figure>
       </div>

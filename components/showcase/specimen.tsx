@@ -1,12 +1,13 @@
 import * as React from "react";
-import { ThemePair } from "./theme-pair";
+import { ThemePair, type ThemePanel } from "./theme-pair";
 
 interface SpecimenProps {
   readonly name: string;
   readonly description?: string;
   /** Pass through to ThemePair for components that render via a portal. */
   readonly portals?: boolean;
-  readonly children: React.ReactNode;
+  /** A function child is called once per panel; any specimen that writes an `id` must be one. */
+  readonly children: React.ReactNode | ((panel: ThemePanel) => React.ReactNode);
 }
 
 /** One labelled entry in the showcase: a heading, a note, and the specimen in both themes. */

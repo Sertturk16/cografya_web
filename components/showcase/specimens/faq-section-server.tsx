@@ -50,27 +50,31 @@ export function FaqSectionServerSpecimen({ locale }: { locale: Locale }) {
         name="FaqSection"
         description={`Altı elle yazılmış SSS bloğunun yerini alan tek bileşen: çapa (\`id\`), \`scroll-mt-28\`, \`tabIndex={-1}\`, erişilebilir ad ve her soruya bir <h3> — hepsi tek yerde. Varsayılan \`list\` mekanizması. Buradaki blok \`structuredData="noindex"\` ile kapılanır: bu sayfanın yüzeyi uçtan uca \`noindex\` olduğundan JSON-LD ÜRETİLMEZ, yani bir iç araç yayına yapılandırılmış veri sızdıramaz. Başlığın altındaki cümle isteğe bağlı \`lede\` özelliğidir; aşağıdaki akordeon örneğinde verilmediği için orada hiç \`<p>\` basılmaz.`}
       >
-        <FaqSection
-          id="ornek-sss-liste"
-          heading="Sıkça Sorulan Sorular"
-          lede="Bu blokta neyin yanıtlandığını bir cümlede söyleyen isteğe bağlı giriş metni."
-          items={ITEMS}
-          locale={locale}
-          structuredData="noindex"
-        />
+        {(panel) => (
+          <FaqSection
+            id={panel.id("ornek-sss-liste")}
+            heading="Sıkça Sorulan Sorular"
+            lede="Bu blokta neyin yanıtlandığını bir cümlede söyleyen isteğe bağlı giriş metni."
+            items={ITEMS}
+            locale={locale}
+            structuredData="noindex"
+          />
+        )}
       </Specimen>
 
       <Specimen
         name="FaqSection — accordion"
         description={`Aynı bileşen, \`mechanism="accordion"\`. Sorular \`Accordion.Header\` sayesinde yine <h3> taşır ve kapalı cevap sunucu HTML'inde kalır. \`structuredData\` verilmemiştir (varsayılan \`false\`): şema hiç istenmemiştir — yukarıdaki blokta ise istenmiş ve yüzey kapısı tarafından reddedilmiştir. İkisi ekranda aynı görünür, sayfa kaynağında aynı sebepten değildir.`}
       >
-        <FaqSection
-          id="ornek-sss-akordeon"
-          heading="Sıkça Sorulan Sorular"
-          items={ITEMS}
-          locale={locale}
-          mechanism="accordion"
-        />
+        {(panel) => (
+          <FaqSection
+            id={panel.id("ornek-sss-akordeon")}
+            heading="Sıkça Sorulan Sorular"
+            items={ITEMS}
+            locale={locale}
+            mechanism="accordion"
+          />
+        )}
       </Specimen>
     </>
   );
