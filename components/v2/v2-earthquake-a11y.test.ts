@@ -91,7 +91,13 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
       ),
     );
     expect(faultLines).toContain("FAULT_LINES_DATA");
-    expect(faultLines).not.toMatch(/MTA/);
+    // T-096 earned ONE citation: the DAF length (580 km) and its segment names are MTA's
+    // (Şaroğlu et al. 1992, MTA active-fault map), so the page's source footnote names MTA.
+    // That footnote is the only place it may appear; anywhere else is the old unearned claim.
+    const sourceNote = /<p className=\{SOURCE_NOTE\}>([\s\S]*?)<\/p>/.exec(faultLines);
+    expect(sourceNote, "fay-hatlari lost its source footnote").not.toBeNull();
+    expect(sourceNote![1]).toMatch(/\bMTA\b/);
+    expect(faultLines.replace(sourceNote![0], "")).not.toMatch(/MTA/);
   });
 
   it("rephrases fault line descriptions without unverified numerical figures (FU125SEO-I2)", () => {
