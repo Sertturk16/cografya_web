@@ -864,14 +864,16 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  * are now the literal `"sr-only"` and therefore READABLE rather than unreadable. No element
  * gained or lost a className; the file is the same tree it was.
  *
- * ONE element is card-shaped and it is not a card in disguise: the combobox panel, hoisted as
- * `PANEL`. It is a popover — `rounded-[16px]` (the deleted stylesheet's `var(--radius-lg)`, which
- * `rounded-2xl` at 18px and `rounded-lg` at 10px do not spell), `p-2.5`, and an edge of
- * `border-input` rather than `border-border` because it must carry the same 3:1 control boundary
- * as the trigger it hangs from. `Card`'s `panel` variant is `rounded-3xl border border-border
- * bg-card p-6 sm:p-8`: a 22px radius, a 1.45:1 decorative edge and 24-32px of padding on a
- * dropdown whose padding is 10px. Both the radius and the edge are outside {@link CARD_ROUNDING}
- * and the surface predicate anyway, so the hoist hides nothing this counter would have seen.
+ * At the time ONE element was card-shaped, and it was not a card in disguise: the combobox panel,
+ * then hoisted as a `PANEL` constant. It was a popover — `rounded-[16px]` (the deleted
+ * stylesheet's `var(--radius-lg)`, which `rounded-2xl` at 18px and `rounded-lg` at 10px do not
+ * spell), `p-2.5`, and an edge of `border-input` rather than `border-border` for the same 3:1
+ * control boundary as its trigger — outside {@link CARD_ROUNDING} and the surface predicate
+ * anyway, so the hoist hid nothing this counter would have seen. That constant no longer exists:
+ * T-054 deleted it with the unmounted `variant="default"` branch it dressed (the 195 → 176 below).
+ * The panel the header renders today is T-078's `DialogPopup`, whose className is a LITERAL
+ * (`bg-card border border-border rounded-2xl`), so it is readable and counted among the
+ * hand-drawn cards, not in this population.
  *
  * T-033 task 6: **139 -> 154**, `member` 66 -> 57. Nine `styles.x` lookups into
  * `earthquake.module.css` left the tree — six in `earthquake-list.tsx`, three in
