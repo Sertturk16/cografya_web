@@ -30,6 +30,12 @@ const FAVORITES_KEYS = [
   // (favorite saved after a successful modal auth), the same mechanism
   // `GameRoundSaveControl`'s own label-swap announcement already uses.
   "savedStatus",
+  // T-080: the button's visible labels and spinner label (hardcoded Turkish until then), and the
+  // expired-session failure, rich text with a `<link>` to the login page.
+  "addLabel",
+  "addedLabel",
+  "savingLabel",
+  "sessionExpired",
 ] as const;
 
 const catalogues = { tr: trMessages.Favorites, en: enMessages.Favorites } as const;
@@ -44,6 +50,12 @@ describe("Favorites message catalogue", () => {
       });
     });
   }
+
+  it("sessionExpired carries the <link> the button fills with the login route", () => {
+    for (const catalogue of Object.values(catalogues)) {
+      expect(catalogue.sessionExpired).toMatch(/<link>[^<]+<\/link>/);
+    }
+  });
 
   it("carries the SAME key set in both locales (pure UI chrome, no narrative split)", () => {
     expect(Object.keys(enMessages.Favorites).sort()).toEqual(

@@ -22,6 +22,14 @@ export const MEASUREMENT_MIN_POINTS: Readonly<Record<MeasurementType, number>> =
 export const MEASUREMENT_POINTS_MAX = 20;
 
 /**
+ * The api DTO's bound on `title` (`MEASUREMENT_TITLE_MAX_LENGTH` in
+ * `cografya_api/src/measurements/dto/create-measurement-request.dto.ts`, `maxLength: 200` in the
+ * OpenAPI spec). The BFF's request schema refuses a longer title with a 400, and the workbench's
+ * title input carries it as `maxLength`, so a reader cannot type a title that fails to save.
+ */
+export const MEASUREMENT_TITLE_MAX_LENGTH = 200;
+
+/**
  * The per-type maximum. A coordinate is a single point by definition and the api rejects a second
  * one; every other type is bounded only by the flat DTO limit above.
  */

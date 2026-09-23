@@ -13,7 +13,7 @@ import {
 import { isSameOrigin } from "@/lib/http/same-origin";
 import { getSiteUrl } from "@/lib/seo/site";
 import type { CreateMeasurementRequest, Measurement } from "@/lib/api/types";
-import { MEASUREMENT_POINTS_MAX } from "./shape";
+import { MEASUREMENT_POINTS_MAX, MEASUREMENT_TITLE_MAX_LENGTH } from "./shape";
 
 /**
  * The web half of the measurements BFF proxy (UYELIK-12 plan §5.2) — a FIFTH small
@@ -69,7 +69,7 @@ const measurementPointSchema = z.object({
 const createMeasurementRequestSchema = z.object({
   type: z.enum(["distance", "area", "coordinate"]),
   points: z.array(measurementPointSchema).min(1).max(MEASUREMENT_POINTS_MAX),
-  title: z.string().max(200).nullable().optional(),
+  title: z.string().max(MEASUREMENT_TITLE_MAX_LENGTH).nullable().optional(),
   clientMeasurementId: z
     .string()
     .min(1)

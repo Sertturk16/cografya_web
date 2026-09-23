@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
+import trMessages from "@/messages/tr.json";
 
 describe("V2GameHistoryStats & Workbench Polish (IRIS A7, IRIS A10, IRIS A11)", () => {
   const statsSource = readFileSync(new URL("./v2-game-history-stats.tsx", import.meta.url), "utf8");
@@ -25,8 +26,11 @@ describe("V2GameHistoryStats & Workbench Polish (IRIS A7, IRIS A10, IRIS A11)", 
   });
 
   it("IRIS A11: workbench uses 'Bulut Arşivine Kaydet' label and aria-live status", () => {
-    expect(workbenchSource).toContain("Bulut Arşivine Kaydet");
+    // The label moved to the catalogue in T-081; the workbench reads it by key.
+    expect(workbenchSource).toContain('t("saveDestination")');
+    expect(trMessages.ToolWorkbench.saveDestination).toBe("Bulut Arşivine Kaydet");
     expect(workbenchSource).not.toContain("Yerel Hafızaya Sakla");
+    expect(JSON.stringify(trMessages.ToolWorkbench)).not.toContain("Yerel Hafızaya Sakla");
     expect(workbenchSource).toContain('role="status"');
     expect(workbenchSource).toContain('aria-live="polite"');
   });

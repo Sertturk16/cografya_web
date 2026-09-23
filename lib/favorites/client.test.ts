@@ -161,23 +161,51 @@ describe("saveFavorite", () => {
     );
   });
 
-  it("reports not-ok on a non-200, never throws", async () => {
+  it("reports an expired session (401) as session-expired, never throws", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => Promise.resolve(new Response(null, { status: 401 }))),
+      vi.fn(() =>
+        Promise.resolve(jsonResponse(401, { ok: false, code: "errors.auth.unauthenticated" })),
+      ),
     );
     await expect(saveFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
       ok: false,
+      code: "session-expired",
     });
   });
 
-  it("reports not-ok on a network failure, never throws", async () => {
+  it("reports the Origin-check 403 as a plain failure — favorites have no quota", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(jsonResponse(403, { ok: false, code: "errors.transport.forbidden" })),
+      ),
+    );
+    await expect(saveFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
+      ok: false,
+      code: "failed",
+    });
+  });
+
+  it("reports any other non-200 as a plain failure, even without a JSON body", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response("<html>", { status: 502 }))),
+    );
+    await expect(saveFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
+      ok: false,
+      code: "failed",
+    });
+  });
+
+  it("reports a network failure as a plain failure, never throws", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new TypeError("network down"))),
     );
     await expect(saveFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
       ok: false,
+      code: "failed",
     });
   });
 
@@ -210,6 +238,7 @@ describe("saveFavorite", () => {
 
       const settled = expect(saveFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
         ok: false,
+        code: "failed",
       });
 
       await vi.advanceTimersByTimeAsync(FAVORITES_FETCH_TIMEOUT_MS);
@@ -273,26 +302,29 @@ describe("removeFavorite", () => {
     );
     await expect(removeFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
       ok: false,
+      code: "failed",
     });
   });
 
-  it("reports not-ok on a non-204, never throws", async () => {
+  it("reports an expired session (401) as session-expired, never throws", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.resolve(new Response(null, { status: 401 }))),
     );
     await expect(removeFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
       ok: false,
+      code: "session-expired",
     });
   });
 
-  it("reports not-ok on a network failure, never throws", async () => {
+  it("reports a network failure as a plain failure, never throws", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new TypeError("network down"))),
     );
     await expect(removeFavorite({ kind: "province", plateCode: "34" })).resolves.toEqual({
       ok: false,
+      code: "failed",
     });
   });
 
@@ -315,6 +347,7 @@ describe("removeFavorite", () => {
 
       const settled = expect(removeFavorite({ kind: "country", isoCode: "TR" })).resolves.toEqual({
         ok: false,
+        code: "failed",
       });
 
       await vi.advanceTimersByTimeAsync(FAVORITES_FETCH_TIMEOUT_MS);

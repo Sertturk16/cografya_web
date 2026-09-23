@@ -198,6 +198,19 @@ describe("saveMeasurement", () => {
     await expect(saveMeasurement(payload)).resolves.toEqual({ ok: false, code: "failed" });
   });
 
+  it("maps an expired session (401) to session-expired, not to a retry", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(jsonResponse(401, { ok: false, code: "errors.auth.unauthenticated" })),
+      ),
+    );
+    await expect(saveMeasurement(payload)).resolves.toEqual({
+      ok: false,
+      code: "session-expired",
+    });
+  });
+
   it("maps a 403 whose body is not JSON to a generic failure, never throws", async () => {
     vi.stubGlobal(
       "fetch",
@@ -279,20 +292,53 @@ describe("removeMeasurement", () => {
     );
   });
 
-  it("resolves ok:false on any non-204", async () => {
+  it("maps a 401 to session-expired, so the copy can say sign in rather than retry", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => Promise.resolve(new Response(null, { status: 401 }))),
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(JSON.stringify({ ok: false, code: "errors.auth.unauthenticated" }), {
+            status: 401,
+          }),
+        ),
+      ),
     );
-    await expect(removeMeasurement(MEASUREMENT.id)).resolves.toEqual({ ok: false });
+    await expect(removeMeasurement(MEASUREMENT.id)).resolves.toEqual({
+      ok: false,
+      code: "session-expired",
+    });
   });
 
-  it("resolves ok:false on a network failure, never throws", async () => {
+  it("maps every other non-204 to a generic failure, including the Origin-check 403", async () => {
+    for (const [status, body] of [
+      [403, { ok: false, code: "errors.transport.forbidden" }],
+      [502, { ok: false, code: "errors.transport.unavailable" }],
+      [500, null],
+    ] as const) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+          Promise.resolve(
+            new Response(body === null ? "<html>" : JSON.stringify(body), { status }),
+          ),
+        ),
+      );
+      await expect(removeMeasurement(MEASUREMENT.id)).resolves.toEqual({
+        ok: false,
+        code: "failed",
+      });
+    }
+  });
+
+  it("resolves a generic failure on a network error, never throws", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new TypeError("network down"))),
     );
-    await expect(removeMeasurement(MEASUREMENT.id)).resolves.toEqual({ ok: false });
+    await expect(removeMeasurement(MEASUREMENT.id)).resolves.toEqual({
+      ok: false,
+      code: "failed",
+    });
   });
 
   it("carries its own AbortController", async () => {
