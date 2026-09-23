@@ -22,7 +22,10 @@ export function V2ContinentLocatorMap({
   countries,
   fillColor = "var(--color-primary, #b0522e)",
   hoverFillColor = "var(--color-primary-dark, #7e3a1e)",
-  strokeColor = "var(--color-primary-dark, #7e3a1e)",
+  // `--card`, the panel's own colour, so the line between two member countries reads as a gap:
+  // 5.13:1 on the light `--primary` fill, 4.99:1 on the dark one. `--color-primary-dark` on the
+  // same fill measured 1.63:1 light / 2.45:1 dark and merged neighbours into one blob (T-092).
+  strokeColor = "var(--card)",
 }: V2ContinentLocatorMapProps) {
   const [hoveredIso, setHoveredIso] = React.useState<string | null>(null);
 
@@ -91,12 +94,17 @@ export function V2ContinentLocatorMap({
               const isHovered = hoveredIso === shape.iso.toUpperCase();
 
               if (!isContinentMember) {
+                // Pixel width on a non-scaling stroke: the viewBox is 1000 wide, so a unitless
+                // 0.3 drew about a tenth of a pixel on a phone (T-092). `stroke-border/40`
+                // measured 1.03:1 light / 1.00:1 dark on this fill, i.e. no line at all;
+                // `muted-foreground/50` is 2.14:1 / 2.44:1. These are context countries, not the
+                // subject, so their line stays quieter than the members' 5:1.
                 return (
                   <path
                     key={shape.iso}
                     d={shape.d}
                     fillRule="evenodd"
-                    className="fill-muted-foreground/15 dark:fill-muted-foreground/20 stroke-border/40 stroke-[0.3]"
+                    className="fill-muted-foreground/15 dark:fill-muted-foreground/20 stroke-muted-foreground/50 [stroke-width:0.75px] [vector-effect:non-scaling-stroke]"
                   />
                 );
               }
@@ -106,10 +114,11 @@ export function V2ContinentLocatorMap({
                   key={shape.iso}
                   d={shape.d}
                   fillRule="evenodd"
+                  vectorEffect="non-scaling-stroke"
                   style={{
                     fill: isHovered ? hoverFillColor : fillColor,
                     stroke: strokeColor,
-                    strokeWidth: isHovered ? 1.2 : 0.5,
+                    strokeWidth: isHovered ? "1.5px" : "0.75px",
                     transition: "fill 0.15s ease, stroke-width 0.15s ease",
                     cursor: "pointer",
                   }}
