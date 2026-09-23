@@ -22,6 +22,13 @@ describe("/turkiye fills a squarer box with real geography (T-079)", () => {
     expect(turkey).toMatch(/preserveAspectRatio="xMidYMid slice"/);
   });
 
+  it("is square on a phone, the tall frame's own shape, so `slice` crops nothing", () => {
+    // At 320px a 231×300 box was taller than wide; `slice` then cut the frame's sides and with
+    // them Türkiye's eastern edge. Square matches TR_CONTEXT_TALL_FRAME exactly.
+    expect(turkey).toMatch(/\baspect-square sm:aspect-\[1270\/580\] sm:min-h-\[420px\]/);
+    expect(turkey).not.toMatch(/(?<!sm:)min-h-\[300px\]/);
+  });
+
   it("labels a country new to the tall frame only when it can hold a label", () => {
     expect(turkey).toMatch(/NEW_CONTEXT_LABEL_MIN_RADIUS = 30\b/);
     for (const name of [
@@ -45,8 +52,11 @@ describe("/turkiye fills a squarer box with real geography (T-079)", () => {
     expect(listed).toEqual(CONTEXT_SHAPES.map((s) => s.iso).sort());
   });
 
-  it("renders its selection card through MapSelectionCard", () => {
+  it("renders its selection card through MapSelectionCard, under the map on a phone", () => {
     expect(turkey).toContain("<MapSelectionCard");
+    expect(turkey).toMatch(
+      /<MapSelectionCard[\s\S]*?className="[^"]*mt-2[^"]*sm:absolute[^"]*sm:bottom-3[^"]*sm:left-3/,
+    );
     expect(turkey).not.toMatch(/<Link[^>]*>\s*<Button/);
   });
 });

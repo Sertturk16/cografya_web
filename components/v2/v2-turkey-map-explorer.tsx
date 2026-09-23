@@ -575,83 +575,304 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             reader heard a figure caption on a province page and a loose paragraph on `/turkiye`.
             `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
         <figure className="m-0 space-y-2">
-          <div
-            ref={mapContainerRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onMouseLeave={() => {
-              if (!isDragging && !isPointerDownRef.current) {
-                setHoveredPlate(null);
-                setMousePos(null);
-              }
-            }}
-            className={`relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] min-h-[300px] sm:min-h-[420px] w-full select-none ${
-              zoomLevel > 1
-                ? `touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`
-                : "cursor-crosshair"
-            }`}
-          >
-            {/* Map Controls Floating Bar */}
+          {/* Positioning context for the selection card, which sits under the map box on a phone
+            and floats over it from `sm`. */}
+          <div className="relative">
             <div
-              onPointerDown={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg"
+              ref={mapContainerRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onMouseLeave={() => {
+                if (!isDragging && !isPointerDownRef.current) {
+                  setHoveredPlate(null);
+                  setMousePos(null);
+                }
+              }}
+              className={`relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-square sm:aspect-[1270/580] sm:min-h-[420px] w-full select-none ${
+                zoomLevel > 1
+                  ? `touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`
+                  : "cursor-crosshair"
+              }`}
             >
-              <button
-                type="button"
-                onClick={() => setShowRegionColors(!showRegionColors)}
-                aria-label={showRegionColors ? t("regionColorsReset") : t("regionColorsShow")}
-                className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
-                  showRegionColors
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }`}
+              {/* Map Controls Floating Bar */}
+              <div
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg"
               >
-                <Palette className="size-3.5" />
-                <span className="hidden sm:inline">Bölge Renkleri</span>
-              </button>
-
-              {/* The product's ONE standalone rule (T-036 measured it). It stays a <div>: it
-                groups toolbar buttons visually and carries no meaning a screen reader needs,
-                so it is hidden from the accessibility tree rather than announced. */}
-              <div aria-hidden="true" className="h-4 w-px bg-border my-auto mx-0.5" />
-
-              <button
-                type="button"
-                onClick={handleZoomIn}
-                aria-label={t("zoomIn")}
-                className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
-              >
-                <ZoomIn className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                disabled={zoomLevel <= 1}
-                aria-label={t("zoomOut")}
-                className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors cursor-pointer"
-              >
-                <ZoomOut className="size-4" />
-              </button>
-              {zoomLevel > 1 && (
                 <button
                   type="button"
-                  onClick={handleResetZoom}
-                  aria-label={t("resetView")}
-                  className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer text-xs font-mono"
+                  onClick={() => setShowRegionColors(!showRegionColors)}
+                  aria-label={showRegionColors ? t("regionColorsReset") : t("regionColorsShow")}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                    showRegionColors
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
                 >
-                  <RotateCcw className="size-3.5" />
+                  <Palette className="size-3.5" />
+                  <span className="hidden sm:inline">Bölge Renkleri</span>
                 </button>
+
+                {/* The product's ONE standalone rule (T-036 measured it). It stays a <div>: it
+                groups toolbar buttons visually and carries no meaning a screen reader needs,
+                so it is hidden from the accessibility tree rather than announced. */}
+                <div aria-hidden="true" className="h-4 w-px bg-border my-auto mx-0.5" />
+
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  aria-label={t("zoomIn")}
+                  className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <ZoomIn className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 1}
+                  aria-label={t("zoomOut")}
+                  className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors cursor-pointer"
+                >
+                  <ZoomOut className="size-4" />
+                </button>
+                {zoomLevel > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleResetZoom}
+                    aria-label={t("resetView")}
+                    className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer text-xs font-mono"
+                  >
+                    <RotateCcw className="size-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* SVG Map Canvas with Transform */}
+              <div
+                style={{
+                  transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
+                  transformOrigin: "center center",
+                  transition: isDragging ? "none" : "transform 0.2s ease-out",
+                }}
+                className="w-full h-full"
+              >
+                {/* `slice` over the tall frame (T-079): in the 1270:580 desktop box it shows exactly the
+                wide frame; in a phone's ~1:1 box the extra height is real land and sea rather than
+                letterbox, so `clampPanOffset`'s box-sized bounds match what is drawn and a zoomed
+                map can no longer be panned into empty space. */}
+                <svg
+                  viewBox={TR_CONTEXT_TALL_VIEWBOX}
+                  preserveAspectRatio="xMidYMid slice"
+                  className="w-full h-full select-none block"
+                  aria-label="Türkiye 81 İl ve Komşular İnteraktif Haritası"
+                >
+                  {/* 1. Surrounding Foreign Countries */}
+                  <g
+                    onMouseEnter={() => setHoveredPlate(null)}
+                    className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none"
+                  >
+                    {TALL_CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
+                      <path key={country.iso} d={country.d} />
+                    ))}
+                  </g>
+
+                  {/* 2. Türkiye Casing Base Land */}
+                  {trCasing && (
+                    <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
+                  )}
+
+                  {/* 3. Türkiye 81 Provinces Layer */}
+                  <g className="stroke-border/90 stroke-[0.8] transition-colors">
+                    {PROVINCE_SHAPES.map((shape) => {
+                      const isHovered = shape.plateCode === hoveredPlate;
+                      const isSelected = shape.plateCode === selectedPlate;
+                      const provItem = provinceMap.get(shape.plateCode);
+                      const regMeta = provItem ? REGION_DATA[provItem.region] : REGION_DATA.MARMARA;
+                      const matchesRegion =
+                        selectedRegion === "all" || provItem?.regionId === selectedRegion;
+                      const matchesCoastal = !onlyCoastal || provItem?.coastal;
+                      const isHighlighted = matchesRegion && matchesCoastal;
+
+                      let fillColor = "fill-card hover:fill-primary/60";
+
+                      if (showRegionColors) {
+                        fillColor = regMeta.identity.fill;
+                      } else if (selectedRegion !== "all" || onlyCoastal) {
+                        fillColor = isHighlighted
+                          ? regMeta.identity.fill
+                          : "fill-card/30 opacity-30";
+                      }
+
+                      if (isHovered || isSelected) {
+                        fillColor = "fill-primary filter drop-shadow-md opacity-100";
+                      }
+
+                      return (
+                        <path
+                          key={shape.plateCode}
+                          d={shape.d}
+                          data-plate={shape.plateCode}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${provItem?.name || shape.plateCode} ili`}
+                          onMouseEnter={() => setHoveredPlate(shape.plateCode)}
+                          onMouseLeave={() => setHoveredPlate(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedPlate(shape.plateCode);
+                            }
+                          }}
+                          onClick={() => {
+                            if (!hasDraggedRef.current) {
+                              setSelectedPlate(shape.plateCode);
+                            }
+                          }}
+                          className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/80 hover:stroke-[1.2] focus-visible:stroke-primary focus-visible:stroke-[2]`}
+                        />
+                      );
+                    })}
+                  </g>
+
+                  {/* 4. Inland Lakes */}
+                  <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
+                    {INLAND_WATER_SHAPES.map((lake) => (
+                      <path key={lake.id} d={lake.d} />
+                    ))}
+                  </g>
+
+                  {/* 5. Surrounding Sea Water Labels. FULL STRENGTH, no `opacity-*`: an opacity
+                  utility is part of the rendered colour and has to be measured with
+                  `blendOver`, which the `opacity-80` these labels shipped with never was —
+                  it put `fill-accent` at 3.35:1 light / 3.85:1 dark on `--map-sea`, under
+                  TEXT_MIN, while the commit justified it with the UNBLENDED 4.85/5.19. At
+                  full strength those 4.85/5.19 are what renders. `/deprem`'s sea labels lost
+                  the same utility one round earlier; this is the other two. */}
+                  <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
+                    {SEA_LABELS.map((sea, i) => (
+                      <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
+                        {sea.name}
+                      </text>
+                    ))}
+                  </g>
+
+                  {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea
+                  labels above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1
+                  dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the
+                  token records in `app/globals.css` — which is the figure at full strength
+                  and the figure that renders now. */}
+                  <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
+                    {TALL_CONTEXT_SHAPES.filter(
+                      (c) =>
+                        c.iso !== "TR" &&
+                        !["MK", "RS", "LB", "QN", "CY"].includes(c.iso) &&
+                        (WIDE_FRAME_ISOS.has(c.iso) ||
+                          (c.labelRadius >= NEW_CONTEXT_LABEL_MIN_RADIUS &&
+                            c.iso in COUNTRY_NAMES_TR)),
+                    ).map((country) => {
+                      const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
+                      return (
+                        <text
+                          key={country.iso}
+                          x={country.labelPoint.x}
+                          y={country.labelPoint.y}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          className="tracking-tight select-none"
+                        >
+                          {name}
+                        </text>
+                      );
+                    })}
+                  </g>
+                </svg>
+              </div>
+
+              {/* DYNAMIC FLOATING TOOLTIP */}
+              {hoveredPlate && mousePos && !isDragging && (
+                <div
+                  className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[210px] max-w-[260px] animate-in fade-in-50 zoom-in-95 duration-100"
+                  style={{
+                    top: `${Math.min(mousePos.y + 20, 340)}px`,
+                    left: `${Math.min(mousePos.x + 20, 960)}px`,
+                  }}
+                >
+                  {(() => {
+                    const item = provinceMap.get(hoveredPlate);
+                    if (!item) return null;
+                    const regMeta = REGION_DATA[item.region];
+                    return (
+                      <>
+                        <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="size-6 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center font-mono">
+                              {item.plateCode}
+                            </span>
+                            <div>
+                              <span className="font-heading font-bold text-foreground text-sm block leading-tight">
+                                {item.name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground block">
+                                {regMeta?.name ?? "Türkiye"}
+                              </span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" size="sm" className="text-[10px] font-mono">
+                            TR-{item.plateCode}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-1 text-[11px]">
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>Bölge:</span>
+                            <span className="font-medium text-foreground">
+                              {regMeta?.name.split(" ")[0] ?? "Türkiye"}
+                            </span>
+                          </div>
+                          {item.population && (
+                            <div className="flex items-center justify-between text-muted-foreground">
+                              <span>Nüfus:</span>
+                              <span className="font-mono font-bold text-primary">
+                                {item.population.toLocaleString("tr-TR")}
+                              </span>
+                            </div>
+                          )}
+                          {item.areaKm2 && (
+                            <div className="flex items-center justify-between text-muted-foreground">
+                              <span>Yüzölçümü:</span>
+                              <span className="font-mono font-medium text-foreground">
+                                {item.areaKm2.toLocaleString("tr-TR")} km²
+                              </span>
+                            </div>
+                          )}
+                          {item.districtCount && (
+                            <div className="flex items-center justify-between text-muted-foreground">
+                              <span>İlçe Sayısı:</span>
+                              <span className="font-mono font-medium text-foreground">
+                                {item.districtCount} İlçe
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-1 text-[10px] text-primary font-semibold flex items-center justify-between border-t border-border/60">
+                          <span>Tıkla ve İncele</span>
+                          <ArrowRight className="size-3" />
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
               )}
             </div>
-
-            {/* Active Selection / Quick Info Bar. Full width at the foot of the box on a phone,
-              where the tall frame puts Egypt and the Mediterranean under it, not Türkiye. */}
+            {/* Active Selection / Quick Info Bar: under the map on a phone, over it from `sm` (T-079).
+          Inside the box it covered 24px of Türkiye at 320px and 8px at 360px. */}
             {selectedPlate && activeProvince && (
               <MapSelectionCard
-                className="absolute inset-x-2 bottom-2 z-30 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:max-w-sm"
+                className="mt-2 sm:absolute sm:bottom-3 sm:left-3 sm:z-30 sm:mt-0 sm:max-w-sm"
                 leading={
                   <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 font-mono text-sm font-bold text-primary">
                     {activeProvince.plateCode}
@@ -676,222 +897,6 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 closeLabel={t("closeSelection")}
                 onClose={() => setSelectedPlate(null)}
               />
-            )}
-
-            {/* SVG Map Canvas with Transform */}
-            <div
-              style={{
-                transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
-                transformOrigin: "center center",
-                transition: isDragging ? "none" : "transform 0.2s ease-out",
-              }}
-              className="w-full h-full"
-            >
-              {/* `slice` over the tall frame (T-079): in the 1270:580 desktop box it shows exactly the
-                wide frame; in a phone's ~1:1 box the extra height is real land and sea rather than
-                letterbox, so `clampPanOffset`'s box-sized bounds match what is drawn and a zoomed
-                map can no longer be panned into empty space. */}
-              <svg
-                viewBox={TR_CONTEXT_TALL_VIEWBOX}
-                preserveAspectRatio="xMidYMid slice"
-                className="w-full h-full select-none block"
-                aria-label="Türkiye 81 İl ve Komşular İnteraktif Haritası"
-              >
-                {/* 1. Surrounding Foreign Countries */}
-                <g
-                  onMouseEnter={() => setHoveredPlate(null)}
-                  className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none"
-                >
-                  {TALL_CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
-                    <path key={country.iso} d={country.d} />
-                  ))}
-                </g>
-
-                {/* 2. Türkiye Casing Base Land */}
-                {trCasing && (
-                  <path d={trCasing.d} className="fill-[var(--map-land)] pointer-events-none" />
-                )}
-
-                {/* 3. Türkiye 81 Provinces Layer */}
-                <g className="stroke-border/90 stroke-[0.8] transition-colors">
-                  {PROVINCE_SHAPES.map((shape) => {
-                    const isHovered = shape.plateCode === hoveredPlate;
-                    const isSelected = shape.plateCode === selectedPlate;
-                    const provItem = provinceMap.get(shape.plateCode);
-                    const regMeta = provItem ? REGION_DATA[provItem.region] : REGION_DATA.MARMARA;
-                    const matchesRegion =
-                      selectedRegion === "all" || provItem?.regionId === selectedRegion;
-                    const matchesCoastal = !onlyCoastal || provItem?.coastal;
-                    const isHighlighted = matchesRegion && matchesCoastal;
-
-                    let fillColor = "fill-card hover:fill-primary/60";
-
-                    if (showRegionColors) {
-                      fillColor = regMeta.identity.fill;
-                    } else if (selectedRegion !== "all" || onlyCoastal) {
-                      fillColor = isHighlighted ? regMeta.identity.fill : "fill-card/30 opacity-30";
-                    }
-
-                    if (isHovered || isSelected) {
-                      fillColor = "fill-primary filter drop-shadow-md opacity-100";
-                    }
-
-                    return (
-                      <path
-                        key={shape.plateCode}
-                        d={shape.d}
-                        data-plate={shape.plateCode}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={`${provItem?.name || shape.plateCode} ili`}
-                        onMouseEnter={() => setHoveredPlate(shape.plateCode)}
-                        onMouseLeave={() => setHoveredPlate(null)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setSelectedPlate(shape.plateCode);
-                          }
-                        }}
-                        onClick={() => {
-                          if (!hasDraggedRef.current) {
-                            setSelectedPlate(shape.plateCode);
-                          }
-                        }}
-                        className={`${fillColor} transition-all duration-150 cursor-pointer outline-none hover:stroke-foreground/80 hover:stroke-[1.2] focus-visible:stroke-primary focus-visible:stroke-[2]`}
-                      />
-                    );
-                  })}
-                </g>
-
-                {/* 4. Inland Lakes */}
-                <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
-                  {INLAND_WATER_SHAPES.map((lake) => (
-                    <path key={lake.id} d={lake.d} />
-                  ))}
-                </g>
-
-                {/* 5. Surrounding Sea Water Labels. FULL STRENGTH, no `opacity-*`: an opacity
-                  utility is part of the rendered colour and has to be measured with
-                  `blendOver`, which the `opacity-80` these labels shipped with never was —
-                  it put `fill-accent` at 3.35:1 light / 3.85:1 dark on `--map-sea`, under
-                  TEXT_MIN, while the commit justified it with the UNBLENDED 4.85/5.19. At
-                  full strength those 4.85/5.19 are what renders. `/deprem`'s sea labels lost
-                  the same utility one round earlier; this is the other two. */}
-                <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
-                  {SEA_LABELS.map((sea, i) => (
-                    <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
-                      {sea.name}
-                    </text>
-                  ))}
-                </g>
-
-                {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea
-                  labels above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1
-                  dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the
-                  token records in `app/globals.css` — which is the figure at full strength
-                  and the figure that renders now. */}
-                <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
-                  {TALL_CONTEXT_SHAPES.filter(
-                    (c) =>
-                      c.iso !== "TR" &&
-                      !["MK", "RS", "LB", "QN", "CY"].includes(c.iso) &&
-                      (WIDE_FRAME_ISOS.has(c.iso) ||
-                        (c.labelRadius >= NEW_CONTEXT_LABEL_MIN_RADIUS &&
-                          c.iso in COUNTRY_NAMES_TR)),
-                  ).map((country) => {
-                    const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
-                    return (
-                      <text
-                        key={country.iso}
-                        x={country.labelPoint.x}
-                        y={country.labelPoint.y}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        className="tracking-tight select-none"
-                      >
-                        {name}
-                      </text>
-                    );
-                  })}
-                </g>
-              </svg>
-            </div>
-
-            {/* DYNAMIC FLOATING TOOLTIP */}
-            {hoveredPlate && mousePos && !isDragging && (
-              <div
-                className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[210px] max-w-[260px] animate-in fade-in-50 zoom-in-95 duration-100"
-                style={{
-                  top: `${Math.min(mousePos.y + 20, 340)}px`,
-                  left: `${Math.min(mousePos.x + 20, 960)}px`,
-                }}
-              >
-                {(() => {
-                  const item = provinceMap.get(hoveredPlate);
-                  if (!item) return null;
-                  const regMeta = REGION_DATA[item.region];
-                  return (
-                    <>
-                      <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="size-6 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center font-mono">
-                            {item.plateCode}
-                          </span>
-                          <div>
-                            <span className="font-heading font-bold text-foreground text-sm block leading-tight">
-                              {item.name}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground block">
-                              {regMeta?.name ?? "Türkiye"}
-                            </span>
-                          </div>
-                        </div>
-                        <Badge variant="outline" size="sm" className="text-[10px] font-mono">
-                          TR-{item.plateCode}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-1 text-[11px]">
-                        <div className="flex items-center justify-between text-muted-foreground">
-                          <span>Bölge:</span>
-                          <span className="font-medium text-foreground">
-                            {regMeta?.name.split(" ")[0] ?? "Türkiye"}
-                          </span>
-                        </div>
-                        {item.population && (
-                          <div className="flex items-center justify-between text-muted-foreground">
-                            <span>Nüfus:</span>
-                            <span className="font-mono font-bold text-primary">
-                              {item.population.toLocaleString("tr-TR")}
-                            </span>
-                          </div>
-                        )}
-                        {item.areaKm2 && (
-                          <div className="flex items-center justify-between text-muted-foreground">
-                            <span>Yüzölçümü:</span>
-                            <span className="font-mono font-medium text-foreground">
-                              {item.areaKm2.toLocaleString("tr-TR")} km²
-                            </span>
-                          </div>
-                        )}
-                        {item.districtCount && (
-                          <div className="flex items-center justify-between text-muted-foreground">
-                            <span>İlçe Sayısı:</span>
-                            <span className="font-mono font-medium text-foreground">
-                              {item.districtCount} İlçe
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-1 text-[10px] text-primary font-semibold flex items-center justify-between border-t border-border/60">
-                        <span>Tıkla ve İncele</span>
-                        <ArrowRight className="size-3" />
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
             )}
           </div>
 

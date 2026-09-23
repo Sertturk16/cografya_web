@@ -27,7 +27,16 @@ const html = renderToStaticMarkup(
 describe("MapSelectionCard", () => {
   it("puts the stats in their own grid cell, never under the actions", () => {
     expect(html).toContain("grid-cols-[auto_minmax(0,1fr)_auto]");
-    expect(html).toMatch(/<p class="[^"]*col-start-2[^"]*">.*5\.910\.320 kişi.*25\.632 km².*<\/p>/);
+    // Below `sm` the stats take a full-width second row and the actions stay in the first (at
+    // 320px a middle column was 87px and broke "5.910.320 kişi" over two lines); from `sm` the
+    // stats sit in the middle column beside the actions, which span both rows.
+    expect(html).toMatch(
+      /<p data-map-card-stats="" class="[^"]*\bcol-span-3 sm:col-span-1 sm:col-start-2\b[^"]*">.*5\.910\.320 kişi.*25\.632 km².*<\/p>/,
+    );
+    expect(html).toMatch(/<div class="sm:row-span-2 flex items-center gap-1">/);
+    // A base `p` margin is invisible in the element's box but a grid row counts it: measured
+    // 82px against 66px for the same card at 1440px.
+    expect(html).toMatch(/<p data-map-card-stats="" class="[^"]*\bm-0\b/);
     // Clipping instead of wrapping is how the old card lost the area figure.
     expect(html).not.toMatch(/\btruncate\b|whitespace-nowrap/);
   });
