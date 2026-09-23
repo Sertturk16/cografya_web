@@ -37,3 +37,65 @@ describe("the combobox renders one interface", () => {
     expect(source).not.toMatch(/\bvariant\b/);
   });
 });
+
+/**
+ * THE OVERLAY IS A MODAL DIALOG, AND ITS FOCUS RULES ARE BASE UI'S (T-078).
+ *
+ * The hand-rolled overlay had three focus defects, all measured in the browser: Tab walked out
+ * of it into the page behind, which stayed open underneath; at 390px Escape left focus on
+ * `<body>` because the one `triggerRef` pointed at the DESKTOP trigger, `display: none` below
+ * `sm`; and `close(restore)` had a parameter every caller passed `true`. The repo's `Dialog`
+ * primitive (Base UI) owns the trap, Escape, outside press and focus return, so the component
+ * keeps only what is specific to it. Real interaction is a browser question; these pins keep
+ * the source from drifting back to the hand-rolled shape.
+ */
+describe("the search overlay is the repo's modal Dialog primitive", () => {
+  it("is built from components/ui/dialog, not a hand-made portal", () => {
+    expect(source).toMatch(/from "@\/components\/ui\/dialog"/);
+    expect(source).toMatch(/<Dialog\b[^>]*\bopen=\{open\}/);
+    expect(source).toMatch(/<DialogPortal\b/);
+    expect(source).toMatch(/<DialogPopup\b/);
+    expect(source).not.toMatch(/createPortal/);
+    expect(source).not.toMatch(/react-dom/);
+  });
+
+  it("announces itself as a named modal dialog", () => {
+    const popup = source.match(/<DialogPopup\b[\s\S]*?>/)?.[0] ?? "";
+    expect(popup, "DialogPopup opening tag").not.toBe("");
+    expect(popup).toMatch(/aria-modal="true"/);
+    expect(popup).toMatch(/aria-label=\{t\("label"\)\}/);
+  });
+
+  it("opens with the caret in the input and returns focus through focusReturnTarget", () => {
+    const popup = source.match(/<DialogPopup\b[\s\S]*?>/)?.[0] ?? "";
+    expect(popup).toMatch(/initialFocus=\{inputRef\}/);
+    expect(popup).toMatch(/finalFocus=\{returnFocus\}/);
+    expect(source).toMatch(/from "@\/lib\/search\/focus-return"/);
+    expect(source).toMatch(/focusReturnTarget\(\[/);
+  });
+
+  it("makes BOTH triggers dialog triggers, each with its own ref", () => {
+    const triggers = source.match(/<DialogTrigger\b[\s\S]*?>/g) ?? [];
+    expect(triggers).toHaveLength(2);
+    const [desktop, mobile] = triggers;
+    expect(desktop).toMatch(/data-testid="global-search"/);
+    expect(desktop).toMatch(/ref=\{desktopTriggerRef\}/);
+    expect(mobile).toMatch(/data-testid="global-search-mobile"/);
+    expect(mobile).toMatch(/ref=\{mobileTriggerRef\}/);
+    // The one shared ref that pointed at the hidden desktop trigger is what lost focus at 390px.
+    expect(source).not.toMatch(/\btriggerRef\b/);
+  });
+
+  it("closes through Base UI's Close part, and leaves Escape to the primitive", () => {
+    expect(source).toMatch(/<DialogClose\b/);
+    // A hand-rolled Escape handler would duplicate the primitive's and, with a
+    // `stopPropagation`, starve its document listener.
+    expect(source).not.toMatch(/"Escape"/);
+  });
+
+  it("has no dead focus-restore flag: close() takes no argument", () => {
+    expect(source).not.toMatch(/\brestore\b/);
+    expect(source).not.toMatch(/restoreFocus/);
+    expect(source).not.toMatch(/\bclose\([^)]/);
+  });
+});

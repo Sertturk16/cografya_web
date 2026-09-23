@@ -235,7 +235,8 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
  *
  *   - {@link CARD_SHAPED_PRIMITIVES} (8) — design-system primitives wearing card chrome.
  *   - {@link MAP_VIEWPORTS} (12) — a rounded, bordered box around an `aspect-[…]` canvas.
- *   - {@link INTERACTIVE_CARD_CARRIERS} (36) — `<Link>` ×27, `<a>` ×5, `<button>` ×4.
+ *   - {@link INTERACTIVE_CARD_CARRIERS} (36) — `<Link>` ×27, `<a>` ×5, `<button>` ×2,
+ *     `<DialogTrigger>` ×2.
  *
  * ## SCOPE — what this scanner cannot see
  *
@@ -1481,8 +1482,10 @@ const INTERACTIVE_CARD_CARRIERS: readonly string[] = [
   "app/[locale]/(site)/turkiye/bolge/[slug]/page.tsx <Link>",
   "components/site-search/search-combobox.tsx <a>",
   "components/site-search/search-combobox.tsx <a>",
-  "components/site-search/search-combobox.tsx <button>",
-  "components/site-search/search-combobox.tsx <button>",
+  // T-078: the header search's two triggers are Base UI `DialogTrigger`s now, which render a
+  // `<button>`; same two elements, same classes, new tag in the source.
+  "components/site-search/search-combobox.tsx <DialogTrigger>",
+  "components/site-search/search-combobox.tsx <DialogTrigger>",
   "components/v2/theme-toggle.tsx <button>",
   "components/v2/v2-books-hub.tsx <Link>",
   "components/v2/v2-header.tsx <Link>",
@@ -1541,7 +1544,7 @@ describe("the three card-shaped populations PR4 must not touch", () => {
   });
 
   it("the interactive carriers are exactly the recorded 36, by file", () => {
-    const tags = new Set(["Link", "a", "button"]);
+    const tags = new Set(["Link", "a", "button", "DialogTrigger"]);
     const found = cardsMatching((element) => tags.has(element.tag));
     expect(
       found,
