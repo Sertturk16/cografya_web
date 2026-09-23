@@ -122,7 +122,9 @@
     "regionGroupedView": "Bölge Gruplu Görünüm",
     "continentGroupedView": "Kıta Gruplu Görünüm",
     "regionColorsShow": "Bölgeleri Renklendir (Lejant Modu)",
-    "regionColorsReset": "Varsayılan Renkler"
+    "regionColorsReset": "Varsayılan Renkler",
+    "explore": "İncele",
+    "closeSelection": "Seçimi kapat"
   },
   "About": {
     "metaTitle": "Hakkımızda",

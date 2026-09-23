@@ -4,7 +4,8 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
-import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
+import { TALL_CONTEXT_SHAPES, TR_CONTEXT_TALL_VIEWBOX } from "@/lib/map/tr-context-tall.generated";
+import { MapSelectionCard } from "@/components/v2/map-selection-card";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import type { GeographicRegion } from "@/lib/api/types";
 import { REGION_KEYS } from "@/lib/game/region-slug";
@@ -122,7 +123,41 @@ const COUNTRY_NAMES_TR: Record<string, string> = {
   RU: "Rusya",
   CY: "Güney Kıbrıs Rum Yönetimi",
   LB: "Lübnan",
+  // T-079: countries only the tall frame shows (north of the Black Sea, south of the Mediterranean).
+  UA: "Ukrayna",
+  RO: "Romanya",
+  MD: "Moldova",
+  EG: "Mısır",
+  LY: "Libya",
+  JO: "Ürdün",
+  SA: "Suudi Arabistan",
 };
+
+/** The wide context frame's countries (`lib/map/tr-context.generated.ts`), labelled as before. */
+const WIDE_FRAME_ISOS = new Set([
+  "AM",
+  "AZ",
+  "BG",
+  "CY",
+  "GE",
+  "GR",
+  "IQ",
+  "IR",
+  "LB",
+  "MK",
+  "QN",
+  "RS",
+  "RU",
+  "SY",
+  "TR",
+]);
+
+/**
+ * A country new to the tall frame is labelled only when its pole of inaccessibility can hold the
+ * label. Measured radii: UA, RO, MD, EG, LY, JO, SA are 37–173 svg units; IL, PS, KW, HU, KZ are
+ * 5–25 — clipped slivers at the frame's edge, or too small at this scale.
+ */
+const NEW_CONTEXT_LABEL_MIN_RADIUS = 30;
 
 const SEA_LABELS = [
   { name: "KARADENİZ", x: 480, y: -20, fontSize: 18 },
@@ -210,7 +245,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   }, [provinces]);
 
   const trCasing = React.useMemo(() => {
-    return CONTEXT_SHAPES.find((c) => c.iso === "TR");
+    return TALL_CONTEXT_SHAPES.find((c) => c.iso === "TR");
   }, []);
 
   // Global release listener for pointerup and pointercancel
@@ -612,55 +647,35 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               )}
             </div>
 
-            {/* Active Selection / Quick Info Bar */}
+            {/* Active Selection / Quick Info Bar. Full width at the foot of the box on a phone,
+              where the tall frame puts Egypt and the Mediterranean under it, not Türkiye. */}
             {selectedPlate && activeProvince && (
-              <div
-                onPointerDown={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="absolute bottom-3 left-3 z-30 flex items-center gap-3 bg-card/95 backdrop-blur-md p-3 rounded-2xl border border-primary/40 shadow-xl max-w-sm animate-in fade-in-50 duration-200"
-              >
-                <div className="size-9 rounded-xl bg-primary/10 text-primary font-bold text-sm flex items-center justify-center font-mono shrink-0">
-                  {activeProvince.plateCode}
-                </div>
-                <div className="space-y-0.5 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-heading font-bold text-foreground text-sm truncate">
-                      {activeProvince.name}
-                    </span>
-                    <Badge variant="outline" size="sm" className="text-[9px] py-0 px-1 font-mono">
-                      {activeRegionMeta?.name.split(" ")[0]}
-                    </Badge>
+              <MapSelectionCard
+                className="absolute inset-x-2 bottom-2 z-30 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:max-w-sm"
+                leading={
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 font-mono text-sm font-bold text-primary">
+                    {activeProvince.plateCode}
                   </div>
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 font-mono">
-                    {activeProvince.population && (
-                      <span>{activeProvince.population.toLocaleString("tr-TR")} kişi</span>
-                    )}
-                    {activeProvince.areaKm2 && (
-                      <span>· {activeProvince.areaKm2.toLocaleString("tr-TR")} km²</span>
-                    )}
-                  </div>
-                </div>
-                <Link
-                  href={activeProvince.path as unknown as React.ComponentProps<typeof Link>["href"]}
-                  className="ml-auto shrink-0"
-                >
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="h-8 text-xs font-semibold px-2.5"
-                    rightIcon={<ArrowRight className="size-3.5" />}
-                  >
-                    İncele
-                  </Button>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlate(null)}
-                  className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
+                }
+                title={activeProvince.name}
+                badges={
+                  <Badge variant="outline" size="sm" className="px-1 py-0 font-mono text-[9px]">
+                    {activeRegionMeta?.name.split(" ")[0]}
+                  </Badge>
+                }
+                stats={[
+                  activeProvince.population
+                    ? `${activeProvince.population.toLocaleString("tr-TR")} kişi`
+                    : null,
+                  activeProvince.areaKm2
+                    ? `${activeProvince.areaKm2.toLocaleString("tr-TR")} km²`
+                    : null,
+                ].filter((stat): stat is string => stat !== null)}
+                href={activeProvince.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                exploreLabel={t("explore")}
+                closeLabel={t("closeSelection")}
+                onClose={() => setSelectedPlate(null)}
+              />
             )}
 
             {/* SVG Map Canvas with Transform */}
@@ -672,8 +687,13 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               }}
               className="w-full h-full"
             >
+              {/* `slice` over the tall frame (T-079): in the 1270:580 desktop box it shows exactly the
+                wide frame; in a phone's ~1:1 box the extra height is real land and sea rather than
+                letterbox, so `clampPanOffset`'s box-sized bounds match what is drawn and a zoomed
+                map can no longer be panned into empty space. */}
               <svg
-                viewBox={TR_CONTEXT_VIEWBOX}
+                viewBox={TR_CONTEXT_TALL_VIEWBOX}
+                preserveAspectRatio="xMidYMid slice"
                 className="w-full h-full select-none block"
                 aria-label="Türkiye 81 İl ve Komşular İnteraktif Haritası"
               >
@@ -682,7 +702,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   onMouseEnter={() => setHoveredPlate(null)}
                   className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none"
                 >
-                  {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
+                  {TALL_CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
                     <path key={country.iso} d={country.d} />
                   ))}
                 </g>
@@ -771,8 +791,13 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   token records in `app/globals.css` — which is the figure at full strength
                   and the figure that renders now. */}
                 <g className="fill-[var(--map-label)] font-sans font-bold text-[12px] pointer-events-none select-none">
-                  {CONTEXT_SHAPES.filter(
-                    (c) => c.iso !== "TR" && !["MK", "RS", "LB", "QN", "CY"].includes(c.iso),
+                  {TALL_CONTEXT_SHAPES.filter(
+                    (c) =>
+                      c.iso !== "TR" &&
+                      !["MK", "RS", "LB", "QN", "CY"].includes(c.iso) &&
+                      (WIDE_FRAME_ISOS.has(c.iso) ||
+                        (c.labelRadius >= NEW_CONTEXT_LABEL_MIN_RADIUS &&
+                          c.iso in COUNTRY_NAMES_TR)),
                   ).map((country) => {
                     const name = COUNTRY_NAMES_TR[country.iso] || country.geoName;
                     return (

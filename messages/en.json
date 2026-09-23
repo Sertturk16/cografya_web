@@ -122,7 +122,9 @@
     "regionGroupedView": "Grouped by region",
     "continentGroupedView": "Grouped by continent",
     "regionColorsShow": "Colour the regions (legend mode)",
-    "regionColorsReset": "Default colours"
+    "regionColorsReset": "Default colours",
+    "explore": "Explore",
+    "closeSelection": "Close selection"
   },
   "About": {
     "metaTitle": "About",

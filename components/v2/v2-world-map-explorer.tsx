@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { MapSelectionCard } from "@/components/v2/map-selection-card";
 import { COUNTRY_SHAPES, WORLD_MAP_VIEWBOX } from "@/lib/map/world-countries.generated";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 import { Badge } from "@/components/ui/badge";
@@ -519,28 +520,16 @@ export function V2WorldMapExplorer({
             sibling while the province locator next door said the same thing as a `<figcaption>`.
             `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
         <figure className="m-0 space-y-2">
-          <div
-            ref={containerRef}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            onMouseLeave={() => {
-              if (!isPanning && !isPointerDownRef.current) {
-                setHoveredIso(null);
-              }
-            }}
-            className={`relative rounded-2xl bg-[var(--map-ocean)] border border-border overflow-hidden p-0 group aspect-[1008/520] min-h-[320px] sm:min-h-[460px] w-full select-none ${
-              zoom > 1
-                ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
-                : "cursor-crosshair"
-            }`}
-          >
-            {/* Map Controls Floating Bar */}
+          {/* Positioning context for the toolbar and card, which sit outside the map box on a
+            phone and float over it from `sm`. */}
+          <div className="relative">
+            {/* Map Controls. A row above the map on a phone, where the box is only as tall as the map
+              (T-079) and a floating bar would cover it; floating over the map from `sm`. */}
             <div
+              data-map-toolbar
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
-              className="absolute top-3 right-3 z-30 flex items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg"
+              className="mb-2 ml-auto flex w-fit items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg sm:absolute sm:top-3 sm:right-3 sm:z-30 sm:mb-0"
             >
               <button
                 type="button"
@@ -571,102 +560,60 @@ export function V2WorldMapExplorer({
               )}
             </div>
 
-            {/* Active Selected Country Card */}
-            {selectedIso && activeCountry && (
-              <div
-                onPointerDown={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="absolute bottom-3 left-3 z-30 flex items-center gap-3 bg-card/95 backdrop-blur-md p-3 rounded-2xl border border-primary/40 shadow-xl max-w-sm animate-in fade-in-50 duration-200"
-              >
-                {activeCountry.hasFlag && (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={`/flags/${activeCountry.isoCode.toUpperCase()}.svg`}
-                    alt={`${activeCountry.nameTr} bayrağı`}
-                    className="w-10 h-7 object-cover rounded-xs border border-border shadow-2xs shrink-0"
-                  />
-                )}
-                <div className="space-y-0.5 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-heading font-bold text-foreground text-sm truncate">
-                      {isEn ? activeCountry.nameEn : activeCountry.nameTr}
-                    </span>
-                    <Badge variant="outline" size="sm" className="text-[9px] py-0 px-1 font-mono">
-                      {activeCountry.isoCode}
-                    </Badge>
-                    {activeCountry.isSpecialStatus && <SpecialStatusBadge isEn={isEn} />}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground flex items-center gap-2 font-mono">
-                    {activeCountry.population && (
-                      <span>
-                        {activeCountry.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi
-                      </span>
-                    )}
-                    {activeCountry.areaKm2 && (
-                      <span>
-                        · {activeCountry.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <Link
-                  href={activeCountry.path as unknown as React.ComponentProps<typeof Link>["href"]}
-                  className="ml-auto shrink-0"
-                >
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    className="h-8 text-xs font-semibold px-2.5"
-                    rightIcon={<ArrowRight className="size-3.5" />}
-                  >
-                    {isEn ? "Explore" : "İncele"}
-                  </Button>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setSelectedIso(null)}
-                  className="text-muted-foreground hover:text-foreground p-1 cursor-pointer"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            )}
-
-            {/* SVG Map Canvas with Zoom & Pan Transform */}
+            {/* No minimum height (T-079): the world has nothing beyond its poles to fill a taller
+            box with, so any floor becomes letterbox painted as ocean on a phone. */}
             <div
-              style={{
-                transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
-                transformOrigin: "center center",
-                transition: isPanning ? "none" : "transform 0.2s ease-out",
+              ref={containerRef}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              onMouseLeave={() => {
+                if (!isPanning && !isPointerDownRef.current) {
+                  setHoveredIso(null);
+                }
               }}
-              className="w-full h-full"
+              className={`relative rounded-2xl bg-[var(--map-ocean)] border border-border overflow-hidden p-0 group aspect-[1008/520] w-full select-none ${
+                zoom > 1
+                  ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
+                  : "cursor-crosshair"
+              }`}
             >
-              <svg
-                viewBox={WORLD_MAP_VIEWBOX}
-                className="w-full h-full select-none block"
-                aria-label="İnteraktif Dünya Haritası"
+              {/* SVG Map Canvas with Zoom & Pan Transform */}
+              <div
+                style={{
+                  transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
+                  transformOrigin: "center center",
+                  transition: isPanning ? "none" : "transform 0.2s ease-out",
+                }}
+                className="w-full h-full"
               >
-                <defs>
-                  <filter id="country-glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feDropShadow
-                      dx="0"
-                      dy="0"
-                      stdDeviation="3"
-                      floodColor="var(--primary)"
-                      floodOpacity="0.8"
-                    />
-                  </filter>
-                </defs>
+                <svg
+                  viewBox={WORLD_MAP_VIEWBOX}
+                  className="w-full h-full select-none block"
+                  aria-label="İnteraktif Dünya Haritası"
+                >
+                  <defs>
+                    <filter id="country-glow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow
+                        dx="0"
+                        dy="0"
+                        stdDeviation="3"
+                        floodColor="var(--primary)"
+                        floodOpacity="0.8"
+                      />
+                    </filter>
+                  </defs>
 
-                {/* Background Ocean Layer */}
-                <rect
-                  width="1008"
-                  height="520"
-                  className="fill-[var(--map-ocean)]"
-                  onMouseEnter={() => setHoveredIso(null)}
-                />
+                  {/* Background Ocean Layer */}
+                  <rect
+                    width="1008"
+                    height="520"
+                    className="fill-[var(--map-ocean)]"
+                    onMouseEnter={() => setHoveredIso(null)}
+                  />
 
-                {/* Graticules / Latitude-Longitude Grid. FULL STRENGTH, no `/60`: an opacity
+                  {/* Graticules / Latitude-Longitude Grid. FULL STRENGTH, no `/60`: an opacity
                   utility is part of the rendered colour, so the `/60` this group carried put
                   the two tropics at 2.26:1 light / 2.34:1 dark on `--map-ocean` -- under
                   GRAPHICAL_MIN, and under the 4.03/4.49 that `app/globals.css` and
@@ -675,214 +622,252 @@ export function V2WorldMapExplorer({
                   one measurement, every line: 4.03 light / 4.49 dark. The major/minor
                   hierarchy is carried by STROKE WIDTH (0.8 against 0.5), which costs no
                   contrast. */}
-                <g className="stroke-[var(--map-graticule)] stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
-                  <line
-                    x1="0"
-                    y1="260"
-                    x2="1008"
-                    y2="260"
-                    className="stroke-[var(--map-graticule)] stroke-[0.8]"
-                  />
-                  <line x1="0" y1="195" x2="1008" y2="195" />
-                  <line x1="0" y1="325" x2="1008" y2="325" />
-                  <line
-                    x1="504"
-                    y1="0"
-                    x2="504"
-                    y2="520"
-                    className="stroke-[var(--map-graticule)] stroke-[0.8]"
-                  />
-                </g>
+                  <g className="stroke-[var(--map-graticule)] stroke-[0.5] stroke-dasharray-[2,4] pointer-events-none">
+                    <line
+                      x1="0"
+                      y1="260"
+                      x2="1008"
+                      y2="260"
+                      className="stroke-[var(--map-graticule)] stroke-[0.8]"
+                    />
+                    <line x1="0" y1="195" x2="1008" y2="195" />
+                    <line x1="0" y1="325" x2="1008" y2="325" />
+                    <line
+                      x1="504"
+                      y1="0"
+                      x2="504"
+                      y2="520"
+                      className="stroke-[var(--map-graticule)] stroke-[0.8]"
+                    />
+                  </g>
 
-                {/* Graticule Text Labels */}
-                <g className="fill-[var(--map-graticule)] text-[7.5px] font-mono select-none pointer-events-none">
-                  <text x="8" y="257">
-                    EKVATOR (0°)
-                  </text>
-                  <text x="8" y="192">
-                    YENGEÇ DÖNENCESİ (23.5°K)
-                  </text>
-                  <text x="8" y="322">
-                    OĞLAK DÖNENCESİ (23.5°G)
-                  </text>
-                  <text x="508" y="14">
-                    0° MERİDYENİ
-                  </text>
-                </g>
+                  {/* Graticule Text Labels */}
+                  <g className="fill-[var(--map-graticule)] text-[7.5px] font-mono select-none pointer-events-none">
+                    <text x="8" y="257">
+                      EKVATOR (0°)
+                    </text>
+                    <text x="8" y="192">
+                      YENGEÇ DÖNENCESİ (23.5°K)
+                    </text>
+                    <text x="8" y="322">
+                      OĞLAK DÖNENCESİ (23.5°G)
+                    </text>
+                    <text x="508" y="14">
+                      0° MERİDYENİ
+                    </text>
+                  </g>
 
-                {/* Country Polygons */}
-                <g fillRule="evenodd">
-                  {COUNTRY_SHAPES.map((shape) => {
-                    const item = countryMap.get(shape.iso);
-                    const continentMeta = item ? CONTINENT_META[item.continent] : null;
-                    const isHovered = hoveredIso === shape.iso;
-                    const isSelected = selectedIso === shape.iso;
-                    const isMatchingContinent =
-                      selectedContinent === "ALL" || item?.continent === selectedContinent;
+                  {/* Country Polygons */}
+                  <g fillRule="evenodd">
+                    {COUNTRY_SHAPES.map((shape) => {
+                      const item = countryMap.get(shape.iso);
+                      const continentMeta = item ? CONTINENT_META[item.continent] : null;
+                      const isHovered = hoveredIso === shape.iso;
+                      const isSelected = selectedIso === shape.iso;
+                      const isMatchingContinent =
+                        selectedContinent === "ALL" || item?.continent === selectedContinent;
 
-                    // `--map-ocean`, NOT `--map-context-line`, and this is measured rather
-                    // than matched to the Türkiye maps by name. `--map-context-line` is tuned
-                    // against `--map-context-land` (3.18/3.54) and was never measured against
-                    // THIS fill: on `--map-unknown-land` it reads 1.23:1 light / 1.04:1 dark,
-                    // so the border between two adjacent un-continent countries was WORSE than
-                    // the slate-400/45 line it replaced (1.97 light / 2.04 dark) even as
-                    // the fill improved 1.67 -> 3.66. The ocean tone clears 3.66:1 light /
-                    // 4.07:1 dark on that fill and is the only existing token that clears the
-                    // floor without flipping polarity between themes -- /dunya is dark in BOTH,
-                    // so a stroke that is white in light and near-black in dark (`--map-land`,
-                    // `--card`, `--background`) is wrong here for the same reason `--map-hover`
-                    // is one literal in both blocks. The outer edge, ocean line on ocean, is
-                    // 1:1 by construction and costs nothing: the land/sea boundary is carried
-                    // by the FILL's own 3.66/4.07 silhouette, which is what WCAG 1.4.11 asks
-                    // of. `lib/theme/map-surface.test.ts` holds the pairing.
-                    let fillClass =
-                      "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5]";
+                      // `--map-ocean`, NOT `--map-context-line`, and this is measured rather
+                      // than matched to the Türkiye maps by name. `--map-context-line` is tuned
+                      // against `--map-context-land` (3.18/3.54) and was never measured against
+                      // THIS fill: on `--map-unknown-land` it reads 1.23:1 light / 1.04:1 dark,
+                      // so the border between two adjacent un-continent countries was WORSE than
+                      // the slate-400/45 line it replaced (1.97 light / 2.04 dark) even as
+                      // the fill improved 1.67 -> 3.66. The ocean tone clears 3.66:1 light /
+                      // 4.07:1 dark on that fill and is the only existing token that clears the
+                      // floor without flipping polarity between themes -- /dunya is dark in BOTH,
+                      // so a stroke that is white in light and near-black in dark (`--map-land`,
+                      // `--card`, `--background`) is wrong here for the same reason `--map-hover`
+                      // is one literal in both blocks. The outer edge, ocean line on ocean, is
+                      // 1:1 by construction and costs nothing: the land/sea boundary is carried
+                      // by the FILL's own 3.66/4.07 silhouette, which is what WCAG 1.4.11 asks
+                      // of. `lib/theme/map-surface.test.ts` holds the pairing.
+                      let fillClass =
+                        "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5]";
 
-                    if (item && continentMeta) {
-                      if (selectedContinent === "ALL") {
-                        fillClass = `${continentMeta.identity.fill} ${continentMeta.identity.stroke} stroke-[0.4]`;
-                      } else if (isMatchingContinent) {
-                        fillClass = `${continentMeta.identity.fill} stroke-white/80 stroke-[0.8] shadow-lg`;
-                      } else {
-                        // The `hover:fill-[var(--map-unknown-land)]/80` that used to sit here
-                        // is GONE, and it was dead before it was wrong: `isHovered` is React
-                        // state set by this path's own `onMouseEnter`, and the branch below
-                        // replaces `fillClass` outright with the `--map-hover` highlight, so
-                        // the CSS hover never rendered. Measured anyway, because a dead class
-                        // is still a recorded intent: /80 over `--map-ocean` is 2.80:1 light /
-                        // 3.02:1 dark, i.e. the hover would have DROPPED the country under the
-                        // 3:1 floor its resting fill clears at 3.66/4.07.
-                        fillClass =
-                          "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5] transition-colors";
+                      if (item && continentMeta) {
+                        if (selectedContinent === "ALL") {
+                          fillClass = `${continentMeta.identity.fill} ${continentMeta.identity.stroke} stroke-[0.4]`;
+                        } else if (isMatchingContinent) {
+                          fillClass = `${continentMeta.identity.fill} stroke-white/80 stroke-[0.8] shadow-lg`;
+                        } else {
+                          // The `hover:fill-[var(--map-unknown-land)]/80` that used to sit here
+                          // is GONE, and it was dead before it was wrong: `isHovered` is React
+                          // state set by this path's own `onMouseEnter`, and the branch below
+                          // replaces `fillClass` outright with the `--map-hover` highlight, so
+                          // the CSS hover never rendered. Measured anyway, because a dead class
+                          // is still a recorded intent: /80 over `--map-ocean` is 2.80:1 light /
+                          // 3.02:1 dark, i.e. the hover would have DROPPED the country under the
+                          // 3:1 floor its resting fill clears at 3.66/4.07.
+                          fillClass =
+                            "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5] transition-colors";
+                        }
                       }
-                    }
 
-                    if (isHovered || isSelected) {
-                      // ONE token, not a light/dark pair: /dunya is dark in both themes, so the
-                      // highlight has only ever one ground (--map-ocean) to be measured against.
-                      // Fix round 1 tried a theme-aware split (--map-graticule light /
-                      // --primary-strong dark) because --primary-strong's dark value cleared
-                      // 9.33:1 against the dark ocean; but its LIGHT value is #7e3a1e, ink
-                      // calibrated for a light surface, which measured only 2.08:1 against the
-                      // light ocean -- worse than --map-graticule's 4.03:1, not better. --map-hover
-                      // pins that same dark-mode value (#f49f80) as a literal in BOTH `:root` and
-                      // `.dark`, which is what makes it work in light too: 8.38:1 light / 9.33:1
-                      // dark full strength, 7.00:1 / 7.71:1 at the /90 this fill renders at --
-                      // above every continent's own contrast against --map-ocean except
-                      // Antarktika's outlier (see app/globals.css and map-surface.test.ts for the
-                      // full measurement, including where it does NOT clear the top two).
-                      fillClass =
-                        "stroke-[var(--map-hover)] stroke-[1.8] fill-[var(--map-hover)]/90 opacity-100";
-                    }
+                      if (isHovered || isSelected) {
+                        // ONE token, not a light/dark pair: /dunya is dark in both themes, so the
+                        // highlight has only ever one ground (--map-ocean) to be measured against.
+                        // Fix round 1 tried a theme-aware split (--map-graticule light /
+                        // --primary-strong dark) because --primary-strong's dark value cleared
+                        // 9.33:1 against the dark ocean; but its LIGHT value is #7e3a1e, ink
+                        // calibrated for a light surface, which measured only 2.08:1 against the
+                        // light ocean -- worse than --map-graticule's 4.03:1, not better. --map-hover
+                        // pins that same dark-mode value (#f49f80) as a literal in BOTH `:root` and
+                        // `.dark`, which is what makes it work in light too: 8.38:1 light / 9.33:1
+                        // dark full strength, 7.00:1 / 7.71:1 at the /90 this fill renders at --
+                        // above every continent's own contrast against --map-ocean except
+                        // Antarktika's outlier (see app/globals.css and map-surface.test.ts for the
+                        // full measurement, including where it does NOT clear the top two).
+                        fillClass =
+                          "stroke-[var(--map-hover)] stroke-[1.8] fill-[var(--map-hover)]/90 opacity-100";
+                      }
 
-                    const cItem = countryMap.get(shape.iso);
-                    const countryName = cItem ? (isEn ? cItem.nameEn : cItem.nameTr) : shape.iso;
+                      const cItem = countryMap.get(shape.iso);
+                      const countryName = cItem ? (isEn ? cItem.nameEn : cItem.nameTr) : shape.iso;
 
-                    return (
-                      <path
-                        key={shape.iso}
-                        d={shape.d}
-                        data-iso={shape.iso}
-                        role="button"
-                        tabIndex={0}
-                        aria-label={countryName}
-                        className={`transition-colors duration-150 cursor-pointer outline-none focus-visible:stroke-primary focus-visible:stroke-[2] ${fillClass}`}
-                        style={isHovered ? { filter: "url(#country-glow)" } : undefined}
-                        onMouseEnter={() => setHoveredIso(shape.iso)}
-                        onMouseLeave={() => setHoveredIso(null)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setSelectedIso(shape.iso);
-                          }
-                        }}
-                        onClick={() => {
-                          if (!hasDraggedRef.current) {
-                            setSelectedIso(shape.iso);
-                          }
-                        }}
-                      />
-                    );
-                  })}
-                </g>
-              </svg>
-            </div>
-
-            {/* DYNAMIC FLOATING TOOLTIP */}
-            {hoveredIso && countryMap.get(hoveredIso) && !isPanning && (
-              <div
-                className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[200px] max-w-[260px] animate-in fade-in-50 zoom-in-95 duration-100"
-                style={getTooltipStyle()}
-              >
-                {(() => {
-                  const item = countryMap.get(hoveredIso)!;
-                  const continentMeta = CONTINENT_META[item.continent];
-                  return (
-                    <>
-                      <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
-                        <div className="flex items-center gap-2">
-                          {item.hasFlag && (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
-                              src={`/flags/${item.isoCode.toUpperCase()}.svg`}
-                              alt={`${item.nameTr} bayrağı`}
-                              className="w-6 h-4 object-cover rounded-xs border border-border/60 shadow-2xs"
-                            />
-                          )}
-                          <div>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-heading font-bold text-foreground text-sm block leading-tight">
-                                {isEn ? item.nameEn : item.nameTr}
-                              </span>
-                              {item.isSpecialStatus && <SpecialStatusBadge isEn={isEn} />}
-                            </div>
-                            <span className="text-[10px] text-muted-foreground block">
-                              {isEn ? item.nameTr : item.nameEn}
-                            </span>
-                          </div>
-                        </div>
-                        <Badge variant="outline" size="sm" className="text-[10px] font-mono">
-                          {item.isoCode}
-                        </Badge>
-                      </div>
-
-                      <div className="space-y-1 text-[11px]">
-                        <div className="flex items-center justify-between text-muted-foreground">
-                          <span>{isEn ? "Continent:" : "Kıta:"}</span>
-                          <span className="font-medium text-foreground">
-                            {continentMeta
-                              ? isEn
-                                ? continentMeta.nameEn
-                                : continentMeta.name
-                              : item.continent}
-                          </span>
-                        </div>
-                        {item.population !== null && item.population !== undefined && (
-                          <div className="flex items-center justify-between text-muted-foreground">
-                            <span>{isEn ? "Population:" : "Nüfus:"}</span>
-                            <span className="font-mono font-bold text-primary">
-                              {item.population.toLocaleString(isEn ? "en-US" : "tr-TR")}
-                            </span>
-                          </div>
-                        )}
-                        {item.areaKm2 !== null && item.areaKm2 !== undefined && (
-                          <div className="flex items-center justify-between text-muted-foreground">
-                            <span>{isEn ? "Area:" : "Yüzölçümü:"}</span>
-                            <span className="font-mono font-medium text-foreground">
-                              {item.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-1 text-[10px] text-primary font-semibold flex items-center justify-between border-t border-border/60">
-                        <span>{isEn ? "Click to inspect" : "Tıkla ve İncele"}</span>
-                        <ArrowRight className="size-3" />
-                      </div>
-                    </>
-                  );
-                })()}
+                      return (
+                        <path
+                          key={shape.iso}
+                          d={shape.d}
+                          data-iso={shape.iso}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={countryName}
+                          className={`transition-colors duration-150 cursor-pointer outline-none focus-visible:stroke-primary focus-visible:stroke-[2] ${fillClass}`}
+                          style={isHovered ? { filter: "url(#country-glow)" } : undefined}
+                          onMouseEnter={() => setHoveredIso(shape.iso)}
+                          onMouseLeave={() => setHoveredIso(null)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedIso(shape.iso);
+                            }
+                          }}
+                          onClick={() => {
+                            if (!hasDraggedRef.current) {
+                              setSelectedIso(shape.iso);
+                            }
+                          }}
+                        />
+                      );
+                    })}
+                  </g>
+                </svg>
               </div>
+
+              {/* DYNAMIC FLOATING TOOLTIP */}
+              {hoveredIso && countryMap.get(hoveredIso) && !isPanning && (
+                <div
+                  className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3.5 shadow-2xl text-xs space-y-2 min-w-[200px] max-w-[260px] animate-in fade-in-50 zoom-in-95 duration-100"
+                  style={getTooltipStyle()}
+                >
+                  {(() => {
+                    const item = countryMap.get(hoveredIso)!;
+                    const continentMeta = CONTINENT_META[item.continent];
+                    return (
+                      <>
+                        <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
+                          <div className="flex items-center gap-2">
+                            {item.hasFlag && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img
+                                src={`/flags/${item.isoCode.toUpperCase()}.svg`}
+                                alt={`${item.nameTr} bayrağı`}
+                                className="w-6 h-4 object-cover rounded-xs border border-border/60 shadow-2xs"
+                              />
+                            )}
+                            <div>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-heading font-bold text-foreground text-sm block leading-tight">
+                                  {isEn ? item.nameEn : item.nameTr}
+                                </span>
+                                {item.isSpecialStatus && <SpecialStatusBadge isEn={isEn} />}
+                              </div>
+                              <span className="text-[10px] text-muted-foreground block">
+                                {isEn ? item.nameTr : item.nameEn}
+                              </span>
+                            </div>
+                          </div>
+                          <Badge variant="outline" size="sm" className="text-[10px] font-mono">
+                            {item.isoCode}
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-1 text-[11px]">
+                          <div className="flex items-center justify-between text-muted-foreground">
+                            <span>{isEn ? "Continent:" : "Kıta:"}</span>
+                            <span className="font-medium text-foreground">
+                              {continentMeta
+                                ? isEn
+                                  ? continentMeta.nameEn
+                                  : continentMeta.name
+                                : item.continent}
+                            </span>
+                          </div>
+                          {item.population !== null && item.population !== undefined && (
+                            <div className="flex items-center justify-between text-muted-foreground">
+                              <span>{isEn ? "Population:" : "Nüfus:"}</span>
+                              <span className="font-mono font-bold text-primary">
+                                {item.population.toLocaleString(isEn ? "en-US" : "tr-TR")}
+                              </span>
+                            </div>
+                          )}
+                          {item.areaKm2 !== null && item.areaKm2 !== undefined && (
+                            <div className="flex items-center justify-between text-muted-foreground">
+                              <span>{isEn ? "Area:" : "Yüzölçümü:"}</span>
+                              <span className="font-mono font-medium text-foreground">
+                                {item.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-1 text-[10px] text-primary font-semibold flex items-center justify-between border-t border-border/60">
+                          <span>{isEn ? "Click to inspect" : "Tıkla ve İncele"}</span>
+                          <ArrowRight className="size-3" />
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+            </div>
+            {/* Active Selected Country Card: under the map on a phone, over it from `sm` (T-079). */}
+            {selectedIso && activeCountry && (
+              <MapSelectionCard
+                className="mt-2 sm:absolute sm:bottom-3 sm:left-3 sm:z-30 sm:mt-0 sm:max-w-sm"
+                leading={
+                  activeCountry.hasFlag ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={`/flags/${activeCountry.isoCode.toUpperCase()}.svg`}
+                      alt={`${activeCountry.nameTr} bayrağı`}
+                      className="h-7 w-10 rounded-xs border border-border object-cover shadow-2xs"
+                    />
+                  ) : undefined
+                }
+                title={isEn ? activeCountry.nameEn : activeCountry.nameTr}
+                badges={
+                  <>
+                    <Badge variant="outline" size="sm" className="px-1 py-0 font-mono text-[9px]">
+                      {activeCountry.isoCode}
+                    </Badge>
+                    {activeCountry.isSpecialStatus && <SpecialStatusBadge isEn={isEn} />}
+                  </>
+                }
+                stats={[
+                  activeCountry.population
+                    ? `${activeCountry.population.toLocaleString(isEn ? "en-US" : "tr-TR")} kişi`
+                    : null,
+                  activeCountry.areaKm2
+                    ? `${activeCountry.areaKm2.toLocaleString(isEn ? "en-US" : "tr-TR")} km²`
+                    : null,
+                ].filter((stat): stat is string => stat !== null)}
+                href={activeCountry.path as unknown as React.ComponentProps<typeof Link>["href"]}
+                exploreLabel={t("explore")}
+                closeLabel={t("closeSelection")}
+                onClose={() => setSelectedIso(null)}
+              />
             )}
           </div>
 
