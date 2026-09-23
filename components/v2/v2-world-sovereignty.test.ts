@@ -9,20 +9,24 @@ import { stripComments } from "@/lib/test-support/strip-comments";
 
 describe("V2 sovereignty and naming invariants", () => {
   it("uses canonical Güney Kıbrıs Rum Yönetimi for CY in neighbor map dictionaries (VAL124SEO-I2)", () => {
-    const files = [
+    // The three maps that label neighbours (`/turkiye`, `/deniz`, `/deprem`) each carried a copy
+    // of the dictionary until T-085 moved it to one module. The rule now runs against that module,
+    // and against the three maps to prove none has grown its own copy back.
+    const dictionary = readFileSync(
+      new URL("../../lib/map/map-country-names.ts", import.meta.url),
+      "utf8",
+    );
+    expect(dictionary).not.toContain('CY: "Kıbrıs"');
+    expect(dictionary).toContain('CY: "Güney Kıbrıs Rum Yönetimi"');
+
+    for (const relPath of [
       "./v2-earthquake-explorer.tsx",
       "./v2-marine-map-explorer.tsx",
       "./v2-turkey-map-explorer.tsx",
-      // `v2-interactive-map-preview.tsx` carried the same dictionary and was on this list until
-      // T-036 deleted it — no Next.js entry point reached it. The rule below is unchanged; it
-      // now runs against the three neighbour dictionaries that actually render.
-    ];
-
-    for (const relPath of files) {
-      const url = new URL(relPath, import.meta.url);
-      const content = readFileSync(url, "utf8");
-      expect(content).not.toContain('CY: "Kıbrıs"');
-      expect(content).toContain('CY: "Güney Kıbrıs Rum Yönetimi"');
+      "./map-context-labels.tsx",
+    ]) {
+      const content = stripComments(readFileSync(new URL(relPath, import.meta.url), "utf8"));
+      expect(content, relPath).not.toMatch(/\bCY: "/);
     }
   });
 

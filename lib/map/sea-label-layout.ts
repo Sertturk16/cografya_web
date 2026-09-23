@@ -84,8 +84,14 @@ export const SEA_LABELS: readonly SeaLabel[] = [
     name: "KARADENİZ",
     fontUnits: 18,
     minPx: 12,
-    // Open water at the anchor runs x 102–824.
-    placements: [{ x: 480, y: -20, lines: ["KARADENİZ"], room: 680 }],
+    placements: [
+      // Open water at the anchor runs x 102–824.
+      { x: 480, y: -20, lines: ["KARADENİZ"], room: 680 },
+      // The wide artifact (`/deniz`, `/deprem`) shows the sea only down to y -60, so a phone-sized
+      // label at y -20 touches the frame's top edge. Lower, it sits on the same run (x 118–830
+      // at y 0); it has no descender, and Sinop's coast starts at y 13.
+      { x: 480, y: 0, lines: ["KARADENİZ"], room: 680 },
+    ],
   },
   {
     name: "AKDENİZ",
@@ -94,8 +100,11 @@ export const SEA_LABELS: readonly SeaLabel[] = [
     placements: [
       // Between Rhodes and Cyprus: water runs x 36–348 at cap height, so ±120 either side.
       { x: 228, y: 480, lines: ["AKDENİZ"], room: 240 },
+      // Centred on that run, 36–348: a phone-sized label that would otherwise touch Cyprus.
+      { x: 192, y: 480, lines: ["AKDENİZ"], room: 300 },
       // South of Cyprus the run is x -150…510 (frame edge to the Levant coast). Below the
-      // desktop box's visible band (y ≤ 551), but a phone's square frame shows it.
+      // desktop box's visible band (y ≤ 551) and the wide artifact (y ≤ 520), but a phone's
+      // square frame shows it; the caller's frame check keeps it off the maps that do not.
       { x: 250, y: 565, lines: ["AKDENİZ"], room: 480 },
     ],
   },

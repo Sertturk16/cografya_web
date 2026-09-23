@@ -142,6 +142,16 @@ export function rectsOverlap(a: Rect, b: Rect): boolean {
   return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
 }
 
+/** Whether `inner` lies wholly inside `outer`. */
+export function rectWithin(inner: Rect, outer: Rect): boolean {
+  return (
+    inner.left >= outer.left &&
+    inner.top >= outer.top &&
+    inner.right <= outer.right &&
+    inner.bottom <= outer.bottom
+  );
+}
+
 /**
  * The viewBox-unit rectangle under `rect`, given in the map box's own CSS px — an overlay such
  * as the zoom toolbar (T-086) — for an SVG drawn `xMidYMid slice` inside a wrapper transformed

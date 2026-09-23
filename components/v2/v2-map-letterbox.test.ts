@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CONTEXT_SHAPES } from "@/lib/map/tr-context.generated";
+import { MAP_COUNTRY_NAMES_TR } from "@/lib/map/map-country-names";
 import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
@@ -13,6 +14,7 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  */
 const read = (file: string) => stripComments(readFileSync(join(__dirname, file), "utf8"));
 const turkey = read("v2-turkey-map-explorer.tsx");
+const labels = read("map-context-labels.tsx");
 
 describe("/turkiye fills a squarer box with real geography (T-079)", () => {
   it("draws the tall context artifact with `slice`, not the wide one", () => {
@@ -31,32 +33,25 @@ describe("/turkiye fills a squarer box with real geography (T-079)", () => {
 
   it("labels a country new to the tall frame only when it can hold a label", () => {
     expect(turkey).toMatch(/NEW_CONTEXT_LABEL_MIN_RADIUS = 30\b/);
-    for (const name of [
-      "Ukrayna",
-      "Romanya",
-      "Moldova",
-      "Mısır",
-      "Libya",
-      "Ürdün",
-      "Suudi Arabistan",
-    ]) {
-      expect(turkey, name).toContain(`"${name}"`);
+    expect(turkey).toMatch(/c\.iso in MAP_COUNTRY_NAMES_TR/);
+    for (const iso of ["UA", "RO", "MD", "EG", "LY", "JO", "SA"]) {
+      expect(MAP_COUNTRY_NAMES_TR[iso], iso).toBeTruthy();
     }
   });
 
   it("sizes and filters the neighbour labels by the measured render scale (T-082)", () => {
     // A fixed `text-[12px]` in viewBox units measured 2.2-2.8px on a phone. The layout comes
-    // from `lib/map/context-label-fit.ts`, fed by a ResizeObserver on the box and the zoom level;
-    // the state starts `null` so the server render is today's desktop labels.
-    expect(turkey).toMatch(/from "@\/lib\/map\/context-label-fit"/);
-    expect(turkey).toMatch(/new ResizeObserver\(/);
-    expect(turkey).toMatch(/useState<number \| null>\(null\)/);
-    expect(turkey).toMatch(
-      /contextLabelLayout\(boxScale === null \? null : boxScale \* zoomLevel\)/,
-    );
-    expect(turkey).toMatch(/<g\s+fontSize=\{contextLabels\.fontSize\}/);
-    expect(turkey).toMatch(/layout\.fits\(name, target\)/);
-    expect(turkey).not.toMatch(/fill-\[var\(--map-label\)\][^"]*text-\[12px\]/);
+    // from `lib/map/context-label-fit.ts` through the shared `MapContextLabels`, fed by a
+    // ResizeObserver on the box and the zoom level; the metrics start `null` so the server
+    // render is today's desktop labels.
+    expect(turkey).toMatch(/useMapBoxMetrics\(mapContainerRef, toolbarRef\)/);
+    expect(turkey).toMatch(/scale=\{boxScale === null \? null : boxScale \* zoomLevel\}/);
+    expect(labels).toMatch(/new ResizeObserver\(/);
+    expect(labels).toMatch(/useState<MapBoxMetrics \| null>\(null\)/);
+    expect(labels).toMatch(/contextLabelLayout\(scale\)/);
+    expect(labels).toMatch(/fontSize=\{neighbours\.fontSize\}/);
+    expect(labels).toMatch(/layout\.fits\(name, target\)/);
+    expect(turkey).not.toMatch(/fill-\[var\(--map-label\)\]/);
   });
 
   it("keeps WIDE_FRAME_ISOS equal to the wide artifact's countries", () => {
@@ -91,5 +86,30 @@ describe("/dunya's box follows the map's own ratio (T-079)", () => {
     expect(world).toMatch(
       /<MapSelectionCard[\s\S]*?className="[^"]*mt-2[^"]*sm:absolute[^"]*sm:bottom-3[^"]*sm:left-3/,
     );
+  });
+});
+
+describe("/deniz and /deprem draw their names through the same layout (T-085)", () => {
+  // Both drew fixed-size SVG text over the wide artifact: at 360px the neighbour names measured
+  // 3-4px and the sea names 3-6px. They now measure their box and render `MapContextLabels`.
+  for (const file of ["v2-marine-map-explorer.tsx", "v2-earthquake-explorer.tsx"]) {
+    const source = read(file);
+    it(`${file} measures its box and hands the scale to MapContextLabels`, () => {
+      expect(source).toMatch(/useMapBoxMetrics\(mapBoxRef/);
+      expect(source).toMatch(
+        /<MapContextLabels[\s\S]*?scale=\{mapScale\}[\s\S]*?frame=\{WIDE_FRAME\}/,
+      );
+    });
+    it(`${file} keeps no fixed-size label layer of its own`, () => {
+      expect(source).not.toMatch(/SEA_LABELS/);
+      expect(source).not.toMatch(/fill-\[var\(--map-label\)\]/);
+      expect(source).not.toMatch(/const COUNTRY_NAMES_TR/);
+    });
+  }
+
+  it("/deniz keeps its names clear of the basin chip floating over the map", () => {
+    const marine = read("v2-marine-map-explorer.tsx");
+    expect(marine).toMatch(/useMapBoxMetrics\(mapBoxRef, modeChipRef\)/);
+    expect(marine).toMatch(/blocked=\{mapBlocked\}/);
   });
 });

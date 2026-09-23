@@ -41,16 +41,16 @@ import { foldForSearch } from "@/lib/search/normalize";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
 import {
   boxRectToViewBox,
-  contextLabelLayout,
-  contextLabelRect,
-  rectsOverlap,
   sliceScale,
   viewBoxRect,
   viewBoxSize,
-  type Rect,
 } from "@/lib/map/context-label-fit";
-import { SEA_LINE_HEIGHT_EM, seaLabelLayout } from "@/lib/map/sea-label-layout";
-import { parseSubpaths } from "@/lib/map/shape-geometry";
+import { MAP_COUNTRY_NAMES_TR, UNLABELLED_CONTEXT_ISOS } from "@/lib/map/map-country-names";
+import {
+  MapContextLabels,
+  contextLabelCandidates,
+  useMapBoxMetrics,
+} from "@/components/v2/map-context-labels";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 
 export interface ProvinceItem {
@@ -123,28 +123,6 @@ export const REGION_DATA: Record<
   },
 };
 
-const COUNTRY_NAMES_TR: Record<string, string> = {
-  GR: "Yunanistan",
-  BG: "Bulgaristan",
-  GE: "Gürcistan",
-  AM: "Ermenistan",
-  AZ: "Azerbaycan",
-  IR: "İran",
-  IQ: "Irak",
-  SY: "Suriye",
-  RU: "Rusya",
-  CY: "Güney Kıbrıs Rum Yönetimi",
-  LB: "Lübnan",
-  // T-079: countries only the tall frame shows (north of the Black Sea, south of the Mediterranean).
-  UA: "Ukrayna",
-  RO: "Romanya",
-  MD: "Moldova",
-  EG: "Mısır",
-  LY: "Libya",
-  JO: "Ürdün",
-  SA: "Suudi Arabistan",
-};
-
 /** The wide context frame's countries (`lib/map/tr-context.generated.ts`), labelled as before. */
 const WIDE_FRAME_ISOS = new Set([
   "AM",
@@ -174,21 +152,16 @@ const NEW_CONTEXT_LABEL_MIN_RADIUS = 30;
 const TALL_VIEWBOX_SIZE = viewBoxSize(TR_CONTEXT_TALL_VIEWBOX);
 const TALL_VIEWBOX_RECT = viewBoxRect(TR_CONTEXT_TALL_VIEWBOX);
 
-/** Clearance in CSS px kept between a map label and the toolbar floating over the map. */
-const TOOLBAR_CLEARANCE_PX = 4;
-
 /** The neighbour countries that may carry a label; which of them do is decided per render scale. */
-const CONTEXT_LABEL_CANDIDATES = TALL_CONTEXT_SHAPES.filter(
-  (c) =>
-    c.iso !== "TR" &&
-    !["MK", "RS", "LB", "QN", "CY"].includes(c.iso) &&
-    (WIDE_FRAME_ISOS.has(c.iso) ||
-      (c.labelRadius >= NEW_CONTEXT_LABEL_MIN_RADIUS && c.iso in COUNTRY_NAMES_TR)),
-).map((country) => ({
-  country,
-  name: COUNTRY_NAMES_TR[country.iso] || country.geoName,
-  target: { rings: parseSubpaths(country.d), x: country.labelPoint.x, y: country.labelPoint.y },
-}));
+const CONTEXT_LABEL_CANDIDATES = contextLabelCandidates(
+  TALL_CONTEXT_SHAPES.filter(
+    (c) =>
+      c.iso !== "TR" &&
+      !UNLABELLED_CONTEXT_ISOS.has(c.iso) &&
+      (WIDE_FRAME_ISOS.has(c.iso) ||
+        (c.labelRadius >= NEW_CONTEXT_LABEL_MIN_RADIUS && c.iso in MAP_COUNTRY_NAMES_TR)),
+  ),
+);
 
 const ALPHABET_TURKISH = [
   "A",
@@ -261,94 +234,42 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
 
-  /**
-   * CSS px per viewBox unit at zoom 1, measured from the box (T-082). `null` until the observer
-   * reports, so the server render and the first client render agree and draw the desktop labels.
-   * The observer fires once on `observe` and then only on a size change, so this costs no layout
-   * read per frame; a sub-0.1% change is not worth a render.
-   */
-  const [boxScale, setBoxScale] = React.useState<number | null>(null);
-  /**
-   * The toolbar floats over the map's top-right corner, so a label drawn there is covered: at
-   * 1440px "Gürcistan" sat under it (T-086). Its box, in the map box's own px, plus the box's
-   * size, are what turn it into a viewBox area no label may use. Same observer, same cadence.
-   */
   const toolbarRef = React.useRef<HTMLDivElement | null>(null);
-  const [toolbarBox, setToolbarBox] = React.useState<{
-    rect: Rect;
-    box: { width: number; height: number };
-  } | null>(null);
-  React.useEffect(() => {
-    const box = mapContainerRef.current;
-    if (!box || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      const bar = toolbarRef.current;
-      if (bar) {
-        const next = {
-          rect: {
-            left: bar.offsetLeft - TOOLBAR_CLEARANCE_PX,
-            top: bar.offsetTop - TOOLBAR_CLEARANCE_PX,
-            right: bar.offsetLeft + bar.offsetWidth + TOOLBAR_CLEARANCE_PX,
-            bottom: bar.offsetTop + bar.offsetHeight + TOOLBAR_CLEARANCE_PX,
-          },
-          box: { width: box.clientWidth, height: box.clientHeight },
-        };
-        setToolbarBox((prev) =>
-          prev &&
-          prev.box.width === next.box.width &&
-          prev.box.height === next.box.height &&
-          prev.rect.left === next.rect.left &&
-          prev.rect.top === next.rect.top &&
-          prev.rect.right === next.rect.right &&
-          prev.rect.bottom === next.rect.bottom
-            ? prev
-            : next,
-        );
-      }
-      const next = sliceScale(
-        box.clientWidth,
-        box.clientHeight,
-        TALL_VIEWBOX_SIZE.width,
-        TALL_VIEWBOX_SIZE.height,
-      );
-      if (!(next > 0)) return;
-      setBoxScale((prev) => (prev !== null && Math.abs(prev - next) / next < 0.001 ? prev : next));
-    });
-    observer.observe(box);
-    if (toolbarRef.current) observer.observe(toolbarRef.current);
-    return () => observer.disconnect();
-  }, []);
-  /** The viewBox area under the toolbar at the current zoom and pan; `null` until measured. */
-  const toolbarArea = React.useMemo(
+  /**
+   * The box and the toolbar floating over its top-right corner (T-086), measured on resize.
+   * `boxScale` is CSS px per viewBox unit at zoom 1 (T-082), `null` until measured, so the server
+   * render and the first client render agree and draw the desktop labels.
+   */
+  const boxMetrics = useMapBoxMetrics(mapContainerRef, toolbarRef);
+  const boxScale =
+    boxMetrics &&
+    sliceScale(
+      boxMetrics.width,
+      boxMetrics.height,
+      TALL_VIEWBOX_SIZE.width,
+      TALL_VIEWBOX_SIZE.height,
+    );
+  /** What the box shows at zoom 1, and what the toolbar covers at the current zoom and pan. */
+  const labelFrame = React.useMemo(
     () =>
-      toolbarBox &&
-      boxRectToViewBox(toolbarBox.rect, toolbarBox.box, TALL_VIEWBOX_RECT, zoomLevel, panOffset),
-    [toolbarBox, zoomLevel, panOffset],
+      boxMetrics &&
+      boxRectToViewBox(
+        { left: 0, top: 0, right: boxMetrics.width, bottom: boxMetrics.height },
+        boxMetrics,
+        TALL_VIEWBOX_RECT,
+        1,
+        { x: 0, y: 0 },
+      ),
+    [boxMetrics],
   );
-  const contextLabels = React.useMemo(() => {
-    const layout = contextLabelLayout(boxScale === null ? null : boxScale * zoomLevel);
-    return {
-      fontSize: layout.fontSize,
-      items: CONTEXT_LABEL_CANDIDATES.filter(
-        ({ country, name, target }) =>
-          layout.fits(name, target) &&
-          !(
-            toolbarArea &&
-            rectsOverlap(
-              contextLabelRect(name, country.labelPoint.x, country.labelPoint.y, layout.fontSize),
-              toolbarArea,
-            )
-          ),
-      ),
-    };
-  }, [boxScale, zoomLevel, toolbarArea]);
-  const seaLabels = React.useMemo(
+  const labelBlocked = React.useMemo(
     () =>
-      seaLabelLayout(
-        boxScale === null ? null : boxScale * zoomLevel,
-        toolbarArea ? (rect) => rectsOverlap(rect, toolbarArea) : undefined,
-      ),
-    [boxScale, zoomLevel, toolbarArea],
+      boxMetrics
+        ? boxMetrics.overlays.map((rect) =>
+            boxRectToViewBox(rect, boxMetrics, TALL_VIEWBOX_RECT, zoomLevel, panOffset),
+          )
+        : [],
+    [boxMetrics, zoomLevel, panOffset],
   );
 
   const provinceMap = React.useMemo(() => {
@@ -860,68 +781,15 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                     ))}
                   </g>
 
-                  {/* 5. Surrounding Sea Water Labels. FULL STRENGTH, no `opacity-*`: an opacity
-                  utility is part of the rendered colour and has to be measured with
-                  `blendOver`, which the `opacity-80` these labels shipped with never was —
-                  it put `fill-accent` at 3.35:1 light / 3.85:1 dark on `--map-sea`, under
-                  TEXT_MIN, while the commit justified it with the UNBLENDED 4.85/5.19. At
-                  full strength those 4.85/5.19 are what renders. `/deprem`'s sea labels lost
-                  the same utility one round earlier; this is the other two. */}
-                  <g className="fill-accent font-heading font-bold pointer-events-none select-none">
-                    {/* Floored to a legible on-screen size, stacked, turned or dropped by what
-                    fits (T-084, `lib/map/sea-label-layout.ts`). `tracking-wider` sits on the
-                    text, not the group, so its 0.05em resolves against the label's own size. */}
-                    {seaLabels.map((sea) => (
-                      <text
-                        key={sea.name}
-                        x={sea.x}
-                        y={sea.y}
-                        textAnchor="middle"
-                        fontSize={sea.fontSize}
-                        transform={
-                          sea.rotate ? `rotate(${sea.rotate} ${sea.x} ${sea.y})` : undefined
-                        }
-                        className="tracking-wider"
-                      >
-                        {sea.lines.map((line, i) => (
-                          <tspan
-                            key={line}
-                            x={sea.x}
-                            dy={i === 0 ? undefined : `${SEA_LINE_HEIGHT_EM}em`}
-                          >
-                            {line}
-                          </tspan>
-                        ))}
-                      </text>
-                    ))}
-                  </g>
-
-                  {/* 6. Neighbor Country Name Labels. FULL STRENGTH for the reason the sea
-                  labels above are: `opacity-80` put `--map-label` at 3.75:1 light / 4.08:1
-                  dark on `--map-context-land`, under TEXT_MIN, against the 5.75/5.54 the
-                  token records in `app/globals.css` — which is the figure at full strength
-                  and the figure that renders now.
-                  Counter-scaled to a constant on-screen size, and a label is drawn only when its
-                  country can hold it at that size (T-082): a fixed 12 units measured 2.2-2.8px
-                  on a phone. `fontSize` is in viewBox units and already divides out the zoom
-                  transform on the wrapper above. */}
-                  <g
-                    fontSize={contextLabels.fontSize}
-                    className="fill-[var(--map-label)] font-sans font-bold pointer-events-none select-none"
-                  >
-                    {contextLabels.items.map(({ country, name }) => (
-                      <text
-                        key={country.iso}
-                        x={country.labelPoint.x}
-                        y={country.labelPoint.y}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        className="tracking-tight select-none"
-                      >
-                        {name}
-                      </text>
-                    ))}
-                  </g>
+                  {/* 5–6. Sea and neighbour-country names, sized to stay legible at every box
+                  size and dropped where they do not fit, cross the frame or sit under the
+                  toolbar (T-082, T-084, T-085, T-086). */}
+                  <MapContextLabels
+                    candidates={CONTEXT_LABEL_CANDIDATES}
+                    scale={boxScale === null ? null : boxScale * zoomLevel}
+                    blocked={labelBlocked}
+                    frame={labelFrame}
+                  />
                 </svg>
               </div>
 
