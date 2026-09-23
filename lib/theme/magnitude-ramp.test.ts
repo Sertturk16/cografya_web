@@ -207,14 +207,14 @@ describe("the ramp's three label consumers read --eq-mag-fg, not a bare white", 
     // alone — `import { MAGNITUDE_LABEL, MAGNITUDE_RING } from "./magnitude-identity"` contains
     // the string "MAGNITUDE_LABEL" and matches neither forbidden pattern, so moving the constant
     // off the magnitude `<text>` entirely would leave every assertion above green while the disc
-    // lost its readable number. The `<text>` that renders `eq.magnitude.toFixed(1)` is matched
+    // lost its readable number. The `<text>` that renders `tr(eq.magnitude, 1)` is matched
     // directly and its OWN className template is required to contain the token.
-    const label = /<text[^>]*className=\{`([^`]*)`\}[^>]*>\s*\{eq\.magnitude\.toFixed\(1\)\}/.exec(
+    const label = /<text[^>]*className=\{`([^`]*)`\}[^>]*>\s*\{tr\(eq\.magnitude, 1\)\}/.exec(
       source,
     );
     expect(
       label,
-      "no <text> rendering eq.magnitude.toFixed(1) was found in the explorer",
+      "no <text> rendering tr(eq.magnitude, 1) was found in the explorer",
     ).not.toBeNull();
     expect(
       label?.[1],

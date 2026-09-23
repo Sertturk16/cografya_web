@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { extractEarthquakeTickerData, extractMarineTickerData } from "./v2-live-ticker";
+import {
+  earthquakeTickerText,
+  extractEarthquakeTickerData,
+  extractMarineTickerData,
+  marineTickerText,
+} from "./v2-live-ticker";
 
 describe("v2-live-ticker telemetry extraction (CODE124-I1, TEST124-I3)", () => {
   describe("extractEarthquakeTickerData", () => {
@@ -59,7 +64,7 @@ describe("v2-live-ticker telemetry extraction (CODE124-I1, TEST124-I3)", () => {
 
       const result = extractMarineTickerData(mockPoints);
       expect(result.marmara).toEqual({ sst: 21.5, wave: 0.3 });
-      expect(result.akdeniz).toEqual({ sst: 27.8, wave: 0.8 });
+      expect(result.akdeniz).toEqual({ sst: 27.81, wave: 0.8 });
     });
 
     it("supports legacy turkish basin string akdeniz", () => {
@@ -78,6 +83,25 @@ describe("v2-live-ticker telemetry extraction (CODE124-I1, TEST124-I3)", () => {
     it("returns nulls for empty or invalid points", () => {
       expect(extractMarineTickerData(null)).toEqual({ marmara: null, akdeniz: null });
       expect(extractMarineTickerData([])).toEqual({ marmara: null, akdeniz: null });
+    });
+  });
+
+  describe("visible figures use the Turkish decimal comma (T-093)", () => {
+    it("writes the magnitude as M 2,9, never M 2.9", () => {
+      const text = earthquakeTickerText({ magnitude: 2.9, location: "Sındırgı", timeAgo: "" });
+      expect(text).toBe("M 2,9 Sındırgı");
+      expect(text).not.toMatch(/\d\.\d/);
+    });
+
+    it("keeps one decimal on a whole magnitude", () => {
+      expect(earthquakeTickerText({ magnitude: 4, location: "Ege", timeAgo: "" })).toBe(
+        "M 4,0 Ege",
+      );
+    });
+
+    it("rounds sea temperature and wave height at display, with a comma", () => {
+      expect(marineTickerText({ sst: 27.81, wave: 0.25 })).toBe("27,8 °C (Dalga: 0,3 m)");
+      expect(marineTickerText({ sst: 21.5, wave: 0 })).toBe("21,5 °C (Dalga: 0,0 m)");
     });
   });
 });
