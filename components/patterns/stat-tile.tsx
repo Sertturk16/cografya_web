@@ -118,14 +118,13 @@ export type StatTileProps = StatTileMeasurement | StatTileFact;
  * that same rule — see {@link StatTileFact}.
  */
 export function StatTile(props: StatTileProps) {
-  const { label, hint, icon, tone = "foreground", className } = props;
+  // `className` is deliberately NOT read. `className?: never` stops a typed caller, but a
+  // `Record<string, unknown>` spread gets past it, so the root only ever wears the literal below;
+  // nothing is spread onto any element either, so `class` has no route in. Pinned at runtime by
+  // `patterns-contract.test.ts`.
+  const { label, hint, icon, tone = "foreground" } = props;
   return (
-    <div
-      className={cn(
-        "flex flex-col rounded-2xl border border-border bg-card p-4 shadow-2xs",
-        className,
-      )}
-    >
+    <div className="flex flex-col rounded-2xl border border-border bg-card p-4 shadow-2xs">
       {/* `order-2`, and second on screen. The source order is the reading order. */}
       <div className="order-2 mt-0.5 flex items-center gap-2">
         {icon !== undefined ? (

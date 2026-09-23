@@ -253,6 +253,36 @@ describe("StatTile inherits that guarantee rather than reimplementing it", () =>
     // consumer — `kitaplar`, the one site that wanted a per-tile hatch, took `columns="2"` instead.
     expect(source).toMatch(/className\?: never/);
   });
+
+  /**
+   * The RUNTIME half of the row above. `className?: never` rejects `className="zz"` and every typed
+   * spread, but a `Record<string, unknown>` spread typechecks with zero errors, and the tile used to
+   * destructure `className` and feed it into its root `cn(...)` — so a smuggled class reached the
+   * card surface. Same hole the `Card` variant branch closed (`components/ui/card-variants.test.tsx`)
+   * and `FaqSection` pins (`faq-section.test.tsx`). `class` rides along because JSX passes the DOM
+   * spelling through untouched; both branches are rendered because each has its own value element.
+   */
+  it("drops a className smuggled past the type, on both branches", () => {
+    const smuggled: Record<string, unknown> = {
+      className: "zz-evil",
+      class: "zz-evil",
+      "data-evil": "zz-evil",
+    };
+    const branches: ReadonlyArray<readonly [string, Partial<StatTileProps>]> = [
+      ["fact", {}],
+      ["measurement", { fact: undefined, value: 12, absent: { label: "Yok" } }],
+      ["absent measurement", { fact: undefined, value: null, absent: { label: "Yok" } }],
+    ];
+    for (const [name, props] of branches) {
+      const markup = tileMarkup({ ...props, ...smuggled });
+      expect(markup, name).not.toContain("zz-evil");
+      expect(classesOf(markup)[0], name).toBe(TILE_SURFACE);
+    }
+    // The task's literal form: a single `as never` cast is enough to get past the type.
+    expect(tileMarkup({ className: "x" } as never)).not.toMatch(/class="[^"]*\bx\b/);
+    // Positive control: the bag DOES leak when forwarded, so the rows above are not vacuous.
+    expect(renderToStaticMarkup(createElement("div", smuggled))).toContain("zz-evil");
+  });
 });
 
 describe("StatGrid is the shell and nothing else", () => {
