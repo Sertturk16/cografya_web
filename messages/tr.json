@@ -275,7 +275,8 @@
     "recallAria": "{label} ölçümünü haritaya yükle",
     "deleteLabel": "Sil",
     "deleteAria": "{label} ölçümünü sil",
-    "deleteError": "Silinemedi. Tekrar dene."
+    "deleteError": "Silinemedi. Tekrar dene.",
+    "minPointsHint": "Kaydetmek için en az {count} nokta ekle."
   },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",

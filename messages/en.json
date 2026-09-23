@@ -275,7 +275,8 @@
     "recallAria": "Load {label} onto the map",
     "deleteLabel": "Delete",
     "deleteAria": "Delete {label}",
-    "deleteError": "Couldn't delete. Try again."
+    "deleteError": "Couldn't delete. Try again.",
+    "minPointsHint": "Add at least {count, plural, one {# point} other {# points}} to save."
   },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",

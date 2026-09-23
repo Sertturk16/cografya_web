@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
+import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
  * Structural AST test for V2ToolWorkbench (`TEST124-I2`, `A11Y124-I5`, `VAL124SEC-2`).
@@ -150,6 +151,43 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       expect(credit, "the credit is not rendered after the fullscreen box opens").toBeGreaterThan(
         -1,
       );
+    });
+  });
+
+  /**
+   * T-051: the api answers an under-count shape (a one-point distance, a two-point area) with a
+   * 400 `invalidShape`. The save gate must be the shared per-type rule from
+   * `lib/measurements/shape.ts`, applied to BOTH the handler and the button, not a local count.
+   */
+  describe("per-type minimum point gate (T-051)", () => {
+    const code = stripComments(source);
+
+    function sliceFrom(start: string, end: string): string {
+      const from = code.indexOf(start);
+      expect(from, `${start} not found`).toBeGreaterThan(-1);
+      const to = code.indexOf(end, from);
+      expect(to, `${end} not found after ${start}`).toBeGreaterThan(from);
+      return code.slice(from, to);
+    }
+
+    it("derives the gate from the shared shape rule", () => {
+      expect(code).toContain('from "@/lib/measurements/shape"');
+      expect(code).toMatch(
+        /const canSave = canSaveMeasurement\(measurementType, points\.length\);/,
+      );
+    });
+
+    it("guards handleSaveMeasurement with the per-type gate, not an empty-list check", () => {
+      const handler = sliceFrom("const handleSaveMeasurement = ", "\n  };");
+      expect(handler).toContain("if (!canSave) return;");
+      expect(handler).not.toContain("points.length === 0");
+    });
+
+    it("disables the save button on the same gate and points it at the reason", () => {
+      const button = sliceFrom("onClick={handleSaveMeasurement}", ">");
+      expect(button).toContain("disabled={!canSave}");
+      expect(button).toContain("aria-describedby={canSave ? undefined : saveHintId}");
+      expect(code).toContain('tMeasurements("minPointsHint", { count: minPointsToSave })');
     });
   });
 });

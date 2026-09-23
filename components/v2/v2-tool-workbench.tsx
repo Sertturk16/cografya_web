@@ -44,6 +44,7 @@ import {
   removeMeasurement,
   type MeasurementRecord,
 } from "@/lib/measurements/client";
+import { MEASUREMENT_MIN_POINTS, canSaveMeasurement } from "@/lib/measurements/shape";
 import {
   Compass,
   MapPin,
@@ -189,6 +190,14 @@ export function V2ToolWorkbench({
   const [saveTitle, setSaveTitle] = React.useState<string>("");
   const [savedList, setSavedList] = React.useState<readonly MeasurementRecord[]>([]);
   const [saveSuccess, setSaveSuccess] = React.useState<boolean>(false);
+  const tMeasurements = useTranslations("Measurements");
+  const saveHintId = React.useId();
+  const measurementType: MeasurementType =
+    activeTool === "distance" ? "distance" : activeTool === "area" ? "area" : "coordinate";
+  // The api refuses an under-count shape (a one-point distance, a two-point area) with a 400,
+  // so the save button is bound to the same per-type rule instead of failing after the click.
+  const canSave = canSaveMeasurement(measurementType, points.length);
+  const minPointsToSave = MEASUREMENT_MIN_POINTS[measurementType];
 
   // Zoom & Pan state
   const [zoomLevel, setZoomLevel] = React.useState<number>(1);
@@ -838,7 +847,7 @@ export function V2ToolWorkbench({
 
   // Save measurement to cloud archive (/api/measurements)
   const handleSaveMeasurement = async () => {
-    if (points.length === 0) return;
+    if (!canSave) return;
 
     if (authState !== "authenticated") {
       requestAuth("measurement");
@@ -848,9 +857,6 @@ export function V2ToolWorkbench({
     const title =
       saveTitle.trim() ||
       `${activeTool === "distance" ? "Mesafe" : activeTool === "area" ? "Alan" : "Koordinat"} Ölçümü`;
-
-    const measurementType: MeasurementType =
-      activeTool === "distance" ? "distance" : activeTool === "area" ? "area" : "coordinate";
 
     const payload = {
       type: measurementType,
@@ -1602,7 +1608,8 @@ export function V2ToolWorkbench({
                   variant="primary"
                   className="h-10 px-4 text-xs font-bold text-white shrink-0 shadow-xs"
                   onClick={handleSaveMeasurement}
-                  disabled={points.length === 0}
+                  disabled={!canSave}
+                  aria-describedby={canSave ? undefined : saveHintId}
                   leftIcon={
                     saveSuccess ? (
                       <BookmarkCheck className="size-4 text-white" />
@@ -1614,6 +1621,11 @@ export function V2ToolWorkbench({
                   {saveSuccess ? "Kaydedildi!" : "Kaydet"}
                 </Button>
               </div>
+              {!canSave && (
+                <p id={saveHintId} className="text-[11px] text-muted-foreground">
+                  {tMeasurements("minPointsHint", { count: minPointsToSave })}
+                </p>
+              )}
               {saveSuccess && (
                 <p
                   role="status"

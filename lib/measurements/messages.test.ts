@@ -37,10 +37,13 @@ const MEASUREMENTS_KEYS = [
   "deleteLabel",
   "deleteAria",
   "deleteError",
+  "minPointsHint",
 ] as const;
 
 /** Keys that carry a `{label}` interpolation placeholder — parametrized, unlike the rest. */
 const PARAMETRIZED_KEYS = new Set(["recallAria", "deleteAria"]);
+/** Keys that carry a `{count}` (ICU) placeholder — the per-type minimum point count. */
+const COUNT_KEYS = ["minPointsHint"] as const;
 
 const catalogues = { tr: trMessages.Measurements, en: enMessages.Measurements } as const;
 
@@ -56,6 +59,11 @@ describe("Measurements message catalogue", () => {
       it.each([...PARAMETRIZED_KEYS])("%s carries the {label} interpolation placeholder", (key) => {
         const value = (catalogue as Record<string, unknown>)[key] as string;
         expect(value).toContain("{label}");
+      });
+
+      it.each(COUNT_KEYS)("%s carries the {count} placeholder", (key) => {
+        const value = (catalogue as Record<string, unknown>)[key] as string;
+        expect(value).toMatch(/\{count[,}]/);
       });
     });
   }
