@@ -7,7 +7,6 @@ import { TOOLS_SURFACE } from "@/lib/tools/tool-registry";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolsHub } from "@/components/v2/v2-tools-hub";
 import { V2GisMethodologyGuide } from "@/components/v2/v2-gis-methodology-guide";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -119,9 +118,6 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
 
         {/* SECTION 2: GIS & GEODESY METHODOLOGY GUIDE */}
         <V2GisMethodologyGuide />
-
-        {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-        <V2SourcesSection scope="araclar" />
       </PageContainer>
     </>
   );

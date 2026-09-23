@@ -563,8 +563,7 @@ export function V2SeaBasinDetailView({
           While the bibliography lived here and the attribution lived nowhere, the four basin
           pages published CMEMS/ECMWF-derived values under a heading naming both providers with
           the mandated notice rendered on no page at all. Each basin page now renders
-          `MarineDataNotice` and then `V2SourcesSection`, in that order — the same order
-          `/deniz` uses, the notice before the bibliography that echoes it. */}
+          `MarineDataNotice` after this view, as `/deniz` does. */}
     </div>
   );
 }

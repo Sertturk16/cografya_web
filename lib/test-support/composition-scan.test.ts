@@ -191,7 +191,7 @@ describe("the literal extractor's hole semantics", () => {
   });
 
   it("MANGLING 3 — a CONDITIONAL grid-cols token is carried through as unconditional", () => {
-    // `components/v2/v2-sources-section.tsx`, twice. `grid-cols-*` is exactly the token the
+    // The since-deleted `v2-sources-section.tsx`, twice. `grid-cols-*` is exactly the token the
     // stat-grid predicate keys on, which is why this one was the most dangerous of the three.
     const expression = '`grid grid-cols-1 md:grid-cols-2 ${n > 2 ? "lg:grid-cols-3" : ""} gap-3.5`';
     expect(literalsIn(expression, false).join(" ")).toContain("lg:grid-cols-3");
@@ -306,8 +306,10 @@ describe("the literal extractor's hole semantics", () => {
  * conditional is an inline style now, the base classes are literal, and the three counts each
  * gained their missing element. This counter going DOWN is the same event those three going up
  * is; it is worth reading them together.
+ *
+ * 19 -> **17**: T-088 deleted `v2-sources-section.tsx` and its two conditional grid divs.
  */
-const TEMPLATE_HOLE_DIVS = 19;
+const TEMPLATE_HOLE_DIVS = 17;
 
 function divSpellings(file: string): { byTag: string[]; byTree: string[] } {
   return {

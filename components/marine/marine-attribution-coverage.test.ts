@@ -23,7 +23,7 @@ import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
  *    surfaces draw no water layer: the four sea-basin pages and the home page published
  *    `sst` / `waveHeight` / `windSpeed10m` — the basin pages under a heading naming
  *    "CMEMS & ECMWF Açık Deniz Modelleri" — with no attribution block on any of them. The
- *    bibliography's `cmems` and `ecmwf-marine` cards deliberately carry no `legalQuote`, so
+ *    sources card's `cmems` and `ecmwf-marine` entries deliberately carried no `legalQuote`, so
  *    ECMWF's required notice was rendered NOWHERE IN THE PRODUCT for those values.
  *
  * So this test hand-writes no list of pages either. It DERIVES the publishers — any `.tsx`
@@ -168,8 +168,7 @@ describe("the marine notice travels with the values", () => {
 
   it("renders it on no page that publishes none", () => {
     // The other direction, and it is not symmetry for its own sake: a page crediting a source
-    // it does not use makes a false statement, which is the defect the bibliography's
-    // `include`/`omit` props exist for (`components/v2/v2-sources-conditional.test.ts`).
+    // it does not use makes a false statement.
     for (const page of pages) {
       if (owing.includes(page)) continue;
       expect(read(page), `${rel(page)} credits CMEMS/ECMWF but publishes neither`).not.toContain(

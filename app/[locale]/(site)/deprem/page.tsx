@@ -10,7 +10,6 @@ import { collectionPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2EarthquakeExplorer, type ProvinceMeta } from "@/components/v2/v2-earthquake-explorer";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -308,28 +307,19 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
           </div>
         </section>
 
-        {/* SECTION 4: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA)
-            Two blocks, two different jobs, and they are not interchangeable.
-
+        {/* SECTION 4: ATTRIBUTION.
             `EarthquakeAttribution` renders the PROVIDER'S OWN wording out of the payload —
             `attributions[].requiredNoticeTr` with its `regulationReference`, plus the mandatory
             early-warning disclaimer. It is required, it is verbatim, and it is not ours to
-            re-author. The V2 rewrite dropped it from this page entirely and kept only the
-            hand-written card grid below, which is how a required notice went missing without a
-            single test turning red (T-032 PR3 found it by re-pointing V1's guards at V2).
-
-            `V2SourcesSection` is the bibliography: what this page is built on, in our words. It
-            does not discharge an attribution obligation and must never be trimmed to look like
-            it does. */}
+            re-author. The V2 rewrite once dropped it from this page entirely and kept only a
+            hand-written sources card, which is how a required notice went missing without a
+            single test turning red (T-032 PR3 found it by re-pointing V1's guards at V2). */}
         {earthquakeMeta !== null && (
           <EarthquakeAttribution
             attributions={earthquakeMeta.attributions}
             disclaimerTr={earthquakeMeta.disclaimerTr}
           />
         )}
-        {/* `omit` the preparedness card: "afet çantası", "Çök-Kapan-Tutun" and the 72-hour
-            protocol are `/deprem/hazirlik`'s content, and AKUT supplied nothing to this page. */}
-        <V2SourcesSection scope="deprem" omit={["afad-hazirlik"]} />
       </PageContainer>
     </>
   );

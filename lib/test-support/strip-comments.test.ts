@@ -101,21 +101,37 @@ describe("stripComments", () => {
     expect(stripComments(rule)).not.toContain("color: red");
   });
 
-  it("strips the real component this task's guards read, without eating its scopes", () => {
-    const source = readFileSync(
-      fileURLToPath(new URL("../../components/v2/v2-sources-section.tsx", import.meta.url)),
-      "utf8",
-    );
+  it("keeps every entry of a scoped list whose middle carries a glob line comment", () => {
+    // The shape of the deleted `v2-sources-section.tsx` that first broke the naive regex: the
+    // glob's `/*` opened a "block" that ran to the next docblock and ate the `deprem` scope.
+    const source = [
+      "/**",
+      " * NO `general` SCOPE.",
+      " */",
+      "const SOURCES = {",
+      '  home: [{ id: "tuik" }],',
+      "  deniz: [",
+      "    // NO `legalQuote`. The notice is single-sourced in `messages/*.json`",
+      '    { id: "cmems" },',
+      "  ],",
+      '  deprem: [{ id: "afad-deprem" }],',
+      "};",
+      "/** trailing docblock */",
+      "export default SOURCES;",
+    ].join("\n");
     const stripped = stripComments(source);
 
-    // Every scope key survives — the naive "block comments first" regex loses everything from
-    // the `messages/*.json` line comment in the `deniz` list onward.
-    for (const scope of ["home", "turkiye", "deniz", "oyun", "deprem", "araclar", "kitaplar"]) {
+    for (const scope of ["home", "deniz", "deprem"]) {
       expect(stripped, `${scope} scope key`).toContain(`  ${scope}: [`);
     }
     expect(stripped).toContain('id: "afad-deprem"');
+    expect(stripped).toContain("export default SOURCES;");
     // …and the prose really is gone.
     expect(stripped).not.toContain("NO `general` SCOPE");
+    expect(stripped).not.toContain("single-sourced");
+    // Control: the naive two-replace form this scanner replaces DOES eat the `deprem` scope.
+    const naive = source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ");
+    expect(naive).not.toContain('id: "afad-deprem"');
   });
 });
 

@@ -565,7 +565,8 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // same reason — the page's one action, given a surface of its own.
 // 189 → **188** in T-079: `/turkiye`'s and `/dunya`'s selection cards, two copies of one
 // spelling, became the single `MapSelectionCard` in `components/v2/map-selection-card.tsx`.
-export const HAND_DRAWN_CARDS = 188;
+// 188 → **187** in T-088: `v2-sources-section.tsx` was deleted with its one hand-drawn card.
+export const HAND_DRAWN_CARDS = 187;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -586,8 +587,9 @@ export const HAND_DRAWN_CARDS = 188;
 // 161 → **162** in T-073: the terms page's English-reader notice
 // (`rounded-2xl border border-border bg-muted`), a well and not a card — it states which
 // language of the text binds, it is not a panel the page offers.
-// 162 → **161** in T-089: `/oyun`'s "Yeni Oyun Özellikleri" strip, a `bg-muted/40` well, deleted.
-export const HAND_DRAWN_WELLS = 161;
+// 162 → **159** in T-088: the three wells of the deleted `v2-sources-section.tsx`.
+// 159 → **158** in T-089: `/oyun`'s "Yeni Oyun Özellikleri" strip, a `bg-muted/40` well, deleted.
+export const HAND_DRAWN_WELLS = 158;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -601,8 +603,9 @@ export const HAND_DRAWN_WELLS = 161;
  * matches `/turkiye`'s (+1) — below `sm` it is a row above the map (`mb-2 ml-auto w-fit`)
  * rather than a bar floating on it, which `/turkiye` still is.
  *
- * 234 → **233** in T-089: the deleted `/oyun` feature strip was the only element with its spelling. */
-export const HAND_DRAWN_CARD_SPELLINGS = 233;
+ * 234 → **230** in T-088: the deleted `v2-sources-section.tsx`'s four shapes, each its own string.
+ * 230 → **229** in T-089: the deleted `/oyun` feature strip was the only element with its spelling. */
+export const HAND_DRAWN_CARD_SPELLINGS = 229;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1029,18 +1032,19 @@ describe("the card scanner itself", () => {
 
   /**
    * THE RECONCILIATION. Every `className=` in the scanned surface is either attached to an
-   * element or is one of five `className = ""` destructuring defaults — pinned by file, so a
+   * element or is one of four `className = ""` destructuring defaults — pinned by file, so a
    * parser regression that starts losing markup fails HERE, with the file named, rather than
    * showing up as a quietly falling card count that the next task reads as progress.
    *
    * Was nine before `components/ui/**` left the walk; `components/ui/accordion.tsx` held four.
+   * Five until T-088 deleted `v2-sources-section.tsx`.
    *
-   * MUTATION-CHECKED: a sixth `{ className = "" }` default added to
+   * MUTATION-CHECKED: a fifth `{ className = "" }` default added to
    * `components/patterns/page-container.tsx` — RED, the message listing
-   * `1x components/patterns/page-container.tsx` at the head of the five. Reverted. (The host was
+   * `1x components/patterns/page-container.tsx` at the head of the list. Reverted. (The host was
    * `theme-pair.tsx` until T-042 moved that file out of this surface.)
    */
-  it("every className attaches to an element, bar the five destructuring defaults", () => {
+  it("every className attaches to an element, bar the four destructuring defaults", () => {
     const unattached = new Map<string, number>();
     for (const file of walkCardSurface()) {
       const source = readSource(file);
@@ -1059,7 +1063,6 @@ describe("the card scanner itself", () => {
       ["components/v2/v2-leaderboard-modal.tsx", 1],
       ["components/v2/v2-marine-map-explorer.tsx", 1],
       ["components/v2/v2-rich-prose.tsx", 1],
-      ["components/v2/v2-sources-section.tsx", 1],
     ]);
   });
 
@@ -1378,7 +1381,8 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // and the English-reader notice.
     // 61 after T-079: `map-selection-card.tsx` joins the surface with the one card both map
     // explorers now render; the explorers stay on it through their other shapes.
-    expect(handDrawnTotals().files).toBe(61);
+    // 60 after T-088: `v2-sources-section.tsx` was deleted.
+    expect(handDrawnTotals().files).toBe(60);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

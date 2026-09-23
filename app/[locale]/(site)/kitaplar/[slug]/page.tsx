@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import type { BenchVideo } from "@/components/book/bench-stage";
 import { DenemeMeta } from "@/components/book/deneme-meta";
 import { VideoBench } from "@/components/book/video-bench";
@@ -663,9 +662,6 @@ export default async function V2BookDetailPage({ params }: PageProps) {
             ))}
           </div>
         )}
-
-        {/* SCIENTIFIC DATA SOURCES & CITATIONS (KAYNAKÇA) */}
-        <V2SourcesSection scope="kitaplar" />
       </PageContainer>
     </>
   );

@@ -33,7 +33,7 @@ describe("V2 sovereignty and naming invariants", () => {
   it("does not call the 199 world rows sovereign countries, on the surface that labels them (SOV122-I1, SOV124-P2)", () => {
     /**
      * RE-POINTED, not weakened. The rule — the site does not describe the 199 seeded world rows
-     * as sovereign states, because 199 of them are not — was pinned on `v2-sources-section.tsx`,
+     * as sovereign states, because 199 of them are not — was pinned on the old sources card,
      * whose `natural-earth` card said "199 ülke ve özerk bölgenin sınır vektörleri". That card
      * and the whole `dunya` scope are gone: the list credited four institutions this repo cannot
      * trace a figure to, and Natural Earth is credited by every map that draws it.
@@ -201,7 +201,7 @@ describe("V2 sovereignty and naming invariants", () => {
       "sectionNavGovernance",
       "sectionNavBorders",
       // NO `sectionNavSources`. The chip it labelled pointed at `#kaynakca`, the anchor around
-      // `<V2SourcesSection scope="dunya">`; the block is gone, so the chip is gone and the key
+      // the sources card's `dunya` block; the block is gone, so the chip is gone and the key
       // with it. Moved to the deleted-key assertion at the foot of this test rather than merely
       // dropped from the list, so a key with nothing to label cannot drift back in.
       "physicalGeographyBadge",

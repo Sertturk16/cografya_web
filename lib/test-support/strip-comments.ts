@@ -10,7 +10,7 @@
  *
  *     source.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/^[ \t]*\/\/.*$/gm, " ")
  *
- * and it silently deletes live code. `components/v2/v2-sources-section.tsx` carried the line
+ * and it silently deletes live code. The since-deleted `v2-sources-section.tsx` carried the line
  * comment
  *
  *     // NO `legalQuote`. The Copernicus Marine notice is single-sourced in `messages/*.json`

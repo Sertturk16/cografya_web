@@ -518,8 +518,12 @@ export function V2WorldMapExplorer({
         {/* EDGE-TO-EDGE World Map Panel, and its caption. A FIGURE, like every other map
             surface here — the credit below is this map's caption and was written as a bare `<p>`
             sibling while the province locator next door said the same thing as a `<figcaption>`.
-            `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
-        <figure className="m-0 space-y-2">
+            `m-0` because a `<figure>` carries a UA margin a `<div>` does not. Under `sm` the
+            figure breaks out of the panel's `p-5` (`-mx-5`, +40px of map on a 360px phone,
+            T-092) and the map box drops its side border and corners, which would otherwise sit
+            against the panel's own edge; the toolbar, selection card and caption put the 20px
+            back so only the map runs edge to edge. */}
+        <figure className="-mx-5 my-0 space-y-2 sm:mx-0">
           {/* Positioning context for the toolbar and card, which sit outside the map box on a
             phone and float over it from `sm`. */}
           <div className="relative">
@@ -529,7 +533,7 @@ export function V2WorldMapExplorer({
               data-map-toolbar
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
-              className="mb-2 ml-auto flex w-fit items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg sm:absolute sm:top-3 sm:right-3 sm:z-30 sm:mb-0"
+              className="mb-2 mr-5 ml-auto flex w-fit items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg sm:absolute sm:top-3 sm:right-3 sm:z-30 sm:mr-0 sm:mb-0"
             >
               <button
                 type="button"
@@ -573,7 +577,7 @@ export function V2WorldMapExplorer({
                   setHoveredIso(null);
                 }
               }}
-              className={`relative rounded-2xl bg-[var(--map-ocean)] border border-border overflow-hidden p-0 group aspect-[1008/520] w-full select-none ${
+              className={`relative rounded-none border-y border-border bg-[var(--map-ocean)] overflow-hidden sm:rounded-2xl sm:border-x p-0 group aspect-[1008/520] w-full select-none ${
                 zoom > 1
                   ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
                   : "cursor-crosshair"
@@ -658,7 +662,7 @@ export function V2WorldMapExplorer({
                   </g>
 
                   {/* Country Polygons */}
-                  <g fillRule="evenodd">
+                  <g fillRule="evenodd" style={{ "--map-zoom": zoom } as React.CSSProperties}>
                     {COUNTRY_SHAPES.map((shape) => {
                       const item = countryMap.get(shape.iso);
                       const continentMeta = item ? CONTINENT_META[item.continent] : null;
@@ -682,14 +686,30 @@ export function V2WorldMapExplorer({
                       // 1:1 by construction and costs nothing: the land/sea boundary is carried
                       // by the FILL's own 3.66/4.07 silhouette, which is what WCAG 1.4.11 asks
                       // of. `lib/theme/map-surface.test.ts` holds the pairing.
+                      //
+                      // Every width below is `--country-stroke`, in CSS PIXELS, never in viewBox
+                      // units: the viewBox is 1000 wide, so a unitless 0.4 drew 0.108px on a
+                      // 360px phone (T-092). The `<path>` turns it into `stroke-width` on a
+                      // `non-scaling-stroke`, divided by `--map-zoom` (set on the `<g>`), because
+                      // zoom is a CSS `scale()` on an HTML wrapper, which `non-scaling-stroke`
+                      // does not undo: without the division a 0.75px border drew 2.85px at 3.8x.
                       let fillClass =
-                        "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5]";
+                        "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] [--country-stroke:0.75px]";
 
                       if (item && continentMeta) {
+                        // The border between two countries of ONE continent is `--map-ocean`,
+                        // the ground colour, so it reads as a gap in the fill. It used to be the
+                        // continent's own colour at /50, i.e. the fill drawn over the fill:
+                        // neighbours in a continent merged into one blob (T-092). Measured in
+                        // `lib/theme/map-surface.test.ts`: 3.35:1 (Avrupa, the worst) to 13.15:1
+                        // light, 3.74:1 to 14.65:1 dark. The selected-continent view keeps the
+                        // same line at 1px: `stroke-white/80`, which the T-092 plan named there,
+                        // measures 1.25:1 on Antarktika, 1.92 Asya, 1.97 Kuzey Amerika, 2.51
+                        // Okyanusya and 2.72 Afrika, so it could not separate those neighbours.
                         if (selectedContinent === "ALL") {
-                          fillClass = `${continentMeta.identity.fill} ${continentMeta.identity.stroke} stroke-[0.4]`;
+                          fillClass = `${continentMeta.identity.fill} stroke-[var(--map-ocean)] [--country-stroke:0.75px]`;
                         } else if (isMatchingContinent) {
-                          fillClass = `${continentMeta.identity.fill} stroke-white/80 stroke-[0.8] shadow-lg`;
+                          fillClass = `${continentMeta.identity.fill} stroke-[var(--map-ocean)] [--country-stroke:1px]`;
                         } else {
                           // The `hover:fill-[var(--map-unknown-land)]/80` that used to sit here
                           // is GONE, and it was dead before it was wrong: `isHovered` is React
@@ -700,7 +720,7 @@ export function V2WorldMapExplorer({
                           // 3.02:1 dark, i.e. the hover would have DROPPED the country under the
                           // 3:1 floor its resting fill clears at 3.66/4.07.
                           fillClass =
-                            "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] stroke-[0.5] transition-colors";
+                            "fill-[var(--map-unknown-land)] stroke-[var(--map-ocean)] [--country-stroke:0.75px] transition-colors";
                         }
                       }
 
@@ -719,7 +739,7 @@ export function V2WorldMapExplorer({
                         // Antarktika's outlier (see app/globals.css and map-surface.test.ts for the
                         // full measurement, including where it does NOT clear the top two).
                         fillClass =
-                          "stroke-[var(--map-hover)] stroke-[1.8] fill-[var(--map-hover)]/90 opacity-100";
+                          "stroke-[var(--map-hover)] [--country-stroke:1.5px] fill-[var(--map-hover)]/90 opacity-100";
                       }
 
                       const cItem = countryMap.get(shape.iso);
@@ -733,7 +753,7 @@ export function V2WorldMapExplorer({
                           role="button"
                           tabIndex={0}
                           aria-label={countryName}
-                          className={`transition-colors duration-150 cursor-pointer outline-none focus-visible:stroke-primary focus-visible:stroke-[2] ${fillClass}`}
+                          className={`transition-colors duration-150 cursor-pointer outline-none [vector-effect:non-scaling-stroke] [stroke-width:calc(var(--country-stroke)/var(--map-zoom))] focus-visible:stroke-primary focus-visible:[--country-stroke:2px] ${fillClass}`}
                           style={isHovered ? { filter: "url(#country-glow)" } : undefined}
                           onMouseEnter={() => setHoveredIso(shape.iso)}
                           onMouseLeave={() => setHoveredIso(null)}
@@ -835,7 +855,7 @@ export function V2WorldMapExplorer({
             {/* Active Selected Country Card: under the map on a phone, over it from `sm` (T-079). */}
             {selectedIso && activeCountry && (
               <MapSelectionCard
-                className="mt-2 sm:absolute sm:bottom-3 sm:left-3 sm:z-30 sm:mt-0 sm:max-w-sm"
+                className="mx-5 mt-2 sm:absolute sm:bottom-3 sm:left-3 sm:z-30 sm:mx-0 sm:mt-0 sm:max-w-sm"
                 leading={
                   activeCountry.hasFlag ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -875,7 +895,7 @@ export function V2WorldMapExplorer({
             relationship — this was a bare `<p>` while the province locator next door said the
             same thing as a caption. `boundaries={false}` because this surface draws no OSM
             geometry — the province layer is a different map. */}
-          <figcaption>
+          <figcaption className="px-5 sm:px-0">
             <MapAttribution boundaries={false} world />
           </figcaption>
         </figure>

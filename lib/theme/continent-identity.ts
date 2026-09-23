@@ -57,8 +57,6 @@ export interface ContinentIdentity {
    * with an `opacity-*` utility rather than a second, lighter hue — the continent has one colour.
    */
   readonly fill: string;
-  /** The country outline on that map, at the 50% the shipped `strokeColor` used. */
-  readonly stroke: string;
   /** The 15% wash of the fill, as a surface. Translucent, so one value serves both themes. */
   readonly surface: string;
   /** The label that sits on `surface` (or on a bare `--card`). Carries its own dark value. */
@@ -104,7 +102,6 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
   avrupa: {
     slug: "avrupa",
     fill: "fill-[var(--continent-avrupa)]",
-    stroke: "stroke-[var(--continent-avrupa)]/50",
     surface: "bg-[var(--continent-avrupa-tint)]",
     label: "text-[var(--continent-avrupa-text)]",
     edge: "border-[var(--continent-avrupa)]/30",
@@ -121,7 +118,6 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
   asya: {
     slug: "asya",
     fill: "fill-[var(--continent-asya)]",
-    stroke: "stroke-[var(--continent-asya)]/50",
     surface: "bg-[var(--continent-asya-tint)]",
     label: "text-[var(--continent-asya-text)]",
     edge: "border-[var(--continent-asya)]/30",
@@ -138,7 +134,6 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
   afrika: {
     slug: "afrika",
     fill: "fill-[var(--continent-afrika)]",
-    stroke: "stroke-[var(--continent-afrika)]/50",
     surface: "bg-[var(--continent-afrika-tint)]",
     label: "text-[var(--continent-afrika-text)]",
     edge: "border-[var(--continent-afrika)]/30",
@@ -155,7 +150,6 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
   "kuzey-amerika": {
     slug: "kuzey-amerika",
     fill: "fill-[var(--continent-kuzey-amerika)]",
-    stroke: "stroke-[var(--continent-kuzey-amerika)]/50",
     surface: "bg-[var(--continent-kuzey-amerika-tint)]",
     label: "text-[var(--continent-kuzey-amerika-text)]",
     edge: "border-[var(--continent-kuzey-amerika)]/30",
@@ -173,7 +167,6 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
   "guney-amerika": {
     slug: "guney-amerika",
     fill: "fill-[var(--continent-guney-amerika)]",
-    stroke: "stroke-[var(--continent-guney-amerika)]/50",
     surface: "bg-[var(--continent-guney-amerika-tint)]",
     label: "text-[var(--continent-guney-amerika-text)]",
     edge: "border-[var(--continent-guney-amerika)]/30",
@@ -191,7 +184,6 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
   okyanusya: {
     slug: "okyanusya",
     fill: "fill-[var(--continent-okyanusya)]",
-    stroke: "stroke-[var(--continent-okyanusya)]/50",
     surface: "bg-[var(--continent-okyanusya-tint)]",
     label: "text-[var(--continent-okyanusya-text)]",
     edge: "border-[var(--continent-okyanusya)]/30",
@@ -209,7 +201,6 @@ export const CONTINENT_IDENTITY: Readonly<Record<ContinentSlug, ContinentIdentit
   antarktika: {
     slug: "antarktika",
     fill: "fill-[var(--continent-antarktika)]",
-    stroke: "stroke-[var(--continent-antarktika)]/50",
     surface: "bg-[var(--continent-antarktika-tint)]",
     label: "text-[var(--continent-antarktika-text)]",
     edge: "border-[var(--continent-antarktika)]/30",

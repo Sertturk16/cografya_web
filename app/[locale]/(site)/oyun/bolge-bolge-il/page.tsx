@@ -10,7 +10,6 @@ import { REGION_KEYS, regionSlug } from "@/lib/game/region-slug";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2RegionThumb, V2RegionThumbDefs } from "@/components/v2/v2-region-thumb";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 import { Badge } from "@/components/ui/badge";
@@ -162,18 +161,8 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
             and carried no credit at all; ODbL's obligation is per PAGE, so one line under the
             grid discharges it for all seven. It does NOT live in `V2RegionThumb` itself — a
             68-line decorative thumbnail with a caption of its own would be absurd, and seven
-            identical captions on one screen worse.
-
-            The bibliography below names OpenStreetMap too, but only inside a closed `<details>`;
-            per `V2SourcesSection`'s own rule that quote is an echo and never the sole carrier. */}
+            identical captions on one screen worse. */}
         <MapAttribution />
-
-        {/* Sources & Pedagogy Footer Section.
-            EXPLICIT `scope`. This call had no props at all, so it fell through to the default
-            `home` scope and claimed CMEMS marine telemetry, ERA5-Land climate normals, AFAD
-            seismic records and PM2.5 — on a page that is a region picker. `oyun` is the scope
-            this page's content actually belongs to, and `/oyun` was already using it. */}
-        <V2SourcesSection scope="oyun" />
       </PageContainer>
     </>
   );

@@ -321,7 +321,9 @@ describe("a continent wears one colour, not two", () => {
   it("the world map paints countries from the module, not from a table of its own", () => {
     const explorer = read("./v2-world-map-explorer.tsx");
     expect(explorer).toContain("continentMeta.identity.fill");
-    expect(explorer).toContain("continentMeta.identity.stroke");
+    // No per-continent stroke: the border between two countries of one continent is the ocean
+    // colour, a gap in the fill, not the fill drawn over itself at /50 (T-092).
+    expect(explorer).not.toContain("identity.stroke");
     // The grouped-view banner used to be a two-stop gradient of an unrelated hue with white text
     // on it. Both halves have to go: the gradient AND the white.
     expect(explorer).toContain("${group.identity.banner} [&_h4]:text-inherit");
