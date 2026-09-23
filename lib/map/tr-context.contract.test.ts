@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "./tr-context.generated";
 import { PROVINCE_SHAPES } from "./tr-provinces.generated";
-import { assertInsideContextFrame } from "../../scripts/lib/tr-frame.mjs";
+import { TALL_CONTEXT_SHAPES, TR_CONTEXT_TALL_VIEWBOX } from "./tr-context-tall.generated";
+import {
+  assertInsideContextFrame,
+  TR_CONTEXT_FRAME,
+  TR_CONTEXT_TALL_FRAME,
+} from "../../scripts/lib/tr-frame.mjs";
 
 /**
  * NEW GUARD — the geographic-context paint stack (`turkiye-yenileme` PR-B, plan §11 item 11).
@@ -34,6 +39,60 @@ import { assertInsideContextFrame } from "../../scripts/lib/tr-frame.mjs";
  * generated file's own numbers from the geometry it ships, which is what catches a hand-edit
  * that bypassed the generator.
  */
+/**
+ * Re-parses a shape's `d` into absolute points, mirroring `path-encode.mjs`'s cursor rules, so a
+ * hand-edit of a committed artifact (bypassing the generator) is still caught by the frame check.
+ */
+function pathPoints(d: string): [number, number][] {
+  const points: [number, number][] = [];
+  const tokens = d.match(/[MmLlZz]|-?\d*\.?\d+/g) ?? [];
+  let i = 0;
+  let x = 0;
+  let y = 0;
+  // `sx`/`sy` — the CURRENT subpath's start point. `path-encode.mjs`'s own encoder resets
+  // its cursor to it on `Z` (SVG 1.1 §8.3.1: `Z` returns the cursor to the subpath's start),
+  // so the NEXT subpath's relative `m` is measured from there, not from wherever the `l`
+  // run left off. Skipping this reset was the first version of this test's own bug: it
+  // read a real emitted point as ~9.5 u outside the frame that the generator's own
+  // (correct) pre-encode check never saw, because the two cursors had silently diverged.
+  let sx = 0;
+  let sy = 0;
+  while (i < tokens.length) {
+    const t = tokens[i++];
+    if (t === "M") {
+      x = Number(tokens[i++]);
+      y = Number(tokens[i++]);
+      sx = x;
+      sy = y;
+      points.push([x, y]);
+    } else if (t === "m") {
+      x += Number(tokens[i++]);
+      y += Number(tokens[i++]);
+      sx = x;
+      sy = y;
+      points.push([x, y]);
+    } else if (t === "l") {
+      while (
+        i < tokens.length &&
+        tokens[i] !== "Z" &&
+        tokens[i] !== "z" &&
+        tokens[i] !== "M" &&
+        tokens[i] !== "m" &&
+        tokens[i] !== "l" &&
+        !Number.isNaN(Number(tokens[i]))
+      ) {
+        x += Number(tokens[i++]);
+        y += Number(tokens[i++]);
+        points.push([x, y]);
+      }
+    } else if (t === "Z" || t === "z") {
+      x = sx;
+      y = sy;
+    }
+  }
+  return points;
+}
+
 describe("lib/map/tr-context.generated.ts artifact", () => {
   it("carries exactly the ISO join keys the frame clips to, each with a labelPoint/labelRadius", () => {
     expect(CONTEXT_SHAPES.length).toBeGreaterThan(0);
@@ -53,58 +112,10 @@ describe("lib/map/tr-context.generated.ts artifact", () => {
   });
 
   it("keeps every shape inside the pinned TR_CONTEXT_FRAME", () => {
-    // Re-parses each shape's `d` into points and re-runs the SAME assertion the generator
-    // runs at build time — so a hand-edit of the committed artifact (bypassing the
-    // generator entirely) is still caught here.
+    // Re-runs the SAME assertion the generator runs at build time over the committed artifact.
     for (const shape of CONTEXT_SHAPES) {
-      const points: [number, number][] = [];
-      const tokens = shape.d.match(/[MmLlZz]|-?\d*\.?\d+/g) ?? [];
-      let i = 0;
-      let x = 0;
-      let y = 0;
-      // `sx`/`sy` — the CURRENT subpath's start point. `path-encode.mjs`'s own encoder resets
-      // its cursor to it on `Z` (SVG 1.1 §8.3.1: `Z` returns the cursor to the subpath's start),
-      // so the NEXT subpath's relative `m` is measured from there, not from wherever the `l`
-      // run left off. Skipping this reset was the first version of this test's own bug: it
-      // read a real emitted point as ~9.5 u outside the frame that the generator's own
-      // (correct) pre-encode check never saw, because the two cursors had silently diverged.
-      let sx = 0;
-      let sy = 0;
-      while (i < tokens.length) {
-        const t = tokens[i++];
-        if (t === "M") {
-          x = Number(tokens[i++]);
-          y = Number(tokens[i++]);
-          sx = x;
-          sy = y;
-          points.push([x, y]);
-        } else if (t === "m") {
-          x += Number(tokens[i++]);
-          y += Number(tokens[i++]);
-          sx = x;
-          sy = y;
-          points.push([x, y]);
-        } else if (t === "l") {
-          while (
-            i < tokens.length &&
-            tokens[i] !== "Z" &&
-            tokens[i] !== "z" &&
-            tokens[i] !== "M" &&
-            tokens[i] !== "m" &&
-            tokens[i] !== "l" &&
-            !Number.isNaN(Number(tokens[i]))
-          ) {
-            x += Number(tokens[i++]);
-            y += Number(tokens[i++]);
-            points.push([x, y]);
-          }
-        } else if (t === "Z" || t === "z") {
-          x = sx;
-          y = sy;
-        }
-      }
       expect(() =>
-        assertInsideContextFrame(points, { label: shape.iso, tolerance: 0.5 }),
+        assertInsideContextFrame(pathPoints(shape.d), { label: shape.iso, tolerance: 0.5 }),
       ).not.toThrow();
     }
   });
@@ -113,6 +124,41 @@ describe("lib/map/tr-context.generated.ts artifact", () => {
     const plateCodes = new Set(PROVINCE_SHAPES.map((shape) => shape.plateCode));
     for (const shape of CONTEXT_SHAPES) {
       expect(plateCodes.has(shape.iso)).toBe(false);
+    }
+  });
+});
+
+describe("lib/map/tr-context-tall.generated.ts artifact (T-079)", () => {
+  it("keeps the wide frame's width and centre, so `slice` at 1270:580 reproduces the wide view", () => {
+    expect(TR_CONTEXT_TALL_FRAME.minX).toBe(TR_CONTEXT_FRAME.minX);
+    expect(TR_CONTEXT_TALL_FRAME.width).toBe(TR_CONTEXT_FRAME.width);
+    expect(TR_CONTEXT_TALL_FRAME.minY + TR_CONTEXT_TALL_FRAME.height / 2).toBe(
+      TR_CONTEXT_FRAME.minY + TR_CONTEXT_FRAME.height / 2,
+    );
+    expect(TR_CONTEXT_TALL_FRAME.height).toBeGreaterThanOrEqual(TR_CONTEXT_TALL_FRAME.width);
+    const { minX, minY, width, height } = TR_CONTEXT_TALL_FRAME;
+    expect(TR_CONTEXT_TALL_VIEWBOX).toBe(`${minX} ${minY} ${width} ${height}`);
+  });
+
+  it("carries every wide-frame country with the wide artifact's label placement", () => {
+    const tall = new Map(TALL_CONTEXT_SHAPES.map((s) => [s.iso, s]));
+    for (const wide of CONTEXT_SHAPES) {
+      const shape = tall.get(wide.iso);
+      expect(shape, `${wide.iso} missing from the tall artifact`).toBeDefined();
+      expect(shape?.labelPoint, wide.iso).toEqual(wide.labelPoint);
+      expect(shape?.labelRadius, wide.iso).toBe(wide.labelRadius);
+    }
+  });
+
+  it("keeps every shape inside the pinned TR_CONTEXT_TALL_FRAME", () => {
+    for (const shape of TALL_CONTEXT_SHAPES) {
+      expect(() =>
+        assertInsideContextFrame(pathPoints(shape.d), {
+          label: shape.iso,
+          tolerance: 0.5,
+          frame: TR_CONTEXT_TALL_FRAME,
+        }),
+      ).not.toThrow();
     }
   });
 });
