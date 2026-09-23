@@ -8,6 +8,8 @@ import {
 } from "@/lib/api/marine";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
 import { getAllContinents } from "@/lib/geo/continents";
+import { nationalPopulation } from "@/lib/geo/national-population";
+import { tr } from "@/lib/text/format-number";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import {
@@ -97,6 +99,8 @@ export default async function V2HomePage({ params }: V2PageProps) {
   // said "7 Kıta", and the registry has seven (Antarktika included). A hardcoded count drifts
   // from the page it advertises; this one had.
   const totalContinents = getAllContinents().length;
+  // The sum of the 81 provinces' TÜİK figures; `null` (nothing printed) on a partial fetch.
+  const population = nationalPopulation(provinces);
   /**
    * A hardcoded literal, deliberately local and unexported. This page is a Server Component
    * that pulls `next-intl/server` and API-fetch modules in at module scope, which is not safe
@@ -182,6 +186,8 @@ export default async function V2HomePage({ params }: V2PageProps) {
               <CardHeader className="space-y-2">
                 <span className="text-xs font-mono text-muted-foreground">
                   {totalProvinces} il · 7 coğrafi bölge
+                  {population !== null &&
+                    ` · nüfus\u00a0${tr(population.total / 1_000_000, 1)}\u00a0milyon (TÜİK\u00a0${population.year})`}
                 </span>
                 <CardTitle className="text-2xl">{t("mapHeading")}</CardTitle>
                 <CardDescription className="text-sm leading-relaxed">
