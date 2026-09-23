@@ -42,6 +42,10 @@ const MEASUREMENTS_KEYS = [
   "savingLabel",
   "saveSuccess",
   "signInHint",
+  // T-080: an expired session during a save or delete (rich text, `<link>` to the login page),
+  // and the retry action of a failed list load.
+  "sessionExpired",
+  "listRetry",
 ] as const;
 
 /** Keys that carry a `{label}` interpolation placeholder — parametrized, unlike the rest. */

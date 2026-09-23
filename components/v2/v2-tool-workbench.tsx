@@ -47,11 +47,14 @@ import {
 import {
   MEASUREMENT_MAX_POINTS,
   MEASUREMENT_MIN_POINTS,
+  MEASUREMENT_TITLE_MAX_LENGTH,
   canSaveMeasurement,
   measurementPointCountIssue,
 } from "@/lib/measurements/shape";
 import {
+  DELETE_ERROR_MESSAGE_KEY,
   SAVE_ERROR_MESSAGE_KEY,
+  type DeleteMeasurementErrorCode,
   type SaveMeasurementErrorCode,
 } from "@/lib/measurements/save-error";
 import {
@@ -163,6 +166,34 @@ function zoomPanOfView(
   };
 }
 
+/** Every `Measurements` key a failed save, delete or list load can show. */
+type MeasurementErrorMessageKey =
+  | (typeof SAVE_ERROR_MESSAGE_KEY)[SaveMeasurementErrorCode]
+  | (typeof DELETE_ERROR_MESSAGE_KEY)[DeleteMeasurementErrorCode];
+
+/**
+ * The copy for a failed save or delete. `sessionExpired` is rich text whose `<link>` goes to the
+ * login page: an expired session is fixed by signing in, not by clicking again. The login page has
+ * no return-path parameter today (it always lands on `/`), so the link carries none.
+ */
+export function MeasurementErrorText({
+  messageKey,
+}: {
+  readonly messageKey: MeasurementErrorMessageKey;
+}) {
+  const t = useTranslations("Measurements");
+  if (messageKey === "sessionExpired") {
+    return t.rich("sessionExpired", {
+      link: (chunks) => (
+        <Link href="/giris" className="font-semibold underline underline-offset-2">
+          {chunks}
+        </Link>
+      ),
+    });
+  }
+  return t(messageKey);
+}
+
 interface V2ToolWorkbenchProps {
   /** If provided, locks the workbench to this specific tool mode (e.g. on dedicated sub-pages). */
   initialMode?: ToolMode;
@@ -198,6 +229,15 @@ export function V2ToolWorkbench({
   const [authState] = useAuthSession();
   const [saveTitle, setSaveTitle] = React.useState<string>("");
   const [savedList, setSavedList] = React.useState<readonly MeasurementRecord[]>([]);
+  // The list is fetched once per sign-in and again on each retry (`listReloadKey`). `listLoad`
+  // records which attempt last settled and whether it worked, so a failed first load can show an
+  // error with a retry instead of an empty space that looks like "you have no measurements".
+  const [listReloadKey, setListReloadKey] = React.useState(0);
+  const [listLoad, setListLoad] = React.useState<{
+    readonly key: number;
+    readonly ok: boolean;
+  } | null>(null);
+  const [deleteFailure, setDeleteFailure] = React.useState<DeleteMeasurementErrorCode | null>(null);
   const [saveSuccess, setSaveSuccess] = React.useState<boolean>(false);
   const [isSaving, setIsSaving] = React.useState<boolean>(false);
   // State flips on the next render; the ref closes the window in which a second click could
@@ -346,17 +386,22 @@ export function V2ToolWorkbench({
     let active = true;
     const controller = new AbortController();
     fetchMeasurements(controller.signal).then((records) => {
-      if (active && records) {
-        setSavedList(records);
-      }
+      if (!active) return;
+      if (records) setSavedList(records);
+      setListLoad({ key: listReloadKey, ok: records !== null });
     });
     return () => {
       active = false;
       controller.abort();
     };
-  }, [authState]);
+  }, [authState, listReloadKey]);
 
   const activeSavedList = authState === "authenticated" ? savedList : [];
+  // The last settled load failed. It stays up while a retry runs (the retry button spins), and
+  // goes away when one succeeds.
+  const listLoadFailed = authState === "authenticated" && listLoad !== null && !listLoad.ok;
+  const listRetrying = listLoadFailed && listLoad.key !== listReloadKey;
+  const handleRetryList = () => setListReloadKey((key) => key + 1);
 
   // Calculate live viewBox string based on zoom and pan
   const currentViewBox = React.useMemo(() => {
@@ -962,9 +1007,12 @@ export function V2ToolWorkbench({
   // Delete saved measurement
   const handleDeleteSaved = async (id: string, e: React.MouseEvent | React.KeyboardEvent) => {
     e.stopPropagation();
+    setDeleteFailure(null);
     const res = await removeMeasurement(id);
     if (res.ok) {
       setSavedList((prev) => prev.filter((item) => item.id !== id));
+    } else {
+      setDeleteFailure(res.code);
     }
   };
 
@@ -1668,6 +1716,7 @@ export function V2ToolWorkbench({
                   onChange={(e) => setSaveTitle(e.target.value)}
                   placeholder={tMeasurements("titleLabel")}
                   aria-label={tMeasurements("titleLabel")}
+                  maxLength={MEASUREMENT_TITLE_MAX_LENGTH}
                   className="h-10 text-xs rounded-xl"
                 />
                 <Button
@@ -1701,7 +1750,7 @@ export function V2ToolWorkbench({
               )}
               {visibleSaveFailure && (
                 <p role="alert" className="text-[11px] text-destructive font-medium">
-                  {tMeasurements(SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure])}
+                  <MeasurementErrorText messageKey={SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure]} />
                 </p>
               )}
               {saveSuccess && (
@@ -1722,7 +1771,7 @@ export function V2ToolWorkbench({
           </div>
 
           {/* B. Saved Measurements History List */}
-          {activeSavedList.length > 0 && (
+          {(activeSavedList.length > 0 || listLoadFailed) && (
             <div className="p-4 sm:p-5 rounded-3xl border border-border bg-card shadow-sm space-y-3">
               <div className="flex items-center justify-between">
                 <h5 className="font-heading font-bold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -1731,6 +1780,27 @@ export function V2ToolWorkbench({
                 </h5>
                 <span className="text-[10px] text-muted-foreground">Tıklayarak Yükleyin</span>
               </div>
+              {listLoadFailed && (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p role="alert" className="text-[11px] text-destructive font-medium">
+                    {tMeasurements("listError")}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRetryList}
+                    isLoading={listRetrying}
+                    leftIcon={<RefreshCw className="size-3.5" />}
+                  >
+                    {tMeasurements("listRetry")}
+                  </Button>
+                </div>
+              )}
+              {deleteFailure && (
+                <p role="alert" className="text-[11px] text-destructive font-medium">
+                  <MeasurementErrorText messageKey={DELETE_ERROR_MESSAGE_KEY[deleteFailure]} />
+                </p>
+              )}
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {activeSavedList.map((item) => (
                   <div

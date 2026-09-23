@@ -282,7 +282,9 @@
     "maxPointsHint": "You can save at most {count, plural, one {# point} other {# points}}. Undo the extra ones.",
     "savingLabel": "Saving…",
     "saveSuccess": "Measurement saved to your cloud archive.",
-    "signInHint": "Sign in to save your measurements to the cloud archive."
+    "signInHint": "Sign in to save your measurements to the cloud archive.",
+    "sessionExpired": "Your session has expired. <link>Sign in again</link> to continue.",
+    "listRetry": "Try again"
   },
   "ProvinceDetail": {
     "metaTitle": "Geography of {name}",
@@ -589,7 +591,11 @@
     "removeAria": "Remove from favorites",
     "signInRequiredAria": "Sign in to add to favorites",
     "saveError": "Couldn't save. Try again.",
-    "savedStatus": "Added to your favorites."
+    "savedStatus": "Added to your favorites.",
+    "addLabel": "Add to favorites",
+    "addedLabel": "In favorites",
+    "savingLabel": "Saving",
+    "sessionExpired": "Session expired. <link>Sign in again</link>."
   },
   "Deniz": {
     "metaTitle": "Sea State: Wind, Waves, Water Temperature",

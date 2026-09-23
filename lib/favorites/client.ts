@@ -21,6 +21,11 @@
 export const FAVORITES_FETCH_TIMEOUT_MS = 8000;
 
 import {
+  mutationErrorCodeFromResponse,
+  readErrorBody,
+  type UnmeteredMutationErrorCode,
+} from "@/lib/http/mutation-error";
+import {
   type FavoriteEntityType,
   type FavoriteTargetParam,
   type FavoriteRecord,
@@ -124,9 +129,16 @@ export async function fetchFavorites(signal: AbortSignal): Promise<FetchFavorite
   }
 }
 
-export interface SaveFavoriteResult {
-  readonly ok: boolean;
-}
+/**
+ * A failed toggle says WHY, because two answers need different copy: an expired session (401) is
+ * fixed by signing in again, not by clicking again. Favorites carry no quota — the api has no
+ * favorites limit and the BFF sends no quota code — so a 403 (the BFF's own Origin check) is an
+ * ordinary failure. The mapping is `lib/http/mutation-error.ts`, shared with measurements.
+ */
+export type FavoriteMutationErrorCode = UnmeteredMutationErrorCode;
+
+export type SaveFavoriteResult =
+  { readonly ok: true } | { readonly ok: false; readonly code: FavoriteMutationErrorCode };
 
 /**
  * `PUT` — idempotent add, no request body (plan §2/§5.1: the target is entirely the route
@@ -151,9 +163,10 @@ export async function saveFavorite(target: FavoriteTargetParam): Promise<SaveFav
       cache: "no-store",
       signal: controller.signal,
     });
-    return { ok: res.status === 200 };
+    if (res.status === 200) return { ok: true };
+    return { ok: false, code: mutationErrorCodeFromResponse(res.status, await readErrorBody(res)) };
   } catch {
-    return { ok: false };
+    return { ok: false, code: "failed" };
   } finally {
     clearTimeout(timeout);
   }
@@ -174,9 +187,10 @@ export async function removeFavorite(target: FavoriteTargetParam): Promise<SaveF
       cache: "no-store",
       signal: controller.signal,
     });
-    return { ok: res.status === 204 };
+    if (res.status === 204) return { ok: true };
+    return { ok: false, code: mutationErrorCodeFromResponse(res.status, await readErrorBody(res)) };
   } catch {
-    return { ok: false };
+    return { ok: false, code: "failed" };
   } finally {
     clearTimeout(timeout);
   }

@@ -1,9 +1,11 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type { MeasurementType } from "@/lib/api/types";
 import {
   MEASUREMENT_MAX_POINTS,
   MEASUREMENT_MIN_POINTS,
   MEASUREMENT_POINTS_MAX,
+  MEASUREMENT_TITLE_MAX_LENGTH,
   canSaveMeasurement,
   measurementPointCountIssue,
 } from "./shape";
@@ -24,6 +26,29 @@ describe("MEASUREMENT_MIN_POINTS", () => {
 describe("MEASUREMENT_POINTS_MAX", () => {
   it("carries the api DTO's flat points bound (MEASUREMENT_POINTS_MAX = 20)", () => {
     expect(MEASUREMENT_POINTS_MAX).toBe(20);
+  });
+});
+
+describe("the contract bounds (committed OpenAPI spec)", () => {
+  const spec = JSON.parse(
+    readFileSync(new URL("../../openapi/openapi.json", import.meta.url), "utf8"),
+  ) as {
+    components: {
+      schemas: {
+        CreateMeasurementRequestDto: {
+          properties: { title: { maxLength: number }; points: { maxItems: number } };
+        };
+      };
+    };
+  };
+  const create = spec.components.schemas.CreateMeasurementRequestDto.properties;
+
+  it("MEASUREMENT_TITLE_MAX_LENGTH is the spec's title maxLength", () => {
+    expect(MEASUREMENT_TITLE_MAX_LENGTH).toBe(create.title.maxLength);
+  });
+
+  it("MEASUREMENT_POINTS_MAX is the spec's points maxItems", () => {
+    expect(MEASUREMENT_POINTS_MAX).toBe(create.points.maxItems);
   });
 });
 

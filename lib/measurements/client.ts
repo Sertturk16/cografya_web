@@ -8,7 +8,13 @@
  */
 
 import type { MeasurementType } from "@/lib/api/types";
-import { saveErrorCodeFromResponse, type SaveMeasurementErrorCode } from "./save-error";
+import { readErrorBody } from "@/lib/http/mutation-error";
+import {
+  deleteErrorCodeFromResponse,
+  saveErrorCodeFromResponse,
+  type DeleteMeasurementErrorCode,
+  type SaveMeasurementErrorCode,
+} from "./save-error";
 
 /** The house standard for a caller-owned read, mirroring `FAVORITES_FETCH_TIMEOUT_MS`'s/
  *  `GAME_ROUNDS_FETCH_TIMEOUT_MS`'s reasoning at the same scale. */
@@ -142,9 +148,10 @@ export type SaveMeasurementResult =
  * periodic/teardown save — no `keepalive`; nothing here needs to survive page unload.
  * Carries its own `AbortController` bounded by `MEASUREMENTS_WRITE_TIMEOUT_MS`.
  *
- * The two failure codes are distinguished DELIBERATELY: a quota failure will not be fixed by
- * retrying the same click, unlike every other failure. `saveErrorCodeFromResponse`
- * (`save-error.ts`) owns the mapping; a network failure or timeout never throws, it is `failed`.
+ * The failure codes are distinguished DELIBERATELY: neither a quota failure nor an expired
+ * session is fixed by retrying the same click, unlike every other failure.
+ * `saveErrorCodeFromResponse` (`save-error.ts`) owns the mapping; a network failure or timeout
+ * never throws, it is `failed`.
  */
 export async function saveMeasurement(
   payload: SaveMeasurementPayload,
@@ -161,8 +168,7 @@ export async function saveMeasurement(
       signal: controller.signal,
     });
     if (res.status !== 200) {
-      const body: unknown = await res.json().catch(() => null);
-      return { ok: false, code: saveErrorCodeFromResponse(res.status, body) };
+      return { ok: false, code: saveErrorCodeFromResponse(res.status, await readErrorBody(res)) };
     }
     const parsed: unknown = await res.json();
     const record = parseSaveBody(parsed);
@@ -182,15 +188,15 @@ function parseSaveBody(value: unknown): MeasurementRecord | null {
   return parseMeasurementEntry((value as { measurement?: unknown }).measurement);
 }
 
-export interface RemoveMeasurementResult {
-  readonly ok: boolean;
-}
+export type RemoveMeasurementResult =
+  { readonly ok: true } | { readonly ok: false; readonly code: DeleteMeasurementErrorCode };
 
 /** `DELETE` — unconditionally idempotent remove, no request body. The BFF answers 204 on
  *  every genuine success, never 200 (plan §5.2's unconditional-204 design, matching the
- *  api exactly). Same `AbortController` + `MEASUREMENTS_WRITE_TIMEOUT_MS` treatment as
- *  `saveMeasurement` above — a fresh controller per call, `clearTimeout` unconditional in
- *  `finally`. */
+ *  api exactly). A failure carries a code so a 401 can say "sign in again" instead of "try
+ *  again" (`deleteErrorCodeFromResponse`). Same `AbortController` +
+ *  `MEASUREMENTS_WRITE_TIMEOUT_MS` treatment as `saveMeasurement` above — a fresh controller
+ *  per call, `clearTimeout` unconditional in `finally`. */
 export async function removeMeasurement(id: string): Promise<RemoveMeasurementResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), MEASUREMENTS_WRITE_TIMEOUT_MS);
@@ -201,9 +207,10 @@ export async function removeMeasurement(id: string): Promise<RemoveMeasurementRe
       cache: "no-store",
       signal: controller.signal,
     });
-    return { ok: res.status === 204 };
+    if (res.status === 204) return { ok: true };
+    return { ok: false, code: deleteErrorCodeFromResponse(res.status, await readErrorBody(res)) };
   } catch {
-    return { ok: false };
+    return { ok: false, code: "failed" };
   } finally {
     clearTimeout(timeout);
   }

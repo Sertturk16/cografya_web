@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth, useAuthModalState, consumeResolved } from "@/lib/auth/auth-modal.client";
 import {
@@ -9,11 +11,30 @@ import {
   removeFavorite,
   isFavoriteMatch,
   FAVORITES_FETCH_TIMEOUT_MS,
+  type FavoriteMutationErrorCode,
   type FavoriteTargetParam,
 } from "@/lib/favorites/client";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Heart, Sparkles, Lock } from "lucide-react";
+
+/**
+ * The copy for a failed toggle. An expired session links to the login page; the login page has no
+ * return-path parameter today (it always lands on `/`), so the link carries none.
+ */
+export function FavoriteFailureText({ code }: { readonly code: FavoriteMutationErrorCode }) {
+  const t = useTranslations("Favorites");
+  if (code === "session-expired") {
+    return t.rich("sessionExpired", {
+      link: (chunks) => (
+        <Link href="/giris" className="font-semibold underline underline-offset-2">
+          {chunks}
+        </Link>
+      ),
+    });
+  }
+  return t("saveError");
+}
 
 interface V2FavoriteButtonProps {
   readonly target: FavoriteTargetParam;
@@ -26,11 +47,14 @@ export function V2FavoriteButton({
   variant = "default",
   className = "",
 }: V2FavoriteButtonProps) {
+  const t = useTranslations("Favorites");
   const [authState] = useAuthSession();
   const modal = useAuthModalState();
   const [favorited, setFavorited] = React.useState(false);
   const [pending, setPending] = React.useState(false);
-  const [saveFailed, setSaveFailed] = React.useState(false);
+  // Why the last toggle failed, or null. An expired session gets its own copy with a login link:
+  // clicking again cannot fix it, and "try again" would say it can.
+  const [failure, setFailure] = React.useState<FavoriteMutationErrorCode | null>(null);
   const [justToggled, setJustToggled] = React.useState(false);
 
   const targetRef = React.useRef(target);
@@ -62,7 +86,7 @@ export function V2FavoriteButton({
   }, [authState]);
 
   const performToggle = React.useCallback(async () => {
-    setSaveFailed(false);
+    setFailure(null);
     const next = !favorited;
     setFavorited(next); // optimistic update
     setPending(true);
@@ -73,7 +97,7 @@ export function V2FavoriteButton({
 
     if (!result.ok) {
       setFavorited(!next); // rollback
-      setSaveFailed(true);
+      setFailure(result.code);
     } else {
       setTimeout(() => setJustToggled(false), 1500);
     }
@@ -111,10 +135,10 @@ export function V2FavoriteButton({
         aria-checked={authState === "authenticated" ? favorited : undefined}
         aria-label={
           favorited
-            ? "Favorilerden çıkar"
+            ? t("removeAria")
             : authState === "authenticated"
-              ? "Favorilere ekle"
-              : "Favorilere eklemek için giriş yapın"
+              ? t("addAria")
+              : t("signInRequiredAria")
         }
         disabled={pending}
         onClick={() => void handleClick()}
@@ -125,7 +149,7 @@ export function V2FavoriteButton({
         } ${className}`}
       >
         {pending ? (
-          <Spinner size="default" label="Kaydediliyor" className="text-muted-foreground" />
+          <Spinner size="default" label={t("savingLabel")} className="text-muted-foreground" />
         ) : (
           <Heart
             className={`size-4 transition-transform duration-200 ${
@@ -147,10 +171,10 @@ export function V2FavoriteButton({
         aria-checked={authState === "authenticated" ? favorited : undefined}
         aria-label={
           favorited
-            ? "Favorilerden çıkar"
+            ? t("removeAria")
             : authState === "authenticated"
-              ? "Favorilere ekle"
-              : "Favorilere eklemek için giriş yapın"
+              ? t("addAria")
+              : t("signInRequiredAria")
         }
         disabled={pending}
         onClick={() => void handleClick()}
@@ -161,7 +185,7 @@ export function V2FavoriteButton({
         } ${className}`}
       >
         {pending ? (
-          <Spinner size="sm" label="Kaydediliyor" className="text-muted-foreground" />
+          <Spinner size="sm" label={t("savingLabel")} className="text-muted-foreground" />
         ) : favorited ? (
           <Heart className="size-3.5 fill-current animate-in zoom-in-50 duration-200" />
         ) : authState === "authenticated" ? (
@@ -173,14 +197,17 @@ export function V2FavoriteButton({
           </div>
         )}
 
-        <span>{favorited ? "Favorilerde" : "Favoriye Ekle"}</span>
+        <span>{favorited ? t("addedLabel") : t("addLabel")}</span>
 
         {justToggled && favorited && <Sparkles className="size-3 animate-spin-slow" />}
       </Button>
 
-      {saveFailed && (
-        <span className="absolute -bottom-5 left-0 text-[10px] text-destructive whitespace-nowrap">
-          Kaydedilemedi, tekrar dene.
+      {failure && (
+        <span
+          role="alert"
+          className="absolute -bottom-5 left-0 text-[10px] text-destructive whitespace-nowrap"
+        >
+          <FavoriteFailureText code={failure} />
         </span>
       )}
     </div>

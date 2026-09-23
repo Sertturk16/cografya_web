@@ -282,7 +282,9 @@
     "maxPointsHint": "Kaydetmek için en fazla {count} nokta olabilir. Fazla noktaları geri al.",
     "savingLabel": "Kaydediliyor…",
     "saveSuccess": "Ölçüm bulut arşivine kaydedildi.",
-    "signInHint": "Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın."
+    "signInHint": "Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın.",
+    "sessionExpired": "Oturumun sona erdi. Devam etmek için <link>yeniden giriş yap</link>.",
+    "listRetry": "Tekrar dene"
   },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",
@@ -589,7 +591,11 @@
     "removeAria": "Favorilerden çıkar",
     "signInRequiredAria": "Favorilere eklemek için giriş yap",
     "saveError": "Kaydedilemedi. Tekrar dene.",
-    "savedStatus": "Favorilere eklendi."
+    "savedStatus": "Favorilere eklendi.",
+    "addLabel": "Favoriye Ekle",
+    "addedLabel": "Favorilerde",
+    "savingLabel": "Kaydediliyor",
+    "sessionExpired": "Oturumun sona erdi. <link>Yeniden giriş yap</link>."
   },
   "Deniz": {
     "metaTitle": "Deniz Durumu: Rüzgâr, Dalga, Su Sıcaklığı",

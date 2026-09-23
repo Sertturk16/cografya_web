@@ -221,7 +221,9 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
 
     it("renders the failure through the shared message map, as an alert", () => {
       expect(code).toContain('from "@/lib/measurements/save-error"');
-      const at = code.indexOf("tMeasurements(SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure])");
+      const at = code.indexOf(
+        "<MeasurementErrorText messageKey={SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure]} />",
+      );
       expect(at, "the failure copy is not rendered").toBeGreaterThan(-1);
       const element = code.slice(code.lastIndexOf("<p", at), at);
       expect(element).toContain('role="alert"');
@@ -276,6 +278,70 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       ]) {
         expect(code, literal).not.toContain(literal);
       }
+    });
+  });
+  /**
+   * T-080: the same silent-failure class T-077 closed for a save, in the three places it was left
+   * open — a failed delete, a failed first load of the saved list, and a 401 during a save or
+   * delete reported as "try again" when the fix is to sign in again. The render of each message is
+   * in `v2-tool-workbench.errors.test.tsx`; this pins the wiring.
+   */
+  describe("delete, list-load and expired-session failures (T-080)", () => {
+    const code = stripComments(source);
+
+    function sliceFrom(start: string, end: string): string {
+      const from = code.indexOf(start);
+      expect(from, `${start} not found`).toBeGreaterThan(-1);
+      const to = code.indexOf(end, from);
+      expect(to, `${end} not found after ${start}`).toBeGreaterThan(from);
+      return code.slice(from, to);
+    }
+
+    function alertAround(needle: string): string {
+      const at = code.indexOf(needle);
+      expect(at, `${needle} is not rendered`).toBeGreaterThan(-1);
+      return code.slice(code.lastIndexOf("<p", at), at);
+    }
+
+    it("records a failed delete instead of dropping it, and renders it as an alert", () => {
+      const handler = sliceFrom("const handleDeleteSaved = ", "\n  };");
+      expect(handler).toContain("setDeleteFailure(null);");
+      expect(handler).toMatch(
+        /if \(res\.ok\) \{[\s\S]*\} else \{\s*setDeleteFailure\(res\.code\);/,
+      );
+      expect(
+        alertAround(
+          "<MeasurementErrorText messageKey={DELETE_ERROR_MESSAGE_KEY[deleteFailure]} />",
+        ),
+      ).toContain('role="alert"');
+    });
+
+    it("shows a failed list load with a retry, and the retry refetches", () => {
+      expect(code).toContain("setListLoad({ key: listReloadKey, ok: records !== null });");
+      expect(code).toContain("}, [authState, listReloadKey]);");
+      expect(alertAround('tMeasurements("listError")')).toContain('role="alert"');
+      const retry = sliceFrom("onClick={handleRetryList}", ">");
+      expect(retry).toContain("isLoading={listRetrying}");
+      expect(code).toContain("const handleRetryList = () => setListReloadKey((key) => key + 1);");
+      // The card must render for a failed load even when there is nothing listed yet.
+      expect(code).toContain("(activeSavedList.length > 0 || listLoadFailed) && (");
+    });
+
+    it("routes an expired session to the login page, not to a retry", () => {
+      const helper = sliceFrom("export function MeasurementErrorText(", "return t(messageKey);");
+      expect(helper).toContain('if (messageKey === "sessionExpired")');
+      expect(helper).toContain('<Link href="/giris"');
+    });
+
+    it("bounds the title input by the same constant the BFF schema enforces", () => {
+      expect(code).toContain("maxLength={MEASUREMENT_TITLE_MAX_LENGTH}");
+      const transport = stripComments(
+        readFileSync(
+          new URL("../../lib/measurements/transport.server.ts", import.meta.url),
+          "utf8",
+        ),
+      );
+      expect(transport).toContain("title: z.string().max(MEASUREMENT_TITLE_MAX_LENGTH)");
     });
   });
 });
