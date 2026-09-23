@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { stripComments, stripCssComments } from "./strip-comments";
+import { maskComments, stripComments, stripCssComments } from "./strip-comments";
 
 /**
  * The stripper other source-text tests depend on, so its own failure modes are pinned here
@@ -117,3 +118,119 @@ describe("stripComments", () => {
     expect(stripped).not.toContain("NO `general` SCOPE");
   });
 });
+
+/** 1-based line of `offset` in `text`, the number a counter would print as `file:line`. */
+function lineAt(text: string, offset: number): number {
+  return text.slice(0, offset).split("\n").length;
+}
+
+/**
+ * The invariant `maskComments` exists for: same length, every line break where it was, and every
+ * character that is not a comment copied through. A comment character may only become a space.
+ */
+function expectLinePreservingMask(source: string, masked: string, label = "source"): void {
+  expect(masked.length, `${label}: length`).toBe(source.length);
+  let firstBad = -1;
+  for (let i = 0; i < source.length && firstBad < 0; i += 1) {
+    const original = source[i]!;
+    const kept = masked[i]!;
+    const lineBreak = original === "\n" || original === "\r";
+    if (lineBreak ? kept !== original : kept !== original && kept !== " ") firstBad = i;
+  }
+  expect(firstBad, `${label}: first offset that is neither copied nor blanked`).toBe(-1);
+}
+
+const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
+const NOT_SOURCE = new Set([".git", ".next", "node_modules", "public", "coverage", "dist"]);
+
+function walkSources(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.isDirectory()) {
+      return NOT_SOURCE.has(entry.name) ? [] : walkSources(join(dir, entry.name));
+    }
+    return entry.name.endsWith(".ts") || entry.name.endsWith(".tsx") ? [join(dir, entry.name)] : [];
+  });
+}
+
+/**
+ * `stripComments` collapses a comment to one space, so every line number computed from its output
+ * after a multi-line block comment is short by the block's height. `maskComments` is the variant a
+ * counter that reports `file:line` reads instead: the same lexer, so exactly the same characters
+ * count as comment, but each one is blanked in place rather than removed.
+ */
+describe("maskComments", () => {
+  it("keeps a token after a 15-line block comment on its original line and offset", () => {
+    const block = ["{/* first", ...Array.from({ length: 13 }, (_, n) => `   prose ${n}`), "*/}"];
+    expect(block).toHaveLength(15);
+    const source = ["<section>", ...block, "<StatGrid />", "</section>"].join("\n");
+    const masked = maskComments(source);
+
+    expect(lineAt(source, source.indexOf("<StatGrid"))).toBe(17);
+    expect(masked.indexOf("<StatGrid")).toBe(source.indexOf("<StatGrid"));
+    expect(lineAt(masked, masked.indexOf("<StatGrid"))).toBe(17);
+    expect(masked).not.toContain("prose");
+    expect(masked.split("\n")).toHaveLength(source.split("\n").length);
+    // The trap it replaces: the stripped text reports the same token fourteen lines early.
+    const stripped = stripComments(source);
+    expect(lineAt(stripped, stripped.indexOf("<StatGrid"))).toBe(3);
+  });
+
+  it("blanks both comment forms in place, delimiters included", () => {
+    expect(maskComments("id/* x */Name")).toBe("id       Name");
+    expect(maskComments("id// x\nName")).toBe("id    \nName");
+    expect(maskComments("a /* one\ntwo */ b")).toBe("a       \n       b");
+    expect(maskComments("{/* jsx */}")).toBe("{         }");
+    expect(maskComments("x /* crlf\r\n */ y")).toBe("x        \r\n    y");
+  });
+
+  it("blanks an unterminated block comment to EOF without overrunning", () => {
+    expect(maskComments("const a = 1; /* never\nclosed")).toBe("const a = 1;         \n      ");
+    expect(maskComments("a /")).toBe("a /");
+    expect(maskComments("a /*")).toBe("a   ");
+  });
+
+  it("lexes exactly like stripComments: strings, templates, `${}` holes and regexes", () => {
+    const cases = [
+      'const url = "https://example.org/a"; // gone',
+      "const glob = `messages/*.json`; /* gone */",
+      'const escaped = "a \\" // b"; // gone',
+      'const token = /(`([^`]+)`|"([^"]+)")/g;\n// gone\nconst kept = 1;',
+      "const re = /[/]\\//g; // gone",
+      "const ratio = total / count; // gone",
+      "<p>km/h</p>\n// gone\nconst kept = 1;",
+      "const cls = `base ${\n  // gone\n  wide ? `a ${inner} b` : `c`\n} tail`;",
+      "const s = `a /* kept */ c`;",
+      "return /* gone */ /re/.test(x) /* gone */ / 2;",
+    ];
+    for (const source of cases) {
+      const masked = maskComments(source);
+      expectLinePreservingMask(source, masked, JSON.stringify(source));
+      expect(masked, JSON.stringify(source)).not.toContain("gone");
+      expect(collapse(masked), JSON.stringify(source)).toBe(collapse(stripComments(source)));
+    }
+    expect(maskComments("const s = `a /* kept */ c`;")).toBe("const s = `a /* kept */ c`;");
+  });
+
+  /**
+   * Parity with `stripComments`, stated exactly. The two differ only in what a comment becomes:
+   * one space there, the comment's own length in spaces and line breaks here. Every comment is at
+   * least two characters, so both leave a whitespace run of length >= 1 where it stood, and
+   * collapsing every whitespace run to one space makes the outputs identical. The mask is also
+   * comment-free under the same lexer, so stripping it again changes nothing.
+   */
+  it("agrees with stripComments over every .ts/.tsx file in the repo", () => {
+    const files = walkSources(REPO_ROOT);
+    expect(files.length).toBeGreaterThan(300);
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      const masked = maskComments(source);
+      expectLinePreservingMask(source, masked, file);
+      expect(collapse(masked), file).toBe(collapse(stripComments(source)));
+      expect(stripComments(masked), file).toBe(masked);
+    }
+  });
+});
+
+function collapse(text: string): string {
+  return text.replace(/\s+/g, " ");
+}
