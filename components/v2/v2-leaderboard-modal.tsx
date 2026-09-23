@@ -111,9 +111,9 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                 <Lock className="size-8" />
               </div>
               <div className="space-y-1 max-w-sm">
-                <h4 className="font-heading font-bold text-lg text-foreground">
+                <h3 className="font-heading font-bold text-lg text-foreground">
                   Giriş Yapman Gerekiyor
-                </h4>
+                </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Liderlik tablosunda yer alan oyuncuları incelemek ve kazandığın skorla listeye
                   adını yazdırmak için hesabına giriş yap.
@@ -146,9 +146,9 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                 <Trophy className="size-8 opacity-40" />
               </div>
               <div className="space-y-1 max-w-sm">
-                <h4 className="font-heading font-semibold text-foreground">
+                <h3 className="font-heading font-semibold text-foreground">
                   Henüz Kayıtlı Skor Yok
-                </h4>
+                </h3>
                 <p className="text-xs text-muted-foreground">
                   Bu modda henüz tamamlanmış ve kaydedilmiş bir sınav skoru bulunmuyor. İlk skoru
                   kaydeden sen ol!

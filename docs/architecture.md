@@ -222,11 +222,14 @@ Details and the open dark-mode bugs: `docs/design.md`.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`
   is gitignored yet two such files are tracked.
 - Prod is plain HTTP on a bare IP; the internal token rides every web→api call in clear.
-- `pnpm build` against a live local API fails at random — a different province or country page
-  each run, fetch aborts / 500s — under Next's ~19 parallel prerender workers. Reproduces at
-  commits predating this work, so it is not a regression of anything landed here. CI now
-  reaches this: since T-048, `ci.yml` stands up a real API from the committed seeds before
-  `pnpm build`, and `scripts/assert-prerender-floor.mjs` runs on every build, so a build that
-  cannot reach the API (or loses it mid-build) fails loudly instead of shipping partial output.
-  Three consecutive local builds against a live API on 2026-09-19 (post-T-048) all passed with
-  every guard row `ok`; the flake did not reproduce, so no worker count is pinned.
+- `pnpm build` against a live local API can fail on one province or country page (fetch abort /
+  `ECONNRESET`, or `ApiError 500`) under Next's ~19 parallel prerender workers. It is load, not
+  chance: it reproduces while something else is also loading the API — an open Playwright
+  session failed `kilis` with `ApiError 500` twice in a row — and the same tree builds clean
+  (992/992 pages) once that load is gone. `✓ Compiled successfully` prints either way; the failure
+  is in prerender. **Before calling a red build a real failure, check whether anything else is
+  hitting the API** (a Playwright/MCP browser, `pnpm sweep:overflow`, a dev server in use), stop
+  it and rerun. CI reaches this path: since T-048, `ci.yml` stands up a real API from the
+  committed seeds before `pnpm build`, and `scripts/assert-prerender-floor.mjs` runs on every
+  build, so a build that cannot reach the API (or loses it mid-build) fails loudly instead of
+  shipping partial output. No worker count is pinned.
