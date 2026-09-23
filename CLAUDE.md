@@ -47,9 +47,9 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   no `fetch` to the API from client code.
 - Types from the contract: alias `components["schemas"][...]` once in `lib/api/types.ts`,
   never reference `schema.ts` shapes at call sites.
-- Five committed generated files, never hand-edited: `lib/api/schema.ts` and
-  `lib/map/{tr-provinces,world-countries,tr-inland-water,tr-context}.generated.ts`. Each has
-  a CI drift gate. Each must be listed in BOTH `.prettierignore` and the ESLint
+- Six committed generated files, never hand-edited: `lib/api/schema.ts` and
+  `lib/map/{tr-provinces,world-countries,tr-inland-water,tr-context,tr-context-tall}.generated.ts`.
+  Each has a CI drift gate. Each must be listed in BOTH `.prettierignore` and the ESLint
   `globalIgnores`.
 - Colours: `var(--token)` from `app/globals.css` or the Tailwind theme keys (`bg-primary`,
   `text-muted-foreground`). No brand hex in components. Brand tokens never encode data on

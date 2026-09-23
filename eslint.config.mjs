@@ -32,6 +32,8 @@ const eslintConfig = defineConfig([
     // was false is the one that runs in CI. `docs/architecture.md` had it recorded as a known
     // gap — a gap nothing prevented anyone from simply closing.
     "lib/map/tr-context.generated.ts",
+    // T-079: the tall frame of the same context, emitted by the same generator run.
+    "lib/map/tr-context-tall.generated.ts",
     // Subagent worktrees. The agent harness creates full checkouts under `.claude/worktrees/`,
     // inside the repo, so a lint run scans every file two or three more times and reports
     // findings against paths that are copies. One such run produced 1,744 errors, all of them

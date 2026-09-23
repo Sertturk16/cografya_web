@@ -87,6 +87,8 @@ import {
   assertInsideContextFrame,
   projectToFrame,
   TR_CONTEXT_FRAME,
+  TR_CONTEXT_TALL_FRAME,
+  TR_CONTEXT_TALL_VIEWBOX,
   TR_CONTEXT_VIEWBOX,
 } from "./lib/tr-frame.mjs";
 
@@ -94,6 +96,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..");
 const SRC = join(ROOT, "data", "world-countries.geojson");
 const OUT = join(ROOT, "lib", "map", "tr-context.generated.ts");
+const OUT_TALL = join(ROOT, "lib", "map", "tr-context-tall.generated.ts");
 
 // --- Tuning -------------------------------------------------------------------
 /** Douglas-Peucker tolerance, in TR-frame svg units — see the module docblock, pipeline
@@ -211,12 +214,16 @@ function clipRingToRect(ring, rect) {
   return poly;
 }
 
-const CONTEXT_RECT = {
-  minX: TR_CONTEXT_FRAME.minX,
-  minY: TR_CONTEXT_FRAME.minY,
-  maxX: TR_CONTEXT_FRAME.minX + TR_CONTEXT_FRAME.width,
-  maxY: TR_CONTEXT_FRAME.minY + TR_CONTEXT_FRAME.height,
-};
+/** A frame's clip rectangle. Two frames are built from the same source: `TR_CONTEXT_FRAME`
+ *  (every context surface) and `TR_CONTEXT_TALL_FRAME` (the /turkiye explorer, T-079). */
+function rectOf(frame) {
+  return {
+    minX: frame.minX,
+    minY: frame.minY,
+    maxX: frame.minX + frame.width,
+    maxY: frame.minY + frame.height,
+  };
+}
 
 /** Every polygon of a geometry as `{ outer, holes }` — mirrors the world generator's helper
  *  of the same shape (each MultiPolygon member is a separate island/landmass). */
@@ -329,123 +336,153 @@ if (geojson.type !== "FeatureCollection" || !Array.isArray(geojson.features)) {
   throw new Error(`Unexpected GeoJSON: ${SRC}`);
 }
 
-// --- Pass 1: project + clip every ring of every feature, filter by ring/feature area ------
 /**
- * @type {{ iso: string, geoName: string, polygons: { outer: number, holes: number[] }[] }[]}
+ * Passes 1–3 for one clip rectangle: project, clip, one topology/simplification pass, one shape
+ * per ISO with its label placement. Unchanged from the single-frame pipeline except that the
+ * rectangle is a parameter.
  */
-const plans = [];
-/** @type {{ points: [number, number][], epsilon: number }[]} */
-const topologyRings = [];
-let rawRingCount = 0;
-let survivingRingCount = 0;
+function buildShapes(rect) {
+  // --- Pass 1: project + clip every ring of every feature, filter by ring/feature area ------
+  /**
+   * @type {{ iso: string, geoName: string, polygons: { outer: number, holes: number[] }[] }[]}
+   */
+  const plans = [];
+  /** @type {{ points: [number, number][], epsilon: number }[]} */
+  const topologyRings = [];
+  let rawRingCount = 0;
+  let survivingRingCount = 0;
 
-for (const feature of geojson.features) {
-  const rawIso = feature.properties?.iso;
-  const iso =
-    typeof rawIso === "string" && /^[a-z]{2}$/i.test(rawIso) ? rawIso.toUpperCase() : rawIso;
-  const geoName = feature.properties?.name;
-  if (typeof iso !== "string" || iso.length < 2) continue; // synthetic backdrop keys never join here either
+  for (const feature of geojson.features) {
+    const rawIso = feature.properties?.iso;
+    const iso =
+      typeof rawIso === "string" && /^[a-z]{2}$/i.test(rawIso) ? rawIso.toUpperCase() : rawIso;
+    const geoName = feature.properties?.name;
+    if (typeof iso !== "string" || iso.length < 2) continue; // synthetic backdrop keys never join here either
 
-  const epsilon = SIMPLIFY_EPSILON_BY_ISO.get(iso) ?? SIMPLIFY_EPSILON;
-  const minRingArea = Math.max(MIN_VISIBLE_RING_AREA, MIN_RING_AREA_BY_ISO.get(iso) ?? 0);
+    const epsilon = SIMPLIFY_EPSILON_BY_ISO.get(iso) ?? SIMPLIFY_EPSILON;
+    const minRingArea = Math.max(MIN_VISIBLE_RING_AREA, MIN_RING_AREA_BY_ISO.get(iso) ?? 0);
 
-  /** @type {{ outer: number, holes: number[] }[]} */
-  const polygons = [];
-  let featureTrueArea = 0;
+    /** @type {{ outer: number, holes: number[] }[]} */
+    const polygons = [];
+    let featureTrueArea = 0;
 
-  for (const { outer, holes } of polygonRings(feature.geometry)) {
-    rawRingCount++;
-    const projectedOuter = outer.map((pt) => projectToFrame(pt));
-    const clippedOuter = clipRingToRect(projectedOuter, CONTEXT_RECT);
-    if (clippedOuter.length < 3) continue;
-    const trueArea = ringArea(clippedOuter);
-    if (trueArea < minRingArea) continue;
+    for (const { outer, holes } of polygonRings(feature.geometry)) {
+      rawRingCount++;
+      const projectedOuter = outer.map((pt) => projectToFrame(pt));
+      const clippedOuter = clipRingToRect(projectedOuter, rect);
+      if (clippedOuter.length < 3) continue;
+      const trueArea = ringArea(clippedOuter);
+      if (trueArea < minRingArea) continue;
 
-    const outerIndex = topologyRings.length;
-    topologyRings.push({ points: clippedOuter, epsilon });
-    featureTrueArea += trueArea;
-    survivingRingCount++;
-
-    /** @type {number[]} */
-    const holeIndices = [];
-    for (const hole of holes) {
-      const projectedHole = hole.map((pt) => projectToFrame(pt));
-      const clippedHole = clipRingToRect(projectedHole, CONTEXT_RECT);
-      if (clippedHole.length < 3) continue;
-      if (ringArea(clippedHole) < minRingArea) continue;
-      holeIndices.push(topologyRings.length);
-      topologyRings.push({ points: clippedHole, epsilon, preserve: true });
+      const outerIndex = topologyRings.length;
+      topologyRings.push({ points: clippedOuter, epsilon });
+      featureTrueArea += trueArea;
       survivingRingCount++;
+
+      /** @type {number[]} */
+      const holeIndices = [];
+      for (const hole of holes) {
+        const projectedHole = hole.map((pt) => projectToFrame(pt));
+        const clippedHole = clipRingToRect(projectedHole, rect);
+        if (clippedHole.length < 3) continue;
+        if (ringArea(clippedHole) < minRingArea) continue;
+        holeIndices.push(topologyRings.length);
+        topologyRings.push({ points: clippedHole, epsilon, preserve: true });
+        survivingRingCount++;
+      }
+      polygons.push({ outer: outerIndex, holes: holeIndices });
     }
-    polygons.push({ outer: outerIndex, holes: holeIndices });
+
+    if (polygons.length === 0 || featureTrueArea < MIN_FEATURE_AREA) continue;
+    plans.push({ iso, geoName, polygons });
   }
 
-  if (polygons.length === 0 || featureTrueArea < MIN_FEATURE_AREA) continue;
-  plans.push({ iso, geoName, polygons });
-}
-
-// --- Pass 2: ONE topology + simplification pass over every surviving ring -----------------
-const topology = buildTopology(topologyRings);
-const simplifiedRings = topology.rings;
-if (topology.stats.asymmetricSharedNodes !== 0) {
-  throw new Error(
-    `generate:tr-context — ${topology.stats.asymmetricSharedNodes} shared source vertices were ` +
-      `kept by one owner and dropped by another. Topology extraction is broken; the emitted ` +
-      `context borders would not coincide.`,
-  );
-}
-
-// --- Pass 3: assemble one shape per ISO, compute the label placement fields ---------------
-/** @type {{ iso: string, geoName: string, d: string, labelPoint: { x: number, y: number }, labelRadius: number }[]} */
-const shapes = [];
-let allProjectedPoints = /** @type {[number, number][]} */ ([]);
-
-for (const plan of plans) {
-  /** @type {[number, number][][]} */
-  const subpaths = [];
-  for (const polygon of plan.polygons) {
-    const outer = simplifiedRings[polygon.outer];
-    if (outer.length < 3 || ringArea(outer) < MIN_VISIBLE_RING_AREA) continue;
-    subpaths.push(outer);
-    for (const holeIndex of polygon.holes) {
-      const hole = simplifiedRings[holeIndex];
-      if (hole.length < 3 || ringArea(hole) < MIN_VISIBLE_RING_AREA) continue;
-      subpaths.push(hole);
-    }
+  // --- Pass 2: ONE topology + simplification pass over every surviving ring -----------------
+  const topology = buildTopology(topologyRings);
+  const simplifiedRings = topology.rings;
+  if (topology.stats.asymmetricSharedNodes !== 0) {
+    throw new Error(
+      `generate:tr-context — ${topology.stats.asymmetricSharedNodes} shared source vertices were ` +
+        `kept by one owner and dropped by another. Topology extraction is broken; the emitted ` +
+        `context borders would not coincide.`,
+    );
   }
-  if (subpaths.length === 0) continue;
 
-  for (const sp of subpaths) allProjectedPoints = allProjectedPoints.concat(sp);
+  // --- Pass 3: assemble one shape per ISO, compute the label placement fields ---------------
+  /** @type {{ iso: string, geoName: string, d: string, labelPoint: { x: number, y: number }, labelRadius: number }[]} */
+  const shapes = [];
+  let allProjectedPoints = /** @type {[number, number][]} */ ([]);
 
-  // Label placement is derived from the LARGEST surviving subpath — a country's mainland,
-  // never one of its islands (Greece's biggest Aegean island is nowhere near the size of its
-  // clipped mainland fragment).
-  let largest = subpaths[0];
-  let largestArea = ringArea(largest);
-  for (const sp of subpaths) {
-    const a = ringArea(sp);
-    if (a > largestArea) {
-      largest = sp;
-      largestArea = a;
+  for (const plan of plans) {
+    /** @type {[number, number][][]} */
+    const subpaths = [];
+    for (const polygon of plan.polygons) {
+      const outer = simplifiedRings[polygon.outer];
+      if (outer.length < 3 || ringArea(outer) < MIN_VISIBLE_RING_AREA) continue;
+      subpaths.push(outer);
+      for (const holeIndex of polygon.holes) {
+        const hole = simplifiedRings[holeIndex];
+        if (hole.length < 3 || ringArea(hole) < MIN_VISIBLE_RING_AREA) continue;
+        subpaths.push(hole);
+      }
     }
-  }
-  const pole = poleOfInaccessibility(largest, LABEL_PRECISION);
+    if (subpaths.length === 0) continue;
 
-  const d = encodePath(subpaths, { decimals: DECIMALS });
-  shapes.push({
-    iso: plan.iso,
-    geoName: plan.geoName,
-    d,
-    labelPoint: { x: Math.round(pole.x * 10) / 10, y: Math.round(pole.y * 10) / 10 },
-    labelRadius: Math.round(pole.d * 10) / 10,
-  });
+    for (const sp of subpaths) allProjectedPoints = allProjectedPoints.concat(sp);
+
+    // Label placement is derived from the LARGEST surviving subpath — a country's mainland,
+    // never one of its islands (Greece's biggest Aegean island is nowhere near the size of its
+    // clipped mainland fragment).
+    let largest = subpaths[0];
+    let largestArea = ringArea(largest);
+    for (const sp of subpaths) {
+      const a = ringArea(sp);
+      if (a > largestArea) {
+        largest = sp;
+        largestArea = a;
+      }
+    }
+    const pole = poleOfInaccessibility(largest, LABEL_PRECISION);
+
+    const d = encodePath(subpaths, { decimals: DECIMALS });
+    shapes.push({
+      iso: plan.iso,
+      geoName: plan.geoName,
+      d,
+      labelPoint: { x: Math.round(pole.x * 10) / 10, y: Math.round(pole.y * 10) / 10 },
+      labelRadius: Math.round(pole.d * 10) / 10,
+    });
+  }
+
+  return { shapes, allProjectedPoints, rawRingCount, survivingRingCount, topology };
 }
+
+const wide = buildShapes(rectOf(TR_CONTEXT_FRAME));
+const { shapes, rawRingCount, survivingRingCount, topology } = wide;
 
 // Safety net (pipeline step 5): every emitted vertex must lie inside the pinned context
 // frame. A clip bug would otherwise ship a shape that quietly draws past the panel.
-assertInsideContextFrame(allProjectedPoints, { label: "generate:tr-context", tolerance: 0.5 });
+assertInsideContextFrame(wide.allProjectedPoints, { label: "generate:tr-context", tolerance: 0.5 });
 
 shapes.sort((a, b) => a.iso.localeCompare(b.iso, "en"));
+
+// --- The tall frame (T-079) ---------------------------------------------------
+const tall = buildShapes(rectOf(TR_CONTEXT_TALL_FRAME));
+assertInsideContextFrame(tall.allProjectedPoints, {
+  label: "generate:tr-context (tall)",
+  tolerance: 0.5,
+  frame: TR_CONTEXT_TALL_FRAME,
+});
+// A country the wide frame also shows keeps the wide artifact's label, so the explorer's desktop
+// view (tall frame, `slice`, 1270:580 box) draws today's labels exactly. Measured: without this
+// BG, IQ, RU, SY, LB and RS move, because more of each country survives the taller clip.
+const wideByIso = new Map(shapes.map((s) => [s.iso, s]));
+const tallShapes = tall.shapes
+  .map((s) => {
+    const w = wideByIso.get(s.iso);
+    return w ? { ...s, labelPoint: w.labelPoint, labelRadius: w.labelRadius } : s;
+  })
+  .sort((a, b) => a.iso.localeCompare(b.iso, "en"));
 
 // --- Emit -------------------------------------------------------------------
 const body = shapes
@@ -509,11 +546,43 @@ ${body}
 
 writeFileSync(OUT, out, "utf8");
 const bytes = Buffer.byteLength(out, "utf8");
+
+const tallBody = tallShapes
+  .map(
+    (s) =>
+      `  { iso: ${JSON.stringify(s.iso)}, geoName: ${JSON.stringify(s.geoName)}, d: ${JSON.stringify(
+        s.d,
+      )}, labelPoint: { x: ${s.labelPoint.x}, y: ${s.labelPoint.y} }, labelRadius: ${s.labelRadius} },`,
+  )
+  .join("\n");
+
+const outTall = `// AUTO-GENERATED by scripts/generate-tr-context.mjs — DO NOT EDIT BY HAND.
+// Regenerate with: pnpm generate:tr-context
+//
+// The same Natural Earth context as tr-context.generated.ts, clipped to TR_CONTEXT_TALL_FRAME
+// (scripts/lib/tr-frame.mjs): the wide frame's width and centre, extended north and south so a
+// map box squarer than 1270:580 fills with real land and sea instead of a flat cut edge (T-079).
+// A country the wide artifact also carries keeps ITS labelPoint/labelRadius, so a consumer that
+// draws this with preserveAspectRatio="xMidYMid slice" in a 1270:580 box renders today's labels.
+// Only v2-turkey-map-explorer draws it; every other context surface keeps the wide artifact.
+
+import type { ContextShape } from "./tr-context.generated";
+
+export const TR_CONTEXT_TALL_VIEWBOX = "${TR_CONTEXT_TALL_VIEWBOX}" as const;
+
+export const TALL_CONTEXT_SHAPES: readonly ContextShape[] = [
+${tallBody}
+];
+`;
+writeFileSync(OUT_TALL, outTall, "utf8");
+const tallBytes = Buffer.byteLength(outTall, "utf8");
 const { stats } = topology;
 console.log(
   `generate:tr-context → ${OUT}\n  ${shapes.length} shapes · viewBox ${TR_CONTEXT_VIEWBOX} · ` +
     `${(bytes / 1024).toFixed(1)} kB\n  raw rings: ${rawRingCount} seen, ${survivingRingCount} ` +
     `survived clip+area filter\n  topology: ${stats.inputRings} rings → ${stats.arcs} arcs ` +
     `(${stats.sharedArcs} shared) · ${stats.inputVertices} → ${stats.outputVertices} vertices\n` +
-    `  shared source nodes: ${stats.sharedNodes} · ASYMMETRIC: ${stats.asymmetricSharedNodes} ✓`,
+    `  shared source nodes: ${stats.sharedNodes} · ASYMMETRIC: ${stats.asymmetricSharedNodes} ✓\n` +
+    `generate:tr-context → ${OUT_TALL}\n  ${tallShapes.length} tall shapes · viewBox ` +
+    `${TR_CONTEXT_TALL_VIEWBOX} · ${(tallBytes / 1024).toFixed(1)} kB`,
 );

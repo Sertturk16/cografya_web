@@ -81,6 +81,25 @@ export const TR_CONTEXT_FRAME = Object.freeze({
 export const TR_CONTEXT_VIEWBOX = `${TR_CONTEXT_FRAME.minX} ${TR_CONTEXT_FRAME.minY} ${TR_CONTEXT_FRAME.width} ${TR_CONTEXT_FRAME.height}`;
 
 /**
+ * T-079: the context frame extended north and south, for a map box squarer than 1270:580 (a
+ * phone). Same `minX`/`width` and the same vertical centre as `TR_CONTEXT_FRAME`, so drawing it
+ * with `preserveAspectRatio="xMidYMid slice"` in a 1270:580 box shows exactly the wide frame,
+ * while a square box shows Ukraine and Crimea north of the Black Sea and Egypt, Jordan and Saudi
+ * Arabia south of the Mediterranean instead of a flat cut edge. Height = width: the squarest box
+ * the explorer renders (301×300 at 390px) then needs no horizontal crop. Only
+ * `v2-turkey-map-explorer.tsx` draws it; every other context surface keeps `TR_CONTEXT_FRAME`.
+ */
+export const TR_CONTEXT_TALL_FRAME = Object.freeze({
+  minX: TR_CONTEXT_FRAME.minX,
+  minY: -405,
+  width: TR_CONTEXT_FRAME.width,
+  height: 1270,
+});
+
+/** The `viewBox` string of `lib/map/tr-context-tall.generated.ts`. */
+export const TR_CONTEXT_TALL_VIEWBOX = `${TR_CONTEXT_TALL_FRAME.minX} ${TR_CONTEXT_TALL_FRAME.minY} ${TR_CONTEXT_TALL_FRAME.width} ${TR_CONTEXT_TALL_FRAME.height}`;
+
+/**
  * Throw if a projected point falls outside the pinned CONTEXT frame — the same inverted
  * safety net `assertInsideFrame()` gives `TR_FRAME`, mirrored for the wider frame (plan
  * §5.3 step 5). Unlike `TR_FRAME`, whose box starts at the origin, `TR_CONTEXT_FRAME` has a
@@ -88,14 +107,18 @@ export const TR_CONTEXT_VIEWBOX = `${TR_CONTEXT_FRAME.minX} ${TR_CONTEXT_FRAME.m
  * against a `[0, viewWidth]` literal.
  *
  * @param {[number, number][]} points Projected points, in svg units.
- * @param {{ label: string, tolerance?: number }} options
+ * @param {{ label: string, tolerance?: number, frame?: { minX: number, minY: number, width: number, height: number } }} options
+ *   `frame` defaults to `TR_CONTEXT_FRAME`; the tall artifact passes `TR_CONTEXT_TALL_FRAME`.
  * @returns {{ maxOvershoot: number }} Largest distance any point sat outside the box.
  */
-export function assertInsideContextFrame(points, { label, tolerance = 0 }) {
-  const minX = TR_CONTEXT_FRAME.minX;
-  const minY = TR_CONTEXT_FRAME.minY;
-  const maxX = TR_CONTEXT_FRAME.minX + TR_CONTEXT_FRAME.width;
-  const maxY = TR_CONTEXT_FRAME.minY + TR_CONTEXT_FRAME.height;
+export function assertInsideContextFrame(
+  points,
+  { label, tolerance = 0, frame = TR_CONTEXT_FRAME },
+) {
+  const minX = frame.minX;
+  const minY = frame.minY;
+  const maxX = frame.minX + frame.width;
+  const maxY = frame.minY + frame.height;
   let maxOvershoot = 0;
   for (const point of points) {
     const [x, y] = point;

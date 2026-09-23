@@ -563,7 +563,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // 188 → **189** in T-073: `/kullanim-sartlari`'s mailto card, the same
 // `rounded-2xl border border-border bg-card` anchor `/hakkimizda` already carries and for the
 // same reason — the page's one action, given a surface of its own.
-export const HAND_DRAWN_CARDS = 189;
+// 189 → **188** in T-079: `/turkiye`'s and `/dunya`'s selection cards, two copies of one
+// spelling, became the single `MapSelectionCard` in `components/v2/map-selection-card.tsx`.
+export const HAND_DRAWN_CARDS = 188;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -591,8 +593,13 @@ export const HAND_DRAWN_WELLS = 162;
  * 232 → **233** in T-073, and the +1 is the interesting half of a +2. The terms page added two
  * elements: its mailto card reuses `/hakkimizda`'s spelling verbatim (deliberately — one action,
  * one treatment, and a second spelling of the same thing is the drift these counts exist to
- * catch), so only the English-reader notice is a new string. */
-export const HAND_DRAWN_CARD_SPELLINGS = 233;
+ * catch), so only the English-reader notice is a new string.
+ *
+ * 233 → **234** in T-079, net of three moves: the two explorers' shared selection-card spelling
+ * is gone (−1), `MapSelectionCard`'s grid is a new one (+1), and `/dunya`'s toolbar no longer
+ * matches `/turkiye`'s (+1) — below `sm` it is a row above the map (`mb-2 ml-auto w-fit`)
+ * rather than a bar floating on it, which `/turkiye` still is. */
+export const HAND_DRAWN_CARD_SPELLINGS = 234;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1364,7 +1371,9 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // result banners. Net one more file, not one more pattern.
     // 60 after T-073: `/kullanim-sartlari` joins the surface with two shapes, the mailto card
     // and the English-reader notice.
-    expect(handDrawnTotals().files).toBe(60);
+    // 61 after T-079: `map-selection-card.tsx` joins the surface with the one card both map
+    // explorers now render; the explorers stay on it through their other shapes.
+    expect(handDrawnTotals().files).toBe(61);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

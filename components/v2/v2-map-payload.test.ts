@@ -80,7 +80,7 @@ function geometryEmittingLoops(source: string, array: string): number {
 
 describe("V2 map surfaces do not duplicate generated geometry", () => {
   it("derives every generated shape array, and each one names a real export", () => {
-    // The four committed artifacts in `CLAUDE.md`'s generated-file list. Pinning the set here
+    // The five committed map artifacts in `CLAUDE.md`'s generated-file list. Pinning the set here
     // rather than the spellings means a renamed array still has to be a real export, while a
     // fifth generated map only has to exist to be covered.
     expect([...GENERATED_ARRAYS].sort()).toEqual([
@@ -88,6 +88,7 @@ describe("V2 map surfaces do not duplicate generated geometry", () => {
       "COUNTRY_SHAPES",
       "INLAND_WATER_SHAPES",
       "PROVINCE_SHAPES",
+      "TALL_CONTEXT_SHAPES",
     ]);
   });
 

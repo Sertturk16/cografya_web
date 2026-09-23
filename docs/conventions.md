@@ -159,6 +159,7 @@ marmara`, `/dunya`, `/dunya/almanya` and both book routes. A sweep over that bui
 | `lib/map/world-countries.generated.ts` | `pnpm generate:world-map`                   | `generate:world-map:check`  |
 | `lib/map/tr-inland-water.generated.ts` | `pnpm generate:water`                       | `generate:water:check`      |
 | `lib/map/tr-context.generated.ts`      | `pnpm generate:tr-context`                  | `generate:tr-context:check` |
+| `lib/map/tr-context-tall.generated.ts` | `pnpm generate:tr-context` (same run)       | `generate:tr-context:check` |
 
 Every entry must be in `.prettierignore` AND `eslint.config.mjs` `globalIgnores`, otherwise
 lint-staged rewrites it on commit and the gate goes red on an untouched file.
