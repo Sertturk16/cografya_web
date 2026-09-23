@@ -49,7 +49,7 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   of which shipped green against a comment in `i18n/routing.ts` — a module reachable from every
   page through `Link` and rendering nothing. Strip with `lib/test-support/strip-comments.ts`, not
   a pair of `String.replace` calls: a `/*` inside a line comment (`messages/*.json`) makes the
-  block-comment regex eat everything to the next delimiter — 220 lines of `v2-sources-section.tsx`,
+  block-comment regex eat everything to the next delimiter — 220 lines of a since-deleted component,
   including the scope a `not.toContain` was asserting about — and swapping the two replaces only
   moves the hole. A stylesheet gets `stripCssComments` from the same module instead: `//` is not a
   comment in CSS, so the JS scanner would eat the rest of any `url(https://…)` line. A check that

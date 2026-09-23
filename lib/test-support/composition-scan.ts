@@ -438,7 +438,7 @@ export const HOLE_MARKER = "${…}";
  *     TOGETHER into `cursor-grabbing cursor-grab`. `v2-world-map-explorer.tsx` the same.
  *   - `components/v2/v2-game-history-stats.tsx` — same nested-template shape, and here a whole
  *     BRANCH IS SILENTLY DELETED: the hole reduces to a bare `? :`.
- *   - `components/v2/v2-sources-section.tsx` — a conditional `"lg:grid-cols-3"` is carried through
+ *   - the since-deleted `v2-sources-section.tsx` — a conditional `"lg:grid-cols-3"` is carried through
  *     as if UNCONDITIONAL, and `grid-cols-*` is exactly the token the stat-grid predicate keys on.
  *
  * So `true` is the implementation of the contract PR3's own docblock already stated ("a computed

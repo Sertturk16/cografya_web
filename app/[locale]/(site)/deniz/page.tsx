@@ -14,7 +14,6 @@ import { V2MarineOceanographyGuide } from "@/components/v2/v2-marine-oceanograph
 import { V2MarineLayerCatalogue } from "@/components/v2/v2-marine-layer-catalogue";
 import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMarineExplainers } from "@/lib/marine/explainers";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -344,10 +343,6 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
             publishes values and catalogues the derived material on every render, so that
             sentence is owed on every render, beside them. Ungated for the same reason.  */}
         <MarineDataNotice />
-
-        {/* SECTION 7: SOURCES (KAYNAKÇA) — the bibliography, in our words. It sits alongside the
-            notice above and never in place of it. */}
-        <V2SourcesSection scope="deniz" />
       </PageContainer>
     </>
   );

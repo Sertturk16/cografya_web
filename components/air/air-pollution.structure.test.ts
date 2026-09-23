@@ -257,7 +257,7 @@ describe("every notice slot the code can render is actually rendered", () => {
   });
 });
 
-describe("the section is gated on the payload, in both directions", () => {
+describe("the section is gated on the payload", () => {
   it("renders only when the api published a series", () => {
     /**
      * This pinned the V1 spelling `{pm25Annual !== null && (<AirPollutionSection`. The V2 page
@@ -268,21 +268,6 @@ describe("the section is gated on the payload, in both directions", () => {
      */
     expect(gatesGoverning(pageCode, "<AirPollutionSection").length).toBeGreaterThan(0);
     expect(ungatedRenderSite(pageCode, "<AirPollutionSection", "pm25Annual")).toBeNull();
-  });
-
-  it("cites the source in Kaynaklar only when the section renders", () => {
-    // A source cited for content that is not on the page is the UX-tour B5 defect.
-    //
-    // V1 built a per-page `extraSources` list and pushed a string onto it. V2 renders a
-    // bibliography component whose `turkiye` scope already carries the PM2.5 source for every
-    // province, so the same defect appears as an OMISSION rather than a push: the province
-    // drops the citation when it has no series to show. Same guarantee, opposite mechanic —
-    // and the V2 rewrite had neither until T-032 PR3, which is what this assertion now pins.
-    // The prop is a spread of per-source clauses since `era5` gained the counterpart it
-    // never had (the climate block renders on no English province page while ERA5-Land was
-    // cited on all 81). This assertion owns the PM2.5 clause and nothing else, so a third
-    // conditional source cannot break it.
-    expect(pageCode).toMatch(/\.\.\.\(pm25Annual \? \[\] : \["acag-pm25"\]\)/);
   });
 
   /**

@@ -253,7 +253,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* THE METHODOLOGY NOTE, RE-HOMED. It used to ride into `V2SourcesSection` as
+          {/* THE METHODOLOGY NOTE, RE-HOMED. It used to ride into the old sources card as
               `regionalNote`, under a "Bölgesel Metodoloji & Yasal Dayanak" badge, in a block that
               also named five institutions this page cannot trace a figure to. The block is gone;
               the note is not a citation and never was. It says the figures are ours, rounded for
@@ -645,7 +645,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
             (`V2ContinentLocatorMap`) credits Natural Earth itself, in the line under the map,
             more precisely than a card at the foot of the page could. The other four entries in
             the `dunya` list — the UN & World Bank, the CIA World Factbook, USGS/NASA, IHO
-            GEBCO — were traceable to nothing here. `V2SourcesSection`'s docblock has the rule.
+            GEBCO — were traceable to nothing here. T-088 later removed the card site-wide.
 
             `Dunya.continentFiguresNoteNamed` was the one thing in that block worth keeping and
             was never a citation; it now renders under the künye grid in the hero, beside the

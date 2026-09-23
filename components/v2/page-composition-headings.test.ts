@@ -1790,8 +1790,8 @@ describe("the PageHero tier switch", () => {
  * T-035 PR4 measured that its brace-balancing scanner and PR3's regex path disagreed about 22
  * `<div>`s, all of them template-hole classNames, and that PR3's side was MANGLED rather than
  * merely verbose — it stripped the hole's quotes, welded both branches of a ternary together,
- * dropped a branch entirely in `v2-game-history-stats.tsx`, and in `v2-sources-section.tsx` welded
- * a CONDITIONAL `lg:grid-cols-3` in as unconditional. That was harmless for THESE counters only
+ * dropped a branch entirely in `v2-game-history-stats.tsx`, and in the since-deleted sources card
+ * welded a CONDITIONAL `lg:grid-cols-3` in as unconditional. That was harmless for THESE counters only
  * because no `<h1>` on the surface carries a template hole, and nothing asserted it.
  *
  * T-045 then merged the two extractors onto PR4's `${…}` marker rather than porting PR3's hole

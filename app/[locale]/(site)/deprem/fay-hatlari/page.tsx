@@ -5,7 +5,6 @@ import type { Locale } from "@/i18n/routing";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { Badge } from "@/components/ui/badge";
@@ -382,14 +381,6 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             <Activity className="size-4" />
           </Link>
         </div>
-
-        {/* Sources Section. `omit` the preparedness card — see `/deprem`.
-            The two AFAD seismic cards are DELIBERATELY LEFT: this page renders no earthquake
-            events of its own, but `V2LiveTicker` publishes AFAD magnitudes in its chrome, and
-            whether a ticker-only value earns a citation is the same single question as whether
-            it owes one (see `components/marine/marine-attribution-coverage.test.ts`). Answering
-            it here and nowhere else would split one decision across 33 pages. */}
-        <V2SourcesSection scope="deprem" omit={["afad-hazirlik"]} />
       </PageContainer>
     </>
   );

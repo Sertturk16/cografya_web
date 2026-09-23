@@ -8,7 +8,6 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2BooksHub } from "@/components/v2/v2-books-hub";
 import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -179,9 +178,6 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
 
         {/* SECTION 2: STUDY STRATEGY & EXAM TOPIC GUIDE */}
         <V2StudyStrategyGuide />
-
-        {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-        <V2SourcesSection scope="kitaplar" />
       </PageContainer>
     </>
   );
