@@ -588,7 +588,8 @@ export const HAND_DRAWN_CARDS = 187;
 // (`rounded-2xl border border-border bg-muted`), a well and not a card — it states which
 // language of the text binds, it is not a panel the page offers.
 // 162 → **159** in T-088: the three wells of the deleted `v2-sources-section.tsx`.
-export const HAND_DRAWN_WELLS = 159;
+// 159 → **158** in T-089: `/oyun`'s "Yeni Oyun Özellikleri" strip, a `bg-muted/40` well, deleted.
+export const HAND_DRAWN_WELLS = 158;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -602,8 +603,9 @@ export const HAND_DRAWN_WELLS = 159;
  * matches `/turkiye`'s (+1) — below `sm` it is a row above the map (`mb-2 ml-auto w-fit`)
  * rather than a bar floating on it, which `/turkiye` still is.
  *
- * 234 → **230** in T-088: the deleted `v2-sources-section.tsx`'s four shapes, each its own string. */
-export const HAND_DRAWN_CARD_SPELLINGS = 230;
+ * 234 → **230** in T-088: the deleted `v2-sources-section.tsx`'s four shapes, each its own string.
+ * 230 → **229** in T-089: the deleted `/oyun` feature strip was the only element with its spelling. */
+export const HAND_DRAWN_CARD_SPELLINGS = 229;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.

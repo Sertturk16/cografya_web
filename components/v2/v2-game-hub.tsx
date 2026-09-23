@@ -5,41 +5,25 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { V2LeaderboardButton } from "./v2-leaderboard-modal";
-import {
-  Gamepad2,
-  MapPin,
-  Compass,
-  Layers,
-  ArrowRight,
-  Sparkles,
-  Zap,
-  CheckCircle2,
-  Brain,
-} from "lucide-react";
+import { Gamepad2, MapPin, Compass, Layers, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export function V2GameHub() {
   return (
     <div className="space-y-8">
       {/* 1. CONTROL & MODE SELECTOR PANEL */}
       <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-xl space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-5">
-          <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-                Harita Oyun Stüdyosu
-              </Badge>
-              <span className="text-xs text-muted-foreground font-medium">
-                İnteraktif Sınav &amp; Hafıza Motoru
-              </span>
-            </div>
-            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
-              Coğrafya Kâşifi — Türkiye Harita Oyunları
-            </h2>
+        <div className="border-b border-border pb-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
+              Dilsiz harita
+            </Badge>
+            <span className="text-xs text-muted-foreground font-medium">
+              Bir oyun seç, yerleri haritada bul
+            </span>
           </div>
-
-          <Badge variant="secondary" size="sm" icon={<Sparkles className="size-3" />}>
-            3 Özel Sınav Modu
-          </Badge>
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
+            Türkiye Harita Oyunları
+          </h2>
         </div>
 
         {/* Mode Selector Cards (Direct Routing Architecture) */}
@@ -47,32 +31,31 @@ export function V2GameHub() {
           {/* Card 1: 81 İl Bulma */}
           <div className="p-6 rounded-3xl border border-border bg-card/80 hover:bg-card hover:border-primary/50 transition-all duration-300 flex flex-col justify-between group shadow-sm hover:shadow-md">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="p-3 rounded-2xl bg-primary/15 text-primary group-hover:scale-110 transition-transform">
-                  <MapPin className="size-6" />
-                </span>
-                <Badge variant="primary" size="sm">
-                  81 Soru
-                </Badge>
-              </div>
+              <span className="inline-flex p-3 rounded-2xl bg-primary/15 text-primary group-hover:scale-110 transition-transform">
+                <MapPin className="size-6" />
+              </span>
               <div>
                 <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-primary transition-colors">
                   81 İl Bulma Sınavı
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  Rastgele sorulan Türkiye illerini dilsiz haritada tıklayarak bulun. Seri çarpanı
-                  ve akıllı ipucu desteğiyle hafızanızı sınayın.
+                  Sorulan ili dilsiz haritada bul. Takılırsan ipucu al: ilin bölgesini ve plaka
+                  kodunu söyler, ama o sorunun puanı yarıya iner.
                 </p>
               </div>
 
               <div className="space-y-1.5 pt-2 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="size-3.5 text-primary" />
-                  <span>Eksiksiz 81 il soru havuzu</span>
+                  <span>81 ilin hepsi, karışık sırayla</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="size-3.5 text-primary" />
-                  <span>Seri çarpanı ve zamanlı mod</span>
+                  <span>Art arda bildikçe ek puan</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 className="size-3.5 text-primary" />
+                  <span>İstersen 60 saniyeye karşı oyna</span>
                 </div>
               </div>
             </div>
@@ -95,32 +78,27 @@ export function V2GameHub() {
           {/* Card 2: 7 Bölge Tanıma */}
           <div className="p-6 rounded-3xl border border-border bg-card/80 hover:bg-card hover:border-secondary/50 transition-all duration-300 flex flex-col justify-between group shadow-sm hover:shadow-md">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="p-3 rounded-2xl bg-secondary/15 text-secondary group-hover:scale-110 transition-transform">
-                  <Compass className="size-6" />
-                </span>
-                <Badge variant="secondary" size="sm">
-                  7 Coğrafi Bölge
-                </Badge>
-              </div>
+              <span className="inline-flex p-3 rounded-2xl bg-secondary/15 text-secondary group-hover:scale-110 transition-transform">
+                <Compass className="size-6" />
+              </span>
               <div>
                 <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-secondary transition-colors">
                   7 Bölge Tanıma
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  Türkiye&apos;nin 7 coğrafi bölgesinin sınırlarını ve mekânsal konumlarını renkli
-                  vektör poligonlar üzerinde test et.
+                  Harita bölgelere göre boyalı ama adları yazmıyor. Adı sorulan bölgeyi bul ve
+                  üstüne tıkla.
                 </p>
               </div>
 
               <div className="space-y-1.5 pt-2 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="size-3.5 text-secondary" />
-                  <span>7 bölge vektör harita sınırları</span>
+                  <span>7 coğrafi bölgenin hepsi</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="size-3.5 text-secondary" />
-                  <span>Bölgesel coğrafya kavrama</span>
+                  <span>İpucu kıyısını ve komşularını söyler</span>
                 </div>
               </div>
             </div>
@@ -143,32 +121,27 @@ export function V2GameHub() {
           {/* Card 3: Bölge Bölge İl Quiz'i */}
           <div className="p-6 rounded-3xl border border-border bg-card/80 hover:bg-card hover:border-accent/50 transition-all duration-300 flex flex-col justify-between group shadow-sm hover:shadow-md">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="p-3 rounded-2xl bg-accent/15 text-accent group-hover:scale-110 transition-transform">
-                  <Layers className="size-6" />
-                </span>
-                <Badge variant="info" size="sm">
-                  Odaklanmış Mod
-                </Badge>
-              </div>
+              <span className="inline-flex p-3 rounded-2xl bg-accent/15 text-accent group-hover:scale-110 transition-transform">
+                <Layers className="size-6" />
+              </span>
               <div>
                 <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-accent transition-colors">
                   Bölge Bölge İl Quiz&apos;i
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
-                  Marmara, Ege, Karadeniz gibi dilediğin bölgeyi seç; harita otomatik olarak o
-                  bölgeye yakınlaşsın ve illeri tek tek tamamla.
+                  Marmara, Ege ya da Karadeniz gibi bir bölge seç. Harita o bölgeye yakınlaşır, sen
+                  de illerini tek tek bulursun.
                 </p>
               </div>
 
               <div className="space-y-1.5 pt-2 text-[11px] text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="size-3.5 text-accent" />
-                  <span>Bölgeye özel otomatik zoom</span>
+                  <span>Yalnız o bölgenin illeri sorulur</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="size-3.5 text-accent" />
-                  <span>Küçük illeri rahat tıklama</span>
+                  <span>Küçük illere tıklamak kolaylaşır</span>
                 </div>
               </div>
             </div>
@@ -185,23 +158,6 @@ export function V2GameHub() {
                 </Button>
               </Link>
             </div>
-          </div>
-        </div>
-
-        {/* Feature Highlights Strip */}
-        <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 flex flex-wrap items-center justify-between gap-4 text-xs">
-          <div className="flex items-center gap-2">
-            <Zap className="size-4 text-primary" />
-            <span className="font-semibold text-foreground">Yeni Oyun Özellikleri:</span>
-            <span className="text-muted-foreground">
-              Canlı Web Audio ses efektleri, Zoom/Pan desteği, akıllı ipuçları ve detaylı inceleme.
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Brain className="size-4 text-primary" />
-            <span className="text-muted-foreground">
-              Aktif Geri Çağırma (Active Recall) uyumlu MEB müfredatı.
-            </span>
           </div>
         </div>
       </div>

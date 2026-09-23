@@ -1,50 +1,34 @@
 import * as React from "react";
-import { Badge } from "@/components/ui/badge";
-import { Brain, Compass, MapPin, Layers } from "lucide-react";
+import { Compass, MapPin, Layers } from "lucide-react";
 
 export function V2GamePedagogyGuide() {
   const techniques = [
     {
-      title: "1. Zihinsel Harita Çapaları (Mental Anchors)",
-      desc: "İlleri tek tek ezberlemek yerine; deniz kıyıları, göller (Tuz Gölü, Van Gölü) ve sınır boyları gibi doğal nirengi noktalarını referans alın.",
+      title: "Önce Belirgin Yerleri Öğren",
+      desc: "İlleri tek tek ezberleme. Kıyıları, Tuz Gölü ve Van Gölü gibi büyük gölleri, komşu ülkelerle sınırı başlangıç noktası yap; her ili bunlara göre yerleştir.",
       icon: <Compass className="size-5 text-primary" />,
     },
     {
-      title: "2. Komşuluk & Havza Kümeleme",
-      desc: "İlleri bağımsız değil, ait oldukları havzalar ve komşu iller ağıyla birlikte düşünün (örn. Çukurova havzasında Adana-Mersin-Osmaniye kümesi).",
+      title: "İlleri Komşularıyla Birlikte Düşün",
+      desc: "Bir ili tek başına değil, çevresindeki illerle birlikte hatırla. Örneğin Adana, Mersin ve Osmaniye'yi Çukurova'nın çevresinde bir arada düşün.",
       icon: <Layers className="size-5 text-secondary" />,
     },
     {
-      title: "3. Plaka Sırası & Kronolojik Coğrafya",
-      desc: "Cumhuriyet dönemi ilk 67 ilin alfabetik düzeni ile sonradan il olan 14 ilin (68 Aksaray - 81 Düzce) konum mantığını kavrayın.",
+      title: "Plaka Sırasından Yararlan",
+      desc: "Plaka kodları verildiğinde Türkiye'de 67 il vardı ve 1'den 67'ye adlarının alfabetik sırasıyla numaralandı. 68 Aksaray'dan 81 Düzce'ye kadar 14 il sonradan kuruldu ve sıradaki numaraları aldı. İl oyunundaki ipucu plaka kodunu da söylediği için bu sıra işine yarar.",
       icon: <MapPin className="size-5 text-accent" />,
-    },
-    {
-      title: "4. Aktif Geri Çağırma (Active Recall)",
-      desc: "Dilsiz haritada konum tahmin etmek, pasif harita okumaya göre %300 daha kalıcı sinaptik bağlar kurarak görsel hafızayı pekiştirir.",
-      icon: <Brain className="size-5 text-primary" />,
     },
   ];
 
   return (
     <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-lg space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm" icon={<Brain className="size-3.5" />}>
-              Pedagojik Öğrenme Metodu
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              Mekânsal Biliş &amp; Görsel Hafıza
-            </span>
-          </div>
-          <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-            Harita Hafızasını Güçlendirme &amp; Sınav Başarı Rehberi
-          </h3>
-        </div>
+      <div className="border-b border-border pb-4">
+        <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+          Haritayı Daha Kolay Öğrenmek İçin Üç Öneri
+        </h3>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {techniques.map((tech) => (
           <div
             key={tech.title}
