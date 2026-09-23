@@ -89,7 +89,7 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
 
           <Link href="/oyun">
             <Button variant="outline" size="sm" leftIcon={<RotateCcw className="size-3.5" />}>
-              Oyun Hub&apos;ına Dön
+              Oyunlara Dön
             </Button>
           </Link>
         </div>
@@ -98,18 +98,15 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
         <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-8 shadow-sm space-y-2">
           <div className="flex items-center gap-2">
             <Badge variant="primary" size="sm" icon={<Layers className="size-3.5" />}>
-              Bölgesel Odaklı Mod
+              Bölge Bölge İl Bulma
             </Badge>
-            <span className="text-xs text-muted-foreground font-medium">
-              Bölge Bölge İl Tamamlama
-            </span>
           </div>
           <h1 className="font-heading text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-            Bir Coğrafi Bölge Seçin
+            Bir Bölge Seç
           </h1>
           <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-            Seçtiğiniz bölgenin sınırları otomatik olarak büyütülecek ve harita sadece o bölgenin
-            illerine odaklanacaktır.
+            Harita yalnız seçtiğin bölgeyi gösterir; komşu bölgeler ve Türkiye dışı ekrandan çıkar.
+            Sorular da o bölgenin illerinden gelir.
           </p>
         </div>
 
@@ -129,13 +126,11 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
                     {region.name}
                   </h3>
                 </div>
-                {/* NO COUNT ON THE CARD — neither as a badge nor inside this sentence.
+                {/* NO COUNT ON THE CARD, neither as a badge nor in a sentence under the name.
                     "11 il" is the badge the owner removed from the mode cards one level up
                     (DEC 2026-07-30q) and then from these cards too (DEC 2026-08-05g md.3); the
-                    V2 rewrite reintroduced it in both places. */}
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {region.name} kapsamındaki illerin dilsiz haritadaki konumlarını bulun.
-                </p>
+                    V2 rewrite reintroduced it in both places. No sentence under the name
+                    either: the same line on all seven cards told the reader nothing. */}
               </div>
 
               <Link
@@ -149,7 +144,7 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
                   className="w-full justify-between"
                   rightIcon={<ArrowRight className="size-4" />}
                 >
-                  <span>Bölgeyi Başlat</span>
+                  <span>Başla</span>
                 </Button>
               </Link>
             </div>

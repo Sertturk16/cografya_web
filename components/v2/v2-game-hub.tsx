@@ -2,10 +2,9 @@
 
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { V2LeaderboardButton } from "./v2-leaderboard-modal";
-import { Gamepad2, MapPin, Compass, Layers, ArrowRight, CheckCircle2 } from "lucide-react";
+import { MapPin, Compass, Layers, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export function V2GameHub() {
   return (
@@ -13,17 +12,10 @@ export function V2GameHub() {
       {/* 1. CONTROL & MODE SELECTOR PANEL */}
       <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-6 sm:p-8 shadow-xl space-y-6">
         <div className="border-b border-border pb-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-              Dilsiz harita
-            </Badge>
-            <span className="text-xs text-muted-foreground font-medium">
-              Bir oyun seç, yerleri haritada bul
-            </span>
-          </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
-            Türkiye Harita Oyunları
-          </h2>
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">Bir Oyun Seç</h2>
+          <p className="text-xs text-muted-foreground font-medium mt-1">
+            Üç oyun da Türkiye haritasında oynanır.
+          </p>
         </div>
 
         {/* Mode Selector Cards (Direct Routing Architecture) */}
@@ -36,7 +28,7 @@ export function V2GameHub() {
               </span>
               <div>
                 <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                  81 İl Bulma Sınavı
+                  81 İl Bulma
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                   Sorulan ili dilsiz haritada bul. Takılırsan ipucu al: ilin bölgesini ve plaka
@@ -68,7 +60,7 @@ export function V2GameHub() {
                   className="w-full"
                   rightIcon={<ArrowRight className="size-4" />}
                 >
-                  Sınava Başla
+                  Oyuna Başla
                 </Button>
               </Link>
               <V2LeaderboardButton mode="provinces" variant="outline" />
@@ -118,7 +110,7 @@ export function V2GameHub() {
             </div>
           </div>
 
-          {/* Card 3: Bölge Bölge İl Quiz'i */}
+          {/* Card 3: Bölge Bölge İl Bulma */}
           <div className="p-6 rounded-3xl border border-border bg-card/80 hover:bg-card hover:border-accent/50 transition-all duration-300 flex flex-col justify-between group shadow-sm hover:shadow-md">
             <div className="space-y-4">
               <span className="inline-flex p-3 rounded-2xl bg-accent/15 text-accent group-hover:scale-110 transition-transform">
@@ -126,7 +118,7 @@ export function V2GameHub() {
               </span>
               <div>
                 <h3 className="font-heading font-bold text-lg text-foreground group-hover:text-accent transition-colors">
-                  Bölge Bölge İl Quiz&apos;i
+                  Bölge Bölge İl Bulma
                 </h3>
                 <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
                   Marmara, Ege ya da Karadeniz gibi bir bölge seç. Harita o bölgeye yakınlaşır, sen

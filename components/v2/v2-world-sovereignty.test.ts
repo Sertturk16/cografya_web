@@ -48,8 +48,9 @@ describe("V2 sovereignty and naming invariants", () => {
     expect(content).not.toContain("egemenlik statüleri");
     expect(content).not.toContain("199 egemen ülke");
     expect(content).not.toContain("199 Sovereign");
-    expect(content).toContain('"199 Ülke ve Bölge + 7 Kıta"');
-    expect(content).toContain('"199 Countries & Territories + 7 Continents"');
+    // T-090 deleted the "199 Ülke ve Bölge + 7 Kıta" eyebrow (it repeated the filter tabs); the
+    // catalogue heading now carries the "ülke ve bölge" wording, so the anchor sits there.
+    expect(content).toContain('"Ülkeler ve bölgeler"');
   });
 
   it("enforces locale-aware flag gating and synchronizes special status set in v2/dunya (SOV125-C1, SOV124-I1, RV133R4-NEW-I1)", () => {
@@ -355,8 +356,8 @@ describe("V2 sovereignty and naming invariants", () => {
     // chip and the section itself).
     expect(strippedPageContent.match(/\{showsNeighbourSection && \(/g) ?? []).toHaveLength(2);
 
-    // The four remaining isSpecialGeography call sites the declaration pin does not reach.
-    expect(strippedPageContent).toMatch(/isSpecialGeography\s*\?\s*null\s*:\s*\(/); // hero empty-neighbour chip
+    // The three remaining isSpecialGeography call sites the declaration pin does not reach. (T-090
+    // deleted the hero neighbour/island chip, which repeated the KPI tile, and its gate with it.)
     expect(strippedPageContent).toMatch(
       /isSpecialGeography\s*\?\s*"0"\s*:\s*t\("kpiIslandNeighbourValue"\)/,
     ); // hero KPI land-neighbours value

@@ -22,9 +22,14 @@ feedback lines, `messages/tr.json`. The reader is a student or a curious adult, 
 
 3. **No English terms in parentheses.** Not "(Active Recall)", not "(Mental Anchors)". If the
    Turkish needs the English to make sense, rewrite the Turkish.
-4. **No claims we cannot back.** No curriculum alignment ("MEB müfredatı uyumlu"), no
-   "bilimsel" as praise, no percentages or multipliers without a source. A number needs a source
-   that appears on the same page; otherwise it goes.
+4. **Facts: textbook standard, never invented precision.** A textbook-standard geography fact
+   may stay without an on-page source; where the exact figure varies by year, say "yaklaşık" or
+   round it. A figure that is not textbook-standard or cannot be checked is deleted. Claims about
+   the product (curriculum alignment, compliance, "doğrulanmış") need proof in the product
+   itself; no "bilimsel" as praise. This is a teaching site, not an encyclopedia: general
+   geography facts get no source footnote. A figure that changes yearly carries its year
+   ("2025'te yaklaşık 17 milyon"). Licence and data-provider credits (AFAD, TÜİK, OSM, Copernicus)
+   are a different thing and always stay.
 5. **A badge or eyebrow chip earns its place.** It stays only if it carries information that is
    not already visible in the same card or panel. "3 Özel Sınav Modu" above three cards and
    "81 Soru" under a title that says "81 İl" are decoration; delete them.
@@ -32,7 +37,18 @@ feedback lines, `messages/tr.json`. The reader is a student or a curious adult, 
    (Web Audio, Zoom/Pan, SVG, "Yeni özellikler"). Describe the effect: "harita o bölgeye
    yakınlaşır".
 7. **Keep facts, change only the wording.** Numbers, source names and dates stay; if a fact
-   cannot be checked in the code or a cited source, drop the sentence instead of softening it.
+   fails rule 4, drop the sentence instead of softening it into vagueness.
+
+## House style
+
+- **Casing.** Headings (H1–H3), nav labels and buttons in Title Case. Badges, ledes, body
+  text and list items in sentence case.
+- **Vocabulary.** "Tüm" (not "Bütün"), "Diğer" (not "Öteki"), "puan" (not "skor" or "XP"),
+  "oyun" for a game and "tur" for one play (not "sınav"), "il" (not "şehir") for Turkish
+  provinces, "ve" instead of "&" in nav and headings.
+- **One name per page.** A page's H1 uses the same words as its nav label and breadcrumb.
+- **Ledes.** At most one question-style lede per page; never stack questions. Do not reuse
+  the "Bu sayfada … bulursun" or "tıkla: X açılır" frames across pages.
 
 ## Out of scope
 

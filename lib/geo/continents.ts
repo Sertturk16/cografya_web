@@ -100,29 +100,29 @@ export interface ContinentDetailData {
  */
 export const CONTINENT_HUB_FAQS: readonly ContinentFaq[] = [
   {
-    question: "Dünyada kaç kıta vardır ve hangi model geçerlidir?",
+    question: "Dünyada kaç kıta vardır?",
     answer:
-      "Türkiye'de MEB müfredatı ve yaygın coğrafya öğretimi 7 kıta modelini (Asya, Afrika, Kuzey Amerika, Güney Amerika, Antarktika, Avrupa, Okyanusya) esas alır. Birleşmiş Milletler istatistik şeması (UN M49) ise Kuzey ve Güney Amerika'yı tek bir 'Americas' üst bölgesinde toplayarak 6'lı kıta sistemini kullanır. Jeolojik açıdan ise Avrupa ve Asya tek parça Avrasya kütlesini oluşturur.",
+      "Hangi modele baktığına göre değişir. Türkiye'de okullarda 7 kıta öğretilir: Asya, Afrika, Kuzey Amerika, Güney Amerika, Antarktika, Avrupa ve Okyanusya. Birleşmiş Milletler'in istatistik sınıflandırması iki Amerika'yı tek grupta topladığı için 6 kıtayla çalışır. Jeolojiye bakarsan Avrupa ile Asya da ayrı değildir, ikisi birlikte Avrasya'yı oluşturur.",
   },
   {
-    question: "Avrupa ile Asya neden iki ayrı kıta kabul edilir?",
+    question: "Avrupa ile Asya neden iki ayrı kıta sayılır?",
     answer:
-      "Avrupa ile Asya arasında okyanusal bir levha sınırı yoktur; jeolojik olarak tek bir kıtadır (Avrasya). İki bölgenin ayrı kıtalar sayılması, 18. yüzyıldan itibaren şekillenen tarihsel, kültürel ve siyasi bir uzlaşımın (konvansiyon) sonucudur. Ural Dağları, Ural Nehri, Hazar Denizi ve Türk Boğazları geleneksel sınır kabul edilir.",
+      "Aralarında okyanus da levha sınırı da yok; jeolojik olarak tek bir kara kütlesidir. İkiye ayrılmaları 18. yüzyıldan beri süren tarihî ve kültürel bir alışkanlıktır. Sınır olarak genellikle Ural Dağları, Ural Nehri, Hazar Denizi ve Türk Boğazları kabul edilir.",
   },
   {
-    question: "Dünyanın en büyük ve en küçük kıtaları hangileridir?",
+    question: "En büyük ve en küçük kıta hangisi?",
     answer:
-      "Yaklaşık 44,6 milyon km² yüzölçümü ve 4,75 milyarı aşan nüfusuyla Asya hem alan hem nüfus bakımından dünyanın en büyük kıtasıdır. Kara yüzölçümü bakımından en küçük kıta yaklaşık 8,5 milyon km² ile Okyanusya'dır (Avustralya anakarası dahil).",
+      "En büyüğü Asya: yaklaşık 44,6 milyon km² yüzölçümü ve 4,75 milyarı aşan nüfusuyla hem alanda hem nüfusta birinci. En küçüğü yaklaşık 8,5 milyon km² karasıyla Okyanusya; bu alanın büyük kısmı Avustralya anakarasıdır.",
   },
   {
-    question: "Antarktika neden bir kıtadır ve üzerinde ülke var mıdır?",
+    question: "Antarktika neden kıta sayılır, üzerinde ülke var mı?",
     answer:
-      "Antarktika, buzulların altında yaklaşık 14,2 milyon km²'lik gerçek bir kıtasal kayaç kalkanına (kraton) sahip olduğu için kıtadır (Kuzey Kutbu gibi sadece donmuş deniz buzu değildir). Üzerinde hiçbir egemen devlet ve kalıcı yerleşim yoktur; 1959 Antarktika Antlaşması ile uluslararası barış ve bilime ayrılmıştır.",
+      "Çünkü buzun altında yaklaşık 14,2 milyon km²'lik gerçek bir kara var. Kuzey Kutbu'nda ise altında kara olmayan, donmuş deniz buzu bulunur. Antarktika'da hiçbir devlet ve kalıcı yerleşim yok; 1959 Antarktika Antlaşması kıtayı barışçıl amaçlara ve bilime ayırdı.",
   },
   {
-    question: "Okyanusya bir kıta mıdır yoksa bölge midir?",
+    question: "Okyanusya kıta mı, bölge mi?",
     answer:
-      "Fiziki coğrafyada Avustralya anakarası ile Büyük Okyanus'a dağılmış Polinezya, Mikronezya ve Melanezya ada topluluklarının tamamı 'Okyanusya' kıtası çatısı altında toplanır. Kara yüzölçümü 8,5 milyon km² iken, deniz yetki alanı (EEZ) 40 milyon km²'yi aşarak karalarının neredeyse 5 katına ulaşır.",
+      "7 kıta modelinde kıtadır: Avustralya anakarası ve Büyük Okyanus'a dağılmış Polinezya, Mikronezya ve Melanezya adaları Okyanusya adı altında toplanır. Karası 8,5 milyon km², ama ülkelerinin denizdeki ekonomik hak alanı 40 milyon km²'yi aşar; bu, karanın neredeyse 5 katıdır.",
   },
 ];
 
@@ -134,9 +134,10 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameTr: "Afrika",
     nameEn: "Africa",
     code: "AF",
-    taglineTr: "Ekvatoru ortalayan simetrik iklim kuşakları, kadim platolar ve Büyük Rift Vadisi.",
+    taglineTr:
+      "Ekvator tam ortasından geçer; kuzeye ve güneye gittikçe aynı iklim kuşakları sırayla tekrar eder.",
     countryCount: 54,
-    countryCountNoteTr: "BM üyesi 54 bağımsız egemen devlet.",
+    countryCountNoteTr: "BM üyesi 54 bağımsız devlet.",
     population: 1460000000,
     populationFormattedTr: "1,46 Milyar",
     populationSharePercent: 18.2,
@@ -167,103 +168,102 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     dominantClimateTr: "Ekvatoral Yağmur Ormanı, Savan, Step ve Sıcak Çöl (Hadley Hücresi Kuşağı)",
     classificationSourceTr: "BM İstatistik Bölümü (UN M49) — 5 Coğrafi Alt Bölge",
     keyCharacteristicsTr: [
-      "Büyük Sahra: Dünyanın en geniş sıcak çöl kuşağı",
-      "Doğu Afrika Rift Vadisi: Kıtasal levha ayrışması ve volkanizma",
-      "Ekvator Simetrisi: Kuzey ve güney yarımkürede aynalanan biyomlar",
+      "Sahra, dünyanın en geniş sıcak çölü",
+      "Doğu Afrika Rift Vadisi'nde levhalar ayrılıyor, yanardağlar yükseliyor",
+      "Ekvatorun iki yanında aynı bitki kuşakları ayna gibi sıralanır",
     ],
     prose: {
       introTr:
-        "Afrika, ekvator çizgisinin neredeyse tam ortasından geçtiği tek kıtadır. Bu coğrafi konum tesadüfi olmayan bir simetri üretir: Ekvatoral Kongo Havzası'nın gür yağmur ormanlarından hem kuzeye hem güneye doğru uzaklaştıkça savanlar, yarı kurak stepler ve nihayet devasa subtropikal çöl kuşakları birbirini aynalar. Kalkan yapılı yaşlı kabuğu, kesintisiz sıradağlar yerine yüksek platolar ve kıtayı boydan boya yaran tektonik kırık hatlarıyla şekillenmiştir.",
+        "Ekvator Afrika'nın neredeyse tam ortasından geçer. Kongo Havzası'nın yağmur ormanlarından kuzeye de güneye de gidersen aynı sırayla savanlara, yarı kurak steplere ve sonunda çöllere varırsın. Kıtanın büyük kısmı yaşlı ve sağlam bir kabuğun üstünde durur. Bu yüzden Afrika'da uzun sıradağlar yerine yüksek platolar ve kıtayı boydan boya yaran kırık hatları öne çıkar.",
       locationAndBordersTr:
-        "Kuzeyde Akdeniz, batıda Atlas Okyanusu, doğuda Hint Okyanusu ve Kızıldeniz ile kuşatılan Afrika, Avrasya kara kütlesine yalnızca dar Süveyş Kıstağı üzerinden temas eder. 1869'da açılan Süveyş Kanalı, iki kıta arasındaki bu son fiziki köprüyü yapay bir suyoluna dönüştürmüştür. Cebelitarık Boğazı ise kıtanın kuzeybatı ucunu Avrupa'dan sadece 14 kilometrelik bir deniz eşiğiyle ayırır.",
+        "Afrika'nın kuzeyinde Akdeniz, batısında Atlas Okyanusu, doğusunda Hint Okyanusu ve Kızıldeniz var. Kıtanın Avrasya'ya karadan bağlandığı tek yer dar Süveyş Kıstağı'dır. 1869'da açılan Süveyş Kanalı bu son kara bağlantısını bir suyoluyla kesti. Kuzeybatıda Cebelitarık Boğazı, Afrika'yı Avrupa'dan yalnızca 14 kilometrelik bir deniz geçidiyle ayırır.",
       landformsAndGeologyTr:
-        "Afrika morfolojisi, kıtanın büyük bölümünü kaplayan Prekambriyen yaşlı durağan bir kıtasal kalkana (kraton) dayanır. Güney Amerika'daki Andlar ya da Asya'daki Himalayalar gibi kıtayı baştan başa kat eden tekil genç bir sıradağ zinciri bulunmaz; bunun yerine ortalama yükseltisi 300 ila 1.000 metre arasında değişen geniş basamaklı platolar ve bunların arasına yerleşmiş çanaklar (Kongo, Çad ve Kalahari havzaları) egemendir.\n\nKıtanın jeolojik bakımdan en devingen omurgası, doğuda Ürdün Vadisi'nden Mozambik kıyılarına kadar uzanan Doğu Afrika Rift Sistemi'dir. Nubya ve Somali levhalarının birbirinden uzaklaşmasıyla yaklaşık 30 milyon yıldır genişleyen bu vadi hattı, Kilimanjaro ve Kenya Dağı gibi volkanik zirveleri ve Afrika'nın Büyük Göller kuşağını doğurmuştur. Güney ucunda ise iç yaylayı kıyı şeridinden ayıran dik Büyük Yarkenar (Great Escarpment / Drakensberg) uzanır.",
+        "Afrika'nın büyük bölümü Prekambriyen'den kalma, yaşlı ve durağan bir kıta kabuğu üzerindedir. Güney Amerika'daki Andlar ya da Asya'daki Himalayalar gibi kıtayı baştan başa kesen genç bir sıradağ yoktur. Onların yerine yükseltisi çoğunlukla 300 ile 1.000 metre arasında değişen basamaklı platolar ve aralarındaki çanaklar uzanır: Kongo, Çad ve Kalahari havzaları.\n\nJeolojik olarak en hareketli kesim doğudaki Doğu Afrika Rift Sistemi'dir. Ürdün Vadisi'nden Mozambik kıyılarına kadar uzanan bu hat, Nubya ve Somali levhaları birbirinden uzaklaştıkça yaklaşık 30 milyon yıldır genişliyor. Kilimanjaro ve Kenya Dağı gibi volkanik zirveler ile Afrika'nın Büyük Göller'i bu hattın ürünüdür. Güney ucunda ise iç yaylayı kıyıdan ayıran dik bir basamak, Büyük Yarkenar uzanır; Drakensberg Dağları da bu basamağın parçasıdır.",
       climateAndVegetationTr:
-        "Afrika'nın iklim rejimini yöneten temel atmosferik mekanizma Hadley hücresidir. Ekvator çevresinde aşırı ısınıp yükselen hava kütleleri bol konvektif yağış bırakarak Kongo Havzası yağmur ormanlarını besler. Yükselen bu havanın 20°-30° kuzey ve güney enlemlerinde dinamik yüksek basınçla alçalması ise atmosferin nem tutma kapasitesini düşürür; böylece kuzeyde uçsuz bucaksız Büyük Sahra, güneyde ise Kalahari ve Namib çölleri ortaya çıkar.\n\nNamib Çölü'nün aşırı kuraklığı ise yalnızca enlem etkisiyle açıklanamaz; kıyı boyunca kuzeye doğru akan soğuk Benguela Akıntısı denizel havanın alt katmanlarını soğutarak yoğun kıyı sisleri üretir ancak yağış oluşumunu kesin biçimde engeller. Kıtanın en kuzey (Mağrip kıyıları) ve en güney (Kap bölgesi) uçlarında Akdeniz makroiklimi ve zengin maki toplulukları yer alır.",
+        "Afrika'nın iklimini büyük ölçüde Hadley hücresi denen hava dolaşımı belirler. Ekvator çevresinde ısınan hava yükselir, bol yağış bırakır ve Kongo Havzası'nın yağmur ormanlarını besler. Bu hava 20° ile 30° kuzey ve güney enlemlerinde yeniden alçalır. Alçalan hava kurudur ve yağış bırakmaz. Kuzeyde Büyük Sahra, güneyde Kalahari ve Namib çölleri bu yüzden oluşur.\n\nNamib Çölü'nün aşırı kuraklığını yalnız enlem açıklamaz. Kıyı boyunca kuzeye akan soğuk Benguela Akıntısı denizden gelen havanın alt katını soğutur. Kıyıda yoğun sis olur ama yağmur yağmaz. Kıtanın en kuzeyindeki Mağrip kıyılarında ve en güneyindeki Kap bölgesinde ise Akdeniz iklimi ve maki bitki örtüsü görülür.",
       hydrographyTr:
-        "Afrika hidrografyası, plato morfolojisinin bir sonucu olarak basamaklı nehir profilleriyle karakterizedir. 6.650 kilometre uzunluğundaki Nil Nehri, Ekvatoral Göller bölgesinden aldığı Beyaz Nil ve Etiyopya Yaylaları'ndan muson yağmurlarıyla beslenen Mavi Nil'in Hartum'da birleşmesiyle çöl kuşağını aşarak Akdeniz'e hayat taşır.\n\nKongo Nehri ise Amazon'dan sonra dünyanın debisi en yüksek ikinci akarsuyudur; ekvatoru iki kez keserek daimi yağış rejimine sahip dev bir havzayı drene eder. Ancak Kongo, Nijer ve Zambezi nehirlerinin denize dökülmeden önce kıta kenarındaki yarkenarları çağlayanlar (Livingstone ve Viktorya Çağlayanları) eşliğinde aşması, iç kesimler ile okyanus arasındaki kesintisiz gemi ulaşımını tarihsel olarak sınırlandırmıştır.",
+        "Platolar basamak basamak alçaldığı için Afrika nehirleri de basamaklı bir yatakta akar. 6.650 kilometrelik Nil iki koldan beslenir: Ekvator gölleri bölgesinden gelen Beyaz Nil ve Etiyopya Yaylaları'nda muson yağmurlarıyla dolan Mavi Nil. İki kol Hartum'da birleşir, çölü aşar ve Akdeniz'e ulaşır.\n\nKongo Nehri, Amazon'dan sonra dünyada en çok su taşıyan ikinci nehirdir. Ekvatoru iki kez keser ve yıl boyu yağış alan geniş bir havzanın suyunu toplar. Kongo, Nijer ve Zambezi yolları üzerindeki basamakları çağlayanlarla aşar; Livingstone ve Viktorya çağlayanları bunlardandır. Bu çağlayanlar, gemilerin iç kesimlerden okyanusa kesintisiz ulaşmasını tarih boyunca engelledi.",
       populationAndSettlementTr:
-        "Kıtada nüfus son derece dengesiz bir dağılım sergiler. Su kaynaklarının ve tarımsal verimin elverişli olduğu Nil deltası ve vadisi, Gine Körfezi kıyı şeridi (Nijerya metropolleri) ve Doğu Afrika'nın volkanik topraklarla örtülü serin yaylaları (Etiyopya, Ruanda, Burundi) kilometrekareye yüzlerce kişinin düştüğü yoğun yerleşim merkezleridir.\n\nBuna karşılık suyun mutlak yokluğu nedeniyle Sahra'nın devasa kumul ve kaya çölleri ile aşırı nem, sık orman örtüsü ve tropikal hastalık baskısı altındaki iç Kongo Havzası dünyanın en seyrek nüfuslu alanları arasında kalmayı sürdürür.",
+        "Afrika'da nüfus çok dengesiz dağılır. Suyun ve verimli toprağın bulunduğu yerler kalabalıktır: Nil deltası ve vadisi, Nijerya'nın büyük kentleriyle Gine Körfezi kıyısı, Etiyopya, Ruanda ve Burundi'nin volkanik topraklı serin yaylaları. Bu yerlerde kilometrekareye yüzlerce kişi düşer.\n\nSahra'nın kum ve kaya çöllerinde neredeyse hiç su yoktur. İç Kongo Havzası'nda ise aşırı nem, sık orman ve tropikal hastalıklar yerleşmeyi zorlaştırır. Bu iki bölge dünyanın en seyrek nüfuslu yerleri arasındadır.",
       economyAndResourcesTr:
-        "Afrika ekonomisi zengin maden ve enerji yataklarının jeolojik mirasına dayanır. Güney Afrika'daki Witwatersrand havzası dünya altın ve platin rezervlerinin önemli bölümünü barındırırken, Kongo Demokratik Cumhuriyeti ve Zambiya'yı kapsayan 'Bakır Kuşağı' çağdaş yeşil enerji teknolojilerinin vazgeçilmezi olan kobalt ve lityum açısından küresel bir merkezdir. Gine Körfezi (Nijerya ve Angola) zengin açık deniz petrol yataklarına sahiptir.\n\nTarımsal üretimde Fildişi Sahili ve Gana'nın küresel lider olduğu kakao, Etiyopya ve Kenya'nın yüksek yaylalarında üretilen kahve monokültür ihracat kalemleridir. Ancak hammadde ihracatına dayalı sömürge dönemi demiryolu ağları iç pazar entegrasyonunu geciktirmiştir.",
+        "Afrika ekonomisi büyük ölçüde maden ve enerji yataklarına dayanır. Güney Afrika'daki Witwatersrand havzası, dünyanın altın ve platin yataklarının önemli bir bölümünü barındırır. Kongo Demokratik Cumhuriyeti ile Zambiya'ya yayılan Bakır Kuşağı, pillerde kullanılan kobaltın başlıca kaynağıdır. Gine Körfezi'nde, Nijerya ve Angola açıklarında büyük petrol yatakları vardır.\n\nTarımda birkaç ürün öne çıkar. Fildişi Sahili ve Gana dünyanın en çok kakao üreten ülkeleridir; Etiyopya ve Kenya'nın yüksek yaylalarında kahve yetişir. Sömürge döneminde döşenen demiryolları hammaddeyi limanlara taşımak için yapıldı. Bu da ülkelerin birbiriyle ticaret yapmasını geciktirdi.",
       subregionsIntroTr:
-        "Birleşmiş Milletler M49 coğrafi şemasına göre Afrika 5 kurumsal alt bölgeye ayrılır. Bu bölgelerin her biri kendine has iklim mekanizmaları, kültürel havzaları ve ekonomik dinamikleri barındırır.",
+        "BM'nin M49 sınıflandırması Afrika'yı beş alt bölgeye ayırır. Her birinin iklimi, kültürü ve geçim kaynakları farklıdır.",
       disasterAndEnvironmentTr:
-        "Afrika'nın en yakıcı çevre sorunu, Sahra'nın güney sınırındaki Sahel kuşağında yaşanan kronik kuraklık ve çölleşmedir. İklim dalgalanmaları ve aşırı otlatma, kırılgan savan ekosistemlerini hızla kumullara teslim etmektedir.\n\nTektonik açıdan ise Doğu Afrika Kırık Hattı aktif deprem üretme potansiyeline sahiptir; Virunga Dağları'ndaki Nyiragongo ve Nyamuragira gibi aktif stratovolkanlar çevre yerleşimler ve Kivu Gölü gaz katmanları için sürekli tehdit oluşturur.",
+        "Afrika'nın en ağır çevre sorunu Sahel'deki kuraklık ve çölleşmedir. Sahel, Sahra'nın hemen güneyindeki kuşaktır. İklim dalgalanmaları ve aşırı otlatma yüzünden buradaki savanlar giderek kumula dönüşüyor.\n\nDoğu Afrika'daki kırık hattı deprem üretebilir. Virunga Dağları'ndaki Nyiragongo ve Nyamuragira etkin yanardağlardır. Hem çevredeki yerleşimler hem de Kivu Gölü'nün derinlerinde birikmiş gazlar yüzünden sürekli bir tehlike oluştururlar.",
       historicalAndCulturalTr:
-        "Afrika'nın siyasi coğrafyası, 1884-1885 Berlin Konferansı'nda Avrupalı sömürgeci güçler tarafından cetvelle çizilen sınırlardan derinden etkilenmiştir. Doğal nehir havzalarını ve etnik yerleşim coğrafyalarını hiçe sayarak çizilen bu yapay sınırlar, tek bir halkı birkaç farklı devlet sınırına bölerken, çatışan toplulukları aynı idari çatı altında toplamış ve bağımsızlık sonrası sınır sorunlarının ana kaynağı olmuştur.",
+        "Bugünkü Afrika sınırlarının çoğu 1884-1885 Berlin Konferansı'nda Avrupalı sömürge devletleri tarafından cetvelle çizildi. Bu sınırlar nehir havzalarını ve halkların yaşadığı yerleri hesaba katmadı. Aynı halk birkaç devlete bölündü, birbiriyle çatışan topluluklar ise aynı devletin içinde kaldı. Bağımsızlıktan sonraki sınır sorunlarının çoğu buradan çıkar.",
     },
     subregions: [
       {
         nameTr: "Kuzey Afrika",
         nameEn: "Northern Africa",
         descriptionTr:
-          "Büyük Sahra Çölü ve Akdeniz kıyı kuşağı; Arap-Berberi kültür sahası ve hidrokarbon zenginliği.",
+          "Büyük Sahra ile Akdeniz kıyısı arasında. Arap ve Berberi kültürü, petrol ve doğalgaz.",
         sampleCountriesTr: ["Mısır", "Cezayir", "Fas", "Tunus", "Libya", "Sudan"],
       },
       {
         nameTr: "Batı Afrika",
         nameEn: "Western Africa",
         descriptionTr:
-          "Gine Körfezi kıyılarından Sahel'e uzanan yoğun nüfus, zengin tarım ve petrol havzası.",
+          "Gine Körfezi kıyısından Sahel'e uzanır. Nüfusu kalabalık; tarım ve petrol öne çıkar.",
         sampleCountriesTr: ["Nijerya", "Gana", "Senegal", "Fildişi Sahili", "Mali", "Nijer"],
       },
       {
         nameTr: "Orta Afrika",
         nameEn: "Middle Africa",
-        descriptionTr:
-          "Kongo Havzası yağmur ormanları, zengin nehir ağları ve yüksek maden potansiyeli.",
+        descriptionTr: "Kongo Havzası'nın yağmur ormanları, bol nehir ve zengin maden yatakları.",
         sampleCountriesTr: ["Kongo DC", "Kamerun", "Angola", "Gabon", "Çad"],
       },
       {
         nameTr: "Doğu Afrika",
         nameEn: "Eastern Africa",
         descriptionTr:
-          "Büyük Rift Vadisi, yüksek volkanik yaylalar, Büyük Göller ve zengin yaban hayatı.",
+          "Rift Vadisi'nin geçtiği yer: volkanik yaylalar, Büyük Göller ve yaban hayatı.",
         sampleCountriesTr: ["Etiyopya", "Kenya", "Tanzanya", "Uganda", "Ruanda", "Madagaskar"],
       },
       {
         nameTr: "Güney Afrika",
         nameEn: "Southern Africa",
-        descriptionTr: "Kalahari Çölü, zengin elmas ve platin madenleri, ılıman kıyı iklimleri.",
+        descriptionTr: "Kalahari Çölü, elmas ve platin madenleri, ılıman kıyılar.",
         sampleCountriesTr: ["Güney Afrika", "Namibya", "Botsvana", "Zimbabve", "Zambiya"],
       },
     ],
     disasterProfile: {
       primaryRisks: [
-        "Sahel Kuşağı ve Doğu Afrika'da Şiddetli Kuraklık / Çölleşme",
-        "Doğu Afrika Rift Zonu Sismik ve Volkanik Tehlikesi",
-        "Madagaskar ve Güneydoğu Kıyılarında Hint Okyanusu Siklonları",
-        "Büyük Nehir Havzalarında Ani Taşkınlar",
+        "Sahel ve Doğu Afrika'da şiddetli kuraklık ve çölleşme",
+        "Doğu Afrika Rift Vadisi boyunca deprem ve yanardağ tehlikesi",
+        "Madagaskar ve güneydoğu kıyılarında Hint Okyanusu siklonları",
+        "Büyük nehir havzalarında ani taşkınlar",
       ],
       faultLinesOrZones: [
-        "Doğu Afrika Rift Sistemi (Afar Üçlü Ekleminden Mozambik'e)",
-        "Kızıldeniz ve Aden Körfezi Okyanusal Yayılma Merkezleri",
-        "Kuzey Afrika Atlas Dağları Kıvrım Kuşağı",
+        "Doğu Afrika Rift Sistemi, Afar bölgesinden Mozambik'e",
+        "Kızıldeniz ve Aden Körfezi'nde okyanus tabanının açıldığı hatlar",
+        "Kuzey Afrika'da Atlas Dağları kıvrım kuşağı",
       ],
       warningNoteTr:
         "Doğu Afrika Rift Sistemi boyunca devam eden levha açılması, yüzeye yakın sığ odaklı depremler ve lav göllerine sahip tehlikeli volkanizma üretmektedir.",
     },
     faqs: [
       {
-        question: "Afrika kıtasında kaç bağımsız devlet vardır?",
+        question: "Afrika'da kaç bağımsız devlet var?",
         answer:
-          "Afrika kıtasında Birleşmiş Milletler üyesi 54 egemen devlet bulunmaktadır. Ayrıca Afrika Birliği üyesi olan ancak BM statüsü tartışmalı Sahra Arap Demokratik Cumhuriyeti (Batı Sahra) ve fiilen bağımsız Somaliland gibi özel statülü topraklar da mevcuttur.",
+          "Afrika'da BM üyesi 54 devlet var. Bunların dışında statüsü tartışmalı topraklar da bulunur: Afrika Birliği üyesi olan ama BM'deki durumu tartışmalı Sahra Arap Demokratik Cumhuriyeti (Batı Sahra) ve fiilen bağımsız olan Somaliland.",
       },
       {
-        question: "Büyük Rift Vadisi kıtayı ikiye mi bölecek?",
+        question: "Büyük Rift Vadisi kıtayı ikiye bölecek mi?",
         answer:
-          "Evet; Doğu Afrika Rift Sistemi boyunca Nubya ve Somali levhaları yılda birkaç milimetre hızla birbirinden uzaklaşmaktadır. Jeolojik olarak on milyonlarca yıl içinde Doğu Afrika'nın ana kütleden ayrılarak yeni bir okyanus havzası oluşturacağı hesaplanmaktadır.",
+          "Evet, ama çok yavaş. Doğu Afrika Rift Sistemi boyunca Nubya ve Somali levhaları yılda birkaç milimetre birbirinden uzaklaşıyor. Hesaplara göre on milyonlarca yıl içinde Doğu Afrika ana kütleden ayrılacak ve arada yeni bir okyanus oluşacak.",
       },
       {
-        question: "Afrika'nın en büyük gölü ve en uzun nehri hangileridir?",
+        question: "Afrika'nın en büyük gölü ve en uzun nehri hangileri?",
         answer:
-          "Kıtanın en büyük tatlı su gölü 68.800 km² yüzölçümüyle Victoria Gölü'dür. En uzun akarsuyu ise 6.650 kilometre uzunluğuyla Akdeniz'e dökülen Nil Nehri'dir.",
+          "Kıtanın en büyük tatlı su gölü, 68.800 km² yüzölçümüyle Victoria Gölü'dür. En uzun nehri ise 6.650 kilometre boyunca akıp Akdeniz'e dökülen Nil'dir.",
       },
       {
-        question: "Afrika'nın sınırları neden cetvelle çizilmiş gibi düzdür?",
+        question: "Afrika'daki sınırlar neden cetvelle çizilmiş gibi düz?",
         answer:
-          "1884-1885 Berlin Konferansı'nda Avrupalı sömürgeci güçler, kıtanın fiziki coğrafyasını, nehir havzalarını ve etnik yapısını dikkate almadan enlem ve boylam çizgilerini esas alarak yapay sınırlar belirlemiştir.",
+          "Çünkü gerçekten öyle çizildiler. 1884-1885 Berlin Konferansı'nda Avrupalı sömürge devletleri kıtayı paylaşırken dağlara, nehir havzalarına ve halkların yaşadığı yerlere bakmadılar; sınırların çoğunu enlem ve boylam çizgilerine göre belirlediler.",
       },
     ],
   },
@@ -275,10 +275,10 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameTr: "Asya",
     nameEn: "Asia",
     code: "AS",
-    taglineTr: "Dünyanın en yüksek zirveleri, devasa muson havzaları ve kadim nehir medeniyetleri.",
+    taglineTr:
+      "Dünyadaki her beş kişiden üçü Asya'da, Himalayaların ve muson yağmurlarının kıtasında yaşar.",
     countryCount: 44,
-    countryCountNoteTr:
-      "BM M49 Asya coğrafi sınıflandırmasında yer alan 44 bağımsız ülke (Türkiye dahil).",
+    countryCountNoteTr: "BM sınıflamasına göre, Türkiye dahil.",
     population: 4750000000,
     populationFormattedTr: "4,75 Milyar",
     populationSharePercent: 59.3,
@@ -287,7 +287,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     areaSharePercent: 29.8,
     densityPerKm2: 107,
     highestPoint: {
-      name: "Everest Dağı (Sagarmatha / Qomolangma)",
+      name: "Everest Dağı",
       elevationM: 8848.86,
       locationTr: "Nepal - Çin Sınırı (Himalayalar)",
     },
@@ -298,7 +298,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
       noteTr: "Dünyanın kara üzerindeki en alçak noktası.",
     },
     longestRiver: {
-      name: "Yangtze Nehri (Chang Jiang)",
+      name: "Yangtze Nehri",
       lengthKm: 6300,
       noteTr: "Tibet Platosu'ndan doğup Doğu Çin Denizi'ne dökülür; Asya'nın en uzunu.",
     },
@@ -309,58 +309,59 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     dominantClimateTr: "Muson, Step, Çöl, Karasal ve Subarktik Tundra",
     classificationSourceTr: "BM İstatistik Bölümü (UN M49) — 5 Coğrafi Alt Bölge",
     keyCharacteristicsTr: [
-      "Himalaya & Tibet Platosu: Dünyanın çatısı ve Asya'nın su kulesi",
-      "Demografik Ağırlık: Dünya nüfusunun neredeyse %60'ına ev sahipliği",
-      "Aşırı Kontrastlar: En yüksek zirve (Everest) ve en alçak çukur (Lut Gölü)",
+      "Büyük nehirlerinin çoğu Himalayalar ve Tibet Platosu'ndan doğar",
+      "Dünya nüfusunun yaklaşık %60'ı burada yaşar",
+      "Hem en yüksek zirve Everest hem karadaki en alçak nokta Lut Gölü bu kıtadadır",
     ],
     prose: {
       introTr:
-        "Asya, hem yüzölçümü hem de nüfus bakımından gezegenin açık ara en büyük kıtasıdır. Dünya kara alanının yaklaşık üçte birini kaplarken, dünya nüfusunun neredeyse beşte üçüne ev sahipliği yapar. Hindistan Levhası'nın Avrasya'ya çarpmasıyla yükselen Himalaya sıradağları ve 'Dünyanın Çatısı' sayılan Tibet Platosu, kıtanın ikliminden nehir ağlarına kadar tüm fiziki dengelerini organize eden ana motordur.",
+        "Dünya karalarının yaklaşık üçte biri Asya'da; dünya nüfusunun neredeyse beşte üçü de burada yaşıyor. Kıtanın biçimini en çok Hindistan Levhası'nın Avrasya'ya çarpması belirledi. Bu çarpışma Himalayaları ve 'Dünyanın Çatısı' denen Tibet Platosu'nu yükseltti. Asya'nın iklimi de nehirleri de bu yüksek kütleye bağlıdır.",
       locationAndBordersTr:
-        "Kuzeyde Arktik Okyanusu, doğuda Büyük Okyanus, güneyde Hint Okyanusu ile çevrelenen Asya'nın batı sınırı fiziki bir su kütlesi değil, tarihsel bir uzlaşımdır (konvansiyon). 18. yüzyıldan bu yana Ural Dağları, Ural Nehri, Hazar Denizi, Kafkasya ve Türk Boğazları iki kıta arasındaki geleneksel sınır kabul edilir. Ancak bu hatta aktif bir levha sınırı yoktur; Asya ve Avrupa jeolojik olarak Avrasya adlı tek bir devasa tektonik kalkanın parçasıdır.",
+        "Asya'yı kuzeyde Arktik Okyanusu, doğuda Büyük Okyanus, güneyde Hint Okyanusu çevreler. Batı sınırı ise bir deniz değil, insanların üzerinde anlaştığı bir çizgidir. 18. yüzyıldan bu yana Ural Dağları, Ural Nehri, Hazar Denizi, Kafkasya ve Türk Boğazları iki kıta arasındaki sınır sayılır. Bu hatta bir levha sınırı yoktur: Asya ile Avrupa, jeolojik olarak Avrasya denen tek bir kara kütlesinin parçalarıdır.",
       landformsAndGeologyTr:
-        "Asya fiziki coğrafyasının kalbinde Hindistan ile Avrasya levhalarının yaklaşık 50 milyon yıldır devam eden devasa çarpışması yer alır. Bu süreç yeryüzünün en yüksek dağ sistemi olan Himalayaları ve ortalama 4.500 metre irtifadaki uçsuz bucaksız Tibet Platosu'nu yükseltmiştir. Buradan çevreye yayılan Pamir, Tanrı Dağları ve Karakurum silsileleri dev bir dağ düğümü meydana getirir.\n\nKuzeyde ise Sibirya Kalkanı gibi kadim, durağan ve aşınmış düzlükler uzanırken; doğu ve güneydoğuda Pasifik Ateş Çemberi'nin genç volkanik yayları (Japonya, Filipinler ve Endonezya ada zincirleri) yer alır. Batıda ise Arap Levhası'nın sıkıştırmasıyla oluşan Zagros Kıvrım Kuşağı uzanır.",
+        "Hindistan ve Avrasya levhaları yaklaşık 50 milyon yıldır birbirine çarpıyor. Bu çarpışma dünyanın en yüksek dağ sistemi olan Himalayaları ve ortalama 4.500 metre yükseklikteki Tibet Platosu'nu ortaya çıkardı. Pamir, Tanrı Dağları ve Karakurum sıraları da buradan çevreye uzanır ve büyük bir dağ düğümü oluşturur.\n\nKuzeyde Sibirya Kalkanı gibi eski, aşınmış ve düz araziler uzanır. Doğu ve güneydoğuda Pasifik Ateş Çemberi'nin genç volkanik adaları dizilir: Japonya, Filipinler ve Endonezya. Batıda ise Arap Levhası'nın sıkıştırmasıyla oluşan Zagros kıvrım dağları yer alır.",
       climateAndVegetationTr:
-        "Tibet Platosu, Asya'nın hem en yağışlı hem en kurak yerlerini aynı anda üreten iklim motorudur. Yaz aylarında devasa platonun hızla ısınıp termik alçak basınç merkezi oluşturması, Hint Okyanusu'ndan nem yüklü devasa hava kütlelerini çeker. Bu durum Güney ve Güneydoğu Asya'yı etkisi altına alan Asya Musonunu tetikler; dünyanın en çok yağış alan yeri (Çerapunçi / Meghalaya) Himalayaların güney eteklerinde oluşur.\n\nAncak aynı Himalaya duvarı bulutların kuzeye geçişini engellediği için dağların arkasında kalan Orta Asya ve Tibet dünyanın en büyük yağmur gölgesi çöl kuşağına dönüşür (Gobi ve Taklamakan çölleri). Kuzeyde tayga ormanları ve tundra biyomları, güneyde ise nemli tropikal yağmur ormanları egemendir.",
+        "Tibet Platosu, Asya'nın hem en yağışlı hem en kurak yerlerini belirler. Yazın plato hızla ısınır ve üzerinde alçak basınç oluşur. Bu alçak basınç Hint Okyanusu'ndan nemli havayı çeker ve Güney ile Güneydoğu Asya'ya muson yağmurlarını getirir. Dünyanın en çok yağış alan yeri, Meghalaya eyaletindeki Çerapunçi, Himalayaların güney eteklerindedir.\n\nAynı dağ duvarı bulutların kuzeye geçmesini engeller. Bu yüzden dağların arkasında kalan Orta Asya ve Tibet, dünyanın en büyük yağmur gölgesi çöllerine dönüşür: Gobi ve Taklamakan. Kuzeyde tayga ormanları ve tundra, güneyde tropikal yağmur ormanları yaygındır.",
       hydrographyTr:
-        "Tibet Platosu ve çevreleyen buzullar 'Asya'nın Su Kulesi' olarak adlandırılır. Sarı Nehir (Huang He), Yangtze, Mekong, Salween, Brahmaputra, Ganj ve İndus nehirlerinin tamamı bu dağlık çekirdekten doğar ve aşağı havzalarda 1,5 milyardan fazla insanın içme, sulama ve enerji ihtiyacını karşılar.\n\nKıtanın iç kesimleri ise okyanusa çıkışı olmayan devasa kapalı havzalarla (Hazar Denizi, Baykal Gölü, Aral Gölü havzası ve dünyanın en derin çöküntüsü Lut Gölü) kaplıdır. Baykal Gölü tek başına yeryüzündeki donmamış tatlı suyun yaklaşık beşte birini barındırır.",
+        "Tibet Platosu ve çevresindeki buzullara 'Asya'nın su kulesi' denir. Sarı Nehir, Yangtze, Mekong, Salween, Brahmaputra, Ganj ve İndus bu dağlık bölgeden doğar. Aşağı havzalarında 1,5 milyardan fazla insan içme, sulama ve enerji için bu nehirlere bağlıdır.\n\nKıtanın iç kesimlerinde okyanusa çıkışı olmayan kapalı havzalar vardır; Hazar Denizi ve Aral Gölü bunların en bilinenleridir. Lut Gölü de kapalı bir havzadır ve kıyısı karadaki en alçak noktadır. Sibirya'daki Baykal Gölü ise tek başına yeryüzündeki donmamış tatlı suyun yaklaşık beşte birini tutar.",
       populationAndSettlementTr:
-        "Nüfus, muson yağmurlarının ve nehir alüvyonlarının tarıma olanak tanıdığı nehir deltalarında olağanüstü yoğunlaşmıştır. Kuzey Çin Ovası, Yangtze Deltası, Hint-Gang Ovası ve Endonezya'nın Java Adası kilometrekareye binlerce insanın düştüğü küresel demografik merkezlerdir.\n\nBuna karşılık şiddetli karasallık ve yükselti nedeniyle Tibet Platosu, Gobi Çölü, Moğolistan bozkırları ve Sibirya'nın donmuş arazileri kilometrekareye 2 kişinin bile düşmediği geniş boşluklar barındırır.",
+        "Nüfus, muson yağmurlarının ve nehirlerin getirdiği alüvyonun tarımı mümkün kıldığı ovalarda ve deltalarda toplanır. Kuzey Çin Ovası, Yangtze Deltası, Hint-Gang Ovası ve Endonezya'nın Java Adası'nda kilometrekareye binlerce kişi düşer.\n\nTibet Platosu, Gobi Çölü, Moğolistan bozkırları ve Sibirya'nın donmuş toprakları ise sert iklim ve yükseklik yüzünden neredeyse boştur; buralarda kilometrekareye 2 kişi bile düşmez.",
       economyAndResourcesTr:
-        "Asya dünya sanayi üretiminin, teknolojisinin ve enerji rezervlerinin ağırlık merkezidir. Basra Körfezi tortul havzası küresel petrol rezervlerinin yarısından fazlasını ve doğalgaz yataklarının %40'ını barındırır.\n\nDoğu Asya (Çin, Japonya, Güney Kore, Tayvan) yüksek teknoloji, yarı iletken, otomotiv ve ağır sanayide dünyanın imalat atölyesidir. Pirinç tarımı milyarlarca insanın temel gıda kaynağını oluştururken, Malakka Boğazı dünya deniz ticaretinin en stratejik boğum noktasıdır.",
+        "Basra Körfezi çevresinde dünyanın en büyük petrol ve doğalgaz yatakları bulunur. Çin, Japonya, Güney Kore ve Tayvan; elektronik, yarı iletken, otomotiv ve ağır sanayi ürünlerinin büyük kısmını üretir.\n\nPirinç, milyarlarca insanın temel besinidir. Malakka Boğazı ise dünya deniz ticaretinin en işlek geçitlerinden biridir.",
       subregionsIntroTr:
-        "BM M49 sınıflandırmasına göre Asya beş ana alt bölgeye ayrılır. Her alt bölge belirgin bir iklim, jeoloji ve kültürel medeniyet havzasını temsil eder.",
+        "BM'nin M49 sınıflaması Asya'yı beş alt bölgeye ayırır. Her birinin iklimi, yeryüzü şekilleri ve kültürü ayrıdır.",
       disasterAndEnvironmentTr:
-        "Asya doğal afet sıklığı ve yıkıcılığı bakımından dünyanın en kırılgan kıtasıdır. Pasifik Ateş Çemberi üzerindeki ada yayları (Japonya, Endonezya, Filipinler) yıkıcı depremler, tsunamiler ve volkanik patlamalarla karşı karşıyadır. Himalaya sismik kuşağı kıta içi levha çarpışmasına bağlı büyük büyüklükte (M≥7.5) sarsıntılar üretir.\n\nMuson mevsiminde Bangladeş ve Hindistan'da yaşanan nehir taşkınları ile Aral Gölü'nün aşırı sulama projeleri yüzünden kuruması kıtanın önde gelen ekolojik krizleridir.",
+        "Japonya, Endonezya ve Filipinler, Pasifik Ateş Çemberi üzerindeki ada yaylarında yer alır; bu ülkelerde yıkıcı depremler, tsunamiler ve yanardağ patlamaları sık görülür. Himalaya kuşağında levhaların kıta içinde çarpışması 7,5 ve üzeri büyüklükte depremler üretir.\n\nMuson mevsiminde Bangladeş ve Hindistan'da nehirler taşar. Aşırı sulama yüzünden kuruyan Aral Gölü ise kıtanın en bilinen çevre felaketlerinden biridir.",
       historicalAndCulturalTr:
-        "Asya, yeryüzünün en eski nehir boyu medeniyetlerine (Mezopotamya, İndus Vadisi, Sarı Nehir) ve evrensel dinlerin (İslam, Hristiyanlık, Musevilik, Budizm, Hinduizm) doğuşuna beşiklik etmiştir. Kıta-boyu kervan ticareti ağı olan İpek Yolu, vahalar ve dağ geçitleri üzerinden Çin'den Akdeniz'e dek sadece mal değil, inanç, alfabe ve bilim aktarımını sağlayarak bugünün Asya kültür haritasını örmüştür.",
+        "Dünyanın en eski uygarlıklarından bazıları Asya'nın nehir kıyılarında doğdu: Mezopotamya, İndus Vadisi ve Sarı Nehir. İslam, Hristiyanlık, Musevilik, Budizm ve Hinduizm de bu kıtada ortaya çıktı. Çin'den Akdeniz'e uzanan İpek Yolu, vahalar ve dağ geçitleri üzerinden yalnız mal değil inanç, alfabe ve bilim de taşıdı. Bugünkü Asya'nın kültür haritası büyük ölçüde bu yolun izlerini taşır.",
     },
     subregions: [
       {
         nameTr: "Doğu Asya",
         nameEn: "Eastern Asia",
         descriptionTr:
-          "Sarı Nehir ve Yangtze havzaları, kadim medeniyetler, dünyanın en büyük üretim ve teknoloji merkezi.",
+          "Sarı Nehir ve Yangtze havzaları. Eski uygarlıkların yurdu, bugün dünyanın en büyük üretim ve teknoloji merkezi.",
         sampleCountriesTr: ["Çin", "Japonya", "Güney Kore", "Moğolistan", "Kuzey Kore"],
       },
       {
         nameTr: "Güneydoğu Asya",
         nameEn: "South-eastern Asia",
         descriptionTr:
-          "Tropikal ada ve yarımadalar kuşağı, Pasifik Ateş Çemberi, deniz ticaret rotaları.",
+          "Tropikal adalar ve yarımadalar; Pasifik Ateş Çemberi'nin üzerinde, işlek deniz ticaret yollarının kıyısında.",
         sampleCountriesTr: ["Endonezya", "Malezya", "Filipinler", "Vietnam", "Tayland", "Singapur"],
       },
       {
         nameTr: "Güney Asya",
         nameEn: "Southern Asia",
-        descriptionTr: "Himalayalar güneyi, Hint-Gang Ovası, yoğun nüfus ve muson tarımı.",
+        descriptionTr:
+          "Himalayaların güneyi ve Hint-Gang Ovası; kalabalık nüfus ve musona bağlı tarım.",
         sampleCountriesTr: ["Hindistan", "Pakistan", "Bangladeş", "Nepal", "Sri Lanka"],
       },
       {
         nameTr: "Orta Asya",
         nameEn: "Central Asia",
         descriptionTr:
-          "Denizden en uzak karasal kalbi, İpek Yolu bozkırları ve hidrokarbon/maden zenginliği.",
+          "Okyanuslardan çok uzak bozkırlar; İpek Yolu'nun geçtiği topraklar, petrol, doğalgaz ve maden yatakları.",
         sampleCountriesTr: [
           "Kazakistan",
           "Özbekistan",
@@ -373,7 +374,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
         nameTr: "Batı Asya",
         nameEn: "Western Asia",
         descriptionTr:
-          "Bereketli Hilal, Basra Körfezi petrol sahaları, Akdeniz ve Kafkaslar köprüsü.",
+          "Bereketli Hilal ve Basra Körfezi'nin petrol sahaları; Akdeniz ile Kafkasya arasında bir köprü.",
         sampleCountriesTr: [
           "Türkiye",
           "Suudi Arabistan",
@@ -387,40 +388,40 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     ],
     disasterProfile: {
       primaryRisks: [
-        "Pasifik Ateş Çemberi Sismik Hatları & Tsunami (Japonya, Endonezya, Filipinler)",
-        "Himalaya-Alp Levha Çarpışma Kuşağı Yıkıcı Depremleri",
-        "Güney ve Güneydoğu Asya Muson Taşkınları ve Tropikal Siklonlar",
-        "Orta ve Batı Asya Kuraklık ve Toz Fırtınaları",
+        "Pasifik Ateş Çemberi'nde deprem ve tsunami: Japonya, Endonezya, Filipinler",
+        "Himalaya-Alp kuşağında yıkıcı depremler",
+        "Güney ve Güneydoğu Asya'da muson taşkınları ve tropikal siklonlar",
+        "Orta ve Batı Asya'da kuraklık ve toz fırtınaları",
       ],
       faultLinesOrZones: [
-        "Himalaya Ana Bindirme Fayı (MHT)",
-        "Kuzey Anadolu ve Doğu Anadolu Fay Sistemleri (Türkiye)",
-        "Zagros Kıvrım-Bindirme Kuşağı (İran)",
-        "Sunda Hendeği Dalma-Batma Zonu (Endonezya)",
+        "Himalaya Ana Bindirme Fayı",
+        "Kuzey Anadolu ve Doğu Anadolu fayları (Türkiye)",
+        "Zagros kıvrım ve bindirme kuşağı (İran)",
+        "Sunda Hendeği dalma-batma zonu (Endonezya)",
       ],
       warningNoteTr:
-        "Dünyadaki volkanik patlamaların ve tsunamilerin %70'inden fazlası Asya'nın doğu ve güneydoğu kıyılarında gerçekleşmektedir.",
+        "Asya'nın doğu ve güneydoğu kıyıları Pasifik Ateş Çemberi'nin üstündedir; dünyadaki volkanik patlamaların ve tsunamilerin büyük bölümü bu çemberde olur.",
     },
     faqs: [
       {
         question: "Avrupa ile Asya arasındaki sınır nereden geçer?",
         answer:
-          "Jeolojik bir levha sınırı bulunmamakla birlikte, coğrafi gelenek Ural Dağları, Ural Nehri, Hazar Denizi, Kafkas Dağları'nın su bölümü çizgisi, Karadeniz, İstanbul ve Çanakkale boğazlarını kıtalararası sınır kabul eder.",
+          "İki kıta arasında bir levha sınırı yoktur; sınır gelenekle çizilir. Ural Dağları, Ural Nehri, Hazar Denizi, Kafkas Dağları'nın su bölümü çizgisi, Karadeniz, İstanbul Boğazı ve Çanakkale Boğazı sınır kabul edilir.",
       },
       {
         question: "Türkiye Asya kıtasında mı yer alır?",
         answer:
-          "Türkiye topraklarının %97'si (Anadolu) Asya kıtasında, %3'ü (Doğu Trakya) Avrupa kıtasındadır. BM M49 şeması Türkiye'yi bir bütün olarak Batı Asya bölgesinde sınıflandırır.",
+          "Türkiye topraklarının %97'si (Anadolu) Asya'da, %3'ü (Doğu Trakya) Avrupa'dadır. BM'nin M49 sınıflaması Türkiye'nin tamamını Batı Asya bölgesine koyar.",
       },
       {
         question: "Asya neden dünyanın en kalabalık kıtasıdır?",
         answer:
-          "Muson rejiminin sağladığı bol su ve nehir deltalarının biriktirdiği verimli alüvyon topraklar, binlerce yıldır yılda birden çok ürün alınmasına (özellikle pirinç) imkân vermiş ve devasa nüfusları besleyebilmiştir.",
+          "Muson yağmurları bol su, nehir deltaları da verimli alüvyon toprak sağlar. Bu sayede binlerce yıldır yılda birden fazla ürün, özellikle pirinç, alınabilmiş ve çok büyük nüfuslar beslenebilmiştir.",
       },
       {
         question: "Lut Gölü neden dünyanın en alçak noktasıdır?",
         answer:
-          "Ölü Deniz (Lut Gölü), Afrika levhası ile Arap levhasının birbirinden yanal olarak kaydığı Ölü Deniz Kırık Hattı üzerinde yer alan derin bir tektonik çöküntüdür; su yüzeyi deniz seviyesinin yaklaşık 430 metre altındadır.",
+          "Lut Gölü, yani Ölü Deniz, Afrika ve Arap levhalarının birbirine göre yana kaydığı Ölü Deniz fay hattı üzerindeki derin bir çöküntüdedir. Su yüzeyi deniz seviyesinin yaklaşık 430 metre altındadır.",
       },
     ],
   },
@@ -432,10 +433,9 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameTr: "Avrupa",
     nameEn: "Europe",
     code: "EU",
-    taglineTr: "Yarımadalar yarımadası, Gulf Stream ılımanlığı ve Sanayi Devrimi'nin beşiği.",
+    taglineTr: "Denizin her yöne sokulduğu küçük bir kıta; kışlarını Golf Akıntısı yumuşatır.",
     countryCount: 43,
-    countryCountNoteTr:
-      "BM M49 Avrupa sınıflandırmasındaki 43 bağımsız ülke (Rusya Federasyonu dahil).",
+    countryCountNoteTr: "BM M49'a göre 43 bağımsız ülke, Rusya dahil.",
     population: 745000000,
     populationFormattedTr: "745 Milyon",
     populationSharePercent: 9.3,
@@ -444,7 +444,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     areaSharePercent: 6.8,
     densityPerKm2: 73,
     highestPoint: {
-      name: "Elbrus Dağı (Kafkaslar) / Mont Blanc (Alpler)",
+      name: "Elbrus Dağı",
       elevationM: 5642,
       locationTr: "Rusya (Elbrus 5.642 m) — Batı Avrupa'da Mont Blanc 4.808 m",
     },
@@ -465,45 +465,44 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     dominantClimateTr: "Ilıman Okyanusal, Akdeniz ve Nemli Karasal",
     classificationSourceTr: "BM İstatistik Bölümü (UN M49) — 4 Coğrafi Alt Bölge",
     keyCharacteristicsTr: [
-      "Girintili Kıyılar: Deniz etkisinin iç kesimlere dek sokulduğu yarımadalar yapısı",
-      "Kuzey Atlantik Akıntısı: Enlemine göre olağanüstü ılıman kışlar",
-      "Yüksek Kentleşme: Yoğun sanayi koridoru ve gelişmiş altyapı ağı",
+      "Girintili kıyılar: deniz, yarımadaların arasından iç kesimlere kadar sokulur",
+      "Kuzey Atlantik Akıntısı sayesinde enlemine göre ılık kışlar",
+      "Kentleşme yüksek, sanayi bölgeleri birbirine yakın",
     ],
     prose: {
       introTr:
-        "Avrupa, Avrasya kara kütlesinin batıya uzanmış devasa bir yarımadası, coğrafyacıların ifadesiyle bir 'yarımadalar yarımadası'dır. İber, İtalya, Balkan ve İskandinav yarımadalarıyla çevrili bu girintili çıkıntılı kıyı yapısı, kıtanın neredeyse hiçbir noktasının denizden çok uzak kalmamasını sağlar. Kuzey Atlantik Akıntısı'nın getirdiği ılımanlaştırıcı etki sayesinde aynı enlemdeki Sibirya ya da Kanada tundralarına kıyasla çok daha elverişli yaşam koşulları sunar.",
+        "Haritaya bakınca Avrupa, Asya'nın batıya uzanan bir yarımadası gibi durur. Bu büyük yarımada da kendi içinde küçüklerine bölünür: İber, İtalya, Balkan ve İskandinav yarımadaları. Aralarına denizler girer, bu yüzden kıtada denizden çok uzak bir yer neredeyse yoktur. Kuzey Atlantik Akıntısı kışları yumuşatır; aynı enlemdeki Sibirya ya da Kanada tundrasına göre burada yaşamak çok daha kolaydır.",
       locationAndBordersTr:
-        "Batıda Atlas Okyanusu, kuzeyde Arktik Denizi, güneyde Akdeniz ve Karadeniz ile sınırlandırılmıştır. Doğu sınırı ise Ural Dağları, Ural Nehri ve Hazar Denizi hattı boyunca uzanır. Cebelitarık Boğazı güneybatıda Afrika'ya, Çanakkale ve İstanbul boğazları ise güneydoğuda Anadolu'ya komşudur.\n\nSiyasi coğrafyada Rusya Federasyonu'nun topraklarının yaklaşık %77'si Ural'ın doğusunda (Sibirya'da) kalmasına rağmen, başkenti ve nüfusunun %75'i batıda yer aldığından BM M49 şeması Rusya'yı bir bütün olarak Doğu Avrupa içinde kabul eder.",
+        "Batıda Atlas Okyanusu, kuzeyde Arktik Okyanusu, güneyde Akdeniz ve Karadeniz vardır. Doğu sınırı Ural Dağları, Ural Nehri ve Hazar Denizi boyunca çizilir. Güneybatıda Cebelitarık Boğazı Afrika'ya, güneydoğuda Çanakkale ve İstanbul boğazları Anadolu'ya açılır.\n\nRusya'nın topraklarının yaklaşık %77'si Ural'ın doğusunda, yani Sibirya'dadır. Ama başkenti ve nüfusunun %75'i batıda olduğu için BM M49 şeması Rusya'nın tamamını Doğu Avrupa'ya koyar.",
       landformsAndGeologyTr:
-        "Avrupa topografyası güneydeki genç kıvrım dağları ile kuzeydeki geniş ovaların tezatlığı üzerine kuruludur. Güney kuşağında Afrika ve Avrasya levhalarının çarpışmasıyla yükselen Alpler, Pireneler, Apeninler ve Karpatlar yer alır. Alp Orojenezinin bu genç zirveleri dik yamaçlar ve derin vadilerle belirgindir.\n\nKıtanın kuzeyinde ise Fransa'dan Ural Dağları'na kadar kesintisiz uzanan Kuzey Avrupa Ovası uzanır. Bu düzlük tarih boyunca göçler, ticaret ve askeri hareketler için doğal bir koridor işlevi görmüştür. İskandinavya ve İskoçya'da ise buzul çağlarının mirası olan fiyortlar ve Baltık Kalkanı'nın yaşlı kristalin kayaları egemendir.",
+        "Güneyde genç ve yüksek dağlar, kuzeyde geniş ovalar vardır. Alpler, Pireneler, Apeninler ve Karpatlar, Afrika ile Avrasya levhalarının çarpışmasıyla yükseldi. Genç oldukları için yamaçları dik, vadileri derindir.\n\nKuzeyde Kuzey Avrupa Ovası, Fransa'dan Ural Dağları'na kadar kesintisiz uzanır. Tarih boyunca göçler, ticaret ve ordular bu düzlükten geçti. İskandinavya ve İskoçya'da ise buzul çağlarından kalan fiyortlar ve Baltık Kalkanı'nın çok eski kayaları görülür.",
       climateAndVegetationTr:
-        "Avrupa'nın iklimini belirleyen en kritik unsur, Meksika Körfezi'nden doğup Atlas Okyanusu'nu aşan sıcak su akıntısı Gulf Stream (Kuzey Atlantik Akıntısı) ve batı rüzgarlarıdır. Bu akıntı, 50°-60° kuzey enlemlerinde yer alan Londra, Paris ve Hamburg gibi metropollerin kışları donma noktasının üzerinde, ılıman ve bol yağışlı (okyanusal iklim) geçirmesini sağlar.\n\nGüneyde Akdeniz havzası yazları sıcak ve kurak, kışları ılık ve yağışlı bir rejim sunar. Doğuya doğru gidildikçe deniz etkisi azalır ve yerini sıcak yazlar ile sert karlı kışların yaşandığı nemli karasal iklime bırakır. Doğal bitki örtüsü güneyde maki, orta kesimlerde geniş yapraklı karma ormanlar, kuzeyde ise iğne yapraklı tayga kuşağıdır.",
+        "Avrupa'nın iklimini en çok Golf Akıntısı ile onun devamı olan Kuzey Atlantik Akıntısı ve batı rüzgârları belirler. Meksika Körfezi'nden gelen bu sıcak su sayesinde 50°-60° kuzey enlemlerindeki Londra, Paris ve Hamburg'da kışlar genellikle donma noktasının üstünde, ılık ve yağışlı geçer. Bu okyanusal iklimdir.\n\nAkdeniz kıyılarında yazlar sıcak ve kurak, kışlar ılık ve yağışlıdır. Doğuya gittikçe denizin etkisi azalır; yazlar sıcak, kışlar sert ve karlı olur. Güneyde maki, orta kesimde geniş yapraklı karışık ormanlar, kuzeyde iğne yapraklı tayga ormanları vardır.",
       hydrographyTr:
-        "Avrupa nehirleri, kıtanın iktisadi omurgasını oluşturan düzenli rejimleri ve birbirine kanallarla bağlı oluşlarıyla öne çıkar. Ren Nehri, İsviçre Alpleri'nden doğup Almanya ve Hollanda'nın sanayi kalbini katederek Rotterdam limanından Kuzey Denizi'ne dökülür ve dünyanın en işlek iç suyoludur.\n\nTuna Nehri ise Kara Ormanlar'dan doğup 10 ülkeyi geride bırakarak Karadeniz'e ulaşır. Volga, 3.530 km ile Avrupa'nın en uzun nehridir. Ladoga ve Onega gölleri kuzeyde buzullaşma sonucu oluşmuş dev tatlı su kütleleridir.",
+        "Avrupa nehirleri yıl boyunca düzenli akar ve birçoğu kanallarla birbirine bağlıdır; bu da onları taşımacılık için değerli kılar. Ren Nehri İsviçre Alpleri'nden doğar, Almanya ve Hollanda'nın sanayi bölgelerinden geçer ve Rotterdam'da Kuzey Denizi'ne dökülür.\n\nTuna Nehri Kara Orman'dan doğar, 10 ülkeden geçip Karadeniz'e ulaşır. Volga 3.530 km ile Avrupa'nın en uzun nehridir. Kuzeydeki Ladoga ve Onega gölleri buzulların oyduğu çukurlarda oluşmuş büyük tatlı su gölleridir.",
       populationAndSettlementTr:
-        "Avrupa dünya ortalamasının çok üzerinde (%75+) bir kentleşme oranına sahiptir. İngiltere'nin merkezinden başlayıp Benelüks ülkeleri, Ren Vadisi ve Kuzey İtalya'ya kadar uzanan 'Mavi Muz' (Blue Banana) kuşağı, kıtanın en yoğun nüfuslu, sermaye ve sanayinin en çok kümelendiği koridorudur.\n\nDemografik olarak yaşlanan bir nüfus yapısına sahip olan kıtada, kırsal alanlardan şehirlere ve Doğu Avrupa'dan Batı Avrupa metropollerine doğru sürekli bir iç göç hareketi gözlenmektedir.",
+        "Avrupa'da insanların yaklaşık dörtte üçü şehirde yaşar; bu, dünya ortalamasının çok üstündedir. İngiltere'den başlayıp Benelüks ülkeleri ve Ren Vadisi üzerinden Kuzey İtalya'ya uzanan Mavi Muz kuşağı, kıtada nüfusun, paranın ve sanayinin en çok toplandığı yerdir.\n\nNüfus yaşlanıyor. Köylerden şehirlere, Doğu Avrupa'dan Batı Avrupa'nın büyük şehirlerine sürekli göç var.",
       economyAndResourcesTr:
-        "Avrupa, Sanayi Devrimi'nin doğduğu yerdir. 19. yüzyılda Ruhr (Almanya) ve Midlands (İngiltere) kömür havzalarında başlayan sanayileşme, bugün ileri mühendislik, kimya, otomotiv, havacılık ve finans sektörlerine evrilmiştir.\n\nAvrupa Birliği ortak pazarı, kıta içi gümrüksüz ticaret ve sermaye serbestisi sağlayarak küresel ekonomik bir güç merkezi kurmuştur. Tarımda yüksek verimli mekanizasyon uygulanırken, Kuzey Denizi açıklarında zengin petrol ve doğalgaz üretilmektedir.",
+        "Sanayi Devrimi Avrupa'da başladı. 19. yüzyılda Almanya'daki Ruhr ve İngiltere'deki Midlands kömür havzalarında kurulan fabrikalar, zamanla yerini makine, kimya, otomotiv, havacılık ve finans sektörlerine bıraktı.\n\nAvrupa Birliği'nin ortak pazarında mallar gümrüksüz, sermaye serbestçe dolaşır. Tarımda makine kullanımı yaygın ve verim yüksektir. Kuzey Denizi'nde petrol ve doğal gaz çıkarılır.",
       subregionsIntroTr:
-        "BM M49 standardı Avrupa'yı 4 kurumsal alt bölgeye ayırır: Batı, Kuzey, Güney ve Doğu Avrupa. Bu ayrım coğrafi, ekonomik ve tarihsel temellere dayanır.",
+        "BM M49 standardı Avrupa'yı dört alt bölgeye ayırır: Batı, Kuzey, Güney ve Doğu Avrupa. Ayrım coğrafyaya, ekonomiye ve tarihe dayanır.",
       disasterAndEnvironmentTr:
-        "Kıtanın sismik tehlikesi esas olarak Afrika-Avrasya temas bölgesinde yer alan Akdeniz kuşağında (İtalya, Yunanistan, Balkanlar) yoğunlaşır. Etna, Vezüv ve Stromboli aktif volkanlardır. İzlanda ise Orta Atlantik Sırtı üzerindeki çatlak volkanizmasıyla bilinir.\n\nSon yıllarda iklim krizine bağlı olarak Güney Avrupa'da şiddetli yaz sıcak dalgaları, orman yangınları ve Ren/Tuna havzalarında ani yıkıcı sel felaketleri en büyük çevresel tehdit haline gelmiştir.",
+        "Depremler en çok Afrika ile Avrasya levhalarının karşılaştığı Akdeniz kuşağında, yani İtalya, Yunanistan ve Balkanlar'da olur. Etna, Vezüv ve Stromboli etkin yanardağlardır. İzlanda, Orta Atlantik Sırtı'nın üzerinde durur; lav burada yer yer uzun yarıklardan çıkar.\n\nSon yıllarda Güney Avrupa'da şiddetli sıcak dalgaları ve orman yangınları, Ren ve Tuna havzalarında ani seller en büyük çevre sorunları arasına girdi.",
       historicalAndCulturalTr:
-        "Antik Yunan demokrasisi ve Roma hukukunun temelleri üzerinde yükselen Avrupa, Orta Çağ feodalizminin ardından Rönesans, Reform, Aydınlanma Çağı ve 1789 Fransız İhtilali ile çağdaş ulus devlet ve insan hakları kavramlarını üretmiştir. 15. yüzyıldan itibaren başlayan Coğrafi Keşifler ve sömürgecilik dalgası, Avrupa dillerinin ve kurumlarının tüm dünyaya yayılmasına yol açmıştır.",
+        "Antik Yunan demokrasisi ve Roma hukuku Avrupa'nın temelini attı. Orta Çağ'ın ardından Rönesans, Reform, Aydınlanma ve 1789 Fransız İhtilali geldi; bugünkü ulus devlet ve insan hakları fikirleri bu dönemde şekillendi. 15. yüzyılda başlayan Coğrafi Keşifler ve sömürgecilikle Avrupa dilleri ve kurumları dünyanın dört bir yanına yayıldı.",
     },
     subregions: [
       {
         nameTr: "Batı Avrupa",
         nameEn: "Western Europe",
-        descriptionTr:
-          "Ren Havzası, yüksek sanayileşme, okyanusal iklim ve küresel finans merkezleri.",
+        descriptionTr: "Ren havzası, okyanusal iklim, güçlü sanayi, büyük finans merkezleri.",
         sampleCountriesTr: ["Almanya", "Fransa", "Hollanda", "Belçika", "İsviçre", "Avusturya"],
       },
       {
         nameTr: "Güney Avrupa",
         nameEn: "Southern Europe",
         descriptionTr:
-          "Akdeniz kıyı kuşağı, İber, İtalya ve Balkan yarımadaları, zengin tarihi miras.",
+          "Akdeniz kıyıları ile İber, İtalya ve Balkan yarımadaları; tarihi kentlerle dolu.",
         sampleCountriesTr: [
           "İtalya",
           "İspanya",
@@ -517,7 +516,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
         nameTr: "Kuzey Avrupa",
         nameEn: "Northern Europe",
         descriptionTr:
-          "İskandinav ve Baltık ülkeleri, Britanya Adaları, fiyortlar ve yüksek refah düzeyi.",
+          "İskandinav ve Baltık ülkeleri ile Britanya Adaları; fiyortlu kıyılar, yüksek refah.",
         sampleCountriesTr: [
           "Birleşik Krallık",
           "İsveç",
@@ -531,45 +530,45 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
         nameTr: "Doğu Avrupa",
         nameEn: "Eastern Europe",
         descriptionTr:
-          "Kuzey Avrupa Ovası uzantısı, Volga ve Tuna havzaları, karasal iklim egemenliği.",
+          "Kuzey Avrupa Ovası'nın doğu ucu, Volga ve Tuna havzaları; kışlar sert, iklim karasal.",
         sampleCountriesTr: ["Rusya", "Polonya", "Ukrayna", "Romanya", "Çekya", "Macaristan"],
       },
     ],
     disasterProfile: {
       primaryRisks: [
-        "Güney Avrupa & Akdeniz Havzası Sismik Tehlikesi (İtalya, Yunanistan)",
-        "İzlanda ve İtalya Aktif Volkanizması",
-        "Kıta Genelinde Sıcak Dalgaları, Kuraklık ve Orman Yangınları",
-        "Orta ve Batı Avrupa Büyük Nehir Taşkınları (Ren, Elbe, Tuna)",
+        "Akdeniz kuşağında depremler, özellikle İtalya ve Yunanistan'da",
+        "İzlanda ve İtalya'da yanardağ patlamaları",
+        "Sıcak dalgaları, kuraklık ve orman yangınları",
+        "Ren, Elbe ve Tuna gibi büyük nehirlerde taşkınlar",
       ],
       faultLinesOrZones: [
-        "Afrika-Avrasya Dalma-Batma Zonu (Kuzey Akdeniz Yayı)",
-        "Apenin Fay Sistemi (İtalya)",
-        "Orta Atlantik Yayılma Sırtı (İzlanda)",
+        "Afrika levhasının Avrasya'nın altına daldığı Akdeniz yayı",
+        "İtalya'da Apenin fay sistemi",
+        "İzlanda'dan geçen Orta Atlantik Sırtı",
       ],
       warningNoteTr:
         "İtalya ve Balkanlar boyunca uzanan fay hatları, sığ odaklı yıkıcı depremler üretme potansiyeline sahiptir.",
     },
     faqs: [
       {
-        question: "Avrupa'nın en yüksek zirvesi Mont Blanc mı Elbrus mu?",
+        question: "Avrupa'nın en yüksek dağı Mont Blanc mı, Elbrus mu?",
         answer:
-          "Eğer Kafkas Dağları'nın su bölümü çizgisi Avrupa-Asya sınırı kabul edilirse, Rusya sınırları içindeki 5.642 metrelik Elbrus Dağı Avrupa'nın en yüksek zirvesidir. Kafkaslar sınır dışı tutulduğunda ise Fransa-İtalya sınırındaki 4.808 metrelik Mont Blanc en yüksek dağ sayılır.",
+          "Sınırı nereden çektiğine bağlı. Kafkas Dağları'nın su bölümü çizgisini Avrupa-Asya sınırı sayarsan, Rusya'daki 5.642 metrelik Elbrus en yüksek dağdır. Kafkasları Avrupa'nın dışında tutarsan, Fransa-İtalya sınırındaki 4.808 metrelik Mont Blanc birinci olur.",
       },
       {
         question: "Avrupa neden aynı enlemdeki Kanada ve Sibirya'dan daha sıcaktır?",
         answer:
-          "Meksika Körfezi'nden kuzeydoğuya doğru akan Gulf Stream (Kuzey Atlantik Sıcak Su Akıntısı) ve batı rüzgarları, okyanus üzerindeki devasa ısı enerjisini Batı ve Kuzey Avrupa kıyılarına taşıyarak kış sıcaklıklarını 10-15°C yükseltir.",
+          "Meksika Körfezi'nden kuzeydoğuya akan Golf Akıntısı ve devamı Kuzey Atlantik Akıntısı, okyanusun ısısını batı rüzgârlarıyla birlikte Batı ve Kuzey Avrupa kıyılarına taşır. Bu yüzden kışlar aynı enlemdeki Kanada ve Sibirya'dan çok daha ılık geçer.",
       },
       {
-        question: "Mavi Muz (Blue Banana) ne anlama gelir?",
+        question: "Mavi Muz ne demek?",
         answer:
-          "Londra'dan başlayıp Benelüks, Batı Almanya ve İsviçre üzerinden Milano ve Cenova'ya kadar kavisli bir hat çizen, yaklaşık 110 milyon insanın yaşadığı, Avrupa'nın en yoğun sanayi, ticaret ve nüfus koridorudur.",
+          "Londra'dan başlayıp Benelüks, Batı Almanya ve İsviçre üzerinden Milano ve Cenova'ya kadar kavis çizen şeridin adıdır. Yaklaşık 110 milyon kişinin yaşadığı bu kuşak, Avrupa'da sanayinin, ticaretin ve nüfusun en yoğun olduğu yerdir.",
       },
       {
         question: "Fiyort nedir ve nerede görülür?",
         answer:
-          "Buzul çağlarında derinleşen U şekilli buzul vadilerinin deniz suyu altında kalmasıyla oluşan dik, derin ve uzun körfezlere fiyort denir. Avrupa'da en muazzam örnekleri Norveç kıyılarında ve İskoçya'da görülür.",
+          "Buzulların oyduğu U biçimli vadiler, buzul çağından sonra deniz suyuyla dolunca fiyort denen dik yamaçlı, derin ve uzun körfezler oluşur. Avrupa'daki en bilinen örnekler Norveç ve İskoçya kıyılarındadır.",
       },
     ],
   },
@@ -582,9 +581,9 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameEn: "North America",
     code: "NA",
     taglineTr:
-      "Boylamsal dağ kalkanları, Büyük Göller ve engelsiz hava kütlelerinin çarpışma alanı.",
+      "Dağlar kuzey-güney uzandığı için kutup havası ile tropik hava ovada karşı karşıya gelir.",
     countryCount: 23,
-    countryCountNoteTr: "Kanada, ABD, Meksika, 7 Orta Amerika ve 13 Karayip ada ülkesi.",
+    countryCountNoteTr: "Kanada, ABD, Meksika, 7 Orta Amerika ve 13 Karayip ülkesi.",
     population: 600000000,
     populationFormattedTr: "600 Milyon",
     populationSharePercent: 7.5,
@@ -598,13 +597,13 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
       locationTr: "ABD (Alaska Sıradağları)",
     },
     lowestPoint: {
-      name: "Ölüm Vadisi (Badwater Basin)",
+      name: "Ölüm Vadisi",
       elevationM: -86,
       locationTr: "ABD (Kaliforniya)",
       noteTr: "Kuzey Amerika'nın en derin ve en sıcak çöl çukuru.",
     },
     longestRiver: {
-      name: "Mississippi - Missouri Nehir Sistemi",
+      name: "Mississippi-Missouri",
       lengthKm: 5970,
       noteTr: "Meksika Körfezi'ne dökülen dünyanın en büyük drenaj havzalarından biri.",
     },
@@ -613,54 +612,53 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
       areaKm2: 82100,
     },
     dominantClimateTr: "Kutup Tundrası, Karasal, Ilıman, Step, Çöl ve Karayip Tropikali",
-    classificationSourceTr: "National Geographic & BM M49 — 23 Egemen Devlet Kapsamı",
+    classificationSourceTr: "National Geographic ve BM M49 — 23 Egemen Devlet Kapsamı",
     keyCharacteristicsTr: [
-      "Tornado Alley: Kuzey-güney açık ovalarında kutup ve tropikal hava çarpışması",
-      "Büyük Göller: Dünyanın en büyük tatlı su yüzeyi havzası",
-      "Kordiyera Sistemi: Pasifik boyunca uzanan genç Kayalık Dağlar silsilesi",
+      "Büyük Ovalar'da kutup havası ile tropik hava çarpışır, hortumlar buradan çıkar",
+      "Büyük Göller, yüzey alanıyla dünyanın en büyük tatlı su göl grubu",
+      "Batıda Pasifik boyunca uzanan genç ve sarp Kayalık Dağlar",
     ],
     prose: {
       introTr:
-        "Kuzey Amerika, Arktik dondurucu kutup tundralarından Karayipler'in tropikal mercan adalarına kadar uzanan devasa bir ekolojik yelpazeye sahiptir. Kıtanın morfolojik omurgasını, batıda Pasifik boyunca uzanan genç ve sarp Kayalık Dağlar (Rocky Mountains) ile doğuda aşınmış yaşlı Appalaş Dağları belirler. İki dağ kütlesi arasında doğu-batı yönlü hiçbir doğal engel olmaksızın uzanan devasa Büyük Ovalar (Great Plains), Arktik soğukları ile Meksika Körfezi'nin sıcak-nemli havasının doğrudan çarpışmasına yol açar.",
+        "Kanada'nın kuzeyindeki buzlu Arktik adalardan yola çıkıp güneye inersen tundradan, iğne yapraklı ormanlardan, geniş tahıl ovalarından ve çöllerden geçerek Panama'nın tropik ormanlarına varırsın. Hepsi aynı kıtada. Batıda genç ve sarp Kayalık Dağlar, doğuda aşınmış, yaşlı Appalaş Dağları uzanır. Aradaki Büyük Ovalar'da doğu-batı yönünde hiçbir dağ yoktur. Bu yüzden Arktik'in soğuk havası ile Meksika Körfezi'nin sıcak ve nemli havası burada doğrudan karşılaşır.",
       locationAndBordersTr:
-        "Kuzeyde Arktik Okyanusu, batıda Büyük Okyanus, doğuda Atlas Okyanusu ve güneydoğuda Karayip Denizi ile çevrilidir. Güneyde Panama Kıstağı ve Darién Boşluğu bataklıkları üzerinden Güney Amerika'ya bağlanır.\n\nKıtanın kapsamı konusunda iki yaklaşım vardır: BM M49 şeması dar 'Kuzey Amerika'yı yalnızca ABD ve Kanada çekirdeği olarak tanımlarken, National Geographic ve fiziki coğrafya literatürü Orta Amerika ve Karayip ada devletlerini Panama Kıstağı'na kadar tek bir kıta kabul eder. Projemiz bu kapsamlı fiziki coğrafya yaklaşımını benimser.",
+        "Kuzeyde Arktik Okyanusu, batıda Büyük Okyanus, doğuda Atlas Okyanusu, güneydoğuda Karayip Denizi vardır. Güneyde Panama Kıstağı ve Darién Boşluğu'nun bataklıkları üzerinden Güney Amerika'ya bağlanır.\n\nKıtanın nerede bittiği kaynağa göre değişir. BM M49 şeması 'Kuzey Amerika' adını yalnızca ABD ve Kanada için kullanır. National Geographic ve fiziki coğrafya kitapları ise Orta Amerika ile Karayip adalarını da katar, kıtayı Panama Kıstağı'na kadar uzatır. Bu sitede ikinci yaklaşım kullanılır.",
       landformsAndGeologyTr:
-        "Kıta üç ana jeolojik kuşağa ayrılır. Doğuda yaklaşık 480 milyon yıl önceki kaledoniyen orojenezle yükselmiş, zamanla erozyonla yuvarlak tepelere dönüşmüş Appalaş Dağları yer alır. Merkezde ve kuzeyde ise yeryüzünün en yaşlı kayaçlarını barındıran, buzul aşındırmasıyla binlerce göl çanağı kazanmış sert kristalin Kanada Kalkanı uzanır.\n\nBatı kuşağında ise Pasifik levhası ile Kuzey Amerika levhasının sürtünmesi ve bindirmesiyle yükselen Kuzey Amerika Kordiyerası (Kayalık Dağlar, Cascade ve Sierra Nevada sıraları) yer alır. Bu genç dağ zincirleri aktif faylar, volkanlar ve derin kanyonlarla (Büyük Kanyon) şekillenmiştir.",
+        "Kıtayı üç büyük kuşağa ayırabilirsin. Doğuda Appalaş Dağları vardır. Yaklaşık 480 milyon yıl önce yükselmeye başlayan bu dağlar, aşınarak yuvarlak tepelere dönüşmüştür. Ortada ve kuzeyde Kanada Kalkanı uzanır. Burada yeryüzünün en yaşlı kayaçları yüzeye çıkar. Buzullar bu sert zemini oyarak binlerce göl çanağı açmıştır.\n\nBatıda ise Pasifik levhası ile Kuzey Amerika levhasının birbirine sürtünüp bindirmesiyle yükselen genç dağlar yer alır: Kayalık Dağlar, Cascade ve Sierra Nevada sıraları. Bu kuşakta aktif faylar, volkanlar ve Büyük Kanyon gibi derin kanyonlar bulunur.",
       climateAndVegetationTr:
-        "Kuzey Amerika iklimini en çok etkileyen fiziki unsur, sıradağların enlemesine (doğu-batı) değil boylamasına (kuzey-güney) uzanmasıdır. Bu durum, kutup kökenli dondurucu hava kütlelerinin (blizzard) hiçbir engele çarpmadan Teksas ve Meksika Körfezi'ne kadar inebilmesine, güneyin sıcak nemli havasının ise iç kesimlere sokulabilmesine neden olur.\n\nBu iki zıt hava kütlesinin Büyük Ovalar üzerinde temas ettiği hat, dünyanın en şiddetli hortumlarının üretildiği 'Hortum Vadisi'ni (Tornado Alley) oluşturur. Batı kıyısında Akdeniz ve okyanusal iklimler, güneybatıda kurak Sonora ve Mojave çölleri, kuzeyde ise tayga ve tundra kuşağı yer alır.",
+        "Kuzey Amerika'nın iklimini en çok belirleyen şey dağların yönüdür. Sıradağlar doğu-batı değil, kuzey-güney doğrultusunda uzanır. Kutuptan gelen dondurucu hava hiçbir engele takılmadan Teksas'a ve Meksika Körfezi'ne kadar iner. Güneyin sıcak ve nemli havası da aynı yoldan iç kesimlere sokulur.\n\nBu iki hava kütlesinin Büyük Ovalar üzerinde buluştuğu hatta 'Hortum Koridoru' denir. Dünyada hortumların en sık ve en şiddetli görüldüğü yer burasıdır. Batı kıyısında Akdeniz ve okyanusal iklim, güneybatıda kurak Sonora ve Mojave çölleri, kuzeyde tayga ve tundra kuşağı yer alır.",
       hydrographyTr:
-        "Kıtanın kalbinde yer alan Büyük Göller (Superior, Michigan, Huron, Erie, Ontario), buzul gerilemesiyle oluşmuş, dünya yüzey tatlı su rezervlerinin yaklaşık beşte birini tutan devasa bir hidrolojik sistemdir. Saint Lawrence Nehri vasıtasıyla Atlas Okyanusu'na bağlanan bu sistem kıta içi ağır gemi taşımacılığına imkân tanır.\n\nMississippi-Missouri nehir sistemi ise 30'dan fazla eyaleti drene ederek kıtanın tarımsal kalbini Meksika Körfezi'ne bağlar. Batıda ise dağları yararak ilerleyen Kolorado Nehri kurak güneybatının can damarıdır.",
+        "Kıtanın ortasındaki Büyük Göller (Superior, Michigan, Huron, Erie, Ontario) buzulların çekilmesiyle oluştu. Dünyadaki yüzey tatlı suyunun yaklaşık beşte biri bu göllerdedir. Saint Lawrence Nehri gölleri Atlas Okyanusu'na bağlar, böylece büyük gemiler kıtanın içine kadar girebilir.\n\nMississippi-Missouri sistemi 30'dan fazla eyaletin suyunu toplar ve tarım bölgelerini Meksika Körfezi'ne bağlar. Batıda dağları yararak akan Kolorado Nehri, kurak güneybatının en önemli su kaynağıdır.",
       populationAndSettlementTr:
-        "Nüfus, su ve ticaret yollarının en elverişli olduğu kıyılarda ve Büyük Göller çevresinde toplanmıştır. Boston'dan Washington D.C.'ye uzanan BosWash megalopolü, kıtanın siyasi ve finansal ağırlık merkezidir. Kaliforniya kıyıları ve Meksika'nın yüksek platoları (Meksiko metropolü) diğer yoğun alanlardır.\n\nBuna karşılık kurak Büyük Havza (Great Basin), Kayalık Dağların yüksek kesimleri ve Kanada ile Alaska'nın donmuş kuzey toprakları son derece seyrek bir nüfus yoğunluğu sergiler.",
+        "İnsanlar suyun ve ticaret yollarının kolay olduğu kıyılarda ve Büyük Göller çevresinde toplanmıştır. Boston'dan Washington D.C.'ye kadar kesintisiz uzanan kentler kuşağına BosWash denir. Burası kıtanın siyaset ve finans merkezidir. Kaliforniya kıyıları ile Meksika'nın yüksek platoları, özellikle Meksiko şehri, diğer kalabalık bölgelerdir.\n\nKurak Büyük Havza, Kayalık Dağlar'ın yüksek kesimleri ve Kanada ile Alaska'nın donmuş kuzeyi ise neredeyse boştur.",
       economyAndResourcesTr:
-        "Kuzey Amerika dünyanın en büyük gayrisafi hasılasını üreten küresel ekonomik bir devdir. Büyük Ovalar dünyanın tahıl ambarı olup mısır, soya ve buğday üretiminde küresel liderdir. Kayaç gazı ve hidrolik çatlatma teknolojileriyle ABD ve Kanada dünyanın en büyük hidrokarbon üreticileri arasındadır.\n\nKaliforniya'daki Silikon Vadisi küresel bilişim, yapay zekâ ve yazılım endüstrisinin merkezidir. NAFTA (yeni adıyla USMCA) serbest ticaret anlaşması Kanada, ABD ve Meksika üretim zincirlerini entegre etmiştir.",
+        "Büyük Ovalar kıtanın tahıl ambarıdır: mısır, soya ve buğday burada yetişir. ABD ve Kanada, kaya gazı ve hidrolik çatlatma yöntemiyle dünyanın en büyük petrol ve doğal gaz üreticileri arasına girmiştir.\n\nKaliforniya'daki Silikon Vadisi yazılım, bilişim ve yapay zekâ şirketlerinin merkezidir. Kanada, ABD ve Meksika arasındaki serbest ticaret anlaşması NAFTA, bugünkü adıyla USMCA, üç ülkenin fabrikalarını tek bir üretim zincirine bağlamıştır.",
       subregionsIntroTr:
-        "Kuzey Amerika kıtası üç ana jeopolitik ve coğrafi kuşağa ayrılır: Anglo-Amerika (ABD ve Kanada), Orta Amerika kıstağı ve Karayip Ada Devletleri.",
+        "Kıta üç parçaya ayrılır: ABD ile Kanada'nın oluşturduğu Anglo-Amerika, Orta Amerika kıstağı ve Karayip adaları.",
       disasterAndEnvironmentTr:
-        "Batı kıyısı boyunca uzanan San Andreas Fay Hattı, Kaliforniya'da yıkıcı deprem potansiyeli taşır. Cascade Sıradağları'nda yer alan Saint Helens ve Rainier gibi volkanlar aktiftir.\n\nMeksika Körfezi ve Karayip kıyıları her sonbaharda Atlas Okyanusu üzerinden gelen yıkıcı kasırgaların (hurricanes) hedefi olurken, iç ovalar her bahar yüzlerce ölümcül hortumla sarsılır. Batıda ise kuraklık kaynaklı kontrol edilemeyen orman yangınları büyümektedir.",
+        "Batı kıyısı boyunca uzanan San Andreas Fayı, Kaliforniya'da yıkıcı depremler üretebilir. Cascade Sıradağları'ndaki Saint Helens ve Rainier volkanları aktiftir.\n\nMeksika Körfezi ve Karayip kıyıları her sonbahar Atlas Okyanusu'ndan gelen kasırgalarla vurulur. İç ovalarda her bahar yüzlerce hortum görülür ve bunların bir kısmı can alır. Batıda kuraklığa bağlı orman yangınları giderek büyüyor.",
       historicalAndCulturalTr:
-        "Kıta, on binlerce yıl önce Bering Boğazı üzerinden geçen yerli halkların (İnuitler, Kızılderililer, Mayalar, Aztekler) kadim yurdudur. 1492 sonrasında başlayan yoğun Avrupalı kolonizasyonu yerli nüfusu dramatik biçimde azaltmış; ardından köle ticareti ve 19-20. yüzyıllarda dünyanın her köşesinden gelen göç dalgalarıyla çok kültürlü çağdaş toplumlar inşa edilmiştir.",
+        "Kıtanın ilk halkları on binlerce yıl önce Bering Boğazı üzerinden geldi. İnuitler, Mayalar, Aztekler ve daha birçok yerli halk bu topraklarda yaşadı. 1492'den sonra başlayan Avrupa sömürgeciliği yerli nüfusu çok büyük ölçüde azalttı. Ardından köle ticareti ve 19-20. yüzyıllarda dünyanın her yerinden gelen göçmenler, bugünkü çok kültürlü toplumları oluşturdu.",
     },
     subregions: [
       {
-        nameTr: "Kuzey Amerika Çekirdeği (Anglo-Amerika)",
+        nameTr: "Anglo-Amerika",
         nameEn: "Northern America",
-        descriptionTr:
-          "Kanada ve Amerika Birleşik Devletleri; yüksek sanayi, geniş tarım ovaları ve ileri teknoloji.",
+        descriptionTr: "Kanada ve ABD: güçlü sanayi, geniş tarım ovaları ve ileri teknoloji.",
         sampleCountriesTr: ["Amerika Birleşik Devletleri", "Kanada"],
       },
       {
         nameTr: "Orta Amerika",
         nameEn: "Central America",
         descriptionTr:
-          "Meksika'dan Panama Kıstağı'na uzanan volkanik dağlar, tropikal ormanlar ve Maya mirası.",
+          "Meksika'dan Panama Kıstağı'na volkanik dağlar ve tropik ormanlar. Maya kentlerinin kalıntıları bu kuşaktadır.",
         sampleCountriesTr: ["Meksika", "Guatemala", "Kosta Rika", "Panama", "Honduras"],
       },
       {
         nameTr: "Karayipler",
         nameEn: "Caribbean",
         descriptionTr:
-          "Büyük ve Küçük Antiller adalar kuşağı, tropikal iklim, deniz turizmi ve şeker kamışı tarımı.",
+          "Büyük ve Küçük Antiller'in adaları. Tropik iklim, deniz turizmi ve şeker kamışı tarımı.",
         sampleCountriesTr: [
           "Küba",
           "Dominik Cumhuriyeti",
@@ -673,15 +671,15 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     ],
     disasterProfile: {
       primaryRisks: [
-        "Meksika Körfezi ve Karayiplerde Kategori 4-5 Yıkıcı Kasırgalar (Hurricanes)",
-        "San Andreas Fayı ve Pasifik Levhası Sismik Tehlikesi",
-        "Büyük Ovalar Hortum Kuşağı (Tornado Alley)",
-        "Batı ABD ve Kanada'da Şiddetli Orman Yangınları",
+        "Meksika Körfezi ve Karayipler'de 4. ve 5. kategori kasırgalar",
+        "San Andreas Fayı ve Pasifik levhası boyunca depremler",
+        "Büyük Ovalar'daki hortum koridoru",
+        "Batı ABD ve Kanada'da büyük orman yangınları",
       ],
       faultLinesOrZones: [
-        "San Andreas Doğrultu Atımlı Fay Sistemi (Kaliforniya)",
-        "Cascadia Dalma-Batma Zonu (Kuzeybatı Pasifik)",
-        "Karayip Levha Sınırı Fay Zonu",
+        "San Andreas doğrultu atımlı fayı, Kaliforniya",
+        "Cascadia dalma-batma zonu, kuzeybatı Pasifik kıyısı",
+        "Karayip levhasının sınırındaki faylar",
       ],
       warningNoteTr:
         "Cascadia dalma-batma zonu, M≥9.0 büyüklüğünde megathrust depremi ve devasa tsunami üretme potansiyeline sahiptir.",
@@ -690,22 +688,22 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
       {
         question: "Orta Amerika ve Karayipler Kuzey Amerika'ya mı dahildir?",
         answer:
-          "Evet; fiziki coğrafya açısından Kuzey Amerika kıtası Kanada'nın kuzey kutup adalarından Panama Kıstağı'na kadar uzanır ve tüm Orta Amerika ile Karayip ada ülkelerini kapsar.",
+          "Fiziki coğrafyaya göre evet. Kuzey Amerika, Kanada'nın kutup adalarından Panama Kıstağı'na kadar uzanır. Orta Amerika ülkeleri ve Karayip adaları da bu kıtaya girer.",
       },
       {
-        question: "Tornado Alley (Hortum Vadisi) neden Kuzey Amerika'dadır?",
+        question: "Kuzey Amerika'da neden bu kadar çok hortum görülür?",
         answer:
-          "Kıtanın ortasında doğu-batı yönlü bir sıradağ olmaması, kuzeyin soğuk-kuru Arktik havası ile Meksika Körfezi'nin sıcak-nemli tropikal havasının Teksas-Kansas hattında engelsizce çarpışmasına ve süperhücre fırtınalarına yol açar.",
+          "Kıtanın ortasında doğu-batı yönünde uzanan bir sıradağ yoktur. Kuzeyden gelen soğuk ve kuru Arktik havası ile Meksika Körfezi'nin sıcak ve nemli havası, Teksas-Kansas hattında hiçbir engele takılmadan çarpışır. Bu çarpışma şiddetli fırtınalar ve hortumlar doğurur.",
       },
       {
         question: "Büyük Göller nasıl oluşmuştur?",
         answer:
-          "Büyük Göller, Son Buzul Çağı'nda (yaklaşık 14.000 yıl önce) kıtayı kaplayan dev Laurentide Buzul Kalkanı'nın yumuşak kayaçları oyması ve buzulun erimesiyle oluşan çanakların tatlı suyla dolması sonucu meydana gelmiştir.",
+          "Son Buzul Çağı'nda kıtayı Laurentide Buzul Kalkanı kaplıyordu. Buzul yumuşak kayaçları oyarak derin çanaklar açtı. Yaklaşık 14.000 yıl önce buzul eriyince bu çanaklar tatlı suyla doldu ve Büyük Göller oluştu.",
       },
       {
         question: "Ölüm Vadisi neden dünyanın en sıcak yerlerinden biridir?",
         answer:
-          "Deniz seviyesinin 86 metre altında yer alan derin çöküntü havzası, yüksek sıradağlarla çevrilidir; alçalan kuru hava sıkışarak aşırı ısınır ve vadi duvarları arasında hapsolur.",
+          "Vadi deniz seviyesinin 86 metre altındadır ve etrafı yüksek dağlarla çevrilidir. Aşağı inen kuru hava sıkıştıkça ısınır, vadi duvarlarının arasında sıkışıp kalır.",
       },
     ],
   },
@@ -717,9 +715,9 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameTr: "Güney Amerika",
     nameEn: "South America",
     code: "SA",
-    taglineTr: "And Dağları'nın tek eksenli omurgası, Amazon Yağmur Ormanları ve Lityum Üçgeni.",
+    taglineTr: "Batıda And Dağları yükselir, doğuya doğru arazi alçalıp Amazon ormanına iner.",
     countryCount: 12,
-    countryCountNoteTr: "12 bağımsız devlet (Fransız Guyanası denizaşırı bölgesi hariç).",
+    countryCountNoteTr: "12 bağımsız devlet. Fransız Guyanası Fransa'ya bağlı, sayıya girmez.",
     population: 435000000,
     populationFormattedTr: "435 Milyon",
     populationSharePercent: 5.4,
@@ -748,93 +746,93 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
       areaKm2: 8372,
     },
     dominantClimateTr:
-      "Ekvatoral Tropikal Yağmur Ormanı, Savan, Yarı Kurak Pampa, Atakama Çölü ve Dağ İklimi",
+      "Ekvatoral Tropikal Yağmur Ormanı, Savan, Yarı Kurak Pampa, Atacama Çölü ve Dağ İklimi",
     classificationSourceTr: "BM İstatistik Bölümü (UN M49) — Amerika Kıtası Alt Bölgesi",
     keyCharacteristicsTr: [
-      "And Dağları: 7.000 km uzunluğuyla dünyanın en uzun kesintisiz dağ zinciri",
-      "Amazon Biyomu: Yeryüzündeki türlerin %10'undan fazlasını barındıran biyolojik çeşitlilik",
-      "Atakama Çölü: Çifte yağmur gölgesi ve soğuk Humboldt akıntısıyla dünyanın en kurak yeri",
+      "And Dağları, 7.000 km boyunca kesintisiz uzanan en uzun dağ zinciri",
+      "Amazon Havzası'nda dünyanın en geniş tropikal yağmur ormanı",
+      "Atacama, kutuplar dışında dünyanın en kurak çölü",
     ],
     prose: {
       introTr:
-        "Güney Amerika'nın fiziki coğrafyası, Afrika'nın çoklu havza-plato yapısının aksine tek bir baskın eksen üzerinde organize olmuştur: Batı kıyısı boyunca baştan sona uzanan And Dağları. Nazca levhasının kıtasal levhanın altına dalmasıyla yükselen bu 7.000 kilometrelik devasa bariyer, kıtanın akarsu yönelimlerinden iklim kuşaklarına, maden dağılımından yerleşim desenine kadar tüm sistemlerini tek başına belirler.",
+        "Kıtanın batı kıyısı boyunca And Dağları bir duvar gibi yükselir. Doğuya geçince arazi alçalır ve Amazon Havzası'nın ormanla kaplı ovaları başlar. Güney Amerika'nın coğrafyası bu iki parçanın karşıtlığıyla anlaşılır.\n\nAnd Dağları, Nazca levhasının kıtanın altına dalmasıyla yükselmiştir ve 7.000 kilometre boyunca uzanır. Akarsuların hangi yöne aktığını, yağışın nereye düştüğünü, madenlerin ve şehirlerin nerede toplandığını büyük ölçüde bu dağlar belirler.",
       locationAndBordersTr:
-        "Kuzeyde Panama Kıstağı ve Darién Boşluğu üzerinden Orta Amerika'ya bağlanır. Doğuda Atlas Okyanusu, batıda Büyük Okyanus, kuzeyde Karayip Denizi ve güneyde fırtınalı Drake Boğazı ile çevrilidir. Drake Boğazı, kıtayı Antarktika'dan yaklaşık 1.000 kilometrelik açık deniz mesafesiyle ayırır.",
+        "Kıta kuzeyde Panama Kıstağı ve Darién Boşluğu üzerinden Orta Amerika'ya bağlanır. Doğusunda Atlas Okyanusu, batısında Büyük Okyanus, kuzeyinde Karayip Denizi vardır. Güneyde fırtınalı Drake Boğazı, kıtayı Antarktika'dan yaklaşık 1.000 kilometrelik açık denizle ayırır.",
       landformsAndGeologyTr:
-        "Kıtanın morfolojisi üç ana kuşaktan oluşur. Batıda Pasifik Ateş Çemberi'nin parçası olan genç, sismik açıdan son derece aktif ve dünyanın en yüksek volkanlarını barındıran And Dağları sıralanır. Andların orta kesiminde, Doğu ve Batı Kordiyera arasında sıkışmış 3.800 metre irtifadaki Altiplano Yaylası uzanır.\n\nKıtanın doğusunda ise Prekambriyen döneminden kalma aşınmış, durağan Guyana ve Brezilya Kalkanları yer alır. Bu iki yükselti kütlesinin arasında ise yeryüzünün en geniş alüvyal çöküntü ovaları olan Amazon Havzası ve güneydeki Paraná-Paraguay (Gran Chaco ve Pampa) ovaları uzanır.",
+        "Kıtayı batıdan doğuya üç kuşağa ayırabilirsin. En batıda And Dağları uzanır. Pasifik Ateş Çemberi'nin parçası olan bu genç dağlarda depremler sık yaşanır ve dünyanın en yüksek volkanları buradadır. Dağların orta kesiminde, Doğu ve Batı Kordiyera arasında, 3.800 metre yükseklikteki Altiplano Yaylası yer alır.\n\nDoğuda Prekambriyen'den kalma, aşınmış ve sakin Guyana ve Brezilya kalkanları bulunur. Bu iki yüksek alanın arasında akarsuların taşıdığı tortularla dolmuş geniş ovalar yayılır: kuzeyde Amazon Havzası, güneyde Paraná-Paraguay ovaları, yani Gran Chaco ve Pampa.",
       climateAndVegetationTr:
-        "Amazon Havzası, ekvatoral konumu ve Atlas Okyanusu'ndan gelen alize rüzgarlarının taşıdığı nemin And Dağları'na çarpıp yoğuşması sayesinde dünyanın en geniş tropikal yağmur ormanını barındırır. Kıtanın güney kesiminde yer alan Pampa düzlükleri verimli ılıman çayırlarla örtülüdür.\n\nBuna karşın kıtanın batısında, Şili'de yer alan Atakama Çölü kutuplar haricinde dünyanın en kurak yeridir. Atakama'nın aşırı kuraklığı çifte mekanizmanın sonucudur: And Dağları doğudan gelen tüm Atlantik nemini keserken (yağmur gölgesi), batıda Büyük Okyanus kıyısından akan soğuk Humboldt (Peru) Akıntısı denizel havanın yükselip yağış bırakmasını kesinlikle önler.",
+        "Amazon Havzası ekvator üzerindedir. Alize rüzgârlarının Atlas Okyanusu'ndan getirdiği nem And Dağları'na çarpınca yağmura dönüşür. Dünyanın en geniş tropikal yağmur ormanı bu yağışla beslenir. Güneydeki Pampa düzlükleri ise verimli ılıman çayırlarla örtülüdür.\n\nBatıda, Şili'deki Atacama Çölü kutuplar dışında dünyanın en kurak yeridir. Kuraklığın iki nedeni var. And Dağları doğudan gelen Atlantik nemini keser. Batıda kıyı boyunca akan soğuk Humboldt (Peru) Akıntısı da deniz havasını serinletir, havanın yükselip yağmur bırakmasına izin vermez.",
       hydrographyTr:
-        "Amazon Nehri tek başına dünya denizlerine dökülen nehir suyunun yaklaşık beşte birini taşır. Havza genişliği 7 milyon kilometrekareyi bulur ve 1.100'den fazla kol ile beslenir. And Dağları'nın batı yamacından doğup kıtayı doğuya doğru boydan boya kat eden Amazon, Atlas Okyanusu'na boşalırken tuzlu suyu yüzlerce kilometre açığa kadar seyreltir.\n\nGüneyde Paraná ve Uruguay nehirlerinin birleşerek oluşturduğu Río de la Plata halici, kıtanın ikinci büyük drenaj sistemidir. 3.812 metre irtifadaki Titicaca Gölü ise dünyanın ticari gemi işletilen en yüksek gölüdür.",
+        "Amazon Nehri, dünya denizlerine dökülen nehir suyunun yaklaşık beşte birini tek başına taşır. Havzası 7 milyon kilometrekareyi bulur ve 1.100'den fazla kolla beslenir. And Dağları'nın batı yamacından doğar, kıtayı doğuya doğru boydan boya geçer. Atlas Okyanusu'na döküldüğü yerde deniz suyunu yüzlerce kilometre açığa kadar tatlılaştırır.\n\nGüneyde Paraná ve Uruguay nehirleri birleşerek Río de la Plata halicini oluşturur; bu, kıtanın ikinci büyük akarsu sistemidir. 3.812 metre yükseklikteki Titicaca Gölü ise ticari gemilerin çalıştığı dünyanın en yüksek gölüdür.",
       populationAndSettlementTr:
-        "Güney Amerika nüfusu kıtanın kıyı kenarlarında kümelenmiştir ('içi boş kıta' modeli). Atlas Okyanusu kıyısında São Paulo, Rio de Janeiro ve Buenos Aires; Pasifik kıyısında ise Lima ve Santiago gibi dev metropoller yer alır.\n\nİç kısımlarda yer alan devasa Amazon Havzası aşırı nem, sık bitki örtüsü ve ulaşım güçlüğü nedeniyle; güneydeki Patagonya platosu ise şiddetli rüzgarlar ve soğuk çöl iklimi nedeniyle son derece seyrek nüfusludur.",
+        "Güney Amerikalıların çoğu kıyılarda yaşar, iç kesimler boş kalır. Atlas Okyanusu kıyısında São Paulo, Rio de Janeiro ve Buenos Aires, Büyük Okyanus kıyısında Lima ve Santiago gibi büyük şehirler vardır.\n\nİçerideki Amazon Havzası'nda nem, sık orman ve ulaşım zorluğu yerleşmeyi güçleştirir. Güneydeki Patagonya platosunda ise sert rüzgârlar ve soğuk, kurak iklim yüzünden nüfus çok seyrektir.",
       economyAndResourcesTr:
-        "And Dağları'nın volkanik ve hidrotermal zenginliği, kıtayı küresel bir madencilik devine dönüştürmüştür. Şili ve Peru dünya bakır üretiminin liderleridir. Şili, Bolivya ve Arjantin sınırlarının kesiştiği yüksek tuz düzlükleri (Salar de Uyuni, Salar de Atacama), küresel lityum rezervlerinin yarısından fazlasını barındıran 'Lityum Üçgeni'ni oluşturur.\n\nVenezuela dünyanın en büyük kanıtlanmış ham petrol rezervlerine sahiptir. Brezilya ve Arjantin ise Pampa ve Cerrado ovalarında soya, mısır, sığır eti ve kahve üretiminde küresel tarım devleridir.",
+        "And Dağları'nın volkanik yapısı kıtaya zengin maden yatakları kazandırmıştır. Şili ve Peru dünyada en çok bakır üreten ülkelerdendir. Şili, Bolivya ve Arjantin'in sınırlarının buluştuğu yüksek tuz düzlükleri (Salar de Uyuni, Salar de Atacama) 'Lityum Üçgeni' diye anılır; dünyadaki lityum kaynaklarının yarısından fazlası buradadır.\n\nVenezuela, dünyanın kanıtlanmış en büyük ham petrol rezervine sahiptir. Brezilya ve Arjantin, Pampa ve Cerrado ovalarında yetiştirdikleri soya, mısır, kahve ve sığır etiyle dünyanın önde gelen tarım üreticilerindendir.",
       subregionsIntroTr:
-        "Güney Amerika, coğrafi ve iktisadi açıdan And Ülkeleri, Brezilya kara kütlesi ve Güney Koni (Southern Cone) olmak üzere üç temel bölgeye ayrılır.",
+        "Güney Amerika üç bölgeye ayrılarak incelenir: And ülkeleri, Brezilya ve kıtanın güney ucundaki Güney Koni.",
       disasterAndEnvironmentTr:
-        "Kıtanın batısı Pasifik Ateş Çemberi'nin en tehlikeli segmentlerinden biridir. 1960 yılında kaydedilen 9.5 büyüklüğündeki Valdivia Depremi aletsel dönemin en büyük depremidir. And Dağları'ndaki Cotopaxi ve Villarrica gibi buzullarla kaplı volkanlar lav ve çamur akıntıları (lahar) riski taşır.\n\nEn büyük çevre krizi ise tarım ve sığır otlakları açmak için Amazon yağmur ormanlarında sürdürülen ormansızlaşmadır. Ayrıca El Niño ve La Niña iklim salınımları kıtada yıkıcı kuraklıklara veya fırtınalı sellere yol açar.",
+        "Kıtanın batısı Pasifik Ateş Çemberi'nin en tehlikeli kesimlerinden biridir. 1960'taki 9,5 büyüklüğündeki Valdivia Depremi, ölçüm aletleriyle kaydedilmiş en büyük depremdir. And Dağları'ndaki Cotopaxi ve Villarrica gibi tepesi buzulla kaplı volkanlar patladığında eriyen buz, çamur akıntılarına yol açabilir.\n\nEn büyük çevre sorunu, tarla ve sığır otlağı açmak için Amazon ormanlarının kesilmesidir. El Niño ve La Niña dönemleri de kıtada ağır kuraklıklara ya da sellere neden olur.",
       historicalAndCulturalTr:
-        "Kıta, And Yaylaları'nda taş mimarisi ve teras tarımıyla yükselen İnka İmparatorluğu'nun beşiğidir. 1494 Tordesillas Antlaşması ile Papalık, keşfedilen yeni toprakları İspanya ve Portekiz arasında paylaştırmıştır. Bu meridyen çizgisi bugünün dil haritasını belirlemiştir: Doğuda kalan Brezilya Portekizceyi benimserken, kıtanın geri kalanı İspanyolca konuşan bir dünyaya dönüşmüştür.",
+        "İnka İmparatorluğu, And yaylalarında taş yapılar ve basamaklı teras tarlalarıyla yükseldi. 1494'teki Tordesillas Antlaşması ile İspanya ve Portekiz, keşfedilen yeni toprakları bir meridyen boyunca paylaştı. Bu çizgi bugünkü dil haritasını belirledi: doğuda kalan Brezilya Portekizce, kıtanın geri kalanı İspanyolca konuşur.",
     },
     subregions: [
       {
         nameTr: "And Ülkeleri",
         nameEn: "Andean States",
         descriptionTr:
-          "And Dağları omurgası, Altiplano maden havzaları, kadim İnka kültürü ve Pasifik kıyıları.",
+          "And Dağları boyunca dizilen ülkeler: Altiplano'nun madenleri, İnka mirası ve Büyük Okyanus kıyıları.",
         sampleCountriesTr: ["Peru", "Bolivya", "Kolombiya", "Ekvador", "Şili", "Venezuela"],
       },
       {
         nameTr: "Brezilya Kara Kütlesi",
         nameEn: "Brazil Landmass",
         descriptionTr:
-          "Kıtanın neredeyse yarısını kaplayan Amazon ormanları, Cerrado tarımı ve Portekiz mirası.",
+          "Kıtanın neredeyse yarısı. Amazon ormanları, Cerrado'nun tarım alanları ve Portekiz mirası.",
         sampleCountriesTr: ["Brezilya"],
       },
       {
-        nameTr: "Güney Koni (Southern Cone)",
+        nameTr: "Güney Koni",
         nameEn: "Southern Cone",
         descriptionTr:
-          "Pampa düzlükleri, Río de la Plata havzası, ılıman iklim ve Avrupa kökenli kentsel kültür.",
+          "Pampa düzlükleri ve Río de la Plata havzası. İklimi ılıman, şehirlerinde Avrupalı göçmenlerin izi belirgin.",
         sampleCountriesTr: ["Arjantin", "Şili", "Uruguay", "Paraguay"],
       },
     ],
     disasterProfile: {
       primaryRisks: [
-        "Pasifik Ateş Çemberi Megathrust Depremleri (M≥8.5) ve Tsunami",
-        "Buzul Kaplı And Volkanlarının Patlamaları ve Çamur Akıntıları (Lahar)",
-        "Amazon Havzasında Geniş Çaplı Ormansızlaşma ve Biyoçeşitlilik Kaybı",
-        "El Niño / La Niña Kaynaklı Şiddetli Kuraklık ve Sel Dalgaları",
+        "Pasifik kıyısında 8,5 ve üzeri büyüklükte depremler ve tsunamiler",
+        "Buzulla kaplı And volkanlarının patlamaları ve çamur akıntıları",
+        "Amazon'da orman kaybı ve bununla yok olan türler",
+        "El Niño ve La Niña dönemlerinde ağır kuraklık ve seller",
       ],
       faultLinesOrZones: [
-        "Peru-Şili Hendeği (Nazca - Güney Amerika Levha Dalma Zonu)",
-        "Kuzey And Fay Sistemi",
-        "Magallanes-Fagnano Fayı (Tierra del Fuego)",
+        "Peru-Şili Hendeği, Nazca levhasının Güney Amerika levhasının altına daldığı hat",
+        "Kuzey And fay sistemi",
+        "Magallanes-Fagnano Fayı, Ateş Toprakları",
       ],
       warningNoteTr:
         "Tarihin aletsel olarak ölçülmüş en büyük depremi (M=9.5, 1960 Valdivia) bu kıtanın batı kıyısında gerçekleşmiştir.",
     },
     faqs: [
       {
-        question: "Atakama Çölü neden dünyanın en kurak yeridir?",
+        question: "Atacama Çölü neden bu kadar kurak?",
         answer:
-          "Doğudaki 6.000 metrelik And Dağları Atlantik'ten gelen tüm nemli hava kütlelerini keserek devasa bir yağmur gölgesi yaratır; batıdaki soğuk Humboldt Akıntısı ise kıyı havasını soğutup konveksiyonu engeller. Bu çifte bariyer Atakama'yı neredeyse sıfır yağışlı bir çöle dönüştürür.",
+          "Atacama, kutuplar dışındaki en kurak çöldür. Doğusundaki 6.000 metrelik And Dağları, Atlantik'ten gelen nemli havayı keser. Batısındaki soğuk Humboldt Akıntısı ise kıyıdaki havayı serinletir ve yükselip bulut oluşturmasını önler. Bu iki engel yüzünden bazı kesimlerine neredeyse hiç yağmur düşmez.",
       },
       {
-        question: "Lityum Üçgeni nedir ve neden stratejiktir?",
+        question: "Lityum Üçgeni nedir, neden önemlidir?",
         answer:
-          "Şili, Bolivya ve Arjantin'in yüksek And platolarındaki tuz düzlüklerinin (salar) oluşturduğu üçgendir. Elektrikli araç bataryalarının hammaddesi olan küresel lityum rezervlerinin %50'den fazlası bu havzada bulunur.",
+          "Şili, Bolivya ve Arjantin'in yüksek And platolarındaki tuz düzlüklerinin oluşturduğu alandır. Elektrikli araç pillerinde kullanılan lityumun dünyadaki kaynaklarının yarısından fazlası burada bulunur.",
       },
       {
-        question: "Brezilya neden İspanyolca değil Portekizce konuşur?",
+        question: "Brezilya'da neden İspanyolca değil Portekizce konuşulur?",
         answer:
-          "1494 yılında İspanya ve Portekiz arasında imzalanan Tordesillas Antlaşması ile dünya ikiye bölünmüş; bu meridyenin doğusunda kalan Güney Amerika burnu (bugünkü Brezilya) Portekiz egemenliğine bırakılmıştır.",
+          "1494'te İspanya ile Portekiz arasında imzalanan Tordesillas Antlaşması, yeni keşfedilen toprakları bir meridyen boyunca ikiye böldü. Bu çizginin doğusunda kalan, bugünkü Brezilya'nın bulunduğu kesim Portekiz'e bırakıldı.",
       },
       {
-        question: "Amazon Nehri'nin debisi ne kadardır?",
+        question: "Amazon Nehri ne kadar su taşır?",
         answer:
-          "Amazon Nehri saniyede yaklaşık 209.000 metreküp su taşır. Bu miktar, kendisinden sonra gelen en büyük yedi nehrin toplam debisinden daha fazladır ve dünya okyanuslarına karışan toplam nehir suyunun yaklaşık beşte biridir.",
+          "Amazon saniyede yaklaşık 209.000 metreküp su taşır. Bu, ondan sonra gelen en büyük yedi nehrin toplamından fazladır ve okyanuslara karışan tüm nehir suyunun yaklaşık beşte biri eder.",
       },
     ],
   },
@@ -846,9 +844,10 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameTr: "Okyanusya",
     nameEn: "Oceania",
     code: "OC",
-    taglineTr: "Ada dünyası, 40 milyon km² deniz yetki alanı ve iklim krizinin ön cephesi.",
+    taglineTr:
+      "Karası 8,5 milyon km², ülkelerinin denizdeki hak alanı ise 40 milyon km²'yi aşıyor.",
     countryCount: 14,
-    countryCountNoteTr: "14 bağımsız egemen ada devleti (Avustralya anakarası dahil).",
+    countryCountNoteTr: "Avustralya dahil 14 bağımsız devlet.",
     population: 45000000,
     populationFormattedTr: "45 Milyon",
     populationSharePercent: 0.6,
@@ -857,19 +856,19 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     areaSharePercent: 5.7,
     densityPerKm2: 5,
     highestPoint: {
-      name: "Puncak Jaya (Carstensz) / Wilhelm Dağı",
+      name: "Wilhelm Dağı",
       elevationM: 4509,
       locationTr:
         "Papua Yeni Gine (Wilhelm Dağı 4.509 m) — Avustralya anakarasında Kosciuszko 2.228 m",
     },
     lowestPoint: {
-      name: "Eyre Gölü (Kati Thanda)",
+      name: "Eyre Gölü",
       elevationM: -15,
       locationTr: "Güney Avustralya",
       noteTr: "Kurak mevsimde dev bir tuz tavasına dönüşen kapalı göl yatağı.",
     },
     longestRiver: {
-      name: "Murray - Darling Nehir Sistemi",
+      name: "Murray-Darling",
       lengthKm: 2530,
       noteTr: "Avustralya'nın güneydoğu tarım havzasını drene eder.",
     },
@@ -880,52 +879,52 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     dominantClimateTr: "Çöl, Yarı Kurak Step, Tropikal Denizel, Okyanusal ve Ilıman",
     classificationSourceTr: "BM İstatistik Bölümü (UN M49) — 4 Coğrafi Alt Bölge",
     keyCharacteristicsTr: [
-      "Deniz Egemenliği: ~8,5M km² kara alanına karşılık ~40M km² Münhasır Ekonomik Bölge (EEZ)",
-      "Büyük Set Resifi: Uzaydan görülebilen dünyanın en büyük yaşayan mercan ekosistemi",
-      "Endemik Canlılar: Milyonlarca yıllık ada izolasyonunun mirası olan keseli fauna",
+      "Ülkelerin denizdeki ekonomik hak alanı, kara alanının neredeyse beş katı",
+      "Dünyanın en büyük mercan resifi sistemi olan Büyük Set Resifi",
+      "Uzun süre yalıtılmış kalan adalarda gelişmiş keseliler ve kivi kuşu",
     ],
     prose: {
       introTr:
-        "Okyanusya, diğer altı kıtadan niteliksel olarak ayrılır: Karaların sınırları belirlediği bir dünya değil, devasa Büyük Okyanus sularına saçılmış on binlerce adanın oluşturduğu bir 'su kıtası'dır. Kıtanın yaklaşık 8,5 milyon kilometrekarelik kara alanının %90'ını tek başına Avustralya anakarası oluştururken, ada devletlerinin sahip olduğu Münhasır Ekonomik Bölge (EEZ) deniz alanı 40 milyon kilometrekareyi —kara alanının neredeyse beş katını— aşar.",
+        "Okyanusya'yı haritada ararken önce denizi görürsün. Kara parçası yaklaşık 8,5 milyon km² ve bunun %90'ı tek başına Avustralya. Geri kalanı Büyük Okyanus'a dağılmış on binlerce ada. Ada devletlerinin denizde ekonomik hak sahibi olduğu alan ise 40 milyon km²'yi aşar, yani kara alanının neredeyse beş katıdır.",
       locationAndBordersTr:
-        "Kıta, Büyük Okyanus'un güney ve orta kesimlerinde binlerce kilometrelik bir alana yayılmıştır. Batıda Hint Okyanusu, kuzeyde ve doğuda Büyük Okyanus ile kuşatılmıştır. En batıdaki Papua Yeni Gine adası ilginç bir coğrafi bölünmeye sahiptir: Adanın doğu yarısı bağımsız Papua Yeni Gine olarak Okyanusya'dayken, batı yarısı (Batı Papua) Endonezya toprağı olarak Asya kıtasında değerlendirilir. Bu durum, tek bir adanın iki ayrı kıtaya bölünmüş ender örneklerindendir.",
+        "Kıta, Büyük Okyanus'un güney ve orta kesimlerine yayılır. Batısında Hint Okyanusu, kuzeyinde ve doğusunda Büyük Okyanus vardır.\n\nYeni Gine adası iki kıta arasında bölünmüştür. Doğu yarısı bağımsız Papua Yeni Gine'dir ve Okyanusya'da sayılır. Batı yarısı Endonezya'ya bağlıdır ve Asya'da sayılır. Bir adanın böyle iki kıtaya bölünmesi pek az görülür.",
       landformsAndGeologyTr:
-        "Okyanusya iki zıt jeolojik karakter barındırır. Avustralya anakarası, yeryüzünün en yaşlı, en düz ve aşınmış kıtasal kalkanlarından biridir; ortalama yükseltisi düşüktür ve doğusundaki Büyük Su Ayırıcı Sıradağlar (Great Dividing Range) haricinde belirgin bir genç dağa sahip değildir.\n\nBuna karşılık Yeni Zelanda, Papua Yeni Gine ve çevre ada yayları Pasifik Ateş Çemberi üzerindeki genç levha sınırlarında yükselmiştir. Yeni Zelanda'daki Güney Alpleri buzulları ve aktif volkanları barındırırken; Melanezya, Mikronezya ve Polinezya adaları ya volkanik dağ zirveleri ya da denizaltı yanardağlarının üzerinde mercan poliplerinin inşa ettiği alçak atollerden oluşur.",
+        "Okyanusya'da iki farklı yapı yan yana durur. Avustralya anakarası dünyanın en yaşlı ve en düz kara parçalarından biridir. Uzun süre aşındığı için alçaktır. Doğu kıyısı boyunca uzanan Büyük Su Ayırıcı Sıradağları dışında belirgin bir dağ sırası yoktur.\n\nYeni Zelanda, Papua Yeni Gine ve çevredeki ada yayları ise Pasifik Ateş Çemberi üzerindeki genç levha sınırlarında yükselmiştir. Yeni Zelanda'nın Güney Alpleri'nde buzullar, Kuzey Adası'nda etkin yanardağlar vardır. Melanezya, Mikronezya ve Polinezya adalarının bir kısmı yanardağ tepeleridir. Bir kısmı da denizaltı yanardağlarının üstünde mercanların biriktirdiği alçak atollerdir.",
       climateAndVegetationTr:
-        "Avustralya anakarasının üçte ikisi kurak ve yarı kuraktır; iç kesimlerdeki uçsuz bucaksız çöl ve çalılık alanlar 'Outback' olarak adlandırılır. Kıtanın güneydoğu ve güneybatı uçları ılıman Akdeniz ve okyanusal iklime sahiptir. Yeni Zelanda yıl boyu yağışlı, ılıman denizel bir iklim sunar.\n\nPasifik adaları ise yıl boyu alizelerin getirdiği nemle beslenen tropikal denizel iklime sahiptir. Kıtanın diğer kıtalardan erken jeolojik dönemde (Gondwana'nın parçalanması) ayrılıp izole olması, kanguru, koala, ornitorenk ve kivi kuşu gibi plasentasız keseli ve tek delikli canlıların evrilip bugüne ulaşmasını sağlamıştır.",
+        "Avustralya anakarasının üçte ikisi kurak ya da yarı kuraktır. Avustralyalılar iç kesimdeki bu çöl ve çalılık alanlara 'Outback', yani uzak iç bölge der. Güneydoğu ve güneybatı uçlarında Akdeniz iklimi ve ılıman okyanus iklimi görülür. Yeni Zelanda yıl boyu yağış alır ve ılıktır.\n\nPasifik adalarında alize rüzgârlarının getirdiği nemle tropikal deniz iklimi hâkimdir. Kıta, Gondwana parçalanırken diğer karalardan erken ayrıldı. Bu yalıtım sayesinde kanguru ve koala gibi keseliler, ornitorenk gibi yumurtlayan memeliler ve Yeni Zelanda'da kivi kuşu bugüne kadar yaşayabildi.",
       hydrographyTr:
-        "Okyanusya'nın en büyük akarsu ağı, Avustralya'nın güneydoğusundaki Murray-Darling Havzası'dır. Kıtanın tarımsal üretiminin can damarı olan bu sistem, kurak dönemlerde ciddi su çekilmesi yaşar. İç kesimlerdeki akarsuların çoğu kurak mevsimde kuruyan mevsimlik derelerdir (creek).\n\nKıtanın en görkemli su yapısı, Avustralya'nın kuzeydoğu kıyısında 2.300 kilometre boyunca uzanan Büyük Set Resifi'dir (Great Barrier Reef). Binlerce ayrı resif ve adadan oluşan bu yapı, canlı organizmaların inşa ettiği dünyanın en büyük ekosistemidir. Küçük mercan ada devletlerinde ise akarsu bulunmaz; tatlı su tamamen yağmur suyu sarnıçları ve kırılgan yeraltı tatlı su lenslerinden (Ghyben-Herzberg) elde edilir.",
+        "Okyanusya'nın en büyük akarsu ağı, Avustralya'nın güneydoğusundaki Murray-Darling Havzası'dır. Kıtanın tarımı büyük ölçüde bu havzaya bağlıdır ve kurak yıllarda sular çok azalır. İç kesimlerdeki derelerin çoğu yalnızca yağışlı mevsimde akar.\n\nAvustralya'nın kuzeydoğu kıyısında Büyük Set Resifi 2.300 kilometre boyunca uzanır. Binlerce ayrı resif ve adadan oluşan bu yapı, dünyanın en büyük mercan resifi sistemidir. Küçük mercan adalarında ise akarsu yoktur. Tatlı su, sarnıçlarda biriktirilen yağmur suyundan ve toprağın altında tuzlu suyun üstünde duran ince bir tatlı su tabakasından sağlanır.",
       populationAndSettlementTr:
-        "Nüfus olağanüstü derecede dengesiz ve kentsel odaklıdır. Avustralya nüfusunun %85'inden fazlası anakaranın doğu ve güneydoğu kıyılarındaki birkaç büyükşehirde (Sidney, Melbourne, Brisbane, Perth) yaşar; iç kesimler neredeyse boştur.\n\nPasifik adalarında ise yerleşimler küçük ada köylerinde ve sahil kasabalarında dağınık topluluklar halinde varlığını sürdürür. Tuvalu ve Nauru gibi ada devletlerinin toplam nüfusu yalnızca 10-12 bin kişidir.",
+        "Nüfus az ve şehirlerde toplanmıştır. Avustralyalıların büyük çoğunluğu kıyıdaki birkaç büyük şehirde yaşar: Sidney, Melbourne, Brisbane, Perth. İç kesimler neredeyse boştur.\n\nPasifik adalarında insanlar küçük köylere ve kıyı kasabalarına dağılmıştır. Tuvalu ve Nauru gibi ada devletlerinin nüfusu yalnızca 10-12 bin kişidir.",
       economyAndResourcesTr:
-        "Avustralya dünyanın en büyük maden ihracatçılarındandır; demir cevheri, kömür, boksit, altın, lityum ve sıvılaştırılmış doğalgaz (LNG) sevkiyatında küresel pazarları yönetir. Yeni Zelanda mandıracılık, et ve kivi ihracatında uzmanlaşmıştır.\n\nKüçük Pasifik ada devletlerinin ekonomisi ise devasa Münhasır Ekonomik Bölgelerindeki orkinos balıkçılığı lisanslarına, turizme, hindistancevizi (kopra) üretimine ve yurtdışında yaşayan diasporanın gönderdiği işçi dövizlerine bağımlıdır.",
+        "Avustralya dünyanın en büyük maden ihracatçılarındandır. Demir cevheri, kömür, boksit, altın, lityum ve sıvılaştırılmış doğalgaz satar. Yeni Zelanda süt ürünleri, et ve kivi ihracatıyla öne çıkar.\n\nKüçük Pasifik ada devletleri ise geniş deniz alanlarındaki orkinos avı için yabancı filolara verdikleri izinlerden gelir elde eder. Turizm, kopra yani kurutulmuş hindistancevizi ve yurt dışında çalışan vatandaşlarının gönderdiği para da bu ekonomilerin dayanaklarıdır.",
       subregionsIntroTr:
-        "BM M49 standardı Okyanusya'yı 4 alt bölgeye ayırır: Avustralya ve Yeni Zelanda, Melanezya ('Siyah Adalar'), Mikronezya ('Küçük Adalar') ve Polinezya ('Çok Adalar').",
+        "BM M49 sınıflandırması Okyanusya'yı 4 alt bölgeye ayırır: Avustralya ve Yeni Zelanda, Melanezya ('Siyah Adalar'), Mikronezya ('Küçük Adalar') ve Polinezya ('Çok Adalar').",
       disasterAndEnvironmentTr:
-        "Okyanusya, küresel iklim krizinin ve deniz seviyesi yükselmesinin en acil tehdit oluşturduğu ön cephedir. Tuvalu, Kiribati ve Marşal Adaları gibi ortalama rakımı deniz seviyesinden sadece 1-2 metre yüksek olan atol ülkeleri, yükselen dalgalar, kıyı erozyonu ve yeraltı tatlı sularının tuzlanması nedeniyle topraklarını kaybetme ve haritadan silinme riskiyle yüz yüzedir.\n\nAvustralya'da ise aşırı sıcak dalgaları ve aylarca süren yıkıcı çalı yangınları (bushfires) ile okyanus suyunun ısınmasına bağlı Büyük Set Resifi mercan beyazlaması en büyük ekolojik felaketlerdir.",
+        "Deniz seviyesinin yükselmesi en çok burada hissedilir. Tuvalu, Kiribati ve Marşal Adaları gibi atol ülkelerinde karanın ortalama yüksekliği deniz seviyesinden yalnızca 1-2 metre fazladır. Yükselen su, kıyı aşınması ve yeraltı sularının tuzlanması bu ülkeleri toprak kaybetme tehlikesiyle karşı karşıya bırakır.\n\nAvustralya'da ise aşırı sıcak dalgaları ve aylarca süren çalılık yangınları yaşanır. Isınan deniz suyu Büyük Set Resifi'ndeki mercanların beyazlamasına yol açar.",
       historicalAndCulturalTr:
-        "Avustralya Aborjinleri yaklaşık 50.000 yılı aşan geçmişleriyle yeryüzünün yaşayan en eski kesintisiz kültürünü temsil eder. Polinezyalı denizciler ise pusula olmaksızın sadece yıldızları, okyanus akıntılarını ve kuş uçuşlarını okuyarak kano ve katamaranlarla devasa Pasifik'i aşmış ve Hawaii'den Yeni Zelanda'ya (Maoriler) kadar adaları iskân etmiştir. 18. yüzyıldan itibaren İngiliz kolonizasyonu başlamıştır.",
+        "Avustralya Aborjinlerinin geçmişi 50.000 yılı aşar. Onların kültürü, kesintisiz süren en eski yaşayan kültür olarak kabul edilir.\n\nPolinezyalı denizciler pusula kullanmadan Büyük Okyanus'u geçtiler. Yıldızlara, akıntılara ve kuşların uçuşuna bakarak yön buldular, kano ve katamaranlarla Hawaii'den Yeni Zelanda'ya kadar adalara yerleştiler. Yeni Zelanda'ya yerleşenler Maorilerdir. 18. yüzyıldan itibaren bölge İngiliz sömürgesi olmaya başladı.",
     },
     subregions: [
       {
         nameTr: "Avustralya ve Yeni Zelanda",
         nameEn: "Australia and New Zealand",
         descriptionTr:
-          "Gelişmiş piyasa ekonomileri, devasa maden kaynakları, modern metropoller ve ılıman iklim.",
+          "Bölgenin en zengin iki ülkesi. Büyük maden kaynakları, kıyıdaki büyük şehirler ve ılıman iklim.",
         sampleCountriesTr: ["Avustralya", "Yeni Zelanda"],
       },
       {
         nameTr: "Melanezya",
         nameEn: "Melanesia",
         descriptionTr:
-          "Yeni Gine'den Fiji'ye uzanan büyük dağlık ve volkanik adalar; zengin kültürel ve dilsel çeşitlilik.",
+          "Yeni Gine'den Fiji'ye uzanan dağlık, yanardağlı büyük adalar. Çok sayıda dil ve kültür bir arada.",
         sampleCountriesTr: ["Papua Yeni Gine", "Fiji", "Solomon Adaları", "Vanuatu"],
       },
       {
         nameTr: "Mikronezya",
         nameEn: "Micronesia",
         descriptionTr:
-          "Ekvatorun kuzeyinde binlerce küçük mercan adası ve atol; geniş balıkçılık yetki alanları.",
+          "Ekvatorun kuzeyinde binlerce küçük mercan adası ve atol. Karası küçük, balıkçılık yapılan deniz alanı geniş.",
         sampleCountriesTr: [
           "Kiribati",
           "Marşal Adaları",
@@ -938,21 +937,21 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
         nameTr: "Polinezya",
         nameEn: "Polynesia",
         descriptionTr:
-          "Yeni Zelanda, Hawaii ve Paskalya Adası üçgeninde yer alan açık deniz ada dünyası.",
+          "Köşelerinde Yeni Zelanda, Hawaii ve Paskalya Adası'nın durduğu büyük bir üçgenin içindeki adalar.",
         sampleCountriesTr: ["Samoa", "Tonga", "Tuvalu"],
       },
     ],
     disasterProfile: {
       primaryRisks: [
-        "Küresel Isınma ve Deniz Seviyesi Yükselmesi (Atol Ülkeleri İçin Varoluşsal Tehdit)",
-        "Büyük Okyanus Tropikal Siklonları ve Fırtına Kabarmaları",
-        "Avustralya Kuraklığı, Aşırı Sıcak Dalgaları ve Çalı Yangınları",
-        "Yeni Zelanda ve Melanezya Sismik ve Volkanik Etkinliği",
+        "Deniz seviyesinin yükselmesi; atol ülkeleri için varlık meselesi",
+        "Büyük Okyanus'ta tropikal fırtınalar ve fırtına kabarmaları",
+        "Avustralya'da kuraklık, sıcak dalgaları ve çalılık yangınları",
+        "Yeni Zelanda ve Melanezya'da depremler ve yanardağ patlamaları",
       ],
       faultLinesOrZones: [
-        "Alp Fayı (Yeni Zelanda Güney Adası)",
-        "Kermadec-Tonga Hendeği Dalma-Batma Zonu",
-        "Yeni Hebridler Hendeği (Vanuatu)",
+        "Alp Fayı, Yeni Zelanda Güney Adası",
+        "Kermadec-Tonga Hendeği dalma-batma kuşağı",
+        "Yeni Hebridler Hendeği, Vanuatu",
       ],
       warningNoteTr:
         "Tuvalu ve Kiribati gibi alçak mercan adaları, deniz seviyesinin yükselmesi nedeniyle 21. yüzyıl içinde tamamen sular altında kalma tehlikesiyle karşı karşıyadır.",
@@ -961,22 +960,22 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
       {
         question: "Avustralya bir kıta mıdır yoksa ada mıdır?",
         answer:
-          "Avustralya kendi tektonik levhasına (Avustralya Levhası) sahip devasa bir kara kütlesi olduğu için ada değil, dünyanın en küçük kıtası olarak kabul edilir. Çevreleyen ada ülkeleriyle birlikte oluşturduğu bölgesel yapıya Okyanusya denir.",
+          "Avustralya kendi levhası olan Avustralya Levhası üzerinde duran büyük bir kara parçasıdır. Bu yüzden ada değil, dünyanın en küçük kıtası sayılır. Çevresindeki ada ülkeleriyle birlikte oluşturduğu bölgeye Okyanusya denir.",
       },
       {
-        question: "Tuvalu ve Kiribati neden iklim mültecisi riskiyle karşı karşıyadır?",
+        question: "Tuvalu ve Kiribati neden iklim göçü riskiyle karşı karşıya?",
         answer:
-          "Bu ülkeler mercan atollerinden oluşur ve en yüksek noktaları deniz seviyesinden sadece 2-3 metre yüksektedir. Deniz seviyesinin yükselmesi, kıyı erozyonu ve fırtına kabarmaları yerleşim alanlarını yok etmekte, tarım arazilerini ve içme suyunu tuzlandırmaktadır.",
+          "Bu ülkeler mercan atollerinden oluşur ve en yüksek noktaları deniz seviyesinden yalnızca 2-3 metre yüksektir. Yükselen deniz, kıyı aşınması ve fırtına kabarmaları yerleşim alanlarını küçültür, tarım toprağını ve içme suyunu tuzlandırır.",
       },
       {
-        question: "Büyük Set Resifi uzaydan görülebilir mi?",
+        question: "Büyük Set Resifi ne kadar büyüktür?",
         answer:
-          "Evet; 2.300 kilometre uzunluğundaki Büyük Set Resifi, canlı organizmaların oluşturduğu yeryüzündeki en büyük tekil yapıdır ve uzaydan çıplak gözle seçilebilir.",
+          "Büyük Set Resifi, Avustralya'nın kuzeydoğu kıyısı boyunca 2.300 kilometre uzanır. Binlerce ayrı resif ve adadan oluşur ve dünyanın en büyük mercan resifi sistemidir.",
       },
       {
-        question: "Papua Yeni Gine neden iki kıtaya bölünmüştür?",
+        question: "Yeni Gine adası neden iki kıtaya bölünmüştür?",
         answer:
-          "Yeni Gine adasının doğu yarısı bağımsız Papua Yeni Gine devleti olarak Okyanusya kıtasına dahildir; batı yarısı ise sömürge dönemi sınırları gereği Endonezya'ya bağlıdır ve siyasi coğrafyada Asya'da sayılır.",
+          "Adanın doğu yarısı bağımsız Papua Yeni Gine devletidir ve Okyanusya'da sayılır. Batı yarısı sömürge döneminden kalan sınırlar yüzünden Endonezya'ya bağlıdır ve siyasi coğrafyada Asya'da sayılır.",
       },
     ],
   },
@@ -988,12 +987,12 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameTr: "Antarktika",
     nameEn: "Antarctica",
     code: "AN",
-    taglineTr: "Kutup çölü, yeryüzünün en büyük tatlı su buz kalkanı ve barışa adanmış kıta.",
+    taglineTr:
+      "Kalın bir buzun altında kalan, kimsenin kalıcı olarak yaşamadığı ve hiçbir devlete ait olmayan kıta.",
     countryCount: 0,
-    countryCountNoteTr:
-      "Egemen devlet yoktur; 1959 Antarktika Antlaşması ile uluslararası barış ve bilime ayrılmıştır.",
+    countryCountNoteTr: "Devlet yok; 1959 Antarktika Antlaşması'yla bilime ayrıldı.",
     population: 0,
-    populationFormattedTr: "Kalıcı Nüfus Yok (1.000–5.000 Bilim İnsanı)",
+    populationFormattedTr: "Kalıcı nüfus yok",
     populationSharePercent: 0.0,
     areaKm2: 14200000,
     areaFormattedTr: "14.200.000 km²",
@@ -1012,7 +1011,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
         "Buz örtüsü kaldırıldığında deniz seviyesinin 2.540 metre altında kalacak vadi tabanı.",
     },
     longestRiver: {
-      name: "Onyx Nehri (Mevsimlik Erime Deresi)",
+      name: "Onyx Nehri",
       lengthKm: 32,
       noteTr: "Yalnızca kutup yazının birkaç haftasında Wright Vadisi'nde akar.",
     },
@@ -1023,52 +1022,52 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     dominantClimateTr: "Ekstrem Kutup İklimi (Soğuk Çöl / Buzul İklimi)",
     classificationSourceTr: "1959 Antarktika Antlaşması — 60° Güney Enlemi Coğrafi Sınırı",
     keyCharacteristicsTr: [
-      "Buz Kalkanı: Dünyadaki buzun %90'ını ve tatlı suyun %70'ini barındırır",
-      "Kutup Çölü: Yıllık yağışın Sahra'dan bile az olduğu yeryüzünün en kurak ve soğuk kıtası",
-      "Uluslararası Yönetişim: Askeri faaliyetlerin yasaklandığı tarafsız bilim bölgesi",
+      "Dünyadaki buzun yaklaşık %90'ı, tatlı suyun yaklaşık %70'i bu kıtada",
+      "Sahra'dan bile az yağış alır; hem en soğuk hem en kurak kıta",
+      "Askeri faaliyet yasak, kıtada yalnızca bilim yapılır",
     ],
     prose: {
       introTr:
-        "Antarktika, yeryüzünün en soğuk, en kuru, en rüzgarlı ve ortalama yükseltisi en yüksek (yaklaşık 2.200 m) kıtasıdır. Üzerini kaplayan devasa buz kalkanı, yeryüzündeki tüm buz kütlesinin yaklaşık %90'ını ve mevcut tatlı su rezervlerinin %70'ini bünyesinde barındırır. Hiçbir yerli halka ve egemen devlete sahip olmayan kıta, 1959 Antarktika Antlaşması ile askeri faaliyetlerden arındırılmış, yalnızca barışçıl bilimsel araştırmalara adanmış uluslararası tek kara kütlesidir.",
+        "Kıtanın neredeyse tamamı buzla kaplı. Bu buz örtüsü yer yer 4.800 metreden kalın; dünyadaki buzun yaklaşık %90'ı ve tatlı suyun yaklaşık %70'i burada. Buz yüzünden Antarktika, ortalama yükseltisi en fazla (yaklaşık 2.200 m) olan kıta; aynı zamanda en soğuk, en kurak ve en rüzgârlı olanı. Yerli halkı ve devleti yok. 1959 Antarktika Antlaşması askeri faaliyeti yasakladı ve kıtayı barışçıl bilimsel araştırmaya ayırdı.",
       locationAndBordersTr:
-        "Güney Kutup Noktası'nı merkezine alan Antarktika, 60° güney enlem paralelinin güneyindeki tüm alanı kapsar. Çevresi bütünüyle Güney Okyanusu'nun fırtınalı sularıyla kuşatılmıştır. En yakın kara kütlesi, yaklaşık 1.000 kilometre kuzeyde Drake Boğazı'nın ötesinde uzanan Güney Amerika'nın Ateş Toprakları'dır (Tierra del Fuego).",
+        "Güney Kutbu kıtanın ortasında. Antarktika denince 60° güney enleminin güneyindeki her yer anlaşılır. Kıtanın çevresinde yalnızca Güney Okyanusu'nun fırtınalı suları var. En yakın kara, yaklaşık 1.000 kilometre kuzeyde, Drake Boğazı'nın öbür yakasındaki Ateş Toprakları'dır; Güney Amerika'nın en güney ucu.",
       landformsAndGeologyTr:
-        "Kıta, Transantarktik Dağları ile iki ana jeolojik bölgeye ayrılır: Doğu Antarktika ve Batı Antarktika. Doğu Antarktika, Prekambriyen yaşlı son derece kalın ve durağan bir kıtasal kalkandır. Üzerindeki buz örtüsünün ortalama kalınlığı 2.000 metreyi, en kalın yerinde ise 4.800 metreyi aşar.\n\nBatı Antarktika ise And Dağları'nın bir uzantısı niteliğindeki dağ sıralarını ve aktif volkanları (örneğin Ross Adası'ndaki Erebus Dağı) barındırır. Vinson Masifi (4.892 m) kıtanın en yüksek zirvesidir. Buz kalkanının altında ise Bentley Buzul-altı Çukuru (-2.540 m) gibi derin kara vadileri gizlidir.",
+        "Transantarktik Dağları kıtayı ikiye böler: Doğu Antarktika ve Batı Antarktika. Doğu Antarktika çok yaşlı (Prekambriyen) ve sağlam bir kayaç temel üzerinde durur. Üstündeki buz ortalama 2.000 metreden, en kalın yerinde 4.800 metreden kalındır.\n\nBatı Antarktika'da And Dağları'nın devamı sayılan dağ sıraları ve etkin yanardağlar var; Ross Adası'ndaki Erebus Dağı bunlardan biri. Kıtanın en yüksek yeri 4.892 metrelik Vinson Masifi. Buzun altında ise derin vadiler saklı: Bentley Buzul-altı Çukuru'nun tabanı deniz seviyesinin 2.540 metre altında.",
       climateAndVegetationTr:
-        "Antarktika teknik olarak dünyanın en büyük çölüdür. İç kesimlere düşen yıllık yağış miktarı 50 milimetrenin altındadır; bu oran Sahra Çölü'nün pek çok yerinden daha düşüktür. 21 Temmuz 1983'te Sovyet Vostok İstasyonu'nda ölçülen -89,2°C, yeryüzünde ölçülmüş en düşük doğal sıcaklık rekorudur.\n\nİç platolardan kıyılara doğru yerçekimi etkisiyle esen katabatik fırtına rüzgarları saatte 300 kilometre hıza ulaşabilir. Kara bitki örtüsü yalnızca Antarktika Yarımadası'nın yazın kardan arınan kayalıklarında tutunabilen iki çiçekli bitki türü, yosunlar ve likenlerle sınırlıdır. Buna karşılık kıyıyı çevreleyen denizler kril ve plankton zenginliği sayesinde balinalar, foklar ve imparator penguenleri için eşsiz bir besin alanıdır.",
+        "Antarktika dünyanın en büyük çölüdür, çünkü çöl olmak için sıcak değil kurak olmak gerekir. İç kesimlere yılda 50 milimetreden az yağış düşer; Sahra'nın birçok yerinden daha az. Yeryüzünde ölçülen en düşük sıcaklık da burada: 21 Temmuz 1983'te Sovyet Vostok İstasyonu'nda -89,2 °C.\n\nİç yaylalarda soğuyan ağır hava yokuş aşağı kıyıya doğru akar. Bu katabatik rüzgârlar saatte 300 kilometreye ulaşabilir. Karada yalnızca yosunlar, likenler ve iki çiçekli bitki türü yaşar; onlar da Antarktika Yarımadası'nda yazın karı eriyen kayalıklarda. Denizler ise kril ve planktonla dolu. Balinalar, foklar ve imparator penguenleri bu besinle yaşar.",
       hydrographyTr:
-        "Sıvı yüzey akarsuyu neredeyse hiç yoktur; en uzunu yaz aylarında birkaç hafta akan 32 kilometrelik Onyx Deresi'dir. Ancak kıtanın derinliklerinde, binlerce metre kalınlığındaki buzun basıncı ve alttan gelen jeotermal ısı sayesinde sıvı halde kalan 400'den fazla buzul-altı göl keşfedilmiştir.\n\nBunların en büyüğü olan Vostok Gölü, yaklaşık 15 milyon yıldır dış atmosferle teması kesilmiş izole bir tatlı su kütlesidir. Kıyı şeridinde ise deniz üzerinde yüzen Ross ve Ronne gibi devasa buz sahanlıkları (ice shelf) yer alır.",
+        "Kıtanın yüzeyinde akarsu neredeyse yok. En uzunu, yazın yalnızca birkaç hafta akan 32 kilometrelik Onyx Nehri. Buzun altında ise 400'den fazla göl bulundu. Bunlar donmaz, çünkü üstlerindeki binlerce metrelik buz basınç yapar, aşağıdan da yerin ısısı gelir.\n\nBu göllerin en büyüğü Vostok Gölü. Kıyılarda ise Ross ve Ronne gibi büyük buz sahanlıkları var: karadaki buzun denize uzanıp su üstünde yüzen kısımları.",
       populationAndSettlementTr:
-        "Kıtada kalıcı yerli nüfus bulunmamaktadır. İnsan varlığı yalnızca Antarktika Antlaşması'na taraf ülkelerin işlettiği yaklaşık 70 aktif bilimsel araştırma istasyonundaki araştırmacılar ve teknik personelden oluşur.\n\nYaz aylarında nüfus 4.000–5.000 kişiye ulaşırken, karanlık kutup kışında bu sayı 1.000 kişinin altına düşer. Türkiye de 2017'den bu yana her yıl düzenlenen Ulusal Antarktika Bilim Seferleri ile Horseshoe Adası'nda geçici bilim kampı işletmektedir.",
+        "Antarktika'da doğup büyüyen kimse yok. Kıtada yaşayanlar, antlaşmaya taraf ülkelerin işlettiği yaklaşık 70 araştırma istasyonundaki bilim insanları ve teknik personel.\n\nYazın bu sayı 4.000–5.000 kişiye çıkar, karanlık kutup kışında 1.000'in altına iner. Türkiye 2017'den beri her yıl Ulusal Antarktika Bilim Seferi düzenliyor ve Horseshoe Adası'nda geçici bir bilim kampı kuruyor.",
       economyAndResourcesTr:
-        "Antarktika'da ticari madencilik, petrol arama veya askeri amaçlı iktisadi faaliyet yürütülmesi 1991 Madrid Çevre Koruma Protokolü ile süresiz olarak yasaklanmıştır. Buz kalkanının altında zengin kömür, demir ve hidrokarbon rezervlerinin bulunduğu bilinmektedir ancak bunlar insanlığın ortak mirası olarak korunmaktadır.\n\nYegane ticari faaliyet, çevre kuralları çerçevesinde yaz aylarında Antarktika Yarımadası'na düzenlenen kruvaziyer kutup turizmi ve Güney Okyanusu'ndaki denetimli kril/patagonya dişbalığı avcılığıdır.",
+        "1991 Madrid Çevre Koruma Protokolü, Antarktika'da ticari madenciliği ve petrol aramayı süresiz yasakladı. Kıtada kömür ve demir yatakları olduğu biliniyor, ama bunlara dokunulmuyor.\n\nİzin verilen ticari işler iki tane: yazın Antarktika Yarımadası'na düzenlenen, çevre kurallarına bağlı gemi turları ve Güney Okyanusu'nda denetim altındaki kril ve patagonya dişbalığı avı.",
       subregionsIntroTr:
-        "Antarktika üç ana coğrafi kesime ayrılır: Doğu Antarktika Buz Kalkanı, Batı Antarktika ve Güney Amerika'ya doğru uzanan Antarktika Yarımadası.",
+        "Antarktika üç kesime ayrılır: Doğu Antarktika'nın büyük buz örtüsü, Batı Antarktika ve Güney Amerika'ya doğru uzanan Antarktika Yarımadası.",
       disasterAndEnvironmentTr:
-        "Antarktika küresel iklim sisteminin termostatıdır. Devasa beyaz buz örtüsü gelen güneş ışınlarını yansıtarak (albedo etkisi) gezegenin aşırı ısınmasını engeller. Eğer Antarktika buz kalkanı bütünüyle erirse, küresel deniz seviyesi yaklaşık 58 metre yükselecektir.\n\nÖzellikle Batı Antarktika'daki Thwaites Buzulu ('Kıyamet Buzulu') gibi denizle temas eden buzul sahanlıklarının dipten ısınan okyanus akıntılarıyla erimesi ve parçalanması, 21. yüzyılın en kritik küresel deniz seviyesi tehdididir. Ayrıca 1980'lerde kutup üzerinde keşfedilen ozon deliği, çevre protokolleri sayesinde toparlanma sürecindedir.",
+        "Beyaz buz, gelen güneş ışığının çoğunu uzaya geri yansıtır; bu da dünyanın daha fazla ısınmasını frenler. Antarktika'daki buzun tamamı erirse deniz seviyesi yaklaşık 58 metre yükselir.\n\nBatı Antarktika'da Thwaites Buzulu gibi denize uzanan buzullar, altlarına sokulan ılık okyanus suyuyla eriyip parçalanıyor. Bu buzula bu yüzden \"Kıyamet Buzulu\" da deniyor. Kıtanın üzerinde 1980'lerde fark edilen ozon deliği ise uluslararası çevre anlaşmalarından sonra küçülmeye başladı.",
       historicalAndCulturalTr:
-        "1820'lerde ilk kez gözlemlenen kıta, 20. yüzyılın başlarında 'Kutup Kahramanlık Çağı'na sahne olmuştur. 1911'de Roald Amundsen ve Robert Falcon Scott Güney Kutbu'na ilk ulaşan kâşifler olmuştur. 1 Aralık 1959'da imzalanan Antarktika Antlaşması, yedi ülkenin (İngiltere, Fransa, Şili, Arjantin, Avustralya, Norveç, Yeni Zelanda) toprak iddialarını dondurmuş ve kıtayı sadece bilime ve barışa vakfetmiştir.",
+        "Kıta ilk kez 1820'lerde görüldü. 20. yüzyılın başı kutup keşiflerinin en yoğun dönemiydi. Roald Amundsen'in ekibi 1911 Aralık'ında Güney Kutbu'na ilk ulaşan oldu; Robert Falcon Scott bir ay sonra, 1912 Ocak'ında vardı.\n\n1 Aralık 1959'da imzalanan Antarktika Antlaşması, yedi ülkenin (İngiltere, Fransa, Şili, Arjantin, Avustralya, Norveç, Yeni Zelanda) toprak iddialarını dondurdu ve kıtayı bilime ve barışa ayırdı.",
     },
     subregions: [
       {
         nameTr: "Doğu Antarktika",
         nameEn: "East Antarctica",
         descriptionTr:
-          "Prekambriyen kalkanı, dünyanın en kalın buz tabakası (-89°C Vostok istasyonu) ve Güney Kutup Noktası.",
+          "En kalın buz burada. Güney Kutbu ve -89 °C'nin ölçüldüğü Vostok İstasyonu da bu kesimde.",
         sampleCountriesTr: ["Uluslararası İstasyonlar (McMurdo, Vostok, Amundsen-Scott)"],
       },
       {
         nameTr: "Batı Antarktika",
         nameEn: "West Antarctica",
         descriptionTr:
-          "Deniz seviyesinin altındaki kayaç yatakları, kırılgan buz sahanlıkları ve aktif volkanizma.",
+          "Buzun altındaki kayalar deniz seviyesinin altında. Kolay kırılan buz sahanlıkları ve etkin yanardağlar var.",
         sampleCountriesTr: ["Uluslararası İstasyonlar"],
       },
       {
         nameTr: "Antarktika Yarımadası",
         nameEn: "Antarctic Peninsula",
         descriptionTr:
-          "Güney Amerika'ya uzanan en ılıman kesim; yazın kardan arınan kıyılar, penguen kolonileri ve bilim üsleri.",
+          "Güney Amerika'ya uzanan, kıtanın en ılık kesimi. Yazın kıyılarında kar erir; penguen kolonileri ve bilim üsleri burada.",
         sampleCountriesTr: [
           "Uluslararası İstasyonlar (Türkiye Geçici Bilim Kampı - Horseshoe Adası)",
         ],
@@ -1076,13 +1075,13 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     ],
     disasterProfile: {
       primaryRisks: [
-        "Küresel Isınma Kaynaklı Buz Sahanlığı Çöküşleri ve Deniz Seviyesi Yükselmesi",
-        "Erebus Dağı Aktif Volkanizması ve Buzul Altı Erime Riskleri",
-        "Katabatik Fırtınalar ve Ekstrem Kutup Soğukları (-80°C Altı)",
+        "Isınmayla çöken buz sahanlıkları ve yükselen deniz seviyesi",
+        "Erebus Dağı'nın etkinliği ve buzun altta erimesi",
+        "Katabatik fırtınalar ve -80 °C'nin altına inen soğuklar",
       ],
       faultLinesOrZones: [
         "Batı Antarktika Rift Sistemi",
-        "Scotia Plakası Sınırı (Antarktika Yarımadası Kuzeyi)",
+        "Scotia Levhası sınırı (Antarktika Yarımadası'nın kuzeyi)",
       ],
       warningNoteTr:
         "Batı Antarktika'daki Thwaites ve Pine Island buzullarının dengesizleşmesi, tek başına küresel deniz seviyesini onlarca santimetre yükseltebilecek potansiyele sahiptir.",
@@ -1091,22 +1090,21 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
       {
         question: "Antarktika kime aittir?",
         answer:
-          "Antarktika hiçbir devlete ait değildir. 1959 yılında imzalanan Antarktika Antlaşması, geçmişteki tüm egemenlik iddialarını dondurmuş ve kıtayı tüm insanlığın yararına, yalnızca barışçıl ve bilimsel amaçlara tahsis etmiştir.",
+          "Hiçbir devlete. 1959'da imzalanan Antarktika Antlaşması daha önceki tüm toprak iddialarını dondurdu. Kıta yalnızca barışçıl ve bilimsel işler için kullanılabilir.",
       },
       {
-        question: "Antarktika neden dünyanın en kurak çölüdür?",
+        question: "Buzla kaplı Antarktika nasıl çöl olabilir?",
         answer:
-          "Havanın aşırı soğuk olması, atmosferin su buharı tutma kapasitesini neredeyse sıfıra indirir. İç kesimlerdeki yüksek basınç alanı bulut oluşumunu engeller; bu nedenle iç platolara yılda 50 mm'den daha az kar yağar.",
+          "Çöl, az yağış alan yer demektir. Çok soğuk hava neredeyse hiç su buharı taşıyamaz. İç kesimlerdeki yüksek basınç da bulut oluşmasını engeller. Bu yüzden iç yaylalara yılda 50 milimetreden az kar düşer.",
       },
       {
-        question: "Antarktika'daki tüm buzlar erirse ne olur?",
-        answer:
-          "Antarktika buz kalkanının tamamen erimesi durumunda, dünya okyanuslarının su seviyesi yaklaşık 58 metre (190 fit) yükselecek ve dünyadaki tüm kıyı metropolleri tamamen sular altında kalacaktır.",
+        question: "Antarktika'daki tüm buz erirse ne olur?",
+        answer: "Dünya genelinde deniz seviyesi yaklaşık 58 metre yükselir.",
       },
       {
         question: "Türkiye'nin Antarktika'da üssü var mı?",
         answer:
-          "Türkiye, Cumhurbaşkanlığı himayelerinde ve Sanayi ve Teknoloji Bakanlığı uhdesinde, TÜBİTAK MAM Kutup Araştırmaları Enstitüsü (KARE) koordinasyonunda her yıl Ulusal Antarktika Bilim Seferleri düzenlemekte ve Horseshoe Adası'nda geçici Türk Bilim Kampı işletmektedir.",
+          "Kalıcı bir üssü yok, geçici bir kampı var. TÜBİTAK MAM Kutup Araştırmaları Enstitüsü (KARE) her yıl Ulusal Antarktika Bilim Seferi düzenliyor ve Horseshoe Adası'nda geçici Türk Bilim Kampı'nı kuruyor.",
       },
     ],
   },

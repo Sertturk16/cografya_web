@@ -50,36 +50,36 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
     id: "kaf",
     name: "Kuzey Anadolu Fay Hattı (KAF)",
     shortName: "KAF",
-    type: "Sağ Yanal Doğrultu Atımlı Fay Zonu",
+    type: "Sağ Yanal Doğrultu Atımlı Fay",
     riskLevel: "Çok Yüksek",
     lengthKm: 1200,
     badgeClass: FAULT_IDENTITY.kaf.badge,
     borderClass: FAULT_IDENTITY.kaf.articleEdge,
     accentColor: FAULT_IDENTITY.kaf.label,
     formation:
-      "Avrasya Levhası'nın güneye, Anadolu Levhacığı'nın ise Arap Levhası'nın kuzeye doğru sıkıştırmasıyla batıya doğru yılda yaklaşık 20-25 milimetre hızla ötelenmesi sonucunda oluşmuştur. Doğu Anadolu'daki Karlıova üçlü eklem noktasından başlayıp Marmara Denizi ve Saros Körfezi üzerinden Kuzey Ege çukurluklarına kadar uzanan, yerkürenin en sismik ve aktif doğrultu atımlı kıtasal kırık zonlarından biridir.",
+      "Kuzeye ilerleyen Arap Levhası Anadolu'yu sıkıştırıyor. Kuzeyde Avrasya Levhası'na dayanan Anadolu bu baskıdan batıya doğru kaçıyor, yılda yaklaşık 20-25 milimetre. KAF, bu kaymanın Anadolu ile Avrasya arasındaki sınırıdır. Doğuda Karlıova'dan başlar, Marmara Denizi ve Saros Körfezi'nden geçerek Kuzey Ege'deki çukurlara kadar uzanır. Dünyanın karada en etkin doğrultu atımlı faylarından biridir.",
     movementMechanism:
-      "Sağ yanal doğrultu atım: Fay düzleminin karşısında duran bir gözlemciye göre fayın sağ tarafındaki blok görece kendine doğru hareket eder. Bu yatay hareket sırasında fay üzerindeki pürüzler ve kilitlenmeler sismik enerji biriktirir; sürtünme direnci aşıldığında ani atımlarla yıkıcı depremler açığa çıkar.",
+      "Sağ yanal doğrultu atım: fayın bir yanında durup karşıya baktığında, karşı taraf sağa doğru kayar. Hareket yataydır. Fayın iki yanı pürüzlü yüzeylerinden birbirine takılır ve bu sırada gerilim birikir. Gerilim sürtünmeyi yendiğinde iki yan bir anda kayar; deprem bu ani kaymadır.",
     segments: [
       {
-        name: "Doğu Segmenti (Karlıova – Erzincan – Suşehri)",
+        name: "Doğu Parçası (Karlıova – Erzincan – Suşehri)",
         detail:
-          "Karlıova düğüm noktasından başlayarak Yedisu Fayı, Erzincan Ovası ve Kelkit Vadisi boyunca uzanır. 1939 büyük felaketinin başladığı yüksek dağlık kırık hattıdır.",
+          "Karlıova'dan başlar; Yedisu Fayı, Erzincan Ovası ve Kelkit Vadisi boyunca ilerler. 1939 Erzincan depremi bu yüksek, dağlık bölümde başladı.",
       },
       {
-        name: "Orta Segment (Koyulhisar – Tokat – Niksar – Ladik – Kargı – Bolu)",
+        name: "Orta Parça (Koyulhisar – Tokat – Niksar – Ladik – Kargı – Bolu)",
         detail:
-          "Kuzey Anadolu sıradağlarının güney eteklerini takip eden vadi oluklarını kat eder. 1942, 1943 ve 1944 yıllarında batıya doğru domino etkisiyle kırılan silsiledir.",
+          "Kuzey Anadolu Dağları'nın güney eteklerindeki vadileri izler. 1942, 1943 ve 1944'te art arda, her seferinde biraz daha batıda kırıldı.",
       },
       {
-        name: "Batı Segmenti (Bolu – Düzce – Adapazarı – İzmit Körfezi)",
+        name: "Batı Parçası (Bolu – Düzce – Adapazarı – İzmit Körfezi)",
         detail:
-          "Gölcük ve Düzce üzerinden Marmara havzasına giriş yapar. 17 Ağustos ve 12 Kasım 1999 kırılmalarıyla yüzeyde 5 metreyi aşan kalıcı yatay ötelemeler oluşturmuştur.",
+          "Düzce ve Gölcük üzerinden Marmara'ya girer. 17 Ağustos ve 12 Kasım 1999 depremlerinde fayın iki yanı yüzeyde yer yer 5 metreden fazla yana kaydı ve öyle kaldı.",
       },
       {
-        name: "Marmara Denizi Geçişi & Kuzey Kol",
+        name: "Marmara Denizi'nin Altındaki Kuzey Kol",
         detail:
-          "İzmit Körfezi çıkışından Prens Adaları güneyi, Çınarcık Çukuru, Orta Marmara Sırtı ve Tekirdağ Çukurluğu üzerinden Gaziköy-Şarköy ve Saros Körfezi'ne bağlanır.",
+          "İzmit Körfezi'nden çıkınca Prens Adaları'nın güneyinden, Çınarcık Çukuru'ndan, Orta Marmara Sırtı'ndan ve Tekirdağ Çukurluğu'ndan geçer; Gaziköy-Şarköy üzerinden Saros Körfezi'ne bağlanır.",
       },
     ],
     provinces: [
@@ -107,85 +107,85 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 1939,
         place: "Erzincan",
         magnitude: "Ms 7.9",
-        note: "Türkiye Cumhuriyeti tarihinin en yıkıcı aletsel dönem depremi; 33 binden fazla can kaybı ve ~350 km yüzey kırığı.",
+        note: "33 binden fazla kişi hayatını kaybetti. Yerde yaklaşık 350 km uzunluğunda bir kırık açıldı.",
       },
       {
         year: 1942,
         place: "Niksar – Erbaa",
         magnitude: "Ms 7.0",
-        note: "KAF boyunca batıya göç eden gerilim transferinin ikinci büyük adımı.",
+        note: "1939'dan sonra gerilim fay boyunca batıya aktarıldı; bu, o dizinin ikinci büyük depremi.",
       },
       {
         year: 1943,
         place: "Tosya – Ladik",
         magnitude: "Ms 7.2",
-        note: "Orta Karadeniz geçiş kuşağında yaklaşık 280 kilometrelik fay kırığı.",
+        note: "Orta Karadeniz'in iç kesiminde fay yaklaşık 280 kilometre boyunca kırıldı.",
       },
       {
         year: 1944,
         place: "Bolu – Gerede",
         magnitude: "Ms 7.2",
-        note: "Batı Karadeniz iç kesiminde yüzey kırığı ve ağır yapısal hasar.",
+        note: "Batı Karadeniz'in iç kesiminde kırık yüzeye kadar çıktı, binalar ağır hasar gördü.",
       },
       {
         year: 1999,
         place: "Kocaeli (Gölcük)",
         magnitude: "Mw 7.4",
-        note: "17 Ağustos 1999: Sanayi kalbi Marmara'da 17 binden fazla can kaybı, 120 km yüzey kırığı ve 5.5 metreye varan atım.",
+        note: "17 Ağustos 1999. Sanayinin yoğun olduğu Marmara'da 17 binden fazla can kaybı oldu. Fay yüzeyde 120 km boyunca kırıldı, iki yan 5,5 metreye kadar kaydı.",
       },
       {
         year: 1999,
         place: "Düzce",
         magnitude: "Mw 7.2",
-        note: "12 Kasım 1999: Gölcük depreminin doğu ucundaki gerilim transferiyle 87 gün sonra kırılan fay segmenti.",
+        note: "12 Kasım 1999. Gölcük depremi gerilimi doğuya aktardı; 87 gün sonra o kırığın hemen doğusundaki parça kırıldı.",
       },
     ],
     seismicGapAndRisk:
-      "1999 Gölcük depremiyle boşalan gerilim enerjisi Marmara Denizi altındaki Kuzey Marmara Segmenti'ne aktarılmıştır. Prens Adaları ile Silivri açıkları arasındaki fay parçası 1766'dan beri kırılmamış olup kritik bir 'sismik boşluk' niteliği taşımaktadır.",
+      "1999 Gölcük depreminde boşalan gerilimin bir kısmı Marmara Denizi'nin altındaki kuzey parçaya aktarıldı. Prens Adaları ile Silivri açıkları arasındaki bölüm 1766'dan beri kırılmadı. Uzun süredir kırılmayan böyle parçalara sismik boşluk denir.",
     marineConnection: {
       seaName: "Marmara Denizi",
       href: "/deniz/marmara",
       description:
-        "KAF'ın Marmara Denizi tabanındaki 3 derin çukurluk (Tekirdağ, Orta Marmara, Çınarcık) ve denizaltı fay geometrisi Marmara Denizi sayfasında incelenmektedir.",
+        "KAF'ın Marmara Denizi tabanında açtığı üç derin çukuru (Tekirdağ, Orta Marmara, Çınarcık) Marmara Denizi sayfası anlatıyor.",
     },
   },
   {
     id: "daf",
     name: "Doğu Anadolu Fay Hattı (DAF)",
     shortName: "DAF",
-    type: "Sol Yanal Doğrultu Atımlı Fay Zonu",
+    type: "Sol Yanal Doğrultu Atımlı Fay",
     riskLevel: "Çok Yüksek",
     lengthKm: 550,
     badgeClass: FAULT_IDENTITY.daf.badge,
     borderClass: FAULT_IDENTITY.daf.articleEdge,
     accentColor: FAULT_IDENTITY.daf.label,
     formation:
-      "Arap Levhası'nın kuzeye doğru yaptığı tektonik baskı sonucunda Anadolu Levhacığı'nın güneydoğu sınırını çizer. Hatay-Antakya grabeninden ve İskenderun Körfezi doğusundan başlayarak Kahramanmaraş, Gölbaşı, Hazar Gölü (Elazığ) ve Bingöl üzerinden Karlıova birleşim noktasına uzanır.",
+      "Anadolu'nun güneydoğu kenarıdır ve kuzeye doğru iten Arap Levhası'nın baskısıyla oluşmuştur. Hatay'daki Antakya grabeninden ve İskenderun Körfezi'nin doğusundan başlar; Kahramanmaraş, Gölbaşı, Elazığ'daki Hazar Gölü ve Bingöl üzerinden Karlıova'da KAF ile birleşir.",
     movementMechanism:
-      "Sol yanal doğrultu atım: Fay hattının karşısındaki blok sola doğru hareket eder. Yıllık deformasyon hızı KAF'a kıyasla daha mütevazı (ortalama 8-10 mm/yıl) olmakla birlikte, yüzyıllar boyu kilitlenen segmentler kırıldığında devasa magnitüdlü sismik enerji boşalımı meydana getirir.",
+      "Sol yanal doğrultu atım: fayın karşı tarafı sola doğru kayar. DAF, KAF'tan daha yavaş hareket eder, yılda ortalama 8-10 mm. Ama yüzyıllarca kilitli kalmış bir parçası kırıldığında çok büyük bir deprem olabilir.",
     segments: [
       {
-        name: "Karlıova – Bingöl – Palu Segmenti",
-        detail: "KAF ile DAF'ın kesiştiği Karlıova düğümünden Murat Nehri vadisi boyunca uzanır.",
+        name: "Karlıova – Bingöl – Palu Parçası",
+        detail: "İki fayın buluştuğu Karlıova'dan Murat Nehri vadisini izleyerek güneybatıya iner.",
       },
       {
-        name: "Palu – Hazar Gölü – Sivrice Segmenti",
+        name: "Palu – Hazar Gölü – Sivrice Parçası",
         detail:
-          "Elazığ Hazar Gölü tektonik çöküntüsünü boydan boya geçer. 24 Ocak 2020 depreminde kırılarak gerilimini güneybatıya aktarmıştır.",
+          "Elazığ'daki Hazar Gölü'nün oturduğu çukuru boydan boya geçer. 24 Ocak 2020 depreminde kırıldı ve gerilimini güneybatıya aktardı.",
       },
       {
-        name: "Doğanyol – Pütürge – Erkenek Segmenti",
-        detail: "Malatya ile Adıyaman arasındaki dağlık kuşağı kat eden derin kırık zonudur.",
+        name: "Doğanyol – Pütürge – Erkenek Parçası",
+        detail: "Malatya ile Adıyaman arasındaki dağlık bölgeyi keser.",
       },
       {
-        name: "Pazarcık – Türkoğlu – Gölbaşı Segmenti",
+        name: "Pazarcık – Türkoğlu – Gölbaşı Parçası",
         detail:
-          "6 Şubat 2023 sabaha karşı saat 04:17'de Mw 7.7 büyüklüğündeki ana şokun merkez üssünü barındıran segment.",
+          "6 Şubat 2023'te sabaha karşı 04:17'de olan Mw 7.7 büyüklüğündeki depremin merkez üssü bu parçadaydı.",
       },
       {
-        name: "Amanos – Hatay – Samandağ Segmenti",
+        name: "Amanos – Hatay – Samandağ Parçası",
         detail:
-          "Amik Ovası ve Asi Nehri havzasından geçerek Ölü Deniz Fay Zonu ile kesişen güney ucu.",
+          "Fayın güney ucu. Amik Ovası'ndan ve Asi Nehri havzasından geçer, Ölü Deniz Fayı ile kesişir.",
       },
     ],
     provinces: [
@@ -203,86 +203,87 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 1822,
         place: "Antakya – Halep",
         magnitude: "Ms ~7.0",
-        note: "Güney DAF ve Ölü Deniz Fay kesişiminde büyük can kaybı ve tarihi yerleşim tahribatı.",
+        note: "DAF'ın güney ucunun Ölü Deniz Fayı ile kesiştiği yerde oldu. Can kaybı büyüktü, tarihi kentler ağır hasar gördü.",
       },
       {
         year: 1872,
         place: "Amik Gölü (Antakya)",
         magnitude: "Ms 7.2",
-        note: "Amik Ovası zemininde sıvılaşma ve geniş çaplı tektonik çöküntü.",
+        note: "Amik Ovası'nın suya doygun zemini sıvılaştı, yani bir süre sıvı gibi davrandı; geniş alanlar çöktü.",
       },
       {
         year: 1971,
         place: "Bingöl",
         magnitude: "Ms 6.8",
-        note: "DAF'ın kuzeydoğu ucunda ağır yapı hasarı.",
+        note: "Fayın kuzeydoğu ucunda oldu; yapılar ağır hasar aldı.",
       },
       {
         year: 2020,
         place: "Elazığ (Sivrice)",
         magnitude: "Mw 6.8",
-        note: "Pütürge segmenti üzerinde kırılma; Malatya ve Elazığ'da can kayıpları.",
+        note: "Pütürge parçası kırıldı. Malatya ve Elazığ'da can kaybı oldu.",
       },
       {
         year: 2023,
         place: "Pazarcık (Kahramanmaraş)",
         magnitude: "Mw 7.7",
-        note: "6 Şubat 2023 saat 04:17: DAF'ın yaklaşık 300 kilometrelik ana hattı üzerinde 9 saat arayla yaşanan 'Asrın Felaketi'nin ilk ana şoku; 11 ilde 53 bini aşkın can kaybı.",
+        note: "6 Şubat 2023, saat 04:17. DAF'ın yaklaşık 300 kilometrelik ana hattında dokuz saat arayla olan iki büyük depremin ilki. 11 ilde 53 binden fazla kişi hayatını kaybetti.",
       },
       {
         year: 2023,
         place: "Elbistan (Kahramanmaraş)",
         magnitude: "Mw 7.6",
-        note: "6 Şubat 2023 saat 13:24: İlk depremin tetiklediği Çardak Fayı üzerinde gerçekleşen ikinci bağımsız sarsıntı.",
+        note: "6 Şubat 2023, saat 13:24. İlk deprem yakındaki Çardak Fayı'nı tetikledi. Bu ikincisi bir artçı değil, o fayda olan ayrı bir depremdi.",
       },
     ],
     seismicGapAndRisk:
-      "6 Şubat 2023 depremleri DAF'ın güneybatı kollarındaki yüzlerce yıllık enerji birikimini büyük ölçüde boşaltmıştır. Buna karşılık kuzey uçtaki Yedisu Fayı (Erzincan-Bingöl arası) 1784'ten beri kırılmamış olup sismik boşluk vasfını sürdürmektedir.",
+      "6 Şubat 2023 depremleri, DAF'ın güneybatı kollarında yüzlerce yıldır biriken gerilimin büyük kısmını boşalttı. Kuzey uçtaki Yedisu Fayı (Erzincan ile Bingöl arası) ise 1784'ten beri kırılmadı; hâlâ bir sismik boşluk.",
     marineConnection: {
       seaName: "Akdeniz (İskenderun Körfezi)",
       href: "/deniz/akdeniz",
       description:
-        "DAF'ın güney ucu Samandağ kıyısından Doğu Akdeniz basenine ve Kıbrıs Yayı tektoniğine bağlanır.",
+        "DAF'ın güney ucu Samandağ kıyısında denize ulaşır ve Doğu Akdeniz'de Kıbrıs Yayı'na bağlanır.",
     },
   },
   {
     id: "bafs",
     name: "Batı Anadolu Fay Sistemi (BAFS)",
     shortName: "BAFS",
-    type: "Normal Faylanma ve Horst-Graben Genişleme Sistemi",
+    type: "Normal Faylar, Horst ve Graben",
     riskLevel: "Yüksek",
     lengthKm: 800,
     badgeClass: FAULT_IDENTITY.bafs.badge,
     borderClass: FAULT_IDENTITY.bafs.articleEdge,
     accentColor: FAULT_IDENTITY.bafs.label,
     formation:
-      "Afrika Levhası'nın Helen Yayı boyunca Ege Denizi'nin altına dalması ve yay gerisi açılma tektoniği (back-arc extension) nedeniyle Batı Anadolu kabuğu kuzey-güney yönünde yılda yaklaşık 30-40 milimetre hızla esnemektedir. Bu gerilme, dağlık kütlelerin (horst) yükselmesine ve aralarındaki çöküntü ovalarının (graben) fay diklikleriyle tabana oturmasına yol açmıştır.",
+      "Afrika Levhası, Helen Yayı boyunca Ege Denizi'nin altına dalıyor. Bunun arkasında kalan Batı Anadolu'nun yer kabuğu kuzey-güney yönünde çekiliyor ve yılda yaklaşık 30-40 milimetre esniyor. Gerilen kabuk kırılıyor: bazı bloklar yükselip dağları (horst), aralarındakiler dik fay yamaçları boyunca çöküp ovaları (graben) oluşturuyor.",
     movementMechanism:
-      "Normal faylanma: Kabuktaki açılma ve çekme kuvvetleri sonucunda asılı blok taban bloğuna göre aşağıya doğru kayar. Bu faylarda düşey yer değiştirme bileşeni baskındır ve yüzeyde basamaklı fay aynaları, dik yamaçlar ve termal su çıkışları oluşturur.",
+      "Normal fay: kabuk iki yana çekildikçe fayın üstünde kalan blok (asılı blok) alttaki bloğa göre aşağı kayar. Hareketin büyük kısmı dikeydir. Yüzeyde basamak basamak fay aynaları ve dik yamaçlar oluşur, kırıklardan sıcak su çıkar.",
     segments: [
       {
-        name: "Bakırçay Grabeni & Kırıkları",
+        name: "Bakırçay Grabeni",
         detail:
-          "Soma, Kınık ve Bergama olukları boyunca uzanarak Çandarlı Körfezi açıklarına kavuşur.",
+          "Soma, Kınık ve Bergama çukurlarını izler ve Çandarlı Körfezi açıklarına kadar sürer.",
       },
       {
         name: "Gediz (Alaşehir) Grabeni",
         detail:
-          "Sarıgöl, Alaşehir, Salihli ve Turgutlu hattı boyunca Bozdağlar horstunun kuzey yamacını belirler; 1969 Alaşehir depreminin kaynağıdır.",
+          "Sarıgöl, Alaşehir, Salihli ve Turgutlu boyunca Bozdağlar'ın kuzey eteğini çizer. 1969 Alaşehir depremi burada oldu.",
       },
       {
         name: "Küçük Menderes Çöküntüsü",
-        detail: "Ödemiş, Tire ve Torbalı ovalarını çevreleyen basamaklı normal fay zonlarıdır.",
+        detail:
+          "Ödemiş, Tire ve Torbalı ovalarının kenarlarında basamak gibi dizilen normal faylar.",
       },
       {
         name: "Büyük Menderes Grabeni",
         detail:
-          "Dinar, Nazilli, Aydın ve Söke üzerinden Ege Denizi'ne dökülen Türkiye'nin en karakteristik tektonik graben vadisidir.",
+          "Dinar'dan başlayıp Nazilli, Aydın ve Söke üzerinden Ege Denizi'ne kadar uzanan uzun bir çöküntü vadisi.",
       },
       {
         name: "Gökova & Muğla Fay Kuşağı",
         detail:
-          "Muğla, Ula, Ören ve Bodrum yarımadası boyunca uzanan derin denizaltı graben faylarıdır.",
+          "Muğla, Ula, Ören ve Bodrum Yarımadası boyunca uzanan, deniz altında süren graben fayları.",
       },
     ],
     provinces: [
@@ -300,40 +301,40 @@ export const FAULT_LINES_DATA: FaultLineItem[] = [
         year: 1969,
         place: "Alaşehir (Manisa)",
         magnitude: "Ms 6.5",
-        note: "Gediz grabenindeki normal fay hareketine bağlı yüzey deformasyonu.",
+        note: "Gediz grabeninde bir normal fay kaydı ve yer yüzeyinde izi görüldü.",
       },
       {
         year: 1970,
         place: "Gediz (Kütahya)",
         magnitude: "Ms 7.2",
-        note: "İç Batı Anadolu geçiş kuşağında binden fazla can kaybı.",
+        note: "Batı Anadolu'nun iç kesiminde oldu. Binden fazla can kaybı yaşandı.",
       },
       {
         year: 1995,
         place: "Dinar (Afyonkarahisar)",
         magnitude: "Ms 6.1",
-        note: "Büyük Menderes grabeninin doğu basamağında sığ odaklı yıkım.",
+        note: "Büyük Menderes grabeninin doğu ucunda, yere yakın (sığ odaklı) bir depremdi ve yıkıma yol açtı.",
       },
       {
         year: 2017,
         place: "Bodrum – Kos",
         magnitude: "Mw 6.6",
-        note: "Gökova Körfezi açığında normal faylanma ve küçük çaplı yerel kıyı tsunamisi.",
+        note: "Gökova Körfezi açığında bir normal fay kırıldı. Kıyıya küçük, yerel bir tsunami ulaştı.",
       },
       {
         year: 2020,
         place: "Sisam – İzmir",
         magnitude: "Mw 6.6",
-        note: "30 Ekim 2020: Sisam adası kuzeyindeki normal fayın kırılmasıyla 70 km uzaktaki Bayraklı ve Bornova alüvyon zeminlerinde ağır yıkım ve Seferihisar kıyısında tsunami.",
+        note: "30 Ekim 2020. Sisam Adası'nın kuzeyindeki normal fay kırıldı. 70 km uzaktaki Bayraklı ve Bornova'da, yumuşak alüvyon zemin üzerindeki binalarda ağır yıkım oldu; Seferihisar kıyısına tsunami ulaştı.",
       },
     ],
     seismicGapAndRisk:
-      "BAFS üzerindeki faylar KAF gibi tek bir ana iz üzerinde değil, yüzlerce parçalı paralel kırık ağından oluşur. Bu nedenle 5.0 - 6.5 büyüklüğündeki orta ölçekli depremler çok sık tekrarlanır. Alüvyon zeminli ovalardaki yapı stokları zemin büyütmesi nedeniyle yüksek risk taşır.",
+      "BAFS, KAF gibi tek bir hat değildir; yüzlerce parçalı, birbirine paralel kırıktan oluşan bir ağdır. Bu yüzden 5.0 ile 6.5 arası orta büyüklükte depremler çok sık olur. Ovaların yumuşak alüvyon zemini sarsıntıyı büyütür, bu yüzden oradaki binalar daha büyük risk altındadır.",
     marineConnection: {
       seaName: "Ege Denizi",
       href: "/deniz/ege",
       description:
-        "BAFS graben vadilerinin Ege Denizi tabanında devam eden denizaltı kırıkları ve kıta sahanlığı etkileşimi Ege Denizi sayfasında incelenmektedir.",
+        "Graben vadilerinin Ege Denizi tabanında nasıl sürdüğünü ve kıyıyı nasıl biçimlendirdiğini Ege Denizi sayfasında okuyabilirsin.",
     },
   },
 ];

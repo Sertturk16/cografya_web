@@ -76,7 +76,7 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "CBS Araçları", href: "/araclar", path: "/araclar" },
+              { label: "Harita Araçları", href: "/araclar", path: "/araclar" },
               { label: "Mesafe Ölçme", path: "/araclar/mesafe-olcme" },
             ]}
             locale={locale}
@@ -88,37 +88,31 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
               tier="hub"
               heading="Haritada Kuş Uçuşu Mesafe Ölçme"
               badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<Route className="size-3.5" />}>
-                    Jeodezik Kuş Uçuşu Mesafe
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    WGS84 Haversine Modeli
-                  </Badge>
-                </>
+                <Badge variant="primary" size="sm" icon={<Route className="size-3.5" />}>
+                  Duraklı rotanın toplamını verir
+                </Badge>
               }
               notice={<V2EnWorkInProgressNotice locale={locale} />}
               lede={
                 <>
-                  Türkiye haritasında dilediğiniz noktaları işaretleyerek ya da 81 il merkezinden
-                  seçerek noktalar arası jeodezik mesafeyi, tahmini uçuş süresini ve karayolu
-                  farkını anında hesaplayın.
+                  Haritaya tıkla ya da listeden iki il seç: aradaki kuş uçuşu mesafe hemen çıkar.
+                  Uçakla kaç dakika süreceğini ve yolun kabaca kaç kilometre tutacağını da görürsün.
                 </>
               }
             />
 
             {/* Metric Strip */}
             <StatGrid gutter="hero">
-              <StatTile label="Büyük Daire Yayı Denklemi" fact="Haversine" tone="primary" />
+              <StatTile label="Mesafeyi hesaplayan formül" fact="Haversine" tone="primary" />
               {/* `fact`, not `value={6371}`. THE LINE THIS PR DRAWS: `MetricValue` guards
                   against a page promising a reading it does not have, which is a statement
                   about DATA. These four are constants typed into the copy — a documented
                   radius, a cruising speed — and there is nothing for an `absent` state to
                   describe. The tiles fed by real data DO take the measurement branch; see
                   `turkiye`, `dunya` and `kitaplar`. */}
-              <StatTile label="WGS84 Ortalama Dünya Yarıçapı" fact="6.371 km" tone="secondary" />
-              <StatTile label="Seyir Hızı Uçuş Simülasyonu" fact="800 km/s" tone="accent" />
-              <StatTile label="Topoğrafik Karayolu Katsayısı" fact="%28 Eğim" tone="primary" />
+              <StatTile label="Dünya'nın ortalama yarıçapı" fact="6.371 km" tone="secondary" />
+              <StatTile label="Uçuş süresinde varsayılan hız" fact="800 km/sa" tone="accent" />
+              <StatTile label="Karayolu tahmini: kuş uçuşu ×" fact="1,28" tone="primary" />
             </StatGrid>
           </Card>
         </div>

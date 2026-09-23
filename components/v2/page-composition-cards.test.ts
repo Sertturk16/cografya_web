@@ -591,7 +591,8 @@ export const HAND_DRAWN_CARDS = 187;
 // 159 → **158** in T-089: `/oyun`'s "Yeni Oyun Özellikleri" strip, a `bg-muted/40` well, deleted.
 // 158 → **156** in T-091: the two boxed attribution notes became footnotes — the AFAD disclaimer
 // in `earthquake-attribution.tsx` and `MarineDataNotice`'s panel. A notice is not a panel.
-export const HAND_DRAWN_WELLS = 156;
+// 156 → **150** in T-090: the home page's two decorative three-tile strips (6 wells) deleted.
+export const HAND_DRAWN_WELLS = 150;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -608,8 +609,9 @@ export const HAND_DRAWN_WELLS = 156;
  * 234 → **230** in T-088: the deleted `v2-sources-section.tsx`'s four shapes, each its own string.
  * 230 → **229** in T-089: the deleted `/oyun` feature strip was the only element with its spelling.
  * 229 → **227** in T-091: the two wells above ({@link HAND_DRAWN_WELLS}) were each a one-off
- * spelling, so both left the set with them. */
-export const HAND_DRAWN_CARD_SPELLINGS = 227;
+ * spelling, so both left the set with them.
+ * 227 → **226** in T-090: the home strips' tile spelling left with them. */
+export const HAND_DRAWN_CARD_SPELLINGS = 226;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1001,7 +1003,8 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   // index row's `<summary>` and its chevron. 195 → 176 in T-054: the search combobox's
   // unmounted `default` branch. See {@link COMPUTED_CARD_CLASSNAMES}.
   ["identifier", 176],
-  ["member", 9],
+  // 9 → 8 in T-090: `/dunya/kita` dropped the continent-name chip that repeated each card's title.
+  ["member", 8],
   ["ternary", 2],
 ];
 
@@ -1796,11 +1799,14 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  * move these three; the isolation run that separates the two is in that block above, as is the
  * Ruling AZ control at these values, on `hakkimizda/page.tsx` and reverted.
  */
-export const STAT_GRIDS_WITHOUT_STATTILE = 47;
+// 47 → 46: T-090 dropped the muted sentence on the `oyun/bolge-bolge-il` region cards,
+// so that grid no longer reads as tiles. 46 → 44 in T-090: the home page's two three-tile
+// count strips deleted.
+export const STAT_GRIDS_WITHOUT_STATTILE = 44;
 
-export const STAT_GRID_FILES = 25;
+export const STAT_GRID_FILES = 24; // 25 → 24, same T-090 change
 
-export const STAT_TILES_WITHOUT_STATTILE = 111;
+export const STAT_TILES_WITHOUT_STATTILE = 104; // 111 → 110 (/oyun region cards) → 104 (home strips), T-090
 
 /**
  * The floor that is supposed to RISE. Zero for three tasks; 13 once the metric-strip family
@@ -1822,7 +1828,9 @@ export const SURFACE_FILES_RENDERING_STATTILE = 12;
  * `isGridShell` into it would push a scanner internal out of this 4800-test module, a worse trade.
  * If you are auditing this number, read both.
  */
-export const STAT_GRIDS_TOTAL = 59;
+// 59 → 56 in T-090: the /oyun region-card grid and the home page's two count strips left the
+// census; none was migrated.
+export const STAT_GRIDS_TOTAL = 56;
 
 const TILE_VALUE_SIZE = /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)/;
 

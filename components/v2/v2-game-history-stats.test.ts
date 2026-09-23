@@ -25,10 +25,10 @@ describe("V2GameHistoryStats & Workbench Polish (IRIS A7, IRIS A10, IRIS A11)", 
     expect(statsSource).not.toContain("unlocked: totalRounds >= 1");
   });
 
-  it("IRIS A11: workbench uses 'Bulut Arşivine Kaydet' label and aria-live status", () => {
+  it("IRIS A11: workbench says saves go to the account, and has aria-live status", () => {
     // The label moved to the catalogue in T-081; the workbench reads it by key.
     expect(workbenchSource).toContain('t("saveDestination")');
-    expect(trMessages.ToolWorkbench.saveDestination).toBe("Bulut Arşivine Kaydet");
+    expect(trMessages.ToolWorkbench.saveDestination).toBe("Hesabına kaydedilir");
     expect(workbenchSource).not.toContain("Yerel Hafızaya Sakla");
     expect(JSON.stringify(trMessages.ToolWorkbench)).not.toContain("Yerel Hafızaya Sakla");
     expect(workbenchSource).toContain('role="status"');

@@ -77,7 +77,7 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "CBS Araçları", href: "/araclar", path: "/araclar" },
+              { label: "Harita Araçları", href: "/araclar", path: "/araclar" },
               { label: "Alan Hesaplama", path: "/araclar/alan-hesaplama" },
             ]}
             locale={locale}
@@ -87,33 +87,35 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Haritada Alan & Yüzölçümü Hesaplama"
+              heading="Haritada Alan Hesaplama"
               badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<Maximize2 className="size-3.5" />}>
-                    Çokgen (Polygon) Yüzölçümü
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    L&apos;Huilier Jeodezik Teoremi
-                  </Badge>
-                </>
+                <Badge variant="primary" size="sm" icon={<Maximize2 className="size-3.5" />}>
+                  Sonuçta çevre uzunluğu yazılır
+                </Badge>
               }
               notice={<V2EnWorkInProgressNotice locale={locale} />}
               lede={
                 <>
-                  Harita üzerinde en az 3 nokta işaretleyerek çizdiğiniz çokgenin gerçek yüzölçümünü
-                  km², Hektar, Dönüm ve m² cinsinden WGS84 küresel elipsoid modeliyle anında
-                  hesaplayın.
+                  Ölçmek istediğin yerin kenarına köşe köşe nokta koy. Üçüncü noktadan sonra şekil
+                  kapanır ve içinde kalan alan km², hektar ve dönüm olarak yazılır.
                 </>
               }
             />
 
             {/* Metric Strip */}
             <StatGrid gutter="hero">
-              <StatTile label="km², Hektar, Dönüm ve m²" fact="4 Birim" tone="primary" />
-              <StatTile label="Küresel Üçgenleme Algoritması" fact="L'Huilier" tone="secondary" />
-              <StatTile label="Kapalı Çevre (Perimeter) Uzunluğu" fact="Çevre (P)" tone="accent" />
-              <StatTile label="Eğri Yüzey Alan Modeli" fact="WGS84" tone="primary" />
+              <StatTile label="Şekli kapatmak için gereken köşe" fact="En az 3" tone="primary" />
+              <StatTile
+                label="Sonucun birimleri: km², hektar, dönüm"
+                fact="3 birim"
+                tone="secondary"
+              />
+              <StatTile
+                label="Alan bu yarıçaplı bir küre üstünde bulunur"
+                fact="6.371 km"
+                tone="accent"
+              />
+              <StatTile label="1 km² kaç dönüm eder" fact="1.000 dönüm" tone="primary" />
             </StatGrid>
           </Card>
         </div>

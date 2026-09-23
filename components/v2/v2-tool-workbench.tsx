@@ -1113,17 +1113,10 @@ export function V2ToolWorkbench({
         <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-5 sm:p-7 shadow-lg space-y-5">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
             <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                  {t("labBadge")}
-                </Badge>
-                <span className="text-xs text-muted-foreground font-medium">
-                  {t("labSubtitle")}
-                </span>
-              </div>
-              <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary mt-1">
+              <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary">
                 {t("labHeading")}
               </h2>
+              <span className="text-xs text-muted-foreground font-medium">{t("labSubtitle")}</span>
             </div>
 
             <div className="flex items-center gap-2">

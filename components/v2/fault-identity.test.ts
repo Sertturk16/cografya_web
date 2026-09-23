@@ -130,7 +130,7 @@ describe("every fault surface reads the one module, and names its own fault", ()
   it("deprem/page: the three summary cards each read their own fault, on all three members", () => {
     const source = read("../../app/[locale]/(site)/deprem/page.tsx");
     // Anti-vacuity: the section this pin is about is still in the file.
-    expect(source).toContain("Sismotektonik Yapı");
+    expect(source).toContain("Türkiye&apos;nin Üç Büyük Fay Hattı");
     for (const id of IDS) {
       for (const member of ["card", "label", "chip"] as const) {
         const producer = `FAULT_IDENTITY.${id}.${member}`;

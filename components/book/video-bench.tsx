@@ -494,8 +494,8 @@ export function VideoBench({
             </div>
             <div>
               <div className="text-xs font-bold text-foreground">
-                Kitap İlerlemesi: {bookProgress.watchedCount} / {bookProgress.videoCount} video
-                izlendi
+                Bu kitapta {bookProgress.videoCount} videodan {bookProgress.watchedCount} tanesini
+                izledin
               </div>
               {/* `Progress` rather than two nested divs (T-036): the hand-drawn bar carried
                   no `role="progressbar"` and no `aria-valuenow`. The percentage IS on screen
@@ -522,7 +522,7 @@ export function VideoBench({
               }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
             >
-              <span>Kaldığın Yer: Deneme {bookProgress.resume.orderNo}</span>
+              <span>Devam et: Deneme {bookProgress.resume.orderNo}</span>
               <span className="text-[10px] text-muted-foreground">
                 ({Math.floor(bookProgress.resume.lastPositionSeconds / 60)}:
                 {String(bookProgress.resume.lastPositionSeconds % 60).padStart(2, "0")})

@@ -12,8 +12,7 @@ import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
-import { Badge } from "@/components/ui/badge";
-import { Gamepad2, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
@@ -79,31 +78,21 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Harita Oyunları & Coğrafya Sınavları"
-              badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-                    Oyunlaştırılmış Coğrafya
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    3 İnteraktif Sınav Modu
-                  </Badge>
-                </>
-              }
+              heading="Harita Oyunları"
               lede={
                 <>
-                  Dilsiz Türkiye haritası üzerinde illeri doğru bularak puan toplayın, bölge bazlı
-                  sınavlara katılın ve mekânsal hafızanızı en üst seviyeye çıkarın.
+                  Dilsiz haritada il ve bölge adları yazmaz. Sorulan yeri bulup tıkladıkça puan
+                  toplarsın.
                 </>
               }
             />
 
             {/* Metric Strip */}
             <StatGrid gutter="hero">
-              <StatTile label="Farklı Sınav & Test Modu" fact="3 Oyun" tone="primary" />
-              <StatTile label="Eksiksiz Soru Havuzu" fact="81 İl" tone="secondary" />
-              <StatTile label="Bölgesel Harita Tamamlama" fact="7 Bölge" tone="accent" />
-              <StatTile label="Gerçek Zamanlı Geri Bildirim" fact="%100" tone="primary" />
+              <StatTile label="Aşağıdan birini seç" fact="3 Oyun" tone="primary" />
+              <StatTile label="Türkiye'nin tüm illeri" fact="81 İl" tone="secondary" />
+              <StatTile label="Bölgeyi ya da illerini bul" fact="7 Bölge" tone="accent" />
+              <StatTile label="Klasik, zamana karşı, alıştırma" fact="3 Zorluk" tone="primary" />
             </StatGrid>
           </Card>
         </div>

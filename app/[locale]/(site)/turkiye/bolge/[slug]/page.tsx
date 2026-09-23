@@ -39,6 +39,7 @@ import {
   Landmark,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 
 export const revalidate = 86400;
 
@@ -161,33 +162,32 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
   "Çatalca-Kocaeli Bölümü": {
     provincesTr: "İstanbul, Kocaeli, Sakarya, Yalova",
     highlight:
-      "İstanbul ve Çanakkale boğazları, küresel sanayi ve lojistik ağı, en yüksek nüfus yoğunluğu",
+      "İstanbul Boğazı, büyük sanayi ve lojistik ağı, Türkiye'nin en yüksek nüfus yoğunluğu",
   },
   "Güney Marmara Bölümü": {
     provincesTr: "Bursa, Balıkesir, Çanakkale, Bilecik",
-    highlight: "Verimli çöküntü ve delta ovaları, tarım-sanayi entegrasyonu ve Uludağ masifi",
+    highlight: "Verimli çöküntü ve delta ovaları, tarıma dayalı sanayi ve Uludağ kütlesi",
   },
   // Ege
   "Ege Bölümü (Asıl Ege)": {
     provincesTr: "İzmir, Manisa, Aydın, Muğla, Denizli",
-    highlight:
-      "Horst-graben morfolojisi, kıyıya dik uzanan dağlar, Gediz ve Menderes graben ovaları",
+    highlight: "Kıyıya dik uzanan horst dağları, aralarında Gediz ve Menderes graben ovaları",
   },
   "İç Batı Anadolu Bölümü": {
     provincesTr: "Afyonkarahisar, Kütahya, Uşak",
     highlight:
-      "Yüksek platolar, eşik arazisi, karasallaşan iklim, tahıl tarımı ve zengin termal kaynaklar",
+      "Ege ile İç Anadolu arasında bir eşik: yüksek platolar, gittikçe karasallaşan iklim, tahıl tarımı ve bol termal kaynak",
   },
   // Akdeniz
   "Adana Bölümü": {
     provincesTr: "Adana, Mersin, Hatay, Osmaniye, Kahramanmaraş",
     highlight:
-      "Çukurova deltası, verimli alüvyal taban, endüstriyel tarım, narenciye ve İskenderun sanayi hattı",
+      "Çukurova deltası ve verimli alüvyal ovası, büyük ölçekli tarım, narenciye ve İskenderun'daki sanayi",
   },
   "Antalya Bölümü": {
     provincesTr: "Antalya, Isparta, Burdur",
     highlight:
-      "Teke ve Taşeli karstik platoları, polye-kanyon morfolojisi, Batı Toroslar ve sahil turizmi",
+      "Teke ve Taşeli'nin karstik platoları, polyeler ve kanyonlar, Batı Toroslar ve kıyı turizmi",
   },
   // İç Anadolu
   "Konya Bölümü": {
@@ -197,12 +197,12 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
   },
   "Yukarı Sakarya Bölümü": {
     provincesTr: "Ankara, Eskişehir",
-    highlight: "Başkent idari merkezi, yüksek sanayi ve hizmet sektörü yoğunluğu, plato düzlükleri",
+    highlight: "Başkent Ankara, yoğun sanayi ve hizmet sektörü, düz plato yüzeyleri",
   },
   "Orta Kızılırmak Bölümü": {
     provincesTr: "Kayseri, Kırşehir, Nevşehir, Yozgat, Kırıkkale, Niğde",
     highlight:
-      "Volkanik Erciyes-Hasan Dağı sahaları, Kapadokya peri bacaları ve Kızılırmak büklümü",
+      "Erciyes ve Hasan gibi volkanik dağlar, Kapadokya'nın peri bacaları ve Kızılırmak'ın büyük kavsi",
   },
   "Yukarı Kızılırmak Bölümü": {
     provincesTr: "Sivas",
@@ -221,7 +221,8 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
   },
   "Doğu Karadeniz Bölümü": {
     provincesTr: "Trabzon, Rize, Artvin, Giresun, Gümüşhane, Bayburt",
-    highlight: "En yüksek yıllık yağış, dik Kaçkar yamaçları, çay ve fındık monokültürü",
+    highlight:
+      "Türkiye'de en çok yağış alan kıyılar, dik Kaçkar yamaçları, çay ve fındığa dayalı tarım",
   },
   // Doğu Anadolu
   "Erzurum-Kars Bölümü": {
@@ -240,7 +241,7 @@ const SUBREGION_DETAILS: Record<string, { provincesTr: string; highlight: string
   "Hakkari Bölümü": {
     provincesTr: "Hakkâri, Şırnak (doğusu)",
     highlight:
-      "Türkiye'nin en sarp ve engebeli buzul topoğrafyası (Cilo-Sat zirveleri) ve derin vadiler",
+      "Türkiye'nin en sarp ve engebeli arazisi, Cilo ve Sat dağlarındaki buzullar, derin vadiler",
   },
   // Güneydoğu Anadolu
   "Dicle Bölümü": {
@@ -265,12 +266,12 @@ const REGION_DISASTER_PROFILES: Record<
   MARMARA: {
     faultLines: ["Kuzey Anadolu Fay Hattı (KAF) Kuzey Kolu", "KAF Güney Kolu", "Ganos Fay Zonu"],
     primaryRisks: [
-      "Yüksek Büyüklükte Sismik Tehlike (M≥7.0)",
-      "Marmara Denizi İkincil Tsunami Riski",
-      "Alüvyon Zemin Sıvılaşması",
+      "Büyüklüğü 7,0 ve üzeri deprem tehlikesi",
+      "Depremin Marmara Denizi'nde tetikleyebileceği tsunami",
+      "Alüvyon zeminlerde sıvılaşma",
     ],
     warningNote:
-      "İstanbul, Kocaeli, Sakarya ve Yalova aksı aktif fay segmentleri üzerinde yer almakta olup kentsel dirençlilik ve zemin güçlendirmesi hayatidir.",
+      "İstanbul, Kocaeli, Sakarya ve Yalova hattı aktif fay parçalarının üzerinde. Binaları ve zemini depreme dayanıklı hâle getirmek hayati önem taşır.",
   },
   EGE: {
     faultLines: [
@@ -280,12 +281,12 @@ const REGION_DISASTER_PROFILES: Record<
       "İzmir Fayı",
     ],
     primaryRisks: [
-      "Sık Aralıklarla Yıkıcı Depremler",
-      "Graben Tabanlarında Zemin Sıvılaşması",
-      "Ege Denizi Kıyı Tsunami Olasılığı",
+      "Sık aralıklarla yıkıcı depremler",
+      "Graben ovalarında zemin sıvılaşması",
+      "Ege kıyılarında tsunami olasılığı",
     ],
     warningNote:
-      "Horst-graben sistemi sebebiyle kabuk sürekli gerilme altındadır; sığ odaklı sarsıntılar geniş alanda yüksek şiddetle hissedilir.",
+      "Horst-graben yapısı yüzünden yer kabuğu sürekli gerilir. Depremlerin odağı sığ olduğu için sarsıntı geniş bir alanda şiddetli hissedilir.",
   },
   AKDENIZ: {
     faultLines: [
@@ -294,12 +295,12 @@ const REGION_DISASTER_PROFILES: Record<
       "Ecemiş Fayı",
     ],
     primaryRisks: [
-      "Levha Sınırı Tektoniği & Deprem",
-      "Karstik Arazide Çöküntü ve Kaya Düşmesi",
-      "Akdeniz Kıyı Kuşağında Fırtına ve Taşkın",
+      "Levha sınırına yakınlık ve deprem",
+      "Karstik arazide çöküntü ve kaya düşmesi",
+      "Kıyı kuşağında fırtına ve taşkın",
     ],
     warningNote:
-      "Doğu Akdeniz (Hatay, Kahramanmaraş, Osmaniye) DAF etkisiyle en kritik sismik fay hattı üzerindedir; batıda ise karstik obruk ve sel riskleri öne çıkar.",
+      "Doğu Akdeniz'deki Hatay, Kahramanmaraş ve Osmaniye, Doğu Anadolu Fayı'nın etkisindedir; deprem tehlikesi en çok buradadır. Batıda ise karstik obruklar ve sel öne çıkar.",
   },
   IC_ANADOLU: {
     faultLines: [
@@ -309,12 +310,12 @@ const REGION_DISASTER_PROFILES: Record<
       "Ecemiş Fay Kuşağı",
     ],
     primaryRisks: [
-      "Obruk Oluşumu ve Karstik Zemin Yarıkları",
-      "Meteorolojik ve Tarımsal Kuraklık / Çölleşme",
-      "Yerel Orta Büyüklükte Sarsıntılar",
+      "Obruklar ve karstik zemin yarıkları",
+      "Kuraklık ve çölleşme",
+      "Yer yer orta büyüklükte depremler",
     ],
     warningNote:
-      "Deprem tehlikesi kıyılara kıyasla düşük olsa da yeraltı suyunun çekilmesine bağlı obruk yarıkları ve kuraklık riski en belirgin afettir.",
+      "Deprem tehlikesi kıyı bölgelerine göre düşüktür. Asıl tehlike, yeraltı suyu çekildikçe açılan obruklar ve kuraklıktır.",
   },
   KARADENIZ: {
     faultLines: [
@@ -322,12 +323,12 @@ const REGION_DISASTER_PROFILES: Record<
       "Karadeniz Sahil Tektonik Kıvrımları",
     ],
     primaryRisks: [
-      "Şiddetli Heyelan ve Kütle Hareketleri",
-      "Ani Sağanak, Sel ve Moloz Taşkınları",
-      "KAF Güney Vadiler Boyunca Sismik Etkinlik",
+      "Şiddetli heyelan ve kütle hareketleri",
+      "Ani sağanak, sel ve moloz taşkınları",
+      "Güneydeki vadiler boyunca Kuzey Anadolu Fayı depremleri",
     ],
     warningNote:
-      "Dik yamaçlar, suya doygun killi zemin ve yoğun yağış rejimi, Türkiye'de en fazla heyelan ve sel hadisesinin yaşandığı afet bölgesini oluşturur.",
+      "Dik yamaçlar, suya doymuş killi zemin ve bol yağış yüzünden Türkiye'de en çok heyelan ve sel bu bölgede yaşanır.",
   },
   DOGU_ANADOLU: {
     faultLines: [
@@ -336,12 +337,12 @@ const REGION_DISASTER_PROFILES: Record<
       "Bingöl-Karlıova Tektonik Düğümü",
     ],
     primaryRisks: [
-      "En Yüksek Sismik Enerji Boşalımı (M≥7.2)",
-      "Kış Aylarında Kar Engeli ve Çığ Düşmesi",
-      "Sarp Vadilerde Heyelan ve Kaya Düşmesi",
+      "En güçlü depremler: büyüklüğü 7,2 ve üzeri",
+      "Kışın karla kapanan yollar ve çığ",
+      "Sarp vadilerde heyelan ve kaya düşmesi",
     ],
     warningNote:
-      "KAF ve DAF hatlarının kesiştiği Karlıova ve çevre iller (Bingöl, Malatya, Elazığ, Erzincan, Muş) Türkiye'nin en hareketli tektonik düğümüdür.",
+      "Kuzey Anadolu ve Doğu Anadolu faylarının kesiştiği Karlıova ile çevresindeki Bingöl, Malatya, Elazığ, Erzincan ve Muş, Türkiye'de yer kabuğunun en hareketli olduğu yerdir.",
   },
   GUNEYDOGU_ANADOLU: {
     faultLines: [
@@ -349,12 +350,12 @@ const REGION_DISASTER_PROFILES: Record<
       "Doğu Anadolu Fayı Batı Segmenti (Gaziantep/Adıyaman)",
     ],
     primaryRisks: [
-      "Kuzey ve Batı Sınırlarında Yıkıcı Deprem",
-      "Yaz Kuraklığı, Aşırı Sıcaklar ve Toz Fırtınası",
-      "Fırat-Dicle Tabanlarında Taşkın",
+      "Kuzey ve batı sınırlarında yıkıcı deprem",
+      "Yaz kuraklığı, aşırı sıcaklar ve toz fırtınası",
+      "Fırat ve Dicle vadilerinde taşkın",
     ],
     warningNote:
-      "Kuzeyde Bitlis bindirmesi ve batıda DAF kritik sismik risk taşırken, güney düzlüklerinde iklim krizi, aşırı sıcaklar ve toz taşınımı etkilidir.",
+      "Kuzeyde Bitlis bindirmesi, batıda Doğu Anadolu Fayı deprem tehlikesi taşır. Güneydeki düzlüklerde ise iklim krizi, aşırı sıcaklar ve toz taşınımı etkilidir.",
   },
 };
 
@@ -460,7 +461,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Türkiye Atlası", href: "/turkiye", path: "/turkiye" },
+              { label: "Türkiye İlleri", href: "/turkiye", path: "/turkiye" },
               { label: region.nameTr, path: canonicalPath },
             ]}
             locale={locale}
@@ -478,9 +479,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   <Badge variant="outline" className={theme.badgeClass}>
                     {theme.nameTr}
                   </Badge>
-                  <Badge variant="secondary" className="font-mono font-medium tracking-wide">
-                    1941 Coğrafya Kongresi
-                  </Badge>
                   <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
                     <Building2 className="size-3 mr-1" /> {region.provinceCount} İl
                   </Badge>
@@ -489,11 +487,11 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   </Badge>
                   {isCoastal ? (
                     <Badge variant="outline" className="flex items-center gap-1">
-                      <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyı
+                      <Waves className="size-3" /> {region.coastalSeas.length} Denize Kıyısı Var
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      🌾 İç Bölge
+                      Denize Kıyısı Yok
                     </Badge>
                   )}
                 </>
@@ -505,7 +503,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <V2FavoriteButton target={{ kind: "region", slug: region.slug }} />
               <Link href="/turkiye">
                 <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-                  Tüm İller &amp; Atlas
+                  Tüm İller
                 </Button>
               </Link>
             </div>
@@ -516,14 +514,14 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             {/* 1. Nüfus */}
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Toplam Nüfus</span>
+                <span className="text-xs font-medium">Nüfus</span>
                 <Users className="size-4 text-primary" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
                 {format.number(region.population)}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                <span>Türkiye Payı:</span>
+                <span>Nüfus Payı:</span>
                 <span className="font-mono font-semibold text-foreground">
                   %{region.populationSharePercent.toFixed(2)}
                 </span>
@@ -557,7 +555,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 {region.populationDensity} kişi/km²
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
-                <span>TR Ortalaması:</span>
+                <span>Türkiye Ortalaması:</span>
                 <span className="font-mono font-semibold text-foreground">110 kişi/km²</span>
               </div>
             </Card>
@@ -565,7 +563,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             {/* 4. GSYH Ağırlığı */}
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">GSYH Ağırlığı (2024)</span>
+                <span className="text-xs font-medium">GSYH Payı (2024)</span>
                 <TrendingUp className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
@@ -582,54 +580,54 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
       {/* QUICKNAV / JUMP NAVIGATION BAR (SCROLLBAR HIDDEN) */}
       <nav
-        aria-label="Bölüm İndeksi"
+        aria-label="Bu sayfadaki bölümler"
         className="sticky top-14 z-30 bg-background/90 backdrop-blur-md border-b border-border py-2.5 overflow-x-auto scrollbar-none"
       >
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 text-xs whitespace-nowrap">
           <span className="text-muted-foreground font-semibold flex items-center gap-1 shrink-0 mr-1">
-            <Layers className="size-3.5" /> Bölümler:
+            <Layers className="size-3.5" /> Bu sayfada:
           </span>
           <a
             href="#konum-ve-harita"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Konum &amp; Harita
+            Konum
           </a>
           <a
             href="#fiziki-cografya"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Fiziki Coğrafya
+            Yeryüzü ve İklim
           </a>
           <a
             href="#sosyo-ekonomi"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Nüfus &amp; Ekonomi
+            Nüfus ve Ekonomi
           </a>
           <a
             href="#bolumler"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Kongre Bölümleri
+            Coğrafi Bölümler
           </a>
           <a
             href="#iller"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Bölgedeki İller
+            İller
           </a>
           <a
             href="#afet"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Deprem &amp; Afet
+            Deprem ve Afetler
           </a>
           <a
             href="#kiyaslama"
             className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            7 Bölge Kıyaslama
+            Bölgeleri Karşılaştır
           </a>
           {/* Gated on BOTH conditions the section is, because the section now has two. `FaqSection`
               returns null for an empty `items`, and the block is TR-only until T-040 — either way
@@ -667,18 +665,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             <div className="lg:col-span-7 space-y-6">
               <Card variant="panel" space="5">
                 <div className="space-y-2 border-b border-border/70 pb-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="primary" size="sm">
-                      Mekânsal Konum &amp; Sınırlar
-                    </Badge>
-                  </div>
                   <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                     <Compass className="size-6 text-primary shrink-0" />
-                    <span>{region.nameTr} Coğrafi Konumu ve Sınırları</span>
+                    <span>Konum ve Sınırlar</span>
                   </h2>
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                    Bölgenin Türkiye üzerindeki mekânsal yayılımı, komşu coğrafi bölgeler, kıyısı
-                    olan denizler ve sınır kapıları.
+                    Bölge Türkiye&apos;nin neresinde, hangi bölgelerle ve ülkelerle komşu, hangi
+                    denizlere kıyısı var.
                   </p>
                 </div>
 
@@ -690,7 +683,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   {region.neighborRegions?.length > 0 && (
                     <div className="space-y-2">
                       <span className="text-xs font-semibold text-muted-foreground block">
-                        Komşu Coğrafi Bölgeler:
+                        Komşu bölgeler:
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {region.neighborRegions.map((nbName) => {
@@ -721,7 +714,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   {region.neighborCountries?.length > 0 && (
                     <div className="space-y-2">
                       <span className="text-xs font-semibold text-muted-foreground block">
-                        Uluslararası Kara Komşuları:
+                        Komşu ülkeler:
                       </span>
                       <div className="flex flex-wrap gap-2">
                         {region.neighborCountries.map((c) => (
@@ -770,13 +763,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   ) : (
                     <div className="space-y-1.5 pt-1">
                       <span className="text-xs font-semibold text-muted-foreground block">
-                        Deniz Kıyısı Durumu:
+                        Denizler:
                       </span>
                       <Badge
                         variant="outline"
                         className="bg-muted/60 text-muted-foreground text-xs py-1 px-2.5"
                       >
-                        İç Kara Bölgesi (Açık denize doğrudan kıyısı bulunmamaktadır)
+                        Denize kıyısı yok
                       </Badge>
                     </div>
                   )}
@@ -798,9 +791,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-3xl border border-border bg-card shadow-sm space-y-3.5">
                 <div className="flex items-center gap-2">
                   <Landmark className="size-4 text-primary" />
-                  <h3 className="font-heading font-bold text-sm text-foreground">
-                    {region.nameTr} Coğrafi Özeti
-                  </h3>
+                  <h3 className="font-heading font-bold text-sm text-foreground">Kısa Bilgiler</h3>
                 </div>
 
                 <div className="divide-y divide-border text-xs">
@@ -818,20 +809,20 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   <div className="py-2 flex items-center justify-between gap-2">
                     <span className="text-muted-foreground shrink-0">Kıyısı Olan Denizler:</span>
                     <span className="font-semibold text-foreground text-right">
-                      {isCoastal ? region.coastalSeas.join(", ") : "İç Kara (Kıyısı Yok)"}
+                      {isCoastal ? region.coastalSeas.join(", ") : "Yok"}
                     </span>
                   </div>
                   <div className="py-2 flex items-center justify-between gap-2">
-                    <span className="text-muted-foreground shrink-0">Coğrafi Alt Bölüm:</span>
+                    <span className="text-muted-foreground shrink-0">Bölümler:</span>
                     <a
                       href="#bolumler"
                       className="font-semibold text-primary hover:underline text-right"
                     >
                       {region.subregions?.length > 0 && region.subregions.length <= 2
-                        ? `${region.subregionCount} Alt Bölüm (${region.subregions
+                        ? `${region.subregionCount} bölüm (${region.subregions
                             .map((s) => s.replace(" Bölümü", ""))
                             .join(", ")})`
-                        : `${region.subregionCount} Coğrafi Alt Bölüm`}
+                        : `${region.subregionCount} bölüm`}
                     </a>
                   </div>
                   <div className="py-2 flex items-center justify-between">
@@ -839,7 +830,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                     <span className="font-semibold text-foreground">{region.provinceCount} İl</span>
                   </div>
                   <div className="py-2 flex items-center justify-between">
-                    <span className="text-muted-foreground">Toplam İlçe Sayısı:</span>
+                    <span className="text-muted-foreground">İlçe Sayısı:</span>
                     <span className="font-semibold text-foreground">
                       {region.districtCount} İlçe
                     </span>
@@ -855,18 +846,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           <Card variant="panel" space="6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  Fiziki Coğrafya &amp; Doğal Çevre
-                </Badge>
-              </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-                Yeryüzü Şekilleri, İklim Kuşakları ve Hidrografya
+                Yeryüzü Şekilleri, İklim ve Sular
               </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Bölgenin morfolojik omurgası, dağ sıraları, tektonik çöküntüleri, baskın iklim
-                özellikleri ve hidrografik su ağı.
-              </p>
             </div>
 
             {/* Highest Point Highlight Banner (if available) */}
@@ -905,12 +887,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge variant="outline" size="sm">
-                      Jeomorfoloji &amp; Dağlar
-                    </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
                       <Mountain className="size-5 shrink-0" />
-                      <span>Yeryüzü Şekilleri ve Ovalar</span>
+                      <span>Dağlar ve Ovalar</span>
                     </h3>
                   </div>
                   <V2RichProse text={region.landformsTr} />
@@ -921,12 +900,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge variant="outline" size="sm">
-                      Klimatoloji &amp; Vejetasyon
-                    </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
                       <CloudSun className="size-5 shrink-0" />
-                      <span>İklim Tipleri ve Bitki Örtüsü</span>
+                      <span>İklim ve Bitki Örtüsü</span>
                     </h3>
                   </div>
                   <V2RichProse text={region.climateAndVegetationTr} />
@@ -937,12 +913,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge variant="outline" size="sm">
-                      Hidrografya &amp; Su Ağı
-                    </Badge>
                     <h3 className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
                       <Droplets className="size-5 shrink-0" />
-                      <span>Akarsular, Göller ve Havzalar</span>
+                      <span>Akarsular ve Göller</span>
                     </h3>
                   </div>
                   <V2RichProse text={region.hydrographyTr} />
@@ -957,18 +930,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           <Card variant="panel" space="6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  Sosyo-Ekonomik Dinamikler
-                </Badge>
-              </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 <TrendingUp className="size-6 text-primary shrink-0" />
-                <span>Nüfus Dağılımı, Yerleşme ve Bölgesel İktisat</span>
+                <span>Nüfus ve Ekonomi</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Demografik yoğunlaşma, şehirleşme oranları, göç hareketleri, sanayi üretimi ve millî
-                hasıla katkısı.
+                İnsanların nerede toplandığı, göçün yönü, bölgenin ne ürettiği ve Türkiye
+                ekonomisindeki payı.
               </p>
             </div>
 
@@ -977,25 +945,16 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-5 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge
-                      variant="outline"
-                      size="sm"
-                      className="bg-primary/10 text-primary border-primary/30"
-                    >
-                      Demografi &amp; Şehirleşme
-                    </Badge>
                     <h3 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
                       <Users className="size-5 text-primary shrink-0" />
-                      <span>Nüfus Dağılımı, Yerleşme ve Göç</span>
+                      <span>Nüfus, Yerleşme ve Göç</span>
                     </h3>
                   </div>
 
                   {/* Demographic Metrics Chips */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="p-3.5 rounded-2xl bg-card border border-border/80 space-y-1">
-                      <span className="text-[11px] text-muted-foreground block">
-                        Ülke Nüfus Payı
-                      </span>
+                      <span className="text-[11px] text-muted-foreground block">Nüfus Payı</span>
                       <span className="font-heading font-extrabold text-xl text-foreground">
                         %{region.populationSharePercent.toFixed(2)}
                       </span>
@@ -1018,12 +977,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="p-5 sm:p-6 rounded-2xl bg-muted/30 border border-border/80 space-y-5 flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="space-y-2 border-b border-border/60 pb-3">
-                    <Badge variant="outline" size="sm">
-                      Bölgesel İktisat &amp; Üretim
-                    </Badge>
                     <h3 className="font-heading text-xl font-bold text-foreground flex items-center gap-2">
                       <BarChart3 className="size-5 shrink-0" />
-                      <span>Ekonomik Güç, Sanayi ve Tarım</span>
+                      <span>Sanayi ve Tarım</span>
                     </h3>
                   </div>
 
@@ -1032,14 +988,14 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                     <div className="p-4 rounded-2xl bg-card border border-border/80 flex items-center justify-between">
                       <div>
                         <span className="text-[11px] font-bold text-muted-foreground block">
-                          Türkiye GSYH Tahmini Katkısı
+                          Türkiye GSYH&apos;sindeki Yaklaşık Payı
                         </span>
                         <span className="font-heading font-extrabold text-2xl text-foreground">
                           ~%{region.gdpShareApproxPercent}
                         </span>
                       </div>
                       <Badge variant="outline" className="text-xs bg-background/80">
-                        TÜİK İl GSYH Tabanı
+                        Kaynak: TÜİK İl GSYH
                       </Badge>
                     </div>
                   )}
@@ -1056,18 +1012,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           <Card variant="panel" space="6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm">
-                  1941 Kongre Tasnifi
-                </Badge>
-              </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 <Boxes className="size-6 text-primary shrink-0" />
-                <span>{region.nameTr} Coğrafi Bölümleri ve Yöreleri</span>
+                <span>Bölgenin {region.subregionCount} Bölümü</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                T.C. Maarif Vekilliği Birinci Coğrafya Kongresi (1941) kararlarıyla belirlenen ve
-                morfolojik sınırlarla çizilen {region.subregionCount} alt bölüm.
+                Maarif Vekilliğinin 1941&apos;de topladığı Birinci Coğrafya Kongresi, bölgeyi yer
+                şekillerine bakarak bu bölümlere ayırdı.
               </p>
             </div>
 
@@ -1078,7 +1029,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
             {region.subregions?.length > 0 && (
               <div className="pt-2">
                 <span className="text-xs font-semibold text-muted-foreground block mb-3">
-                  Kongre Kararıyla Tanımlanan {region.subregions.length} Alt Bölüm:
+                  Bölümlerin öne çıkan özellikleri:
                 </span>
                 <div className={subregionsGridClass}>
                   {region.subregions.map((subName, idx) => {
@@ -1100,15 +1051,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                           </h3>
                           <p className="text-xs text-muted-foreground leading-relaxed">
                             {detail?.highlight ??
-                              "Morfolojik ve iklimsel sınırlarla belirlenmiş resmî coğrafi alt bölüm."}
+                              "Yer şekli ve iklim farklarına göre ayrılmış bir bölüm."}
                           </p>
                         </div>
 
                         {detail?.provincesTr && (
                           <div className="pt-2.5 border-t border-border/60 text-[11px]">
-                            <span className="text-muted-foreground block font-medium">
-                              Bölüm Kapsamı:
-                            </span>
+                            <span className="text-muted-foreground block font-medium">İller:</span>
                             <span className="font-semibold text-foreground/90">
                               {detail.provincesTr}
                             </span>
@@ -1128,20 +1077,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           <Card variant="panel" space="6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  İdari Coğrafya &amp; Mülki Taksimat
-                </Badge>
-              </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 <Building2 className="size-6 text-primary shrink-0" />
-                <span>
-                  {region.nameTr} Bünyesindeki {region.provinceCount} İl Rehberi
-                </span>
+                <span>Bölgedeki {region.provinceCount} İl</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Bölgeyi oluşturan mülki idare birimlerinin güncel nüfus, yüzölçümü ve nüfus
-                yoğunluğu verileri (31 Aralık 2025 ADNKS ve HGM kayıtları).
+                Her ilin nüfusu, yüzölçümü ve nüfus yoğunluğu. Nüfus 31 Aralık 2025 ADNKS&apos;den,
+                yüzölçümü HGM kayıtlarından.
               </p>
             </div>
 
@@ -1188,7 +1130,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                   {format.number(avgProvincePop)}
                 </div>
                 <div className="text-[11px] text-muted-foreground">
-                  {region.provinceCount} İl Arasında Ortalama
+                  {region.provinceCount} ilin ortalaması
                 </div>
               </div>
             </div>
@@ -1214,7 +1156,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                       Yoğunluk
                     </th>
                     <th scope="col" className="px-4 py-3 text-right">
-                      İncele
+                      Sayfası
                     </th>
                   </tr>
                 </thead>
@@ -1281,22 +1223,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           <div className="rounded-3xl border border-destructive/30 bg-destructive/5 p-6 sm:p-8 shadow-sm space-y-6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-destructive/20 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  size="sm"
-                  className="bg-destructive/15 text-destructive-strong border-destructive/30"
-                >
-                  Doğal Afet &amp; Depremsellik
-                </Badge>
-              </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 <ShieldAlert className="size-6 text-destructive-strong shrink-0" />
-                <span>Deprem Kuşakları ve Bölgesel Afet Profili</span>
+                <span>Deprem ve Doğal Afetler</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Bölgenin tektonik konumu, aktif fay zonları, tarihsel deprem kayıtları ve morfolojik
-                risk profili.
+                Bölgeden geçen faylar, geçmişteki büyük depremler ve heyelan, sel, kuraklık gibi
+                diğer tehlikeler.
               </p>
             </div>
 
@@ -1314,14 +1247,14 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                     <div className="flex items-center">
                       <span className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
                         <ShieldAlert className="size-4 text-destructive-strong" />
-                        <span>Sismik &amp; Afet Özeti</span>
+                        <span>Faylar ve Başlıca Tehlikeler</span>
                       </span>
                     </div>
 
                     {/* Active Fault Lines */}
                     <div className="space-y-1.5">
                       <span className="text-[11px] font-semibold text-muted-foreground block">
-                        Kritik Fay Hatları &amp; Tektonik Sistemler:
+                        Başlıca faylar:
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {disasterProfile.faultLines.map((fl) => (
@@ -1339,7 +1272,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                     {/* Primary Hazards */}
                     <div className="space-y-1.5">
                       <span className="text-[11px] font-semibold text-muted-foreground block">
-                        Öne Çıkan Doğal Afet Unsurları:
+                        Öne çıkan tehlikeler:
                       </span>
                       <div className="space-y-1">
                         {disasterProfile.primaryRisks.map((pr) => (
@@ -1356,7 +1289,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
 
                     {/* Warning Note */}
                     <div className="pt-2 border-t border-border/80 text-[11px] text-muted-foreground leading-relaxed">
-                      <span className="font-semibold text-foreground">Afet Bilinci Notu: </span>
+                      <span className="font-semibold text-foreground">Not: </span>
                       {disasterProfile.warningNote}
                     </div>
 
@@ -1376,18 +1309,13 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
           <Card variant="panel" space="6">
             {/* Header INSIDE the Card */}
             <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  Atlas Kıyaslaması
-                </Badge>
-              </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 <Table className="size-6 text-primary shrink-0" />
-                <span>Türkiye&apos;nin Yedi Coğrafi Bölgesi Karşılaştırması</span>
+                <span>Yedi Bölge Yan Yana</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Nüfus büyüklüğü, alan payı, nüfus yoğunluğu ve idari mülki bölünüş açısından yedi
-                coğrafi bölgenin analitik kıyaslaması.
+                Bu bölgenin satırı vurgulu. Başka bir bölgenin adına tıklarsan onun sayfasına
+                geçersin.
               </p>
             </div>
 
@@ -1435,7 +1363,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                             <span className="flex items-center gap-1.5">
                               <span>{item.nameTr}</span>
                               <Badge variant="primary" className="text-[10px] py-0 px-1.5 h-4">
-                                Aktif Bölge
+                                Bu sayfa
                               </Badge>
                             </span>
                           ) : (
@@ -1472,9 +1400,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               </table>
             </div>
             <p className="text-xs text-muted-foreground/80 italic">
-              * Nüfus verileri TÜİK ADNKS 31 Aralık 2025; yüzölçümü Harita Genel Müdürlüğü (HGM) il
-              toplamlarıdır. Paylar 86.092.168 kişilik ülke nüfusu ve 780.040 km²&apos;lik 81 il
-              yüzölçümü tabanından hesaplanmıştır.
+              * Nüfus: TÜİK ADNKS, 31 Aralık 2025. Yüzölçümü: Harita Genel Müdürlüğü (HGM) il
+              toplamları. Paylar, 86.092.168 kişilik Türkiye nüfusuna ve 81 ilin toplamı olan
+              780.040 km²&apos;ye göre hesaplandı.
             </p>
           </Card>
         </section>
@@ -1496,18 +1424,33 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
         {locale === "tr" && (
           <FaqSection
             heading={`${region.nameTr} Hakkında Sıkça Sorulan Sorular`}
-            lede="Bölgenin coğrafi yapısı, nüfusu, illeri, bölümleri ve iklimi hakkında merak edilen temel sorular ve yanıtları."
+            lede="Yer şekilleri, nüfus, iller ve iklim üzerine kısa cevaplar."
             locale={locale}
             items={region.faqs ?? []}
             structuredData="trOnly"
           />
         )}
 
+        {/* How the region figures are built. Same for all seven regions, so it lives here rather
+            than in the api's per-region `sourcesNoteTr` (identical in every row). TR only: the
+            text has no English counterpart yet. */}
+        {locale === "tr" && (
+          <p className={`${SOURCE_NOTE} max-w-[78ch]`}>
+            <span className="font-semibold text-foreground">Bu sayılar nasıl hesaplandı: </span>
+            Nüfus TÜİK&apos;in Adrese Dayalı Nüfus Kayıt Sistemi&apos;nden, yüzölçümü Harita Genel
+            Müdürlüğü&apos;nün il yüzölçümlerinden alındı. TÜİK bölge istatistiklerini İBBS Düzey-1
+            sınıflamasındaki 12 bölge için yayımlar; buradaki bölge toplamları ise 7 coğrafi
+            bölgedeki illerin değerleri toplanarak hesaplandı. Bölge ve bölüm sınırları, 6-21
+            Haziran 1941&apos;de toplanan Birinci Türk Coğrafya Kongresi&apos;nin kararlarına
+            dayanır.
+          </p>
+        )}
+
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-2">
           <Link href="/turkiye">
             <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-              ← Türkiye Atlası&apos;na Dön (Tüm İller)
+              Türkiye Haritasına Dön
             </Button>
           </Link>
           <Link href="/">

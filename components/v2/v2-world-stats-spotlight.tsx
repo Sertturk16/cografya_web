@@ -1,26 +1,16 @@
 import * as React from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Globe, Users, Compass, Mountain, Flame, Snowflake, Waves } from "lucide-react";
+import { Mountain, Flame, Snowflake, Waves } from "lucide-react";
 
 export function V2WorldStatsSpotlight() {
   return (
     <section className="space-y-6">
       <div>
-        <div className="flex items-center gap-2 mb-1.5">
-          <Badge variant="secondary" size="sm" icon={<Trophy className="size-3.5" />}>
-            Dünya Süperlatifleri
-          </Badge>
-          <span className="text-xs font-semibold text-muted-foreground">
-            Coğrafi Ekstremler & Rekorlar
-          </span>
-        </div>
         <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-primary">
-          Gezegenin Enleri: Zirveler, Çukurlar & Dev Ülkeler
+          Dünyanın Enleri
         </h2>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          Dünyanın yüzölçümü ve nüfus bakımından en büyük ülkeleri ile aşırı fiziki coğrafya
-          noktaları.
+          Toprağı en geniş ve nüfusu en kalabalık beş ülke, bir de karanın ve denizin uç noktaları.
         </p>
       </div>
 
@@ -28,17 +18,12 @@ export function V2WorldStatsSpotlight() {
         {/* PANEL 1: EN BÜYÜK 5 ÜLKE (YÜZÖLÇÜMÜ) */}
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm flex flex-col justify-between">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                Yüzölçümü Liderleri
-              </Badge>
-              <span className="text-[11px] font-mono text-muted-foreground">Kara Alanı Payı</span>
-            </div>
             <CardTitle className="text-lg font-heading font-bold text-foreground">
-              Dünyanın En Geniş 5 Ülkesi
+              En Geniş 5 Ülke
             </CardTitle>
             <CardDescription className="text-xs">
-              Küresel kara alanının yaklaşık %36&apos;sını kapsayan devasa coğrafyalar.
+              Dünyadaki karaların yaklaşık %37&apos;si bu beş ülkede. Rusya açık ara ilk sırada;
+              Kanada, Çin ve ABD birbirine çok yakın.
             </CardDescription>
           </CardHeader>
 
@@ -49,7 +34,7 @@ export function V2WorldStatsSpotlight() {
                 name: "Rusya",
                 iso: "RU",
                 area: "17.098.242 km²",
-                share: "11.5%",
+                share: "11,5",
                 continent: "Asya / Avrupa",
               },
               {
@@ -57,7 +42,7 @@ export function V2WorldStatsSpotlight() {
                 name: "Kanada",
                 iso: "CA",
                 area: "9.984.670 km²",
-                share: "6.7%",
+                share: "6,7",
                 continent: "Kuzey Amerika",
               },
               {
@@ -65,7 +50,7 @@ export function V2WorldStatsSpotlight() {
                 name: "Çin",
                 iso: "CN",
                 area: "9.596.961 km²",
-                share: "6.4%",
+                share: "6,4",
                 continent: "Asya",
               },
               {
@@ -73,7 +58,7 @@ export function V2WorldStatsSpotlight() {
                 name: "ABD",
                 iso: "US",
                 area: "9.525.067 km²",
-                share: "6.4%",
+                share: "6,4",
                 continent: "Kuzey Amerika",
               },
               {
@@ -81,7 +66,7 @@ export function V2WorldStatsSpotlight() {
                 name: "Brezilya",
                 iso: "BR",
                 area: "8.515.767 km²",
-                share: "5.7%",
+                share: "5,7",
                 continent: "Güney Amerika",
               },
             ].map((country) => (
@@ -102,7 +87,9 @@ export function V2WorldStatsSpotlight() {
                   <span className="font-mono font-bold text-xs text-primary block">
                     {country.area}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">{country.share} pay</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    karaların %{country.share}
+                  </span>
                 </div>
               </div>
             ))}
@@ -112,17 +99,12 @@ export function V2WorldStatsSpotlight() {
         {/* PANEL 2: EN KALABALIK 5 ÜLKE (NÜFUS) */}
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm flex flex-col justify-between">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" size="sm" icon={<Users className="size-3.5" />}>
-                Nüfus Devleri
-              </Badge>
-              <span className="text-[11px] font-mono text-muted-foreground">BM Demografi</span>
-            </div>
             <CardTitle className="text-lg font-heading font-bold text-foreground">
-              Dünyanın En Kalabalık 5 Ülkesi
+              En Kalabalık 5 Ülke
             </CardTitle>
             <CardDescription className="text-xs">
-              Dünya toplam nüfusunun yaklaşık %46&apos;sını barındıran ülkeler.
+              Dünyada yaşayan her 100 kişiden yaklaşık 46&apos;sı bu beş ülkede. Rakamlar BM
+              tahmini.
             </CardDescription>
           </CardHeader>
 
@@ -132,40 +114,40 @@ export function V2WorldStatsSpotlight() {
                 rank: 1,
                 name: "Hindistan",
                 iso: "IN",
-                pop: "1.43 Milyar",
-                share: "17.8%",
+                pop: "1,43 milyar",
+                share: "17,8",
                 continent: "Güney Asya",
               },
               {
                 rank: 2,
                 name: "Çin",
                 iso: "CN",
-                pop: "1.41 Milyar",
-                share: "17.5%",
+                pop: "1,41 milyar",
+                share: "17,5",
                 continent: "Doğu Asya",
               },
               {
                 rank: 3,
                 name: "ABD",
                 iso: "US",
-                pop: "340 Milyon",
-                share: "4.2%",
+                pop: "340 milyon",
+                share: "4,2",
                 continent: "Kuzey Amerika",
               },
               {
                 rank: 4,
                 name: "Endonezya",
                 iso: "ID",
-                pop: "279 Milyon",
-                share: "3.5%",
+                pop: "279 milyon",
+                share: "3,5",
                 continent: "Güneydoğu Asya",
               },
               {
                 rank: 5,
                 name: "Pakistan",
                 iso: "PK",
-                pop: "241 Milyon",
-                share: "3.0%",
+                pop: "241 milyon",
+                share: "3,0",
                 continent: "Güney Asya",
               },
             ].map((country) => (
@@ -186,7 +168,9 @@ export function V2WorldStatsSpotlight() {
                   <span className="font-mono font-bold text-xs text-secondary block">
                     {country.pop}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">{country.share} küresel</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    dünyanın %{country.share}
+                  </span>
                 </div>
               </div>
             ))}
@@ -196,17 +180,12 @@ export function V2WorldStatsSpotlight() {
         {/* PANEL 3: AŞIRI FİZİKİ COĞRAFYA EKSTREMLERİ */}
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm flex flex-col justify-between">
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" size="sm" icon={<Globe className="size-3.5 text-accent" />}>
-                Doğal Ekstremler
-              </Badge>
-              <span className="text-[11px] font-mono text-muted-foreground">Fiziki Rekorlar</span>
-            </div>
             <CardTitle className="text-lg font-heading font-bold text-foreground">
-              Gezegenin Aşırı Uç Noktaları
+              Uç Noktalar
             </CardTitle>
             <CardDescription className="text-xs">
-              Yeryüzünün en yüksek, en derin, en sıcak ve en kurak doğal sınırları.
+              Karanın en yüksek ve en alçak yeri, okyanusun en derin çukuru, ölçülmüş en yüksek ve
+              en düşük sıcaklık.
             </CardDescription>
           </CardHeader>
 
@@ -215,8 +194,8 @@ export function V2WorldStatsSpotlight() {
               <div className="flex items-center gap-2">
                 <Mountain className="size-4 shrink-0" />
                 <div>
-                  <span className="font-bold block text-foreground">En Yüksek Nokta: Everest</span>
-                  <span className="text-[10px] text-muted-foreground">Nepal / Çin Sınırı</span>
+                  <span className="font-bold block text-foreground">En yüksek nokta: Everest</span>
+                  <span className="text-[10px] text-muted-foreground">Nepal ile Çin sınırında</span>
                 </div>
               </div>
               <span className="font-mono font-bold text-xs">+8.848 m</span>
@@ -226,9 +205,9 @@ export function V2WorldStatsSpotlight() {
               <div className="flex items-center gap-2">
                 <Waves className="size-4 shrink-0" />
                 <div>
-                  <span className="font-bold block text-foreground">En Derin Çukur: Mariana</span>
+                  <span className="font-bold block text-foreground">En derin çukur: Mariana</span>
                   <span className="text-[10px] text-muted-foreground">
-                    Büyük Okyanus (Challenger Deep)
+                    Büyük Okyanus, Challenger Derinliği
                   </span>
                 </div>
               </div>
@@ -239,8 +218,10 @@ export function V2WorldStatsSpotlight() {
               <div className="flex items-center gap-2">
                 <Waves className="size-4 shrink-0" />
                 <div>
-                  <span className="font-bold block text-foreground">En Alçak Kara: Lut Gölü</span>
-                  <span className="text-[10px] text-muted-foreground">Lut Gölü Kıyısı</span>
+                  <span className="font-bold block text-foreground">En alçak kara: Lut Gölü</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Gölün kıyısı, İsrail ile Ürdün arasında
+                  </span>
                 </div>
               </div>
               <span className="font-mono font-bold text-xs">-440 m</span>
@@ -250,13 +231,15 @@ export function V2WorldStatsSpotlight() {
               <div className="flex items-center gap-2">
                 <Flame className="size-4 shrink-0" />
                 <div>
-                  <span className="font-bold block text-foreground">En Sıcak Yer: Ölüm Vadisi</span>
+                  <span className="font-bold block text-foreground">
+                    En sıcak ölçüm: Ölüm Vadisi
+                  </span>
                   <span className="text-[10px] text-muted-foreground">
-                    Kaliforniya, ABD (Furnace Creek)
+                    Furnace Creek, Kaliforniya, ABD
                   </span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-xs">+56.7 °C</span>
+              <span className="font-mono font-bold text-xs">56,7 °C</span>
             </div>
 
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between gap-2">
@@ -264,12 +247,12 @@ export function V2WorldStatsSpotlight() {
                 <Snowflake className="size-4 shrink-0" />
                 <div>
                   <span className="font-bold block text-foreground">
-                    En Soğuk Yer: Vostok İstasyonu
+                    En soğuk ölçüm: Vostok İstasyonu
                   </span>
-                  <span className="text-[10px] text-muted-foreground">Doğu Antarktika Platosu</span>
+                  <span className="text-[10px] text-muted-foreground">Doğu Antarktika</span>
                 </div>
               </div>
-              <span className="font-mono font-bold text-xs">-89.2 °C</span>
+              <span className="font-mono font-bold text-xs">−89,2 °C</span>
             </div>
           </CardContent>
         </Card>

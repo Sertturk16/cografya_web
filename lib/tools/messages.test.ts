@@ -57,7 +57,7 @@ const enTools = flatten((enMessages as Catalogue).Tools);
  * that are pure interface vocabulary and therefore symmetric. Asserted against the catalogue
  * below, so a new `Tools.*` namespace cannot slip past this file by not being mentioned in it.
  */
-const PROSE_NAMESPACES = ["alan", "hub", "koordinat", "mesafe"] as const;
+const PROSE_NAMESPACES = ["hub"] as const;
 const CHROME_NAMESPACES = ["map", "ui"] as const;
 
 /** Keys inside a prose namespace that BOTH locales render — head, headings, cards, JSON-LD. */
@@ -69,67 +69,13 @@ const BOTH_LOCALE_KEYS = [
   "hub.mesafeBody",
   "hub.koordinatName",
   "hub.koordinatBody",
-  "mesafe.metaTitle",
-  "mesafe.metaDescription",
-  "mesafe.heading",
-  "mesafe.teaches",
-  "mesafe.toolHeading",
-  "koordinat.metaTitle",
-  "koordinat.metaDescription",
-  "koordinat.heading",
-  "koordinat.teaches",
-  "koordinat.toolHeading",
-  "alan.metaTitle",
-  "alan.metaDescription",
-  "alan.heading",
-  "alan.teaches",
-  "alan.toolHeading",
   "hub.alanName",
   "hub.alanBody",
   "hub.otherToolsHeading",
 ] as const;
 
 /** Keys inside a prose namespace that exist in Turkish ONLY (§B14, the `/deniz` precedent). */
-const TR_ONLY_KEYS = [
-  "hub.introP1",
-  "mesafe.lede",
-  "mesafe.nedirHeading",
-  "mesafe.nedirP1",
-  "mesafe.nedirP2",
-  "mesafe.karayoluHeading",
-  "mesafe.karayoluP1",
-  "mesafe.karayoluP2",
-  "mesafe.sonucHeading",
-  "mesafe.sonucP2",
-  "mesafe.sonucP3",
-  "mesafe.kaynak",
-  "koordinat.lede",
-  "koordinat.sistemHeading",
-  "koordinat.sistemP1",
-  "koordinat.sistemP2",
-  "koordinat.sistemP3",
-  "koordinat.derecekmHeading",
-  "koordinat.derecekmP1",
-  "koordinat.derecekmP2",
-  "koordinat.gosterimHeading",
-  "koordinat.gosterimP1",
-  "koordinat.gosterimP2",
-  "koordinat.gosterimP3",
-  "koordinat.sonucHeading",
-  "koordinat.sonucP1",
-  "koordinat.sonucP2",
-  "koordinat.sonucP3",
-  "koordinat.kaynak",
-  "alan.lede",
-  "alan.sinirHeading",
-  "alan.sinirP1",
-  "alan.sinirP2",
-  "alan.kureP2",
-  "alan.sonucHeading",
-  "alan.sonucP1",
-  "alan.sonucP2",
-  "alan.kaynak",
-] as const;
+const TR_ONLY_KEYS = ["hub.introP1"] as const;
 
 function expectNonEmptyString(catalogue: Map<string, unknown>, key: string): void {
   const value = catalogue.get(key);
@@ -386,27 +332,19 @@ describe("every Tools key the code asks for exists", () => {
      * in the first direction, and the cause is not a classification slip.
      *
      * The V2 rewrite re-authored the three tool pages with their Turkish prose written INLINE
-     * (`V2ToolEducationalContent`, ~400 lines of it) instead of read from the catalogue. The
-     * prose is still on the page — `TOOLS_SURFACE` is `"trNarrative"` and that is still honest —
-     * but it is now untranslatable, and `Tools.alan`, `Tools.koordinat` and `Tools.mesafe` are
-     * dead weight in both message files. Some of what they carry did not survive the move at
-     * all: `koordinat.derecekmHeading` was a §5.3 BLOCKER-level doorway-defence requirement with
-     * a guard of its own, and no V2 page renders it.
+     * (`V2ToolEducationalContent`) instead of read from the catalogue, which orphaned
+     * `Tools.alan`, `Tools.koordinat` and `Tools.mesafe`; T-090 deleted those three from both
+     * message files. What remains below is the interface vocabulary V2 also writes inline.
      *
-     * Re-catalogueing that prose is page-composition work (T-035), not URL-migration work, so
-     * PR3 records the debt rather than paying it or hiding it. The list is exact and the
-     * assertion is an equality against it, which makes this a ratchet in both directions: a
-     * FOURTH orphan fails here, and so does re-adopting one of these three without shortening
-     * the list. It cannot quietly become the new normal.
+     * The list is exact and the assertion is an equality against it, which makes this a ratchet
+     * in both directions: a new orphan fails here, and so does re-adopting one of these without
+     * shortening the list. It cannot quietly become the new normal.
      */
     const ORPHANED_BY_V2_REWRITE = [
-      "Tools.alan",
-      "Tools.koordinat",
       // `Tools.map` joined the list in T-032 PR4: its only consumer was `components/tools/tool-map.tsx`,
       // the V1 map the tool pages embedded. V2 embeds `V2ToolWorkbench`, which draws its own map
-      // and writes its labels inline — the same inline-copy pattern as the three prose namespaces.
+      // and writes its labels inline — the same inline-copy pattern as the tool pages' prose.
       "Tools.map",
-      "Tools.mesafe",
       // `Tools.ui` joined in T-042, and for the same reason one step later: its only consumers
       // were `components/tools/tool-island.tsx` and its two panels, none of which any route
       // could reach. `V2ToolWorkbench` draws the same controls with its labels written inline.

@@ -58,9 +58,9 @@ export default function RootNotFound() {
         <main className="mx-auto flex min-h-dvh max-w-2xl flex-col justify-center gap-8 px-5 py-16">
           <div className="space-y-3">
             <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">404</p>
-            <h1 className="font-heading text-3xl font-bold">Sayfa bulunamadı</h1>
+            <h1 className="font-heading text-3xl font-bold">Sayfa Bulunamadı</h1>
             <p className="text-muted-foreground">
-              Aradığınız adres taşınmış veya hiç var olmamış olabilir.
+              Aradığın adres taşınmış ya da hiç var olmamış olabilir.
             </p>
             <a
               href="/"

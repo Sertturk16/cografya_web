@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { stripCssComments } from "@/lib/test-support/strip-comments";
+import { stripComments, stripCssComments } from "@/lib/test-support/strip-comments";
 
 /**
  * V1 IS GONE, AND STAYS GONE.
@@ -153,5 +153,33 @@ describe("the V1 global utility classes stay removed", () => {
         ).map((name) => `${file.slice(repoRoot.length)}: .${name}`);
       });
     expect(consumers).toEqual([]);
+  });
+});
+
+/**
+ * NO PATH LITERAL CARRIES THE RETIRED `/v2` PREFIX.
+ *
+ * T-032 moved V2 onto the canonical URLs, but the home hero built its search results as
+ * `` `/v2${path}` `` and sent every province and country pick to a 404 for weeks. A route test
+ * cannot see a path assembled at runtime, so this reads the source: a string or template literal
+ * that starts with `/v2` followed by `/`, `${` or its closing quote is a link to a dead tree.
+ * Import specifiers (`@/components/v2/…`) never start with `/v2`, so they are not matched.
+ */
+const walkSource = (dir: string): string[] =>
+  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) return entry.name === "node_modules" ? [] : walkSource(full);
+    return /\.(ts|tsx)$/.test(entry.name) && !entry.name.includes(".test.") ? [full] : [];
+  });
+
+const RETIRED_PREFIX = /["'`]\/v2(?=\/|\$\{|["'`])/;
+
+describe("the retired /v2 URL prefix", () => {
+  it("appears in no path literal under app/, components/ or lib/", () => {
+    const offenders = ["app", "components", "lib"]
+      .flatMap((dir) => walkSource(join(repoRoot, dir)))
+      .filter((file) => RETIRED_PREFIX.test(stripComments(readFileSync(file, "utf8"))))
+      .map((file) => file.slice(repoRoot.length));
+    expect(offenders).toEqual([]);
   });
 });

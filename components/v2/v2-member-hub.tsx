@@ -228,9 +228,9 @@ export function V2MemberHub({
     if (!result.ok) {
       // Revert if failed
       setFavorites(prev);
-      setAnnouncement("Favori kaldırılamadı. Lütfen tekrar deneyin.");
+      setAnnouncement("Favori kaldırılamadı. Tekrar dene.");
     } else {
-      setAnnouncement("Favori başarıyla kaldırıldı.");
+      setAnnouncement("Favorilerden çıkarıldı.");
     }
   };
 
@@ -243,9 +243,9 @@ export function V2MemberHub({
     if (!result.ok) {
       // Revert if failed
       setMeasurements(prev);
-      setAnnouncement("Ölçüm silinemedi. Lütfen tekrar deneyin.");
+      setAnnouncement("Ölçüm silinemedi. Tekrar dene.");
     } else {
-      setAnnouncement("Kayıtlı ölçüm başarıyla silindi.");
+      setAnnouncement("Ölçüm silindi.");
     }
   };
 
@@ -256,7 +256,7 @@ export function V2MemberHub({
         const found = provinces.find((p) => p.plateCode === item.entityId);
         return {
           title: found ? found.nameTr : `İl (Plaka ${item.entityId})`,
-          subtitle: `Türkiye İli · Plaka ${item.entityId}`,
+          subtitle: `Plaka ${item.entityId}`,
           href: found ? `/turkiye/${found.slugTr}` : `/turkiye`,
           badge: "İl",
           icon: <MapPin className="size-4 text-primary" />,
@@ -268,7 +268,7 @@ export function V2MemberHub({
         );
         return {
           title: found ? found.nameTr : `Ülke (${item.entityId})`,
-          subtitle: `Dünya Ülkesi · ISO ${item.entityId}`,
+          subtitle: `Ülke kodu ${item.entityId}`,
           href: found ? `/dunya/${found.slugTr}` : `/dunya`,
           badge: "Ülke",
           icon: <Globe className="size-4 text-primary" />,
@@ -278,7 +278,7 @@ export function V2MemberHub({
         const found = regions.find((r) => r.slug === item.entityId);
         return {
           title: found ? found.nameTr : `Bölge (${item.entityId})`,
-          subtitle: "Türkiye Coğrafi Bölgesi",
+          subtitle: "Türkiye",
           href: `/turkiye/bolge/${item.entityId}`,
           badge: "Bölge",
           icon: <Compass className="size-4 text-primary" />,
@@ -288,7 +288,7 @@ export function V2MemberHub({
         const meta = CONTINENT_META[item.entityId];
         return {
           title: meta ? meta.name : item.entityId,
-          subtitle: "Kıta Rehberi",
+          subtitle: "Dünya",
           href: `/dunya`,
           badge: "Kıta",
           icon: <Layers className="size-4 text-primary" />,
@@ -368,9 +368,8 @@ export function V2MemberHub({
                 )}
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
-                Coğrafya Gurmesi kişisel üyelik merkezin. Favori lokasyonlarını yönetebilir, soru
-                çözümlerinde kaldığın yerden devam edebilir, sınav geçmişini ve ölçümlerini
-                inceleyebilirsin.
+                Favorilerin, izlediğin çözüm videoları, oyun turların ve kaydettiğin ölçümler bu
+                sayfada.
               </p>
             </div>
           </div>
@@ -402,7 +401,7 @@ export function V2MemberHub({
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
               <PlayCircle className="size-3.5 text-primary" />
-              İzlenen Video
+              İzlenen video
             </div>
             <div className="font-heading font-bold text-xl text-foreground mt-0.5">
               {videosStatus === "loading" ? "…" : totalWatchedVideos}
@@ -411,7 +410,7 @@ export function V2MemberHub({
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
               <Trophy className="size-3.5 text-primary" />
-              Sınav Turları
+              Oyun turu
             </div>
             <div className="font-heading font-bold text-xl text-foreground mt-0.5">
               {gameRoundsStatus === "loading" ? "…" : totalGameRoundsCount}
@@ -420,7 +419,7 @@ export function V2MemberHub({
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
               <Ruler className="size-3.5 text-primary" />
-              Kayıtlı Ölçüm
+              Kayıtlı ölçüm
             </div>
             <div className="font-heading font-bold text-xl text-foreground mt-0.5">
               {measurementsStatus === "loading" ? "…" : totalMeasurementsCount}
@@ -451,7 +450,7 @@ export function V2MemberHub({
           same `--ring` outline inside each tab instead of widening the strip.
         */}
         <TabsList
-          aria-label="Üyelik Panelleri"
+          aria-label="Hesap bölümleri"
           className="flex h-auto w-full overflow-x-auto pb-2 scrollbar-none *:focus-visible:outline-2 *:focus-visible:-outline-offset-2"
         >
           <TabsTrigger value="favorites" className="gap-2">
@@ -464,17 +463,17 @@ export function V2MemberHub({
 
           <TabsTrigger value="videos" className="gap-2">
             <PlayCircle className="size-3.5" />
-            <span>Video İlerlemem</span>
+            <span>Videolarım</span>
           </TabsTrigger>
 
           <TabsTrigger value="games" className="gap-2">
             <Trophy className="size-3.5" />
-            <span>Sınav &amp; Skor Geçmişim</span>
+            <span>Oyun geçmişim</span>
           </TabsTrigger>
 
           <TabsTrigger value="measurements" className="gap-2">
             <Ruler className="size-3.5" />
-            <span>Kayıtlı Ölçümlerim</span>
+            <span>Ölçümlerim</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-muted text-muted-foreground">
               {measurements ? measurements.length : 0}
             </span>
@@ -486,10 +485,10 @@ export function V2MemberHub({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-                Kayıtlı Coğrafi Favorilerim
+                Favoriye Eklediğin Sayfalar
               </h2>
               <p className="text-xs text-muted-foreground">
-                İl, ülke, bölge ve kıtaları favorilerine ekleyerek hızlı erişim listeni oluştur.
+                Birine tıkla, doğrudan o il, ülke ya da bölgenin sayfasına git.
               </p>
             </div>
 
@@ -559,7 +558,7 @@ export function V2MemberHub({
               className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
             >
               <Spinner size="lg" decorative className="text-primary" />
-              <span>Favorileriniz yükleniyor...</span>
+              <span>Favorilerin yükleniyor…</span>
             </div>
           ) : filteredFavorites.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -605,10 +604,9 @@ export function V2MemberHub({
                         href={meta.href as unknown as AppNavigationHref}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                       >
-                        Sayfayı Ziyaret Et
+                        Sayfaya git
                         <ArrowRight className="size-3" />
                       </Link>
-                      <span className="text-[10px] text-muted-foreground">Sabitlendi</span>
                     </div>
                   </div>
                 );
@@ -621,11 +619,11 @@ export function V2MemberHub({
               </div>
               <div className="space-y-1">
                 <h3 className="font-heading font-bold text-base text-foreground">
-                  Henüz kayıtlı favorin bulunmuyor
+                  Favori Listen Boş
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Türkiye ve Dünya atlas sayfalarındaki &quot;Favoriye Ekle&quot; butonuna basarak
-                  dilediğin il, ülke, bölge veya kıtayı bu alana sabitleyebilirsin.
+                  İl, ülke ve bölge sayfalarında &quot;Favoriye Ekle&quot; düğmesi var. Eklediğin
+                  sayfalar bu listeye girer.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -650,11 +648,11 @@ export function V2MemberHub({
         <TabsContent value="videos" className="space-y-6">
           <div>
             <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-              Kitap Video Çözüm İlerleme Durumu
+              Çözüm Videolarında Nerede Kaldın
             </h2>
             <p className="text-xs text-muted-foreground">
-              İzlediğin coğrafya soru çözüm videoları, izleme süren ve kaldığın yer otomatik olarak
-              hesabına kaydedilir.
+              Bir videoyu nerede bıraktığın kendiliğinden kaydedilir. Bitirdiğin denemeyi kitap
+              sayfasında &quot;İzledim&quot; diye işaretleyebilirsin.
             </p>
           </div>
 
@@ -664,7 +662,7 @@ export function V2MemberHub({
               className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
             >
               <Spinner size="lg" decorative className="text-primary" />
-              <span>Video ilerlemeniz kontrol ediliyor...</span>
+              <span>Video ilerlemen yükleniyor…</span>
             </div>
           ) : books.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -691,9 +689,6 @@ export function V2MemberHub({
                             <h3 className="font-heading font-bold text-base text-foreground">
                               {book.titleTr}
                             </h3>
-                            <span className="text-[11px] text-muted-foreground block">
-                              Müfredat Uyumlu Video Soru Bankası
-                            </span>
                           </div>
                         </div>
                         <Badge variant="secondary" size="sm">
@@ -713,11 +708,9 @@ export function V2MemberHub({
                         <Progress value={percentage} aria-label={`${book.titleTr} ilerlemesi`} />
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span>
-                            {watched} / {total > 0 ? total : "—"} Video Çözümü Tamamlandı
+                            {watched} / {total > 0 ? total : "—"} video izlendi
                           </span>
-                          {started > watched && (
-                            <span>{started - watched} videoda devam ediyor</span>
-                          )}
+                          {started > watched && <span>{started - watched} video yarıda kaldı</span>}
                         </div>
                       </div>
                     </div>
@@ -729,7 +722,7 @@ export function V2MemberHub({
                           <div className="flex items-center justify-between text-xs">
                             <span className="font-semibold text-foreground flex items-center gap-1.5">
                               <Sparkles className="size-3.5 text-primary" />
-                              Kaldığın Yer: Soru #{resume.orderNo}
+                              Son açtığın: Deneme {resume.orderNo}
                             </span>
                             <span className="text-[10px] text-muted-foreground">
                               {Math.floor(resume.lastPositionSeconds / 60)}:
@@ -749,7 +742,7 @@ export function V2MemberHub({
                       ) : (
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-muted-foreground">
-                            Henüz bu kitaptan bir soru izlemedin.
+                            Bu kitaptan henüz video açmadın.
                           </span>
                           <Link
                             href={`/kitaplar/${book.slugTr}` as unknown as AppNavigationHref}
@@ -772,24 +765,24 @@ export function V2MemberHub({
               </div>
               <div className="space-y-1">
                 <h3 className="font-heading font-bold text-base text-foreground">
-                  Kayıtlı video ilerlemeniz bulunmuyor
+                  İzlediğin Video Yok
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Coğrafya kitaplarımızın soru çözüm videolarını izlemeye başladığında kaldığın
-                  saniye ve tamamlanma oranı burada listelenir.
+                  Bir kitabın çözüm videolarını izlemeye başla; nerede kaldığını ve kaç videoyu
+                  bitirdiğini buradan takip edersin.
                 </p>
               </div>
               <Link
                 href="/kitaplar"
                 className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
               >
-                Kitap Video Çözümlerini İncele
+                Kitaplara Göz At
               </Link>
             </div>
           )}
         </TabsContent>
 
-        {/* Tab 3: Sınav & Skor Geçmişim Panel */}
+        {/* Tab 3: Oyun Geçmişim Panel */}
         {/*
           `keepMounted`, against Base UI's default: the child below fetches /game-rounds from a
           mount effect into its OWN state, so an unmount throws that state away and the next
@@ -801,11 +794,10 @@ export function V2MemberHub({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-                Harita Oyunları &amp; Başarı İstatistikleri
+                Oyun Geçmişin
               </h2>
               <p className="text-xs text-muted-foreground">
-                Türkiye 81 il, 7 bölge ve dünya harita sınavlarında tamamladığın tüm turlar ve
-                unvanlar.
+                Harita oyunlarında bitirip kaydettiğin turlar ve kazandığın rozetler.
               </p>
             </div>
 
@@ -814,7 +806,7 @@ export function V2MemberHub({
               className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
             >
               <Trophy className="size-3.5" />
-              Yeni Harita Sınavı Başlat
+              Yeni Oyun Başlat
             </Link>
           </div>
 
@@ -827,10 +819,10 @@ export function V2MemberHub({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-                Harita Araçları Bulut Arşivi
+                Kaydettiğin Ölçümler
               </h2>
               <p className="text-xs text-muted-foreground">
-                Harita araçları laboratuvarında çizdiğin mesafe, alan ve koordinat ölçümleri.
+                Harita araçlarında ölçüp sakladığın mesafeler, alanlar ve koordinatlar.
               </p>
             </div>
 
@@ -849,7 +841,7 @@ export function V2MemberHub({
               className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
             >
               <Spinner size="lg" decorative className="text-primary" />
-              <span>Kayıtlı ölçümleriniz yükleniyor...</span>
+              <span>Ölçümlerin yükleniyor…</span>
             </div>
           ) : measurements && measurements.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -890,7 +882,7 @@ export function V2MemberHub({
                             </Badge>
                           </div>
                           <span className="text-[11px] text-muted-foreground block mt-0.5">
-                            {meas.points.length} Coğrafi Nokta
+                            {meas.points.length} nokta
                           </span>
                         </div>
                       </div>
@@ -914,7 +906,7 @@ export function V2MemberHub({
                         href="/araclar"
                         className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                       >
-                        Haritada Aç
+                        Harita araçları
                         <ChevronRight className="size-3" />
                       </Link>
                     </div>
@@ -929,19 +921,18 @@ export function V2MemberHub({
               </div>
               <div className="space-y-1">
                 <h3 className="font-heading font-bold text-base text-foreground">
-                  Kayıtlı ölçümünüz bulunmuyor
+                  Kayıtlı Ölçüm Yok
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Harita araçlarında iki nokta arası mesafe hesaplayabilir, göl veya bölge alanı
-                  ölçebilir ve &quot;Bulut Arşivine Kaydet&quot; seçeneğiyle profilinize
-                  sabitleyebilirsiniz.
+                  Harita araçlarında iki yer arasındaki mesafeyi ya da bir gölün, bir bölgenin
+                  alanını ölçebilirsin. Ölçümü kaydedersen burada durur.
                 </p>
               </div>
               <Link
                 href="/araclar"
                 className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
               >
-                Harita Araçlarını Başlat
+                Ölçmeye Başla
               </Link>
             </div>
           )}

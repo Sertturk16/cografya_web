@@ -4,7 +4,6 @@ import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardHeader,
@@ -13,7 +12,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Compass, ArrowRight, Sparkles, MapPin, Navigation, Layers } from "lucide-react";
+import { Compass, ArrowRight, MapPin, Navigation, Layers } from "lucide-react";
 
 // Coordinates for sample major cities in Turkey & World
 const CITIES: Record<string, { lat: number; lng: number; name: string }> = {
@@ -56,19 +55,13 @@ export function V2InteractiveTools() {
     <section className="space-y-6">
       <div className="border-b border-border pb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" size="sm" icon={<Sparkles className="size-3" />}>
-              CBS &amp; Coğrafi Araçlar
-            </Badge>
-            <span className="text-xs text-muted-foreground">WGS84 Jeodezik Hesaplama</span>
-          </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
-            Canlı Jeodezik Mesafe &amp; Harita Araçları
+          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
+            İki İl Arası Kaç Kilometre?
           </h2>
         </div>
         <Link href="/araclar">
           <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
-            Tüm CBS Araçları
+            Tüm Araçlar
           </Button>
         </Link>
       </div>
@@ -77,16 +70,10 @@ export function V2InteractiveTools() {
         {/* WIDGET 1: Great-Circle Geodesic Distance Calculator */}
         <Card className="lg:col-span-7 border-primary/30 shadow-md bg-gradient-to-br from-card via-card to-muted/30 flex flex-col justify-between">
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                Büyük Daire Jeodezik Hesaplayıcı
-              </Badge>
-              <span className="text-xs font-mono text-muted-foreground">WGS84 Modeli</span>
-            </div>
-            <CardTitle className="text-xl">Kuş Uçuşu Jeodezik Mesafe</CardTitle>
+            <CardTitle className="text-xl">Kuş Uçuşu Mesafe</CardTitle>
             <CardDescription className="text-xs leading-relaxed">
-              İki coğrafi koordinat arasındaki küresel en kısa mesafeyi (Büyük Daire / Haversine)
-              matematiksel olarak anında hesaplayın.
+              İki il seç. Aralarındaki uzaklığı Dünya&apos;nın yuvarlaklığını hesaba katarak hemen
+              görürsün.
             </CardDescription>
           </CardHeader>
 
@@ -94,7 +81,7 @@ export function V2InteractiveTools() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                  <MapPin className="size-3.5 text-primary" /> Başlangıç Noktası
+                  <MapPin className="size-3.5 text-primary" /> Nereden
                 </label>
                 <Select
                   value={cityA}
@@ -108,7 +95,7 @@ export function V2InteractiveTools() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1">
-                  <Navigation className="size-3.5 text-secondary" /> Hedef Nokta
+                  <Navigation className="size-3.5 text-secondary" /> Nereye
                 </label>
                 <Select
                   value={cityB}
@@ -125,7 +112,7 @@ export function V2InteractiveTools() {
             <div className="p-4 rounded-2xl bg-card border border-border shadow-inner flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-center sm:text-left">
                 <span className="text-[11px] text-muted-foreground block font-medium">
-                  Büyük Daire Jeodezik Mesafe
+                  Kuş uçuşu uzaklık
                 </span>
                 <span className="font-heading text-3xl font-bold text-primary">
                   {distanceKm.toLocaleString("tr-TR")}{" "}
@@ -144,9 +131,7 @@ export function V2InteractiveTools() {
           </CardContent>
 
           <CardFooter className="border-t border-border bg-muted/20 justify-between">
-            <span className="text-xs text-muted-foreground">
-              Harita üzerinde serbest ölçüm için:
-            </span>
+            <span className="text-xs text-muted-foreground">Listede olmayan yerler için:</span>
             <Link href="/araclar/mesafe-olcme">
               <Button variant="primary" size="sm" rightIcon={<ArrowRight className="size-3.5" />}>
                 Haritada Ölç
@@ -168,7 +153,7 @@ export function V2InteractiveTools() {
                     Kuş Uçuşu Mesafe Ölçme
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    İki veya çok duraklı güzergâh mesafesini haritada tıklayarak ölçün.
+                    Haritaya tıklayarak iki nokta ya da duraklı bir güzergâh ölç.
                   </p>
                 </div>
               </div>
@@ -184,10 +169,10 @@ export function V2InteractiveTools() {
                 </div>
                 <div>
                   <h3 className="font-heading font-bold text-sm text-foreground group-hover:text-secondary transition-colors">
-                    Koordinat Bulma &amp; Dönüştürme
+                    Koordinat Bulma
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    Haritadaki herhangi bir noktanın enlem, boylam ve derece formatlarını bulun.
+                    Bir noktaya tıkla, enlemini ve boylamını oku.
                   </p>
                 </div>
               </div>
@@ -203,10 +188,10 @@ export function V2InteractiveTools() {
                 </div>
                 <div>
                   <h3 className="font-heading font-bold text-sm text-foreground group-hover:text-accent transition-colors">
-                    Poligon Yüzölçümü Hesaplama
+                    Alan Hesaplama
                   </h3>
                   <p className="text-[11px] text-muted-foreground">
-                    Harita üzerinde çizilen çokgen alanların yüzölçümünü km² cinsinden hesaplayın.
+                    Haritada bir alanın sınırını çiz, kaç km² olduğunu gör.
                   </p>
                 </div>
               </div>

@@ -37,19 +37,11 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
       {/* SECTION HEADER WITH SEARCH */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
-              Resmî Yayın Kataloğu
-            </Badge>
-            <span className="text-xs text-muted-foreground font-mono">
-              {books.length} Kayıtlı Yayın
-            </span>
-          </div>
           <h2
             id="v2-books-catalogue-heading"
             className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1"
           >
-            Video Çözümlü Coğrafya Deneme Kitapları
+            Kitap Listesi
           </h2>
         </div>
 
@@ -128,7 +120,7 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
                     any more. */}
                 <div className="space-y-4 pt-2 border-t border-border/60">
                   <div className="flex items-center justify-between text-xs font-semibold text-primary group-hover:translate-x-1 transition-transform">
-                    <span>Video Çözüm Merkezine Git</span>
+                    <span>Çözüm videolarını aç</span>
                     <ArrowRight className="size-4 ml-1" />
                   </div>
                 </div>
@@ -148,10 +140,10 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
         <div className="p-12 text-center rounded-3xl border border-dashed border-border bg-card/50 space-y-3">
           <BookOpen className="size-10 text-muted-foreground mx-auto" />
           <h4 className="font-heading font-bold text-base text-foreground">
-            Henüz yayımlanmış kitap yok
+            Listede şu an kitap yok
           </h4>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Yayın kataloğu kısa süre içinde güncellenecek. Lütfen daha sonra tekrar deneyin.
+            Biraz sonra sayfayı yenileyip yeniden bak.
           </p>
         </div>
       )}
@@ -160,10 +152,10 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
         <div className="p-12 text-center rounded-3xl border border-dashed border-border bg-card/50 space-y-3">
           <BookOpen className="size-10 text-muted-foreground mx-auto" />
           <h4 className="font-heading font-bold text-base text-foreground">
-            Aramanızla eşleşen kitap bulunamadı
+            Bu aramayla eşleşen kitap yok
           </h4>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Farklı bir arama terimi deneyebilir veya arama filtresini temizleyebilirsiniz.
+            Başka bir kelime dene ya da aramayı temizleyip tüm listeye dön.
           </p>
           <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>
             Aramayı Temizle

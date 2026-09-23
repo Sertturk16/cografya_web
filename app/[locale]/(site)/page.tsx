@@ -37,7 +37,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Waves, Gamepad2, ArrowRight, Clock } from "lucide-react";
+import { Waves, ArrowRight, Clock } from "lucide-react";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Hero } from "@/components/v2/v2-hero";
 import { V2LearningPaths } from "@/components/v2/v2-learning-paths";
@@ -170,11 +170,8 @@ export default async function V2HomePage({ params }: V2PageProps) {
         <section className="space-y-6">
           <div className="border-b border-border pb-3 flex items-center justify-between">
             <div>
-              <Badge variant="outline" size="sm" className="mb-1">
-                Atlas &amp; Harita Merkezleri
-              </Badge>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-                Coğrafi Bölgeler &amp; Harita Keşifleri
+                Türkiye ve Dünya Haritası
               </h2>
             </div>
           </div>
@@ -183,41 +180,14 @@ export default async function V2HomePage({ params }: V2PageProps) {
             {/* Türkiye Hub Card */}
             <Card className="overflow-hidden hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between group">
               <CardHeader className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Badge variant="primary" size="sm">
-                    Türkiye Haritası
-                  </Badge>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {totalProvinces} İl · 7 Coğrafi Bölge
-                  </span>
-                </div>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {totalProvinces} il · 7 coğrafi bölge
+                </span>
                 <CardTitle className="text-2xl">{t("mapHeading")}</CardTitle>
                 <CardDescription className="text-sm leading-relaxed">
                   {t("mapBody")}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
-                    <span className="text-muted-foreground block text-[11px]">Bölgeler</span>
-                    <span className="font-heading font-bold text-base text-foreground">
-                      7 Bölge
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
-                    <span className="text-muted-foreground block text-[11px]">İller</span>
-                    <span className="font-heading font-bold text-base text-foreground">
-                      {totalProvinces} İl
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
-                    <span className="text-muted-foreground block text-[11px]">Nüfus</span>
-                    <span className="font-heading font-bold text-base text-foreground">
-                      85+ Milyon
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
               <CardFooter className="border-t border-border bg-muted/20">
                 <Link href="/turkiye" className="w-full">
                   <Button
@@ -234,41 +204,14 @@ export default async function V2HomePage({ params }: V2PageProps) {
             {/* Dünya Hub Card */}
             <Card className="overflow-hidden hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between group">
               <CardHeader className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary" size="sm">
-                    Dünya Atlası
-                  </Badge>
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {totalCountries} Ülke · {totalContinents} Kıta
-                  </span>
-                </div>
+                <span className="text-xs font-mono text-muted-foreground">
+                  {totalCountries} ülke · {totalContinents} kıta
+                </span>
                 <CardTitle className="text-2xl">{t("worldHeading")}</CardTitle>
                 <CardDescription className="text-sm leading-relaxed">
                   {t("worldBody")}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-3 gap-2.5 text-center text-xs">
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
-                    <span className="text-muted-foreground block text-[11px]">Kıtalar</span>
-                    <span className="font-heading font-bold text-base text-foreground">
-                      {totalContinents} Kıta
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
-                    <span className="text-muted-foreground block text-[11px]">Başkentler</span>
-                    <span className="font-heading font-bold text-base text-foreground">
-                      190+ Başkent
-                    </span>
-                  </div>
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border">
-                    <span className="text-muted-foreground block text-[11px]">Bayraklar</span>
-                    <span className="font-heading font-bold text-base text-foreground">
-                      SVG Vektör
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
               <CardFooter className="border-t border-border bg-muted/20">
                 <Link href="/dunya" className="w-full">
                   <Button
@@ -294,21 +237,16 @@ export default async function V2HomePage({ params }: V2PageProps) {
         <section className="space-y-6">
           <div className="border-b border-border pb-3 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm" icon={<Waves className="size-3.5" />}>
-                  Canlı Deniz &amp; Kıyı Gözlemi
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Copernicus Marine Service &amp; ECMWF
-                </span>
-              </div>
+              <span className="text-xs text-muted-foreground">
+                Copernicus Marine Service ve ECMWF
+              </span>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
-                Bugün Denizler ve Canlı Sıcaklık / Dalga Modelleri
+                Denizlerde Bugün Su Sıcaklığı ve Dalga
               </h2>
             </div>
             <Link href="/deniz">
               <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
-                Tüm Kıyıları İncele
+                Tüm Denizler
               </Button>
             </Link>
           </div>
@@ -364,8 +302,8 @@ export default async function V2HomePage({ params }: V2PageProps) {
                           </div>
                         ) : (
                           <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
-                            <span>Dalga Alanı</span>
-                            <span className="italic">Desteklenmiyor</span>
+                            <span>Dalga Yüksekliği</span>
+                            <span className="italic">Veri yok</span>
                           </div>
                         )}
                       </CardContent>
@@ -377,7 +315,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
                           href="/deniz"
                           className="text-accent hover:underline font-medium inline-flex items-center gap-0.5"
                         >
-                          Kıyı Detayı <ArrowRight className="size-3" />
+                          Ayrıntılar <ArrowRight className="size-3" />
                         </Link>
                       </CardFooter>
                     </Card>
@@ -410,7 +348,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
             </div>
           ) : (
             <Alert variant="info">
-              <AlertTitle>Deniz Telemetrisi Hazırlanıyor</AlertTitle>
+              <AlertTitle>Deniz değerleri henüz yayında değil</AlertTitle>
               <AlertDescription>
                 {scope.pointCount > 0
                   ? t("seaScope", {
@@ -431,9 +369,6 @@ export default async function V2HomePage({ params }: V2PageProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <Badge variant="primary" size="sm" className="mb-1">
-                    {t("eyebrowProvinces")}
-                  </Badge>
                   <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
                     {t("discoverProvinces")}
                   </h3>
@@ -482,9 +417,6 @@ export default async function V2HomePage({ params }: V2PageProps) {
             <div className="space-y-4 pt-4">
               <div className="flex items-center justify-between border-b border-border pb-3">
                 <div>
-                  <Badge variant="outline" size="sm" className="mb-1">
-                    {t("eyebrowCountries")}
-                  </Badge>
                   <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
                     {t("discoverCountries")}
                   </h3>
@@ -532,18 +464,11 @@ export default async function V2HomePage({ params }: V2PageProps) {
         {/* SECTION 6: GAMIFICATION CHALLENGE BANNER */}
         <section className="rounded-3xl border border-secondary/40 bg-gradient-to-r from-muted via-card to-muted p-6 sm:p-10 lg:p-12 shadow-md flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 max-w-2xl">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-                {t("eyebrowGame")}
-              </Badge>
-              <span className="text-xs font-semibold text-secondary">3 İnteraktif Oyun Modu</span>
-            </div>
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-primary leading-tight">
               {t("gameHeading")}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Dilsiz haritada Türkiye illerini ve dünya ülkelerini tahmin edin, zamana karşı yarışın
-              ve harita hafızanızı geliştirin.
+              {t("gameBody")}
             </p>
           </div>
 

@@ -214,7 +214,7 @@ export function V2EarthquakeExplorer({
         }
       } catch (err) {
         console.error("[v2-earthquake-explorer] Client fetch failed:", err);
-        setFetchError("Deprem verileri güncellenirken bir sorun oluştu.");
+        setFetchError("Deprem listesi güncellenemedi. Biraz sonra yeniden dene.");
       } finally {
         setIsLoading(false);
       }
@@ -291,25 +291,23 @@ export function V2EarthquakeExplorer({
      The ramp's dark-mode contrast is a known failure and is T-031d's, not this file's. */
 
   const getIntensityLabel = (mag: number) => {
-    if (mag >= 6.0) return "Şiddetli / Yıkıcı";
-    if (mag >= 5.0) return "Kuvvetli Sarsıntı";
-    if (mag >= 4.0) return "Orta Büyüklükte";
-    if (mag >= 3.0) return "Hissedilebilir";
-    return "Hafif / Mikro";
+    if (mag >= 6.0) return "Büyük deprem";
+    if (mag >= 5.0) return "Orta-büyük deprem";
+    if (mag >= 4.0) return "Orta büyüklükte";
+    if (mag >= 3.0) return "Hissedilir";
+    return "Çok küçük deprem";
   };
 
   const getBindingDescription = (item: V2EarthquakeItem) => {
     if (!item.bindingKind || item.bindingKind === "inside") return null;
     const sentenceKey = bindingSentenceKey(item.bindingKind);
     if (sentenceKey === "offshoreNear") {
-      return item.provinceName
-        ? `${item.provinceName} açıkları (Açık deniz)`
-        : "Açık deniz sarsıntısı";
+      return item.provinceName ? `Denizde, ${item.provinceName} açıklarında` : "Denizde";
     }
     if (sentenceKey === "acrossBorder") {
       return item.provinceName
-        ? `Sınır ötesi (En yakın il: ${item.provinceName})`
-        : "Sınır ötesi sarsıntı";
+        ? `Türkiye dışında, en yakın il: ${item.provinceName}`
+        : "Türkiye dışında";
     }
     return null;
   };
@@ -328,16 +326,8 @@ export function V2EarthquakeExplorer({
         {/* Header Strip */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Badge variant="destructive" size="sm" dot>
-                Canlı AFAD Sismik Ağı
-              </Badge>
-              <span className="text-xs text-muted-foreground font-medium">
-                Türkiye Deprem Veri Merkezi (TDVMS)
-              </span>
-            </div>
             <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-              Türkiye Canlı Sismik Aktivite Monitörü
+              Depremleri Filtrele
             </h2>
           </div>
 
@@ -348,14 +338,14 @@ export function V2EarthquakeExplorer({
                 className={`size-2 rounded-full ${isLoading ? "bg-warning animate-spin" : "bg-success"}`}
               />
               <span className="text-xs font-semibold text-foreground">
-                {isLoading ? "Güncelleniyor..." : `${filteredEvents.length} Sarsıntı Kayıtlı`}
+                {isLoading ? "Güncelleniyor…" : `${filteredEvents.length} deprem`}
               </span>
             </div>
             {maxMagnitudeEvent && !isLoading && (
               <div className="px-3.5 py-1.5 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2">
                 <Flame className="size-3.5 text-destructive" />
                 <span className="text-xs font-bold text-destructive">
-                  En Büyük: M {maxMagnitudeEvent.magnitude.toFixed(1)} (
+                  En büyüğü: M {maxMagnitudeEvent.magnitude.toFixed(1)} (
                   {maxMagnitudeEvent.placeNameTr})
                 </span>
               </div>
@@ -404,7 +394,7 @@ export function V2EarthquakeExplorer({
           {/* Magnitude Presets (5 cols) */}
           <div className="space-y-1.5 lg:col-span-5 min-w-0">
             <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Activity className="size-3.5 text-destructive" /> Büyüklük Eşiği:
+              <Activity className="size-3.5 text-destructive" /> En Küçük Büyüklük:
             </label>
             <div className="grid grid-cols-6 gap-1">
               {MAGNITUDE_PRESETS.map((p) => {
@@ -430,7 +420,7 @@ export function V2EarthquakeExplorer({
           {/* Search Input (3 cols) */}
           <div className="space-y-1.5 lg:col-span-3 min-w-0">
             <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Search className="size-3.5 text-muted-foreground" /> İl / Bölge Ara:
+              <Search className="size-3.5 text-muted-foreground" /> Yer Ara:
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
@@ -457,11 +447,8 @@ export function V2EarthquakeExplorer({
         {/* Map Header Toolbar with Integrated Legend & Magnitude Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 pb-3">
           <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm" icon={<Activity className="size-3.5" />}>
-              Sismik Projeksiyon Haritası
-            </Badge>
             <span className="text-xs text-muted-foreground font-medium hidden sm:inline">
-              Eşzamanlı Merkez Üsleri &amp; Odak Derinlikleri
+              Her daire bir depremin merkez üssü. Daire büyüdükçe deprem de büyür.
             </span>
           </div>
 
@@ -780,7 +767,7 @@ export function V2EarthquakeExplorer({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="primary" size="sm" icon={<Activity className="size-3.5" />}>
-                    Seçili Sarsıntı Detayı
+                    Seçtiğin Deprem
                   </Badge>
                   <Badge
                     variant="outline"
@@ -790,9 +777,6 @@ export function V2EarthquakeExplorer({
                     {getIntensityLabel(selectedEvent.magnitude)}
                   </Badge>
                 </div>
-                <Badge variant="outline" size="sm" className="font-mono text-[10px]">
-                  AFAD TDVMS
-                </Badge>
               </div>
 
               {/* Magnitude & Epicenter Title */}
@@ -802,7 +786,7 @@ export function V2EarthquakeExplorer({
                     M {selectedEvent.magnitude.toFixed(1)}
                   </span>
                   <span className="text-xs font-mono font-semibold text-muted-foreground uppercase">
-                    {selectedEvent.magnitudeType} (Sismik Büyüklük)
+                    {selectedEvent.magnitudeType}
                   </span>
                 </div>
                 <h3 className="font-heading text-lg sm:text-xl font-bold text-foreground">
@@ -823,40 +807,36 @@ export function V2EarthquakeExplorer({
                     {selectedEvent.depthKm.toFixed(2)} km
                   </span>
                   <span className="text-[9px] text-muted-foreground block">
-                    {selectedEvent.depthKm <= 60 ? "Sığ Odaklı Deprem" : "Orta/Derin Odaklı"}
+                    {selectedEvent.depthKm <= 60 ? "Sığ odaklı" : "Orta ya da derin odaklı"}
                   </span>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground block">Oluş Zamanı</span>
+                  <span className="text-[10px] text-muted-foreground block">Ne Zaman</span>
                   <span className="font-mono font-bold text-foreground sm:text-sm">
                     {formatTime(selectedEvent.occurredAtUtc)}
                   </span>
-                  <span className="text-[9px] text-muted-foreground block">Yerel Saat (TSİ)</span>
+                  <span className="text-[9px] text-muted-foreground block">Türkiye saatiyle</span>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground block">Büyüklük Skalası</span>
+                  <span className="text-[10px] text-muted-foreground block">Büyüklük Türü</span>
                   <span className="font-mono font-bold text-foreground sm:text-sm">
                     {selectedEvent.magnitudeType === "Mw"
                       ? "Moment Büyüklüğü (Mw)"
                       : "Yerel Büyüklük (ML)"}
                   </span>
-                  <span className="text-[9px] text-muted-foreground block">Richter Ölçeği</span>
                 </div>
 
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground block">Veri Sağlayıcı</span>
-                  <span className="font-mono font-bold text-foreground sm:text-sm">
-                    AFAD Sismik Ağı
-                  </span>
-                  <span className="text-[9px] text-muted-foreground block">Otomatik Çözüm</span>
+                  <span className="text-[10px] text-muted-foreground block">Kaynak</span>
+                  <span className="font-mono font-bold text-foreground sm:text-sm">AFAD</span>
                 </div>
               </div>
 
               {/* Coordinates Strip */}
               <div className="p-3 rounded-2xl bg-muted/40 border border-border/70 text-xs flex items-center justify-between">
-                <span className="text-muted-foreground">Merkez Üssü Koordinatları:</span>
+                <span className="text-muted-foreground">Merkez üssü:</span>
                 <span className="font-mono font-medium text-foreground">
                   {selectedEvent.latitude.toFixed(4)}° K, {selectedEvent.longitude.toFixed(4)}° D
                 </span>
@@ -882,7 +862,7 @@ export function V2EarthquakeExplorer({
                   }}
                   className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-9 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"
                 >
-                  <span className="text-white">İl Detayı</span>
+                  <span className="text-white">İl Sayfası</span>
                   <ArrowRight className="size-3.5 ml-1 text-white" />
                 </Link>
               )}
@@ -891,9 +871,7 @@ export function V2EarthquakeExplorer({
         ) : (
           <div className="p-8 rounded-3xl border border-border bg-card text-center space-y-2 flex flex-col items-center justify-center">
             <Info className="size-8 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">
-              Filtrelere uygun deprem kaydı bulunamadı.
-            </p>
+            <p className="text-xs text-muted-foreground">Bu filtrelerle eşleşen deprem yok.</p>
           </div>
         )}
 
@@ -901,9 +879,8 @@ export function V2EarthquakeExplorer({
         <div className="p-6 rounded-3xl border border-border bg-card shadow-lg space-y-3.5 flex flex-col justify-between">
           <div className="flex items-center justify-between text-xs pb-2 border-b border-border/60">
             <span className="font-bold text-foreground flex items-center gap-1.5">
-              <Clock className="size-4 text-primary" /> Son Gerçekleşen Sarsıntılar
+              <Clock className="size-4 text-primary" /> En Son Beş Deprem
             </span>
-            <span className="text-[11px] text-muted-foreground font-mono">İlk 5 Kayıt</span>
           </div>
 
           <div className="space-y-2 flex-1 flex flex-col justify-between">
@@ -954,23 +931,24 @@ export function V2EarthquakeExplorer({
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-border pb-3">
           <div>
             <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-              Deprem Veri Tablosu &amp; Sismik Kayıtlar
+              Deprem Listesi
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Seçilen zaman penceresinde gerçekleşen tüm sarsıntı listesi (AFAD TDVMS verileri).
+              Seçtiğin zaman aralığındaki depremler, en yenisi en üstte. Bir satıra tıklarsan o
+              deprem haritada ve üstteki kartta seçilir.
             </p>
           </div>
           <span className="text-xs font-mono text-muted-foreground">
-            Toplam {filteredEvents.length} kayıt gösteriliyor
+            {filteredEvents.length} deprem
           </span>
         </div>
 
         {filteredEvents.length === 0 ? (
           <div className="p-8 rounded-3xl border border-dashed border-border text-center space-y-2">
             <Info className="size-8 text-muted-foreground mx-auto" />
-            <p className="text-sm font-semibold text-foreground">Eşleşen deprem kaydı bulunamadı</p>
+            <p className="text-sm font-semibold text-foreground">Eşleşen deprem yok</p>
             <p className="text-xs text-muted-foreground">
-              Büyüklük eşiğini düşürerek veya zaman aralığını genişleterek tekrar deneyebilirsiniz.
+              En küçük büyüklüğü düşür, daha uzun bir zaman aralığı seç ya da aramayı temizle.
             </p>
           </div>
         ) : (
@@ -979,10 +957,10 @@ export function V2EarthquakeExplorer({
               <TableHeader>
                 <TableRow className="bg-muted/40">
                   <TableHead className="w-24">BÜYÜKLÜK</TableHead>
-                  <TableHead>KONUM / MERKEZ ÜSSÜ</TableHead>
+                  <TableHead>YER</TableHead>
                   <TableHead className="text-right">DERİNLİK</TableHead>
                   <TableHead className="text-right">ENLEM / BOYLAM</TableHead>
-                  <TableHead className="text-right">TARİH &amp; SAAT</TableHead>
+                  <TableHead className="text-right">TARİH VE SAAT</TableHead>
                   <TableHead className="text-right">KAYNAK</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1064,7 +1042,7 @@ export function V2EarthquakeExplorer({
                   className="text-xs rounded-xl"
                   onClick={() => setDisplayCount((prev) => prev + 50)}
                 >
-                  Daha Fazla Göster (+50 Sarsıntı)
+                  50 Deprem Daha Göster
                 </Button>
               </div>
             )}

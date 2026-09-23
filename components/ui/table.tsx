@@ -159,7 +159,7 @@ function TableEmpty({
   colSpan,
   icon = <Inbox className="size-8 text-muted-foreground" />,
   title = "Kayıt Bulunamadı",
-  description = "Arama veya filtre kriterlerinize uygun veri bulunmuyor.",
+  description = "Aramana ya da filtrelerine uyan kayıt yok.",
   action,
 }: {
   colSpan: number;

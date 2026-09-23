@@ -81,44 +81,36 @@ export interface MarinePointData {
  * area — it paints station pins, by temperature. Deleted rather than bound, so nobody binds a
  * fill that nothing renders.
  */
-const BASIN_FILTER_META: Record<
-  string,
-  { name: string; icon: string; badgeClass: string; title: string }
-> & {
-  black_sea: { name: string; icon: string; badgeClass: string; title: string };
-  marmara: { name: string; icon: string; badgeClass: string; title: string };
-  aegean: { name: string; icon: string; badgeClass: string; title: string };
-  mediterranean: { name: string; icon: string; badgeClass: string; title: string };
-  all: { name: string; icon: string; badgeClass: string; title: string };
+const BASIN_FILTER_META: Record<string, { name: string; icon: string; badgeClass: string }> & {
+  black_sea: { name: string; icon: string; badgeClass: string };
+  marmara: { name: string; icon: string; badgeClass: string };
+  aegean: { name: string; icon: string; badgeClass: string };
+  mediterranean: { name: string; icon: string; badgeClass: string };
+  all: { name: string; icon: string; badgeClass: string };
 } = {
   all: {
     name: "Tüm Denizler",
-    title: "Tüm Kıyı İstasyonları",
     icon: "Waves",
     // "all" is not a basin, so it wears the brand accent rather than one basin's identity.
     badgeClass: "bg-primary/10 text-primary-strong border-primary/30",
   },
   black_sea: {
     name: "Karadeniz",
-    title: "Karadeniz Havzası (15 İstasyon)",
     icon: "Waves",
     badgeClass: basinIdentityOf("black_sea").badge,
   },
   marmara: {
     name: "Marmara Denizi",
-    title: "Marmara Denizi Havzası (6 İstasyon)",
     icon: "Anchor",
     badgeClass: basinIdentityOf("marmara").badge,
   },
   aegean: {
     name: "Ege Denizi",
-    title: "Ege Denizi Havzası (5 İstasyon)",
     icon: "Sailboat",
     badgeClass: basinIdentityOf("aegean").badge,
   },
   mediterranean: {
     name: "Akdeniz",
-    title: "Akdeniz Havzası (4 İstasyon)",
     icon: "SunMedium",
     badgeClass: basinIdentityOf("mediterranean").badge,
   },
@@ -320,20 +312,13 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
     <section className="space-y-6" id="v2-marine-map">
       {/* SECTION HEADER */}
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-            Canlı Deniz Telemetrisi
-          </Badge>
-          <Badge variant="outline" size="sm">
-            30 İstasyon • 4 Deniz Havzası
-          </Badge>
-        </div>
         <h2 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight text-primary">
-          Türkiye Kıyıları &amp; Deniz Suyu Sıcaklık Atlası
+          Açık Denizdeki 30 Nokta
         </h2>
         <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
-          Copernicus Marine ve ECMWF saatlik telemetri istasyonları, su sıcaklığı, dalga boyu ve 10m
-          rüzgâr vektörleri.
+          Her nokta bir kıyı ilinin açığında. Seçtiğin noktanın su sıcaklığı, dalga yüksekliği ve 10
+          metredeki rüzgârı bir kartta görünür. Değerler Copernicus Marine ve ECMWF modellerinden
+          gelir; istasyon ölçümü değildir.
         </p>
       </div>
 
@@ -401,7 +386,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 {BASIN_FILTER_META[selectedBasin]?.name}
               </span>
               <span className="text-muted-foreground text-[11px]">
-                ({filteredPoints.length} İstasyon Aktif)
+                ({filteredPoints.length} nokta)
               </span>
             </div>
 
@@ -409,7 +394,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             <svg
               viewBox={TR_CONTEXT_VIEWBOX}
               className="w-full h-full select-none block"
-              aria-label="Türkiye Deniz Telemetrisi ve Kıyılar Haritası"
+              aria-label="Türkiye kıyıları ve açık denizdeki referans noktaları haritası"
             >
               <defs></defs>
 
@@ -496,7 +481,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       transform={`translate(${pt.x}, ${pt.y})`}
                       role="button"
                       tabIndex={0}
-                      aria-label={`İstasyon: ${point.nameTr}, Sıcaklık: ${point.sst ? point.sst.toFixed(1) + " °C" : "Bilinmiyor"}`}
+                      aria-label={`${point.nameTr}, su sıcaklığı: ${point.sst ? point.sst.toFixed(1) + " °C" : "değer yok"}`}
                       onClick={() => handleSelectPoint(point.slugTr)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
@@ -602,7 +587,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   {hoveredPoint.waveHeight !== undefined && hoveredPoint.waveHeight !== null && (
                     <div className="flex items-center justify-between text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        <Waves className="size-3 text-muted-foreground" /> Dalga Boyu:
+                        <Waves className="size-3 text-muted-foreground" /> Dalga Yüksekliği:
                       </span>
                       <span className="font-mono font-medium text-foreground flex items-center gap-1">
                         {hoveredPoint.waveHeight.toFixed(2)} m
@@ -620,7 +605,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                     hoveredPoint.windSpeed10m !== null && (
                       <div className="flex items-center justify-between text-muted-foreground">
                         <span className="flex items-center gap-1">
-                          <Wind className="size-3 text-muted-foreground" /> 10m Rüzgâr:
+                          <Wind className="size-3 text-muted-foreground" /> 10 m&apos;de Rüzgâr:
                         </span>
                         <span className="font-mono font-medium text-foreground flex items-center gap-1">
                           {hoveredPoint.windSpeed10m.toFixed(1)} m/s
@@ -643,7 +628,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 </div>
 
                 <div className="pt-1 text-[10px] text-muted-foreground flex items-center justify-between border-t border-border/60">
-                  <span>Tıklayarak detayları aç</span>
+                  <span>Ayrıntılar için tıkla</span>
                   <span className="font-mono">#{hoveredPoint.displayOrder}</span>
                 </div>
               </div>
@@ -659,7 +644,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 <div>
                   <div className="flex items-center gap-2">
                     <Badge variant="primary" size="sm" icon={<MapPin className="size-3" />}>
-                      Seçili İstasyon
+                      Seçili Nokta
                     </Badge>
                     <span className="text-[11px] font-mono text-muted-foreground">
                       TR-{selectedPoint.plateCode}
@@ -687,9 +672,8 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 <div className="flex items-start gap-2 p-2.5 rounded-2xl bg-warning/10 border border-warning/30 text-warning-strong text-xs">
                   <ShieldAlert className="size-4 text-warning-strong shrink-0 mt-0.5" />
                   <p className="leading-tight text-[11px]">
-                    <strong>Boğaz &amp; Dar Su Yolu:</strong> Açık deniz modellerinin kaba grid
-                    çözünürlüğü ve iki tabakalı akıntı rejimi nedeniyle kıyı bandında yerel sapmalar
-                    olabilir.
+                    <strong>Boğaz yakını:</strong> Model denizi kaba karelere böler, boğazda ise su
+                    iki kat hâlinde akar. Bu yüzden kıyıya yakın değerler yer yer sapabilir.
                   </p>
                 </div>
               )}
@@ -707,7 +691,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
                 <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Waves className="size-3.5 text-muted-foreground" /> Dalga Boyu
+                    <Waves className="size-3.5 text-muted-foreground" /> Dalga Yüksekliği
                   </span>
                   <div className="font-mono font-bold text-base text-foreground flex items-center gap-1.5">
                     <span>
@@ -724,7 +708,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
                 <div className="p-3 rounded-2xl bg-muted/40 border border-border/60 space-y-1">
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Wind className="size-3.5 text-muted-foreground" /> 10m Rüzgâr
+                    <Wind className="size-3.5 text-muted-foreground" /> 10 m&apos;de Rüzgâr
                   </span>
                   <div className="font-mono font-bold text-xs text-foreground flex items-center gap-1">
                     <span>
@@ -749,7 +733,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-1">
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <Clock className="size-3.5 text-muted-foreground" /> Model Zamanı
+                    <Clock className="size-3.5 text-muted-foreground" /> Geçerlilik Anı
                   </span>
                   <div className="font-mono font-medium text-[11px] text-foreground">
                     {/* "—", never "Canlı Analiz". The label above this value reads "Model
@@ -763,7 +747,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   </div>
                   {selectedPoint.gridDistanceKm && (
                     <span className="text-[10px] text-muted-foreground block">
-                      Grid: &le; {selectedPoint.gridDistanceKm.toFixed(1)} km
+                      En yakın model verisi &le; {selectedPoint.gridDistanceKm.toFixed(1)} km
                     </span>
                   )}
                 </div>
@@ -787,7 +771,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                     }}
                     className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 h-8 px-3 text-xs gap-1.5 rounded-xl bg-primary text-white hover:bg-primary shadow-xs"
                   >
-                    <span className="text-white">İl Detayına Git</span>
+                    <span className="text-white">İl Sayfasına Git</span>
                     <ArrowRight className="size-3.5 ml-1 text-white" />
                   </Link>
                 )}
@@ -797,7 +781,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
 
           {!selectedPoint && !showPinValues && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Sıcaklık, dalga ve rüzgâr değerleri için haritada bir istasyona dokun.
+              Sıcaklık, dalga ve rüzgâr değerleri için haritada bir noktaya dokun.
             </p>
           )}
         </div>
@@ -817,7 +801,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           product no longer paints. Both the swatches and the numbers now come from
           `lib/theme/sst-band.ts`. */}
       <div className="p-3.5 rounded-2xl bg-card border border-border flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs">
-        <span className="font-semibold text-foreground text-[11px]">Su Sıcaklığı Skalası:</span>
+        <span className="font-semibold text-foreground text-[11px]">Su Sıcaklığı:</span>
         <span className="flex items-center gap-1.5 text-[11px]">
           <span className="size-2.5 rounded-full bg-[var(--sst-band-hot)]" /> {SST_BAND_MIN_C.hot}
           °C+ (Sıcak Akdeniz)
@@ -838,7 +822,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="İstasyon veya il adı ara..."
+            placeholder="Nokta ya da il adı ara…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 pr-10 py-2 rounded-xl bg-card border-border text-xs"
@@ -905,8 +889,8 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
       {/* FILTER RESULTS COUNTER */}
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Toplam <strong className="text-foreground font-semibold">{filteredPoints.length}</strong>{" "}
-          telemetri istasyonu listeleniyor.
+          Listede <strong className="text-foreground font-semibold">{filteredPoints.length}</strong>{" "}
+          nokta var.
         </span>
         {(searchQuery || selectedBasin !== "all") && (
           <button
@@ -935,12 +919,9 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 <Badge variant="outline" className={group.meta.badgeClass}>
                   {group.meta.name}
                 </Badge>
-                <span className="font-heading font-bold text-sm text-foreground">
-                  {group.meta.title}
-                </span>
               </div>
               <span className="text-xs font-mono text-muted-foreground">
-                {group.items.length} İstasyon
+                {group.items.length} Nokta
               </span>
             </div>
 
@@ -949,12 +930,12 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
               <TableHeader>
                 <TableRow className="bg-muted/20">
                   <TableHead className="w-12 text-center">#</TableHead>
-                  <TableHead>İstasyon Adı &amp; Kıyı</TableHead>
+                  <TableHead>Nokta ve Kıyı</TableHead>
                   <TableHead>İl / Plaka</TableHead>
                   <TableHead className="text-right">Su Sıcaklığı</TableHead>
-                  <TableHead className="text-right">Dalga Boyu &amp; Yönü</TableHead>
-                  <TableHead className="text-right">10m Rüzgâr Hızı &amp; Yönü</TableHead>
-                  <TableHead className="text-right">Model Zamanı</TableHead>
+                  <TableHead className="text-right">Dalga Yüksekliği ve Yönü</TableHead>
+                  <TableHead className="text-right">10 m&apos;de Rüzgâr ve Yönü</TableHead>
+                  <TableHead className="text-right">Geçerlilik Anı</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -980,7 +961,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       id={marinePointAnchorId(point)}
                       tabIndex={0}
                       aria-selected={isSelected}
-                      aria-label={`${point.nameTr} istasyonunu seç`}
+                      aria-label={`${point.nameTr} noktasını seç`}
                       className={`cursor-pointer transition-colors outline-none focus-visible:bg-primary/15 ${
                         isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-muted/40"
                       }`}

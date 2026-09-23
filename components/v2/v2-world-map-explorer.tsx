@@ -459,18 +459,8 @@ export function V2WorldMapExplorer({
       <div className="rounded-3xl border border-primary/30 bg-gradient-to-b from-card via-card to-muted/40 p-5 sm:p-8 shadow-xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" dot>
-                {isEn ? "World Vector Canvas" : "Genişletilmiş Dünya Vektör Tuvali"}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {isEn ? "199 Countries & Territories + 7 Continents" : "199 Ülke ve Bölge + 7 Kıta"}
-              </span>
-            </div>
-            <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-              {isEn
-                ? "Interactive World Map & Country Explorer"
-                : "İnteraktif Dünya Haritası & Ülkeler Kataloğu"}
+            <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+              {isEn ? "Interactive World Map & Country Explorer" : "Dünya haritası"}
             </h3>
           </div>
 
@@ -595,7 +585,7 @@ export function V2WorldMapExplorer({
                 <svg
                   viewBox={WORLD_MAP_VIEWBOX}
                   className="w-full h-full select-none block"
-                  aria-label="İnteraktif Dünya Haritası"
+                  aria-label={isEn ? "World map" : "Dünya haritası"}
                 >
                   <defs>
                     <filter id="country-glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -843,7 +833,7 @@ export function V2WorldMapExplorer({
                         </div>
 
                         <div className="pt-1 text-[10px] text-primary font-semibold flex items-center justify-between border-t border-border/60">
-                          <span>{isEn ? "Click to inspect" : "Tıkla ve İncele"}</span>
+                          <span>{isEn ? "Click to inspect" : "Ayrıntı için tıkla"}</span>
                           <ArrowRight className="size-3" />
                         </div>
                       </>
@@ -923,18 +913,8 @@ export function V2WorldMapExplorer({
         >
           <div className="border-b border-border pb-4 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm">
-                  {isEn ? "199 Countries Catalogue" : "199 Ülke Kataloğu"}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {filteredCountries.length} {isEn ? "Countries Listed" : "Ülke Listeleniyor"}
-                </span>
-              </div>
-              <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-                {isEn
-                  ? "World Countries & Geography Registry"
-                  : "Dünya Ülkeleri Kataloğu & Coğrafi Detaylar"}
+              <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+                {isEn ? "World Countries & Geography Registry" : "Ülkeler ve bölgeler"}
               </h3>
             </div>
 
@@ -973,7 +953,7 @@ export function V2WorldMapExplorer({
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  A-Z İsim
+                  A-Z
                 </button>
                 <button
                   type="button"
@@ -1000,14 +980,14 @@ export function V2WorldMapExplorer({
               </div>
 
               {/* View Mode Switcher */}
-              <TabsList aria-label="Görünüm Seçenekleri" className="h-auto p-1">
+              <TabsList aria-label="Listeyi nasıl göstereyim?" className="h-auto p-1">
                 <TabsTrigger
                   value="continent"
                   className="gap-1 px-2.5 text-xs font-semibold"
                   aria-label={t("continentGroupedView")}
                 >
                   <Layers className="size-3.5" />
-                  <span className="hidden sm:inline">Kıta Gruplu</span>
+                  <span className="hidden sm:inline">Kıtalara göre</span>
                 </TabsTrigger>
                 <TabsTrigger value="table" className="px-1.5" aria-label={t("tableView")}>
                   <List className="size-4" />
@@ -1026,7 +1006,7 @@ export function V2WorldMapExplorer({
                 <Info className="size-4 shrink-0 text-warning-strong" />
                 <span>
                   <strong>{CONTINENT_META[selectedContinent]?.name ?? selectedContinent}</strong>{" "}
-                  {isEn ? "filter is active, but no results found for" : "filtresi etkinken"} &quot;
+                  {isEn ? "filter is active, but no results found for" : "içinde"} &quot;
                   {searchQuery}&quot; {isEn ? "" : "bulunamadı."}
                 </span>
               </div>
@@ -1036,7 +1016,7 @@ export function V2WorldMapExplorer({
                 className="text-xs h-7 px-2.5 bg-card border-warning/40 text-warning-strong"
                 onClick={() => setSelectedContinent("ALL")}
               >
-                {isEn ? "Search All Countries" : "Tüm Dünyada Ara"}
+                {isEn ? "Search All Countries" : "Tüm kıtalarda ara"}
               </Button>
             </div>
           )}
@@ -1141,18 +1121,12 @@ export function V2WorldMapExplorer({
                       </span>
                     </div>
                   </div>
-
-                  <Badge variant="outline" className="text-xs">
-                    {isEn ? "Continent" : "Kıta Havzası"}
-                  </Badge>
                 </div>
 
                 {/* Compact Mini-Card Grid */}
                 <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
                   {group.items.map((country) => {
-                    const v2Path = country.path.startsWith("/")
-                      ? country.path
-                      : `/v2${country.path}`;
+                    const v2Path = country.path.startsWith("/") ? country.path : `/${country.path}`;
                     return (
                       <Link
                         key={country.isoCode}
@@ -1230,7 +1204,7 @@ export function V2WorldMapExplorer({
               <TableBody>
                 {filteredCountries.map((country) => {
                   const continentMeta = CONTINENT_META[country.continent];
-                  const v2Path = country.path.startsWith("/") ? country.path : `/v2${country.path}`;
+                  const v2Path = country.path.startsWith("/") ? country.path : `/${country.path}`;
                   return (
                     <TableRow key={country.isoCode} className="hover:bg-muted/50 transition-colors">
                       <TableCell>
@@ -1320,7 +1294,7 @@ export function V2WorldMapExplorer({
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5 items-start">
                   {groupList.map((c) => {
-                    const v2Path = c.path.startsWith("/") ? c.path : `/v2${c.path}`;
+                    const v2Path = c.path.startsWith("/") ? c.path : `/${c.path}`;
                     return (
                       <Link
                         key={c.isoCode}

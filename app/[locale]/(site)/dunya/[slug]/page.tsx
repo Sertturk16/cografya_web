@@ -59,7 +59,6 @@ import {
   Mountain,
   Waves,
   CloudSun,
-  ShieldAlert,
   FileText,
 } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -404,17 +403,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                       {t("sovereignEntityBadge")}
                     </Badge>
                   )}
-                  {country.neighborCount === 0 ? (
-                    isSpecialGeography ? null : (
-                      <Badge variant="outline" className="flex items-center gap-1">
-                        <Waves className="size-3" /> {t("islandChipLabel")}
-                      </Badge>
-                    )
-                  ) : (
-                    <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      {t("landNeighboursChip", { count: country.neighborCount })}
-                    </Badge>
-                  )}
                 </>
               }
             />
@@ -592,11 +580,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
             <div className="lg:col-span-7 space-y-6">
               <Card variant="panel" space="5">
                 <div className="space-y-2 border-b border-border/70 pb-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="primary" size="sm">
-                      {t("physicalGeographyBadge")}
-                    </Badge>
-                  </div>
                   <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
                     <Mountain className="size-6 text-primary shrink-0" />
                     <span>
@@ -663,7 +646,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-1.5">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                       <Scroll className="size-3.5" />
-                      <span>Tarihsel Kuruluş ve Millî Gün</span>
+                      <span>Kuruluşu ve millî günü</span>
                     </div>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {independenceNote}
@@ -680,7 +663,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   <div className="flex items-center gap-2">
                     <Compass className="size-4 text-primary" />
                     <h3 className="font-heading font-bold text-base text-foreground">
-                      Dünya Haritasındaki Konumu
+                      Haritadaki Yeri
                     </h3>
                   </div>
                   <Badge variant="outline" size="sm" className="font-mono text-[11px]">
@@ -773,9 +756,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                         {sectionHeading("climate")}
                       </h3>
                     </div>
-                    <Badge variant="secondary" size="sm">
-                      {t("climateBeltsBadge")}
-                    </Badge>
                   </div>
                   <V2RichProse
                     text={climateNote}
@@ -793,9 +773,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                         {sectionHeading("hydrography")}
                       </h3>
                     </div>
-                    <Badge variant="outline" size="sm">
-                      {t("hydrographyResourcesBadge")}
-                    </Badge>
                   </div>
                   <V2RichProse
                     text={hydrographyNote}
@@ -810,11 +787,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         {/* SECTION 3: YÖNETİM, DEMOGRAFİ VE RESMÎ KİMLİK TABLOSU */}
         <section id="yonetim-ve-demografi" className="scroll-mt-28 space-y-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
-                {t("administrativeStructureBadge")}
-              </Badge>
-            </div>
             <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight">
               {t("administrativeGroupHeading", { name })}
             </h2>
@@ -833,16 +805,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {/* Sovereignty Note if applicable */}
                 {sovereigntyNote && (
                   <div className="rounded-3xl border border-warning/30 bg-warning/5 p-6 sm:p-8 shadow-sm space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        size="sm"
-                        className="bg-warning/15 text-warning-strong border-warning/30"
-                      >
-                        <ShieldAlert className="size-3 mr-1" />
-                        {t("sovereigntyStatusBadge")}
-                      </Badge>
-                    </div>
                     <h3 className="font-heading text-xl font-bold text-foreground">
                       {t("sovereigntyHeading")}
                     </h3>
@@ -856,11 +818,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {/* Governance & Political Structure Note */}
                 {governanceNote ? (
                   <Card variant="panel" space="3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" size="sm">
-                        {t("governanceStructureBadge")}
-                      </Badge>
-                    </div>
                     <h3 className="font-heading text-xl font-bold text-foreground">
                       {t("governanceStructureHeading")}
                     </h3>
@@ -871,11 +828,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                   </Card>
                 ) : showsGovernanceFallback ? (
                   <Card variant="panel" space="3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" size="sm">
-                        {t("politicalLegalStatusBadge")}
-                      </Badge>
-                    </div>
                     <h3 className="font-heading text-xl font-bold text-foreground">
                       {t("politicalLegalStatusHeading")}
                     </h3>
@@ -900,11 +852,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {/* Settlement / Demographic distribution Note if available */}
                 {settlementNote && (
                   <Card variant="panel" space="3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" size="sm">
-                        {t("settlementBadge")}
-                      </Badge>
-                    </div>
                     <h3 className="font-heading text-xl font-bold text-foreground">
                       {t("settlementHeading")}
                     </h3>
@@ -918,11 +865,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 {/* Economy Note if available */}
                 {economyNote && (
                   <Card variant="panel" space="3">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" size="sm">
-                        {t("economyBadge")}
-                      </Badge>
-                    </div>
                     <h3 className="font-heading text-xl font-bold text-foreground">
                       {t("economyHeading")}
                     </h3>
@@ -947,9 +889,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     <FileText className="size-4 text-primary" />
                     <span>{t("identityCardTitle")}</span>
                   </h3>
-                  <Badge variant="outline" className="font-mono text-xs">
-                    {country.isoCode}
-                  </Badge>
                 </div>
 
                 <div className="divide-y divide-border/60 text-xs">
@@ -1065,11 +1004,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
           <section id="komsular" className="scroll-mt-28 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Badge variant="primary" size="sm">
-                    {t("bordersRegionalBadge")}
-                  </Badge>
-                </div>
                 <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
                   <Globe className="size-6 text-primary shrink-0" />
                   <span>
@@ -1195,7 +1129,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <Link href="/dunya">
             <Button variant="outline" size="sm" leftIcon={<Globe className="size-4" />}>
-              ← Dünya Atlası&apos;na Dön (Tüm Ülkeler)
+              ← Tüm Ülkeler
             </Button>
           </Link>
           <Link href="/">

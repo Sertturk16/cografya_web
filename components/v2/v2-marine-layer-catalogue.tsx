@@ -1,5 +1,4 @@
 import type { MarineLayer } from "@/lib/api/types";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableHeader,
@@ -8,7 +7,7 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { Layers, Database, Compass, Wind, Waves, Thermometer, CheckCircle2 } from "lucide-react";
+import { Compass, Wind, Waves, Thermometer } from "lucide-react";
 
 interface V2MarineLayerCatalogueProps {
   layers: MarineLayer[];
@@ -23,19 +22,19 @@ const LAYER_ICONS: Record<string, React.ReactNode> = {
 };
 
 const LAYER_TITLES_TR: Record<string, string> = {
-  sea_surface_temperature: "Deniz Suyu Sıcaklığı (SST)",
-  wave_height: "Belirgin Dalga Yüksekliği (Hs)",
+  sea_surface_temperature: "Deniz Suyu Sıcaklığı",
+  wave_height: "Belirgin Dalga Yüksekliği",
   wave_direction: "Dalga Geliş Yönü",
-  wind_speed_10m: "10 Metre Rüzgâr Hızı",
-  wind_direction_10m: "10 Metre Rüzgâr Yönü",
+  wind_speed_10m: "10 Metrede Rüzgâr Hızı",
+  wind_direction_10m: "10 Metrede Rüzgâr Yönü",
 };
 
 const LAYER_UNITS_TR: Record<string, string> = {
-  sea_surface_temperature: "°C (Santigrat)",
-  wave_height: "m (Metre)",
-  wave_direction: "Derece (° / Gerçek Kuzey)",
-  wind_speed_10m: "m/s & km/h",
-  wind_direction_10m: "Derece (° / Geldiği Yön)",
+  sea_surface_temperature: "°C",
+  wave_height: "metre",
+  wave_direction: "Derece, gerçek kuzeyden",
+  wind_speed_10m: "m/s ve km/h",
+  wind_direction_10m: "Derece, geldiği yön",
 };
 
 const LAYER_SOURCES_TR: Record<string, string> = {
@@ -53,31 +52,31 @@ export function V2MarineLayerCatalogue({ layers: _layers }: V2MarineLayerCatalog
       id: "sea_surface_temperature",
       calmThreshold: "—",
       cycle: "Günde 1-2 kez (12:00 / 16:00 UTC)",
-      horizon: "10 Günlük Tahmin",
+      horizon: "10 günlük tahmin",
     },
     {
       id: "wave_height",
       calmThreshold: "0.1 m",
       cycle: "Günde 2 kez (00:00, 12:00 UTC)",
-      horizon: "10 Günlük Tahmin",
+      horizon: "10 günlük tahmin",
     },
     {
       id: "wave_direction",
-      calmThreshold: "— (Dalga < 0.1m iken Sakin)",
+      calmThreshold: "Dalga 0.1 m altındaysa sakin",
       cycle: "Günde 2 kez (00:00, 12:00 UTC)",
-      horizon: "10 Günlük Tahmin",
+      horizon: "10 günlük tahmin",
     },
     {
       id: "wind_speed_10m",
       calmThreshold: "0.5 m/s (~1.8 km/h)",
       cycle: "Günde 4 kez (00, 06, 12, 18 UTC)",
-      horizon: "10 Günlük Tahmin",
+      horizon: "10 günlük tahmin",
     },
     {
       id: "wind_direction_10m",
-      calmThreshold: "— (Rüzgâr < 0.5m/s iken Sakin)",
+      calmThreshold: "Rüzgâr 0.5 m/s altındaysa sakin",
       cycle: "Günde 4 kez (00, 06, 12, 18 UTC)",
-      horizon: "10 Günlük Tahmin",
+      horizon: "10 günlük tahmin",
     },
   ];
 
@@ -85,38 +84,28 @@ export function V2MarineLayerCatalogue({ layers: _layers }: V2MarineLayerCatalog
     <section className="space-y-6" aria-labelledby="v2-marine-catalogue-heading">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm" icon={<Layers className="size-3.5" />}>
-              Oşinografi Ölçüm Kataloğu
-            </Badge>
-            <span className="text-xs text-muted-foreground font-medium">
-              Model Parametreleri &amp; Künye
-            </span>
-          </div>
           <h2
             id="v2-marine-catalogue-heading"
             className="font-heading text-2xl sm:text-3xl font-bold text-foreground"
           >
-            Ölçülen Büyüklükler, Birimler ve Model Çevrimleri
+            Ölçüm Kataloğu
           </h2>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Sayfadaki her değerin birimi, hangi modelden geldiği ve kaynağın onu günde kaç kez
+            yenilediği.
+          </p>
         </div>
-        <Badge variant="secondary" size="sm" icon={<Database className="size-3.5" />}>
-          Copernicus &amp; ECMWF
-        </Badge>
       </div>
 
       <div className="rounded-3xl border border-border bg-card overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/40 hover:bg-muted/40">
-              <TableHead className="font-heading font-bold text-xs">Fiziksel Büyüklük</TableHead>
+              <TableHead className="font-heading font-bold text-xs">Değer</TableHead>
               <TableHead className="font-heading font-bold text-xs">Birim</TableHead>
               <TableHead className="font-heading font-bold text-xs">Sakin Eşiği</TableHead>
-              <TableHead className="font-heading font-bold text-xs">Veri Kaynağı</TableHead>
-              <TableHead className="font-heading font-bold text-xs">
-                Model Çevrimi &amp; Ufuk
-              </TableHead>
-              <TableHead className="font-heading font-bold text-xs text-right">Durum</TableHead>
+              <TableHead className="font-heading font-bold text-xs">Kaynak</TableHead>
+              <TableHead className="font-heading font-bold text-xs">Yenilenme</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -148,12 +137,6 @@ export function V2MarineLayerCatalogue({ layers: _layers }: V2MarineLayerCatalog
                       {layer.horizon}
                     </span>
                   </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  <Badge variant="success" size="sm" className="text-[10px] font-semibold">
-                    <CheckCircle2 className="size-2.5 mr-1" />
-                    Yayında
-                  </Badge>
                 </TableCell>
               </TableRow>
             ))}

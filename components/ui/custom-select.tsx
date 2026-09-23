@@ -29,7 +29,7 @@ export function CustomSelect({
   options,
   value,
   onChange,
-  placeholder = "Seçiniz...",
+  placeholder = "Seç…",
   searchPlaceholder = "Ara...",
   searchable = false,
   emptyLabel = "Sonuç bulunamadı.",

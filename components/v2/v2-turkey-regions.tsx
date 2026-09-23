@@ -4,7 +4,7 @@ import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Mountain, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { tr } from "@/lib/text/format-number";
 import { REGION_IDENTITY } from "@/lib/theme/region-identity";
 
@@ -54,7 +54,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     provincesCount: 11,
     climate: "Geçiş İklimi (Akdeniz - Karadeniz - Karasal)",
     description:
-      "İki kıtayı birbirine bağlayan boğazları, sanayi, ticaret ve finans merkezleriyle Türkiye ekonomisinin kalbi.",
+      "İki kıtayı bağlayan boğazlar bu bölgede. Türkiye'nin sanayisi, ticareti ve finansı en çok burada toplanır.",
     highlightProvinces: [
       { name: "İstanbul", slug: "istanbul", plate: "34" },
       { name: "Bursa", slug: "bursa", plate: "16" },
@@ -71,7 +71,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     provincesCount: 8,
     climate: "Tipik Akdeniz İklimi",
     description:
-      "Denize dik uzanan kırıklı dağ sıraları (horst-graben), verimli graben ovaları, zeytinlikler ve girintili kıyı şeridi.",
+      "Dağlar denize dik uzanır, aralarında verimli graben ovaları açılır. Kıyısı girintili çıkıntılı, yamaçları zeytinlik.",
     highlightProvinces: [
       { name: "İzmir", slug: "izmir", plate: "35" },
       { name: "Manisa", slug: "manisa", plate: "45" },
@@ -86,9 +86,9 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "secondary",
     identityClass: REGION_IDENTITY.akdeniz.banner,
     provincesCount: 8,
-    climate: "Sıcak & Kurak Yazlar, Ilık Kışlar",
+    climate: "Sıcak ve Kurak Yazlar, Ilık Kışlar",
     description:
-      "Toros sıradağları, karstik plato ve kanyonlar, seracılık, turunçgil üretimi ve turizm kıyıları.",
+      "Toros Dağları, karstik platolar ve kanyonlar. Kıyıda seralar, turunçgil bahçeleri ve turizm.",
     highlightProvinces: [
       { name: "Antalya", slug: "antalya", plate: "07" },
       { name: "Adana", slug: "adana", plate: "01" },
@@ -105,7 +105,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     provincesCount: 13,
     climate: "Step (Karasal) İklimi",
     description:
-      "Geniş platolar, Tuz Gölü kapalı havzası, volkanik dağlar, tahıl ambarı ovalar ve başkent Ankara.",
+      "Geniş platolar ve tahıl ekilen ovalar, kapalı bir havzadaki Tuz Gölü, volkanik dağlar. Başkent Ankara da burada.",
     highlightProvinces: [
       { name: "Ankara", slug: "ankara", plate: "06" },
       { name: "Konya", slug: "konya", plate: "42" },
@@ -122,7 +122,7 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     provincesCount: 18,
     climate: "Her Mevsim Yağışlı Ilıman İklim",
     description:
-      "Kıyıya paralel Kuzey Anadolu Dağları, zengin orman kuşağı, fındık ve çay tarımı, yaylacılık kültürü.",
+      "Kuzey Anadolu Dağları kıyıya paralel uzanır, yamaçlar ormanla kaplıdır. Fındık, çay ve yayla hayatı bu bölgeyle özdeşleşir.",
     highlightProvinces: [
       { name: "Trabzon", slug: "trabzon", plate: "61" },
       { name: "Samsun", slug: "samsun", plate: "55" },
@@ -137,9 +137,9 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "default",
     identityClass: REGION_IDENTITY["dogu-anadolu"].banner,
     provincesCount: 14,
-    climate: "Sert Karasal & Uzun Kışlar",
+    climate: "Sert Karasal, Uzun Kışlar",
     description:
-      "Türkiye'nin en yüksek ve en engebeli bölgesi, volkanik koniler, Van Gölü havzası ve Fırat-Dicle nehirlerinin kaynağı.",
+      "Türkiye'nin en yüksek ve en engebeli bölgesi. Volkanik dağlar, Van Gölü ve Fırat ile Dicle'nin kaynakları burada.",
     highlightProvinces: [
       { name: "Erzurum", slug: "erzurum", plate: "25" },
       { name: "Van", slug: "van", plate: "65" },
@@ -154,9 +154,9 @@ export const TURKEY_REGIONS: RegionInfo[] = [
     badgeVariant: "outline",
     identityClass: REGION_IDENTITY["guneydogu-anadolu"].banner,
     provincesCount: 9,
-    climate: "Şiddetli Yaz Kuraklığı & Karasal",
+    climate: "Şiddetli Yaz Kuraklığı, Karasal",
     description:
-      "Geniş düzlükler, plato alanları, GAP sulama projeleri, verimli Harran Ovası ve antik Mezopotamya yerleşimleri.",
+      "Geniş düzlükler ve platolar. GAP ile sulanan Harran Ovası verimlidir; Mezopotamya'nın eski yerleşimleri de bu bölgede.",
     highlightProvinces: [
       { name: "Gaziantep", slug: "gaziantep", plate: "27" },
       { name: "Diyarbakır", slug: "diyarbakir", plate: "21" },
@@ -177,17 +177,9 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
   return (
     <section className="space-y-6">
       <div className="border-b border-border pb-3 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm" icon={<Mountain className="size-3.5" />}>
-              Bölge Analizleri
-            </Badge>
-            <span className="text-xs text-muted-foreground">7 Coğrafi Bölge Rehberi</span>
-          </div>
-          <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary mt-1">
-            Türkiye&apos;nin 7 Coğrafi Bölgesi &amp; Karakteristik Özellikleri
-          </h2>
-        </div>
+        <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
+          Bölgelere Kısa Bakış
+        </h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -231,9 +223,6 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                 className={`p-4 ${region.identityClass} [&_h3]:text-inherit [&_a]:text-inherit flex items-center justify-between`}
               >
                 <div>
-                  <span className="text-[10px] text-muted-foreground font-mono block">
-                    Bölge Profili
-                  </span>
                   <h3 className="font-heading font-bold text-lg leading-tight">
                     <Link
                       href={
@@ -269,7 +258,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                     <span className="text-muted-foreground block text-[10px]">En Yüksek Zirve</span>
                     <span className="font-semibold text-foreground text-[11px] truncate block">
                       {fig
-                        ? `${fig.highestPeakNameTr}${peakNameHasParenthetical ? ", " : " ("}${tr(fig.highestPeakElevationM)} m${peakNameHasParenthetical ? "" : ")"}${isHighestPeak ? " · TR Zirvesi" : ""}`
+                        ? `${fig.highestPeakNameTr}${peakNameHasParenthetical ? ", " : " ("}${tr(fig.highestPeakElevationM)} m${peakNameHasParenthetical ? "" : ")"}${isHighestPeak ? " · Türkiye zirvesi" : ""}`
                         : "—"}
                     </span>
                   </div>
@@ -279,7 +268,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
               <CardContent className="space-y-2 py-2">
                 <div className="border-t border-border pt-2.5">
                   <span className="text-[11px] font-semibold text-muted-foreground block mb-2">
-                    Önemli Şehirler:
+                    Başlıca İller:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {region.highlightProvinces.map((prov) => (
@@ -310,7 +299,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                   </span>
                   <span className="text-[11px] font-bold text-primary">
                     {fig
-                      ? `%${tr(fig.populationSharePercent, 1)}${isMostPopulous ? " (En Kalabalık)" : ""}`
+                      ? `Nüfus payı: %${tr(fig.populationSharePercent, 1)}${isMostPopulous ? " (En Kalabalık)" : ""}`
                       : "—"}
                   </span>
                 </div>
@@ -322,7 +311,7 @@ export function V2TurkeyRegions({ regions }: { regions: readonly RegionDeckFigur
                   }
                   className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1 py-1 px-2.5 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
                 >
-                  Bölge Rehberi <ArrowRight className="size-3" />
+                  Bölgeye Git <ArrowRight className="size-3" />
                 </Link>
               </CardFooter>
             </Card>

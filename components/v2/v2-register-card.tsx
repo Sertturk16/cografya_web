@@ -21,7 +21,6 @@ import {
 import { USER_TYPE_LABELS } from "@/lib/auth/profile-labels";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   EducationFieldset,
   EMPTY_EDUCATION_SELECTION,
@@ -286,7 +285,7 @@ export function V2RegisterCard({
     // Canonical password policy validation
     if (!isPasswordPolicyCompliant(password)) {
       errors.password =
-        "Şifren en az 6-128 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermelidir.";
+        "Şifren 6 ile 128 karakter arasında olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -412,7 +411,7 @@ export function V2RegisterCard({
 
     const cleanCode = verificationCode.trim();
     if (!cleanCode || cleanCode.length < 4) {
-      setGeneralError("Lütfen geçerli bir doğrulama kodu giriniz.");
+      setGeneralError("Lütfen geçerli bir doğrulama kodu gir.");
       return;
     }
 
@@ -498,18 +497,15 @@ export function V2RegisterCard({
       {/* Header Info (only rendered on standalone page, hidden in modal for clean minimalist design) */}
       {!inModal && (
         <div className="text-center space-y-2 mb-6">
-          <Badge variant="primary" size="sm" className="mb-1">
-            {step === "verify" ? "Doğrulama Adımı" : "Coğrafya Gurmesi"}
-          </Badge>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
             {step === "verify" ? "E-posta Doğrulama" : "Hesap Oluştur"}
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {step === "identity"
-              ? "Müfredat haritaları, soru bankası ve interaktif araçlara anında erişin."
+              ? "Oyun puanlarını kaydet, kitapların video çözümlerini izle, ölçümlerini ve favorilerini sakla."
               : step === "education"
                 ? "Son bir adım: ne okuduğunu söyle, içerikleri ona göre gösterelim."
-                : `${email} adresine gönderilen 6 haneli kodu giriniz.`}
+                : `${email} adresine gönderdiğimiz 6 haneli kodu gir.`}
           </p>
         </div>
       )}
@@ -725,7 +721,7 @@ export function V2RegisterCard({
                   aria-describedby={fieldErrors.districtId ? "v2-error-district" : undefined}
                   className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150 disabled:opacity-50"
                 >
-                  <option value="">{!selectedPlate ? "Önce İl Seçin" : "İlçe Seç..."}</option>
+                  <option value="">{!selectedPlate ? "Önce İl Seç" : "İlçe Seç..."}</option>
                   {districts.length > 0 &&
                     districts.map((d) => (
                       <option key={d.id} value={d.id}>
@@ -742,7 +738,7 @@ export function V2RegisterCard({
           {/* Password Field */}
           <div className="space-y-1.5">
             <Label htmlFor="v2-register-password" className="text-xs font-bold text-foreground">
-              Güçlü Şifre Oluştur
+              Şifre
             </Label>
             <div className="relative">
               <Input
@@ -924,7 +920,7 @@ export function V2RegisterCard({
             <div className="text-center space-y-1 mb-3">
               <h3 className="font-heading text-lg font-bold text-foreground">E-posta Doğrulama</h3>
               <p className="text-xs text-muted-foreground">
-                {registeredEmail || email} adresine gönderilen 6 haneli kodu giriniz.
+                {registeredEmail || email} adresine gönderdiğimiz 6 haneli kodu gir.
               </p>
             </div>
           )}

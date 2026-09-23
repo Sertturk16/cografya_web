@@ -14,12 +14,11 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { FAULT_IDENTITY } from "@/lib/theme/fault-identity";
-import { Flame, Home, Layers, ShieldCheck, ArrowRight } from "lucide-react";
+import { Home, ShieldCheck, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export const revalidate = 120;
@@ -107,7 +106,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Canlı Deprem Monitörü", path: "/deprem" },
+              { label: "Son Depremler", path: "/deprem" },
             ]}
             locale={locale}
             surface="trOnly"
@@ -116,31 +115,21 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Canlı Deprem Takip & Sismik Monitör"
-              badges={
-                <>
-                  <Badge variant="destructive" size="sm" icon={<Flame className="size-3.5" />} dot>
-                    Canlı Sismik Telemetri
-                  </Badge>
-                  <Badge variant="outline" size="sm">
-                    T.C. İçişleri Bakanlığı AFAD (TDVMS)
-                  </Badge>
-                </>
-              }
+              heading="Türkiye'de Son Depremler"
               lede={
                 <>
-                  Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita
-                  üzerinde merkez üssü, odak derinliği ve büyüklük kademesiyle anlık inceleyin.
+                  Türkiye ve yakın çevresinde son günlerde olan depremler haritada. Bir depreme
+                  tıkla; nerede, ne zaman, kaç büyüklüğünde ve ne kadar derinde olduğunu gör.
                 </>
               }
             />
 
             {/* Metric Strip */}
             <StatGrid gutter="hero">
-              <StatTile label="Veri Yenileme Aralığı" fact="120 sn" tone="destructive" />
-              <StatTile label="TDVMS Veri Tabanı" fact="Canlı AFAD" tone="primary" />
-              <StatTile label="Hassas Büyüklük Skalası" fact="M 1.0 - 7.0+" tone="secondary" />
-              <StatTile label="İl Bazlı Yakınlık Analizi" fact="81 İl" tone="primary" />
+              <StatTile label="Yenilenme aralığı" fact="120 sn" tone="destructive" />
+              <StatTile label="Verinin kaynağı" fact="AFAD" tone="primary" />
+              <StatTile label="En küçük büyüklük filtresi" fact="M 1.0" tone="secondary" />
+              <StatTile label="Geriye doğru en fazla" fact="30 gün" tone="primary" />
             </StatGrid>
           </Card>
         </div>
@@ -160,25 +149,20 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <Badge variant="destructive" size="sm" icon={<Layers className="size-3.5" />}>
-                  Sismotektonik Yapı
-                </Badge>
-                {/* NO "MTA Diri Fay Ağı" EYEBROW. It labelled this section as MTA's published
-                    active-fault network, which is a stronger claim than the bibliography card it
-                    matched — and the card went for lack of anything to back it. `/deprem/fay-hatlari`
-                    renders `lib/earthquake/fault-lines-data.ts`: names, prose and province lists,
-                    no MTA geometry. The heading below says what the section is. */}
-              </div>
+              {/* NO "MTA Diri Fay Ağı" EYEBROW. It labelled this section as MTA's published
+                  active-fault network, which is a stronger claim than the bibliography card it
+                  matched — and the card went for lack of anything to back it. `/deprem/fay-hatlari`
+                  renders `lib/earthquake/fault-lines-data.ts`: names, prose and province lists,
+                  no MTA geometry. The heading below says what the section is. */}
               <h2
                 id="v2-fault-lines-nav-heading"
                 className="font-heading text-xl sm:text-2xl font-bold text-foreground"
               >
-                Türkiye&apos;nin Ana Fay Hatları: KAF, DAF ve BAFS
+                Türkiye&apos;nin Üç Büyük Fay Hattı
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
-                Kuzey Anadolu Fayı, Doğu Anadolu Fayı ve Batı Anadolu Fay Sistemi&apos;nin tektonik
-                arka planı, geçtiği iller, segment kırılmaları ve tarihsel büyük deprem ilişkileri.
+                Kuzey Anadolu Fayı, Doğu Anadolu Fayı ve Batı Anadolu Fay Sistemi: nasıl
+                oluştukları, hangi illerden geçtikleri ve yol açtıkları büyük depremler.
               </p>
             </div>
             <Link
@@ -188,7 +172,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 "shrink-0 group gap-1.5 font-bold",
               )}
             >
-              <span>Fay Hatları Atlasına Git</span>
+              <span>Fay Hatları Sayfası</span>
               <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
@@ -204,8 +188,8 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 </span>
               </div>
               <p className="text-muted-foreground">
-                Saros Körfezi&apos;nden Marmara Denizi tabanına ve Karlıova&apos;ya uzanan 1.200
-                km&apos;lik ana kırık hattı.
+                Karlıova&apos;dan başlar, Marmara Denizi&apos;nin altından geçip Saros
+                Körfezi&apos;ne ulaşır. Boyu 1.200 km kadar.
               </p>
             </div>
             <div className={`p-4 rounded-2xl border ${FAULT_IDENTITY.daf.card} space-y-1.5`}>
@@ -218,8 +202,8 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 </span>
               </div>
               <p className="text-muted-foreground">
-                Hatay grabeninden Kahramanmaraş, Malatya ve Elazığ üzerinden Karlıova birleşimine
-                ulaşan hat.
+                Hatay&apos;dan kuzeydoğuya, Kahramanmaraş, Malatya ve Elazığ üzerinden
+                Karlıova&apos;ya uzanır. Orada KAF ile buluşur.
               </p>
             </div>
             <div className={`p-4 rounded-2xl border ${FAULT_IDENTITY.bafs.card} space-y-1.5`}>
@@ -228,12 +212,12 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 <span
                   className={`text-[10px] font-mono px-2 py-0.5 rounded ${FAULT_IDENTITY.bafs.chip}`}
                 >
-                  Graben Açılması
+                  Normal Faylar
                 </span>
               </div>
               <p className="text-muted-foreground">
-                Gediz, Menderes ve Bakırçay graben çöküntülerini oluşturan çok parçalı normal fay
-                sistemi.
+                Tek bir hat değil, birbirine paralel birçok fay. Gediz, Menderes ve Bakırçay ovaları
+                bu fayların arasında çöken grabenlerdir.
               </p>
             </div>
           </div>
@@ -254,10 +238,10 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                   id="v2-preparedness-summary-heading"
                   className="font-heading text-lg sm:text-xl font-bold text-foreground"
                 >
-                  Deprem Anında Ne Yapmalısınız?
+                  Deprem Anında Ne Yapmalısın?
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Sarsıntı esnasında doğru refleksler hayat kurtarır.
+                  Ne yapacağını önceden bilirsen o an düşünmek zorunda kalmazsın.
                 </p>
               </div>
             </div>
@@ -268,7 +252,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 "shrink-0 group gap-1.5 font-bold",
               )}
             >
-              <span>Kapsamlı Hazırlık Rehberi</span>
+              <span>Hazırlık Rehberinin Tamamı</span>
               <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
@@ -280,28 +264,28 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 1. Çök - Kapan - Tutun
               </span>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Sağlam bir eşyanın yanında hayat üçgeni oluşturun. Baş ve ensenizi koruyarak
-                sarsıntı geçene kadar bekleyin.
+                Sağlam bir eşyanın yanında yere çök, başını ve enseni kapat, eşyaya tutun. Sarsıntı
+                geçene kadar böyle bekle.
               </p>
             </div>
             <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1">
               <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-destructive" />
-                2. Merdiven &amp; Asansöre Koşmayın
+                2. Merdivene ve Asansöre Koşma
               </span>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Binaların en zayıf yerleri merdiven boşluklarıdır. Asla merdivenlere hücum etmeyin,
-                asansörleri kullanmayın.
+                Merdiven boşlukları binanın en zayıf yeridir. Asla merdivene koşma, asansörü
+                kullanma.
               </p>
             </div>
             <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1">
               <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
                 <span className="size-2 rounded-full bg-accent" />
-                3. Tesisatları Kapatıp Tahliye Edin
+                3. Gazı ve Elektriği Kapat, Binadan Çık
               </span>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Sarsıntı bitince doğal gaz vanası ve şarteli kapatın. Afet çantanızı alarak açık
-                toplanma alanına yürüyün.
+                Sarsıntı bitince doğal gaz vanasını ve elektrik şalterini kapat. Afet çantanı al,
+                yürüyerek açık toplanma alanına git.
               </p>
             </div>
           </div>

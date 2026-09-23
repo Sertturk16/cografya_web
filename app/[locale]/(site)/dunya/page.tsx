@@ -21,7 +21,7 @@ import { V2WorldContinents } from "@/components/v2/v2-world-continents";
 import { V2WorldStatsSpotlight } from "@/components/v2/v2-world-stats-spotlight";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Globe, Gamepad2, ArrowRight, Home } from "lucide-react";
+import { Gamepad2, ArrowRight, Home } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 /**
@@ -169,21 +169,11 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Dünya Ülkeleri & Kıtalar Atlası"
-              badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<Globe className="size-3.5" />}>
-                    Dünya Coğrafya Portalı
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    {totalCountries} Ülke & 7 Kıta
-                  </Badge>
-                </>
-              }
+              heading="Dünya Atlası"
               lede={
                 <>
-                  Gezegenimizin 7 kıtası, {totalCountries} ülke ve bölgesi, bayrakları, demografik
-                  dağılımı, yeryüzü şekilleri ve coğrafi ekstremleri tek ekranda.
+                  Haritada bir ülke seçince nüfusu ve yüzölçümü görünür; oradan ülkenin sayfasına
+                  geçersin. Kıtalar, dünyanın rekorları ve ülkelerin tam listesi haritanın altında.
                 </>
               }
             />
@@ -196,15 +186,15 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
                 and for why the `absent` copy below is type-required but unreachable today. */}
             <StatGrid gutter="hero">
               <StatTile
-                label="Ülke & Bölge"
+                label="Ülke ve bölge"
                 value={totalCountries}
                 unit="Ülke"
                 tone="primary"
-                absent={{ label: "Ülke listesi yok", hint: "Katalog yüklenemedi" }}
+                absent={{ label: "Ülke listesi yok", hint: "Liste şu an yüklenemedi" }}
               />
-              <StatTile label="Coğrafi Kara Kütlesi" fact="7 Kıta" tone="secondary" />
-              <StatTile label="Dünya Nüfusu (BM WPP)" fact="~8.1 Milyar" tone="accent" />
-              <StatTile label="Karasal Alan (USGS/NASA)" fact="148.9M km²" tone="primary" />
+              <StatTile label="Kıta" fact="7" tone="secondary" />
+              <StatTile label="Dünya nüfusu" fact="~8,1 milyar" hint="BM tahmini" tone="accent" />
+              <StatTile label="Kara alanı" fact="~148,9 milyon km²" tone="primary" />
             </StatGrid>
           </Card>
         </div>
@@ -229,16 +219,15 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <Badge variant="secondary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
-                Coğrafya Sınavı &amp; Harita Oyunu
+                Harita oyunları
               </Badge>
-              <span className="text-xs font-semibold text-secondary">Etkileşimli Öğrenme</span>
             </div>
             <h3 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-              Dünya Coğrafyasını ve Ülkeleri Ne Kadar İyi Tanıyorsun?
+              Haritayı Ezbere Biliyor musun?
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Dilsiz dünya haritası üzerinde ülkeleri bulun, kıta testlerinde hızınızı sınayın ve
-              puan toplayarak lider tablosunda yükselin.
+              Oyunlar şimdilik Türkiye haritasında: sorulan ili ya da bölgeyi dilsiz haritada bul.
+              Oynamak için giriş yapman gerekir; bitirdiğin turların puanı lider tablosuna girer.
             </p>
           </div>
 
@@ -250,7 +239,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
                 className="w-full md:w-auto shadow-md"
                 rightIcon={<ArrowRight className="size-4" />}
               >
-                Harita Oyununu Başlat
+                Oyunlara Git
               </Button>
             </Link>
           </div>

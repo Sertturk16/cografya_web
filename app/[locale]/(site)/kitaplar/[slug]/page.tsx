@@ -21,15 +21,7 @@ import { isPlayable, resolveVideoState } from "@/lib/book/video-state";
 import type { BookDetail, BookListItem } from "@/lib/api/types";
 import { bookJsonLd, JsonLd, videoObjectJsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import {
-  BookOpen,
-  Video,
-  Home,
-  ExternalLink,
-  ShoppingBag,
-  PlayCircle,
-  ChevronDown,
-} from "lucide-react";
+import { BookOpen, Home, ExternalLink, ShoppingBag, PlayCircle, ChevronDown } from "lucide-react";
 export const revalidate = 86400;
 
 /**
@@ -392,7 +384,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Video Çözümlü Kitaplar", href: "/kitaplar", path: "/kitaplar" },
+              { label: "Kitaplar", href: "/kitaplar", path: "/kitaplar" },
               { label: title, path },
             ]}
             locale={locale}
@@ -456,7 +448,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                 )}
                 <a href="#denemeye-atla">
                   <Button variant="outline" size="sm" leftIcon={<PlayCircle className="size-4" />}>
-                    Video Çözümlere Git
+                    Çözüm Videolarına Geç
                   </Button>
                 </a>
               </div>
@@ -488,9 +480,11 @@ export default async function V2BookDetailPage({ params }: PageProps) {
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[11px] text-muted-foreground font-medium block">Kapsam</span>
+              <span className="text-[11px] text-muted-foreground font-medium block">
+                Sayfa sayısı
+              </span>
               <span className="font-heading font-bold text-sm text-foreground block mt-0.5">
-                {book.pageCount} Sayfa
+                {book.pageCount}
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
@@ -516,13 +510,8 @@ export default async function V2BookDetailPage({ params }: PageProps) {
         <section className="space-y-6">
           <div className="border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" icon={<Video className="size-3.5" />}>
-                  İnteraktif Video Çözüm Merkezi
-                </Badge>
-              </div>
               <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1">
-                Soru Bazlı Video Çözüm &amp; Zaman Çizelgesi
+                Denemelerin Çözüm Videoları
               </h2>
             </div>
           </div>

@@ -73,7 +73,7 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "CBS Araçları", path: "/araclar" },
+              { label: "Harita Araçları", path: "/araclar" },
             ]}
             locale={locale}
             surface={TOOLS_SURFACE}
@@ -82,33 +82,31 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="CBS Harita & Jeodezik Ölçüm Laboratuvarı"
+              heading="Harita Araçları"
               badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                    Coğrafi Bilgi Sistemleri
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    3&apos;ü 1 Arada Ölçüm Stüdyosu
-                  </Badge>
-                </>
+                <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
+                  Ölçmek için kayıt gerekmez
+                </Badge>
               }
               notice={<V2EnWorkInProgressNotice locale={locale} />}
               lede={
                 <>
-                  Harita üzerinde dilediğiniz noktaları işaretleyerek gerçek jeodezik mesafeyi,
-                  enlem/boylam koordinatlarını ve küresel çokgen yüzölçümünü WGS84 hassasiyetiyle
-                  anında hesaplayın.
+                  Türkiye haritasına nokta koy. İki yer arasındaki kuş uçuşu mesafeyi, bir yerin
+                  enlem ve boylamını ya da çizdiğin bir şeklin alanını hemen gör.
                 </>
               }
             />
 
             {/* Metric Strip */}
             <StatGrid gutter="hero">
-              <StatTile label="Küresel Elipsoid Modeli" fact="WGS84" tone="primary" />
-              <StatTile label="Büyük Daire Eğrilik Hesabı" fact="Haversine" tone="secondary" />
-              <StatTile label="km², Hektar, Dönüm Çıktısı" fact="3 Birim" tone="accent" />
-              <StatTile label="Çift Projeksiyon Desteği" fact="UTM + DMS" tone="primary" />
+              <StatTile
+                label="GPS'in de kullandığı koordinat sistemi"
+                fact="WGS84"
+                tone="primary"
+              />
+              <StatTile label="Hesaplarda Dünya'nın yarıçapı" fact="6.371 km" tone="secondary" />
+              <StatTile label="Listeden seçilebilen il merkezi" fact="81 il" tone="accent" />
+              <StatTile label="Alan sonucu: km², hektar, dönüm" fact="3 birim" tone="primary" />
             </StatGrid>
           </Card>
         </div>

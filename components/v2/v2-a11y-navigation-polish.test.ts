@@ -44,7 +44,7 @@ describe("V2 A11y and navigation invariants", () => {
     const url = new URL("./v2-marine-map-explorer.tsx", import.meta.url);
     const content = readFileSync(url, "utf8");
 
-    expect(content).toMatch(/<TableRow[^>]*aria-label=\{`\$\{point\.nameTr\} istasyonunu seç`\}/);
+    expect(content).toMatch(/<TableRow[^>]*aria-label=\{`\$\{point\.nameTr\} noktasını seç`\}/);
   });
 
   it("has no AuthMount to guard — the V1 auth tree is gone (SEC125-M2)", () => {

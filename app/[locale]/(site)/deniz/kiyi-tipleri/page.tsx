@@ -10,21 +10,11 @@ import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { BASIN_IDENTITY } from "@/lib/theme/basin-identity";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
 import { COASTAL_TYPES_DATA, NON_EXISTENT_COASTAL_TYPES } from "@/lib/marine/coastal-types-detail";
-import {
-  Compass,
-  Home,
-  ArrowRight,
-  Waves,
-  Sparkles,
-  MapPin,
-  CheckCircle2,
-  AlertCircle,
-} from "lucide-react";
+import { Home, ArrowRight, Waves, Sparkles, MapPin, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export const revalidate = 86400;
@@ -74,8 +64,8 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Denizler & Kıyılar Atlası", href: "/deniz", path: "/deniz" },
-              { label: "Kıyı Tipleri Atlası", path: "/deniz/kiyi-tipleri" },
+              { label: "Denizler ve Kıyılar", href: "/deniz", path: "/deniz" },
+              { label: "Kıyı Tipleri", path: "/deniz/kiyi-tipleri" },
             ]}
             locale={locale}
             surface="trOnly"
@@ -84,23 +74,13 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Türkiye'nin Kıyı Tipleri & Jeomorfolojisi"
-              badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<Compass className="size-3.5" />}>
-                    Kıyı Jeomorfolojisi
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    6 Temel Kıyı Tipi
-                  </Badge>
-                </>
-              }
+              heading="Türkiye'nin Kıyı Tipleri"
               lede={
                 <>
-                  Dağların kıyı çizgisine göre uzanış doğrultusu, tektonik hareketler ve Dördüncü
-                  Zaman deniz seviyesi yükselmeleri (östatizma) sonucunda şekillenen Türkiye
-                  kıyıları. Görülen 6 temel tip ile enlem ve iç deniz koşulları nedeniyle ülkemizde
-                  rastlanmayan kıyı tipleri.
+                  Türkiye&apos;nin kıyılarını üç şey şekillendirdi: dağların kıyıya paralel mi dik
+                  mi uzandığı, yer kabuğunun nerede çöktüğü ve Dördüncü Zaman&apos;da yükselen
+                  denizin hangi vadileri doldurduğu. Türkiye&apos;de görülen altı kıyı tipi aşağıda;
+                  enlem ya da kapalı deniz yüzünden burada hiç görülmeyenler de en sonda.
                 </>
               }
             >
@@ -112,7 +92,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 )}
               >
                 <Waves className="size-3.5" />
-                <span>Ana Deniz Atlası &amp; Telemetriye Dön</span>
+                <span>Denizler Sayfasına Dön</span>
               </Link>
             </PageHero>
 
@@ -138,9 +118,9 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 was never about which teal, only about whether this tile encodes anything. */}
             <StatGrid gutter="hero">
               <StatTile label="Toplam Kıyı Uzunluğu (HGM)" fact="8.333 km" tone="primary" />
-              <StatTile label="Morfogenetik Çeşitlilik" fact="6 Kıyı Tipi" tone="secondary" />
-              <StatTile label="Denize Kıyısı Olan Şehir" fact="28 İl" tone="accent" />
-              <StatTile label="Fiyort, Skyer & Haliç (Watt)" fact="3 Tip Yok" tone="destructive" />
+              <StatTile label="Türkiye'de Görülen" fact="6 Kıyı Tipi" tone="secondary" />
+              <StatTile label="Denize Kıyısı Olan İl" fact="28 İl" tone="accent" />
+              <StatTile label="Fiyort, Skyer, Haliç ve Watt" fact="Görülmez" tone="destructive" />
             </StatGrid>
           </Card>
         </div>
@@ -152,11 +132,10 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
               id="existing-coastal-types-heading"
               className="font-heading text-2xl sm:text-3xl font-bold text-foreground"
             >
-              Türkiye&apos;de Görülen 6 Temel Kıyı Tipi
+              Türkiye&apos;de Görülen Altı Kıyı Tipi
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-              Oluşum mekanizmaları, morfolojik unsurları ve Türkiye&apos;deki en tipik coğrafi
-              örnekleri.
+              Her birinin nasıl oluştuğu, nasıl tanınacağı ve Türkiye&apos;de nerede görüleceği.
             </p>
           </div>
 
@@ -170,9 +149,6 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
                   <div>
                     <div className="flex items-center gap-2 mb-1.5">
-                      <Badge variant="primary" size="sm">
-                        {ct.badge}
-                      </Badge>
                       <span className="text-xs text-muted-foreground font-mono">{ct.regions}</span>
                     </div>
                     <h3 className="font-heading text-2xl font-bold text-foreground">{ct.name}</h3>
@@ -200,7 +176,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 <div className="space-y-2">
                   <h4 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
                     <Sparkles className="size-4 text-primary" />
-                    <span>Oluşum Süreci ve Nedenselliği</span>
+                    <span>Nasıl Oluşur?</span>
                   </h4>
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     {ct.formation}
@@ -210,7 +186,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 {/* Characteristics */}
                 <div className="space-y-2.5">
                   <h4 className="font-heading text-sm font-bold text-foreground">
-                    Belirleyici Morfolojik Özellikler:
+                    Tanıma İşaretleri:
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {ct.characteristics.map((feat, i) => (
@@ -229,7 +205,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 space-y-1.5 text-xs">
                   <span className="font-bold text-primary flex items-center gap-1.5">
                     <MapPin className="size-3.5" />
-                    <span>Türkiye&apos;deki Tipik Örnekleri:</span>
+                    <span>Türkiye&apos;de Nerede Görülür:</span>
                   </span>
                   <ul className="list-disc list-inside space-y-1 text-muted-foreground pl-1">
                     {ct.turkeyExamples.map((ex, k) => (
@@ -248,23 +224,15 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
           className="rounded-3xl border border-destructive/30 bg-gradient-to-b from-destructive/5 via-card to-card p-6 sm:p-10 shadow-md space-y-6"
         >
           <div className="border-b border-destructive/20 pb-4 space-y-1">
-            <div className="flex items-center gap-2">
-              <Badge variant="destructive" size="sm" icon={<AlertCircle className="size-3.5" />}>
-                Müfredat &amp; Sınav Odaklı Analiz
-              </Badge>
-              <span className="text-xs text-muted-foreground font-semibold">
-                Neden – Sonuç İlişkisi
-              </span>
-            </div>
             <h2
               id="non-existent-types-heading"
               className="font-heading text-2xl sm:text-3xl font-bold text-foreground"
             >
-              Türkiye&apos;de Görülmeyen Kıyı Tipleri ve Coğrafi Nedenleri
+              Türkiye&apos;de Görülmeyen Kıyı Tipleri
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              YKS ve KPSS Coğrafya sınavlarında en sık sorulan eleyici soru kalıbı: Türkiye
-              kıyılarında fiyort, skyer ve haliç (watt) tipi kıyılara neden rastlanmaz?
+              Türkiye kıyılarında fiyort, skyer, haliç ve watt yok. İlk ikisini enlem, son ikisini
+              denizlerimizin kapalı olması açıklıyor.
             </p>
           </div>
 
@@ -275,14 +243,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 className="p-5 rounded-2xl bg-card border border-border shadow-2xs space-y-3 flex flex-col justify-between"
               >
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-heading font-bold text-base text-foreground">
-                      {item.name}
-                    </h3>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-destructive/10 text-destructive font-bold">
-                      Görülmez
-                    </span>
-                  </div>
+                  <h3 className="font-heading font-bold text-base text-foreground">{item.name}</h3>
 
                   <p className="text-xs text-muted-foreground leading-relaxed">{item.formation}</p>
                 </div>
@@ -290,13 +251,13 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
                 <div className="space-y-2 pt-2 border-t border-border/80">
                   <div className="p-3 rounded-xl bg-destructive/5 border border-destructive/20 text-xs text-muted-foreground space-y-1">
                     <span className="font-bold text-foreground block">
-                      Türkiye&apos;de Görülmeme Sebebi:
+                      Türkiye&apos;de Neden Yok:
                     </span>
                     <p className="text-[11px] leading-relaxed">{item.whyNotInTurkey}</p>
                   </div>
 
                   <span className="text-[11px] text-muted-foreground block pt-1">
-                    <strong>Dünyadaki Emsalleri:</strong> {item.globalExamples}
+                    <strong>Dünyada Nerede Var:</strong> {item.globalExamples}
                   </span>
                 </div>
               </div>
@@ -308,10 +269,10 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
         <section className="p-6 sm:p-8 rounded-3xl border border-border bg-gradient-to-r from-card via-muted/30 to-card space-y-4">
           <div className="space-y-1">
             <h3 className="font-heading text-lg font-bold text-foreground">
-              Deniz Havzaları Atlasını Keşfedin
+              Kıyıları Denize Göre İncele
             </h3>
             <p className="text-xs text-muted-foreground">
-              Kıyı tiplerinin şekillendiği 4 denizin canlı telemetri ve hidrografik profilleri.
+              Her denizin sayfasında kıyı şekilleri, akıntılar, akarsular ve kıyı illeri var.
             </p>
           </div>
 
@@ -325,7 +286,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
               >
                 Karadeniz
               </span>
-              <span className="text-[10px] text-muted-foreground">Boyuna Kıyı &amp; Falez</span>
+              <span className="text-[10px] text-muted-foreground">Boyuna kıyı ve falezler</span>
             </Link>
 
             <Link
@@ -337,7 +298,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
               >
                 Marmara Denizi
               </span>
-              <span className="text-[10px] text-muted-foreground">Ria, Lagün &amp; Tombolo</span>
+              <span className="text-[10px] text-muted-foreground">Ria, lagün ve tombolo</span>
             </Link>
 
             <Link
@@ -347,7 +308,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
               <span className={`font-bold ${BASIN_IDENTITY.ege.label} block group-hover:underline`}>
                 Ege Denizi
               </span>
-              <span className="text-[10px] text-muted-foreground">Enine Kıyı &amp; Graben</span>
+              <span className="text-[10px] text-muted-foreground">Enine kıyı ve grabenler</span>
             </Link>
 
             <Link
@@ -359,7 +320,7 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
               >
                 Akdeniz
               </span>
-              <span className="text-[10px] text-muted-foreground">Dalmaçya &amp; Kalanklı</span>
+              <span className="text-[10px] text-muted-foreground">Dalmaçya ve kalanklı kıyı</span>
             </Link>
           </div>
         </section>

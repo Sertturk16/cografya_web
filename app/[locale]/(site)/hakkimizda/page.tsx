@@ -112,7 +112,6 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
           <H2>{t("aboutHeading")}</H2>
           <p className="max-w-prose leading-relaxed">{t("aboutBody1")}</p>
           <p className="max-w-prose leading-relaxed">{t("aboutBody2")}</p>
-          <p className="max-w-prose leading-relaxed">{t("aboutCurriculum")}</p>
         </section>
 
         <section className="space-y-4">

@@ -1,33 +1,25 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Compass, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export function V2MarineOceanographyGuide() {
   return (
     <section className="space-y-6" aria-labelledby="v2-marine-coastal-guide-heading">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4">
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" size="sm" icon={<Compass className="size-3.5" />}>
-              Jeomorfoloji &amp; Kıyı Coğrafyası
-            </Badge>
-            <span className="text-xs font-semibold text-muted-foreground">
-              Kıyı Tipleri &amp; Dinamikler
-            </span>
-          </div>
           <h2
             id="v2-marine-coastal-guide-heading"
             className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-primary"
           >
-            Türkiye&apos;nin Kıyı Tipleri &amp; Denizel Jeomorfolojisi
+            Kıyılar Neden Birbirine Benzemez?
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Dağların kıyıya uzanış doğrultusu ve dördüncü zaman deniz seviyesi değişimlerine
-            (östatik hareketler) göre şekillenen 6 temel kıyı tipi.
+            Bir kıyının şeklini iki şey belirler: dağların kıyıya paralel mi dik mi uzandığı ve
+            Dördüncü Zaman&apos;da yükselen denizin hangi vadileri doldurduğu. Türkiye&apos;de altı
+            kıyı tipi görülür.
           </p>
         </div>
 
@@ -38,7 +30,7 @@ export function V2MarineOceanographyGuide() {
             "shrink-0 group font-bold text-xs gap-1.5",
           )}
         >
-          <span>Kıyı Tipleri Atlasına Git</span>
+          <span>Altı Kıyı Tipini Örnekleriyle Gör</span>
           <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
@@ -48,11 +40,8 @@ export function V2MarineOceanographyGuide() {
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <Badge variant="primary" size="sm">
-                Boyuna Kıyı (Pasifik)
-              </Badge>
               <span className="text-[10px] font-mono text-muted-foreground">
-                Karadeniz &amp; Akdeniz
+                Karadeniz ve Akdeniz
               </span>
             </div>
             <CardTitle className="text-base font-heading font-bold text-foreground">
@@ -61,15 +50,15 @@ export function V2MarineOceanographyGuide() {
           </CardHeader>
           <CardContent className="space-y-2 text-xs text-muted-foreground pt-0">
             <p>
-              Dağların kıyı çizgisine paralel uzandığı alanlarda görülür. Kıyı ile iç kesimler
-              arasında ulaşım geçitlerle (Zigana, Kop, Çubuk, Sertavul, Gülek) sağlanır.
+              Dağlar kıyıya paralel uzanır, iç kesimlere ancak geçitlerden gidilir: Zigana, Kop,
+              Çubuk, Sertavul, Gülek. Pasifik tipi kıyı da denir.
             </p>
             <div className="p-2.5 rounded-xl bg-muted/50 border border-border/60 text-[11px] space-y-1">
-              <span className="font-bold text-foreground block">Önemli Morfolojik Unsurlar:</span>
+              <span className="font-bold text-foreground block">Nasıl Tanınır:</span>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                <li>Falez (Yalıyar) oluşumu ve aşınım fazladır.</li>
-                <li>Kıta sahanlığı (şelf) dardır; deniz aniden derinleşir.</li>
-                <li>Doğal liman, koy ve körfez sayısı azdır.</li>
+                <li>Dalgalar kıyıyı oyar, dik falezler (yalıyarlar) oluşur.</li>
+                <li>Kıta sahanlığı dar; biraz açılınca deniz birden derinleşir.</li>
+                <li>Doğal liman, koy ve körfez az.</li>
               </ul>
             </div>
           </CardContent>
@@ -79,9 +68,6 @@ export function V2MarineOceanographyGuide() {
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <Badge variant="secondary" size="sm">
-                Enine Kıyı
-              </Badge>
               <span className="text-[10px] font-mono text-muted-foreground">Ege Bölgesi</span>
             </div>
             <CardTitle className="text-base font-heading font-bold text-foreground">
@@ -90,15 +76,15 @@ export function V2MarineOceanographyGuide() {
           </CardHeader>
           <CardContent className="space-y-2 text-xs text-muted-foreground pt-0">
             <p>
-              Dağların kıyı çizgisine dik uzandığı Ege kıyılarında görülür. Denizel ılıman iklim
-              graben vadileri boyunca 150-200 km iç kesimlere sokulur.
+              Ege&apos;de dağlar denize dik iner. Aralarındaki çöküntü ovaları (grabenler) denize
+              açılır; deniz havası bu ovalar boyunca 150-200 km içeri girer.
             </p>
             <div className="p-2.5 rounded-xl bg-muted/50 border border-border/60 text-[11px] space-y-1">
-              <span className="font-bold text-foreground block">Önemli Morfolojik Unsurlar:</span>
+              <span className="font-bold text-foreground block">Nasıl Tanınır:</span>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                <li>Girinti-çıkıntı ve koy-körfez sayısı en fazladır.</li>
-                <li>Kıta sahanlığı (şelf alanı) oldukça geniştir.</li>
-                <li>Gerçek kıyı uzunluğu ile kuş uçuşu farkı en yüksektir.</li>
+                <li>Türkiye&apos;nin en girintili çıkıntılı, en çok koy ve körfezi olan kıyısı.</li>
+                <li>Kıta sahanlığı geniş.</li>
+                <li>Kıyı boyu ile kuş uçuşu uzaklık arasındaki fark en çok burada.</li>
               </ul>
             </div>
           </CardContent>
@@ -108,12 +94,7 @@ export function V2MarineOceanographyGuide() {
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <Badge variant="outline" size="sm">
-                Ria Tipi
-              </Badge>
-              <span className="text-[10px] font-mono text-muted-foreground">
-                Boğazlar &amp; Haliç
-              </span>
+              <span className="text-[10px] font-mono text-muted-foreground">Boğazlar ve Haliç</span>
             </div>
             <CardTitle className="text-base font-heading font-bold text-foreground">
               Ria Kıyı Tipi
@@ -121,13 +102,13 @@ export function V2MarineOceanographyGuide() {
           </CardHeader>
           <CardContent className="space-y-2 text-xs text-muted-foreground pt-0">
             <p>
-              Eski akarsu vadilerinin dördüncü zaman deniz seviyesi yükselmesi sonucunda sular
-              altında kalmasıyla oluşan derin doğal su yollarıdır.
+              Deniz yükselince eski akarsu vadileri sular altında kalmış. Ortaya karanın içine
+              uzanan, derin ve doğal su yolları çıkmış.
             </p>
             <div className="p-2.5 rounded-xl bg-muted/50 border border-border/60 text-[11px] space-y-1">
               <span className="font-bold text-foreground block">Türkiye Örnekleri:</span>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                <li>İstanbul Boğazı &amp; Haliç</li>
+                <li>İstanbul Boğazı ve Haliç</li>
                 <li>Çanakkale Boğazı</li>
                 <li>Muğla - Gökova kıyıları</li>
               </ul>
@@ -139,9 +120,6 @@ export function V2MarineOceanographyGuide() {
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <Badge variant="primary" size="sm">
-                Dalmaçya Tipi
-              </Badge>
               <span className="text-[10px] font-mono text-muted-foreground">
                 Antalya (Kaş - Finike)
               </span>
@@ -152,8 +130,8 @@ export function V2MarineOceanographyGuide() {
           </CardHeader>
           <CardContent className="space-y-2 text-xs text-muted-foreground pt-0">
             <p>
-              Kıyıya paralel uzanan sıradağ vadilerinin sular altında kalmasıyla, dağ tepe ve
-              sırtlarının kıyıya paralel ada ve adacık zincirlerine dönüşmesidir.
+              Kıyıya paralel sıradağların arasındaki vadilere deniz dolar. Suyun üstünde kalan
+              tepeler ve sırtlar, kıyı boyunca dizilmiş adalara dönüşür.
             </p>
             <div className="p-2.5 rounded-xl bg-muted/50 border border-border/60 text-[11px] space-y-1">
               <span className="font-bold text-foreground block">Türkiye Örnekleri:</span>
@@ -169,21 +147,19 @@ export function V2MarineOceanographyGuide() {
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <Badge variant="secondary" size="sm">
-                Limanlı (Lagün)
-              </Badge>
               <span className="text-[10px] font-mono text-muted-foreground">
-                Marmara &amp; Karadeniz
+                Marmara ve Karadeniz
               </span>
             </div>
             <CardTitle className="text-base font-heading font-bold text-foreground">
-              Limanlı &amp; Lagün Kıyı Tipi
+              Limanlı ve Lagün Kıyı Tipi
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-xs text-muted-foreground pt-0">
             <p>
-              Geniş tabanlı vadilerin ve koyların ağzında kıyı kordonlarının (kıyı oklarının)
-              birikerek koy ağzını kapatmasıyla oluşan lagün (denizkulağı) kıyılarıdır.
+              Dalgaların taşıdığı kum, bir koyun ya da geniş bir vadinin ağzında birikip set çeker;
+              bu sete kıyı kordonu denir. Setin arkasında denizden ayrılmış bir göl kalır: lagün,
+              yani denizkulağı.
             </p>
             <div className="p-2.5 rounded-xl bg-muted/50 border border-border/60 text-[11px] space-y-1">
               <span className="font-bold text-foreground block">Türkiye Örnekleri:</span>
@@ -200,9 +176,6 @@ export function V2MarineOceanographyGuide() {
         <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:border-primary/40 transition-all flex flex-col justify-between">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <Badge variant="outline" size="sm">
-                Kalanklı Kıyı
-              </Badge>
               <span className="text-[10px] font-mono text-muted-foreground">Mersin (Silifke)</span>
             </div>
             <CardTitle className="text-base font-heading font-bold text-foreground">
@@ -211,14 +184,14 @@ export function V2MarineOceanographyGuide() {
           </CardHeader>
           <CardContent className="space-y-2 text-xs text-muted-foreground pt-0">
             <p>
-              Kalkerli (kireçtaşı / karstik) arazilerdeki derin kanyon vadilerin deniz suları
-              altında kalmasıyla oluşan dar, derin ve dik yamaçlı koylardır.
+              Kireçtaşı arazide suyun oyduğu derin kanyonlara deniz dolmuş. Sonuç dar, derin ve
+              yamaçları dik koylar.
             </p>
             <div className="p-2.5 rounded-xl bg-muted/50 border border-border/60 text-[11px] space-y-1">
               <span className="font-bold text-foreground block">Türkiye Örnekleri:</span>
               <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
                 <li>Mersin - Silifke kıyı kuşağı</li>
-                <li>Narlıkuyu &amp; Cennet-Cehennem kıyı hattı</li>
+                <li>Narlıkuyu ve Cennet-Cehennem kıyı hattı</li>
               </ul>
             </div>
           </CardContent>
