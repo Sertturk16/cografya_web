@@ -17,6 +17,8 @@ export interface CustomSelectProps {
   placeholder?: string;
   searchPlaceholder?: string;
   searchable?: boolean;
+  /** What the list says when a search matches nothing. */
+  emptyLabel?: string;
   className?: string;
   disabled?: boolean;
   id?: string;
@@ -30,6 +32,7 @@ export function CustomSelect({
   placeholder = "Seçiniz...",
   searchPlaceholder = "Ara...",
   searchable = false,
+  emptyLabel = "Sonuç bulunamadı.",
   className,
   disabled = false,
   id,
@@ -240,7 +243,7 @@ export function CustomSelect({
           >
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                Sonuç bulunamadı.
+                {emptyLabel}
               </div>
             ) : (
               filteredOptions.map((opt, index) => {

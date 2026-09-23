@@ -46,12 +46,16 @@ const MEASUREMENTS_KEYS = [
   // and the retry action of a failed list load.
   "sessionExpired",
   "listRetry",
+  // T-081: the workbench's saved-list row, moved out of inline Turkish.
+  "listLoadHint",
+  "untitled",
+  "itemPointCount",
 ] as const;
 
 /** Keys that carry a `{label}` interpolation placeholder — parametrized, unlike the rest. */
 const PARAMETRIZED_KEYS = new Set(["recallAria", "deleteAria"]);
 /** Keys that carry a `{count}` (ICU) placeholder — the per-type minimum / maximum point count. */
-const COUNT_KEYS = ["minPointsHint", "maxPointsHint"] as const;
+const COUNT_KEYS = ["minPointsHint", "maxPointsHint", "itemPointCount"] as const;
 
 const catalogues = { tr: trMessages.Measurements, en: enMessages.Measurements } as const;
 
