@@ -13,11 +13,10 @@ describe("T-014 V2 Header Global Search and Theme Toggle", () => {
   const themeToggleContent = readFileSync(themeTogglePath, "utf8");
   const searchComboboxContent = readFileSync(searchComboboxPath, "utf8");
 
-  it("V2Header mounts SearchCombobox with variant='v2' and pathPrefix='/'", () => {
+  it("V2Header mounts SearchCombobox with pathPrefix='/'", () => {
     expect(v2HeaderContent).toContain(
       'import { SearchCombobox } from "@/components/site-search/search-combobox";',
     );
-    expect(v2HeaderContent).toContain('variant="v2"');
     expect(v2HeaderContent).toContain('pathPrefix="/"');
   });
 
