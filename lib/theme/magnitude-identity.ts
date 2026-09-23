@@ -111,7 +111,7 @@ export const MAGNITUDE_IDENTITY: Readonly<Record<MagnitudeBucket, MagnitudeIdent
     ripple: "stroke-[var(--eq-mag-1)]",
     badge: "bg-[var(--eq-mag-1)] text-[var(--eq-mag-fg)]",
     swatch: "bg-[var(--eq-mag-1)]",
-    legend: "M < 3.0",
+    legend: "M < 3,0",
   },
   2: {
     bucket: 2,
@@ -119,7 +119,7 @@ export const MAGNITUDE_IDENTITY: Readonly<Record<MagnitudeBucket, MagnitudeIdent
     ripple: "stroke-[var(--eq-mag-2)]",
     badge: "bg-[var(--eq-mag-2)] text-[var(--eq-mag-fg)]",
     swatch: "bg-[var(--eq-mag-2)]",
-    legend: "M 3.0–3.9",
+    legend: "M 3,0–3,9",
   },
   3: {
     bucket: 3,
@@ -127,7 +127,7 @@ export const MAGNITUDE_IDENTITY: Readonly<Record<MagnitudeBucket, MagnitudeIdent
     ripple: "stroke-[var(--eq-mag-3)]",
     badge: "bg-[var(--eq-mag-3)] text-[var(--eq-mag-fg)]",
     swatch: "bg-[var(--eq-mag-3)]",
-    legend: "M 4.0–4.9",
+    legend: "M 4,0–4,9",
   },
   4: {
     bucket: 4,
@@ -135,7 +135,7 @@ export const MAGNITUDE_IDENTITY: Readonly<Record<MagnitudeBucket, MagnitudeIdent
     ripple: "stroke-[var(--eq-mag-4)]",
     badge: "bg-[var(--eq-mag-4)] text-[var(--eq-mag-fg)]",
     swatch: "bg-[var(--eq-mag-4)]",
-    legend: "M 5.0–5.9",
+    legend: "M 5,0–5,9",
   },
   5: {
     bucket: 5,
@@ -143,7 +143,7 @@ export const MAGNITUDE_IDENTITY: Readonly<Record<MagnitudeBucket, MagnitudeIdent
     ripple: "stroke-[var(--eq-mag-5)]",
     badge: "bg-[var(--eq-mag-5)] text-[var(--eq-mag-fg)]",
     swatch: "bg-[var(--eq-mag-5)]",
-    legend: "M ≥ 6.0",
+    legend: "M ≥ 6,0",
   },
 };
 

@@ -123,3 +123,69 @@ describe("no toFixed in visible text (T-093)", () => {
     );
   });
 });
+
+/**
+ * The same comma, hard-written (T-093). A figure typed straight into Turkish copy — a legend
+ * `"M 3.0–3.9"`, a threshold `"0.5 m/s"`, a table cell `"Mw 7.4"` — never passes through a
+ * formatter, so the `toFixed` census above cannot see it. This scan reads string and JSX text
+ * for the two shapes that are unambiguous in this codebase: a magnitude written with a point,
+ * and a number with one or two decimals written with a point in front of a physical unit.
+ * Thousands (`1.200 km`) have three digits after the point and are not matched; CSS and SVG
+ * numbers carry no unit from the list, and an SVG path (`M582.5 306.8`) has no space after its
+ * `M`. Generated map files are skipped. `components/showcase/` is the design-system specimen
+ * page, out of scope for site copy (`docs/copy.md`).
+ */
+const HARD_WRITTEN_DECIMAL: readonly RegExp[] = [
+  /\bM[wsLd]?(?:\s+|\s*[<≥≤~]\s*)\d+\.\d\b/,
+  /\b\d+\.\d{1,2}\s?(?:°C|°[KGDB](?![a-zA-Z])|m\/s|km\/h|km²|km(?![a-zA-Z])|mm(?![a-zA-Z-])|m(?![a-zA-Z/-]))/,
+];
+
+function hardWrittenDecimals(file: string, source: string): string[] {
+  return maskComments(source)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => HARD_WRITTEN_DECIMAL.some((re) => re.test(line)))
+    .map((line) => `${file}: ${line}`);
+}
+
+describe("no hard-written decimal point in visible Turkish copy (T-093)", () => {
+  it("finds none in app/, components/, lib/ or messages/tr.json", () => {
+    const sources = [
+      ...files.filter(
+        (f) => !f.file.startsWith("components/showcase/") && !f.file.includes(".generated."),
+      ),
+      {
+        file: "messages/tr.json",
+        source: readFileSync(join(repoRoot, "messages/tr.json"), "utf8"),
+      },
+    ];
+    const found = sources.flatMap(({ file, source }) => hardWrittenDecimals(file, source));
+    expect(found, `write the Turkish decimal comma:\n  ${found.join("\n  ")}`).toEqual([]);
+  });
+
+  it("catches the shapes it names — the scanner can fail", () => {
+    for (const line of [
+      'legend: "M 3.0–3.9",',
+      'magnitude: "Mw 7.4",',
+      'calmThreshold: "0.5 m/s (~1.8 km/h)",',
+      'avgSummerTemp: "24.5°C – 26.5°C",',
+      "YENGEÇ DÖNENCESİ (23.5°K)",
+      "M≥9.0 büyüklüğünde",
+    ]) {
+      expect(hardWrittenDecimals("x.tsx", line), line).toHaveLength(1);
+    }
+  });
+
+  it("leaves thousands, commas, CSS and comments alone", () => {
+    for (const line of [
+      'fact="6.371 km"',
+      '"M 3,0–3,9"',
+      'className="gap-1.5 mt-2.5 text-[0.85rem]"',
+      'stroke-width="0.5"',
+      "// was M 2.9 before T-093",
+      'd: "M582.5 306.8l-2.5 .2Z"',
+    ]) {
+      expect(hardWrittenDecimals("x.tsx", line), line).toEqual([]);
+    }
+  });
+});

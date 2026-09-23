@@ -100,12 +100,12 @@ const WIDE_FRAME = {
 };
 
 const MAGNITUDE_PRESETS = [
-  { label: "Tümü (1.0+)", val: 1.0 },
-  { label: "M ≥ 2.0", val: 2.0 },
-  { label: "M ≥ 2.5", val: 2.5 },
-  { label: "M ≥ 3.0", val: 3.0 },
-  { label: "M ≥ 4.0", val: 4.0 },
-  { label: "M ≥ 5.0", val: 5.0 },
+  { label: "Tümü (1,0+)", val: 1.0 },
+  { label: "M ≥ 2,0", val: 2.0 },
+  { label: "M ≥ 2,5", val: 2.5 },
+  { label: "M ≥ 3,0", val: 3.0 },
+  { label: "M ≥ 4,0", val: 4.0 },
+  { label: "M ≥ 5,0", val: 5.0 },
 ];
 
 const WINDOW_PRESETS = [

@@ -126,11 +126,11 @@ describe("the magnitude identity table", () => {
     }
     // …and the printed text names those same numbers, in order, low to high.
     expect(MAGNITUDE_BUCKETS.map((b) => MAGNITUDE_IDENTITY[b].legend)).toEqual([
-      "M < 3.0",
-      "M 3.0–3.9",
-      "M 4.0–4.9",
-      "M 5.0–5.9",
-      "M ≥ 6.0",
+      "M < 3,0",
+      "M 3,0–3,9",
+      "M 4,0–4,9",
+      "M 5,0–5,9",
+      "M ≥ 6,0",
     ]);
   });
 

@@ -1494,11 +1494,11 @@ export function V2ToolWorkbench({
             {dynamicScaleBar && (
               <div
                 className="absolute bottom-3 left-3 z-30 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/80 shadow-md pointer-events-none flex flex-col gap-1 text-xs select-none"
-                aria-label={t("scaleBarAria", { km: String(dynamicScaleBar.km) })}
+                aria-label={t("scaleBarAria", { km: formatNumber(dynamicScaleBar.km, locale) })}
               >
                 <div className="flex items-center justify-between text-[11px] font-bold text-foreground font-mono leading-none">
                   <span>0</span>
-                  <span>{dynamicScaleBar.km} km</span>
+                  <span>{formatNumber(dynamicScaleBar.km, locale)} km</span>
                 </div>
                 <div
                   className="h-1.5 border-x-2 border-b-2 border-foreground"

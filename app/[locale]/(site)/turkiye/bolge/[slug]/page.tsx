@@ -568,7 +568,9 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                 <TrendingUp className="size-4" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
-                {region.gdpShareApproxPercent !== null ? `~%${region.gdpShareApproxPercent}` : "—"}
+                {region.gdpShareApproxPercent !== null
+                  ? `~%${tr(region.gdpShareApproxPercent)}`
+                  : "—"}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Kaynak:</span>
@@ -992,7 +994,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                           Türkiye GSYH&apos;sindeki Yaklaşık Payı
                         </span>
                         <span className="font-heading font-extrabold text-2xl text-foreground">
-                          ~%{region.gdpShareApproxPercent}
+                          ~%{tr(region.gdpShareApproxPercent)}
                         </span>
                       </div>
                       <Badge variant="outline" className="text-xs bg-background/80">
