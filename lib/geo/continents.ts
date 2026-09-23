@@ -682,7 +682,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
         "Karayip levhasının sınırındaki faylar",
       ],
       warningNoteTr:
-        "Cascadia dalma-batma zonu, M≥9.0 büyüklüğünde megathrust depremi ve devasa tsunami üretme potansiyeline sahiptir.",
+        "Cascadia dalma-batma zonu, M≥9,0 büyüklüğünde megathrust depremi ve devasa tsunami üretme potansiyeline sahiptir.",
     },
     faqs: [
       {

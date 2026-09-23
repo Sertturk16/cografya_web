@@ -11,6 +11,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Mountain, Users, Maximize2, Waves, Home, ChevronRight, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { tr } from "@/lib/text/format-number";
 
 export const revalidate = 3600;
 
@@ -195,7 +196,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                             {continent.areaFormattedTr}
                           </span>
                           <span className="text-[10px] text-muted-foreground ml-1">
-                            (%{continent.areaSharePercent})
+                            (%{tr(continent.areaSharePercent)})
                           </span>
                         </div>
                         <div>
@@ -207,7 +208,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                           </span>
                           {continent.populationSharePercent > 0 && (
                             <span className="text-[10px] text-muted-foreground ml-1">
-                              (%{continent.populationSharePercent})
+                              (%{tr(continent.populationSharePercent)})
                             </span>
                           )}
                         </div>
@@ -216,7 +217,8 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                             En Yüksek Zirve
                           </span>
                           <span className="font-medium text-foreground truncate block">
-                            {continent.highestPoint.name} ({continent.highestPoint.elevationM} m)
+                            {continent.highestPoint.name} ({tr(continent.highestPoint.elevationM)}{" "}
+                            m)
                           </span>
                         </div>
                         <div>
@@ -224,7 +226,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                             En Uzun Akarsu
                           </span>
                           <span className="font-medium text-foreground truncate block">
-                            {continent.longestRiver.name} ({continent.longestRiver.lengthKm} km)
+                            {continent.longestRiver.name} ({tr(continent.longestRiver.lengthKm)} km)
                           </span>
                         </div>
                       </div>
@@ -310,7 +312,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                         {new Intl.NumberFormat("tr-TR").format(c.areaKm2)}
                       </td>
                       <td className="py-3 px-3 font-mono text-foreground font-medium">
-                        %{c.areaSharePercent}
+                        %{tr(c.areaSharePercent)}
                       </td>
                       <td className="py-3 px-3 font-mono text-muted-foreground">
                         {c.population > 0
@@ -318,7 +320,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                           : "—"}
                       </td>
                       <td className="py-3 px-3 font-mono text-foreground font-medium">
-                        {c.populationSharePercent > 0 ? `%${c.populationSharePercent}` : "—"}
+                        {c.populationSharePercent > 0 ? `%${tr(c.populationSharePercent)}` : "—"}
                       </td>
                       <td className="py-3 px-3 font-mono text-muted-foreground">
                         {c.densityPerKm2 > 0 ? c.densityPerKm2 : "0"}
@@ -329,13 +331,13 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                       <td className="py-3 px-4 text-muted-foreground">
                         <span className="font-medium text-foreground">{c.highestPoint.name}</span>{" "}
                         <span className="text-[11px] font-mono">
-                          ({c.highestPoint.elevationM} m)
+                          ({tr(c.highestPoint.elevationM)} m)
                         </span>
                       </td>
                       <td className="py-3 px-4 text-muted-foreground">
                         <span className="font-medium text-foreground">{c.lowestPoint.name}</span>{" "}
                         <span className="text-[11px] font-mono">
-                          ({c.lowestPoint.elevationM} m)
+                          ({tr(c.lowestPoint.elevationM)} m)
                         </span>
                       </td>
                     </tr>

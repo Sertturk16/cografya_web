@@ -130,7 +130,7 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
             <StatGrid gutter="hero">
               <StatTile label="Yenilenme aralığı" fact="120 sn" tone="destructive" />
               <StatTile label="Verinin kaynağı" fact="AFAD" tone="primary" />
-              <StatTile label="En küçük büyüklük filtresi" fact="M 1.0" tone="secondary" />
+              <StatTile label="En küçük büyüklük filtresi" fact="M 1,0" tone="secondary" />
               <StatTile label="Geriye doğru en fazla" fact="30 gün" tone="primary" />
             </StatGrid>
           </Card>
