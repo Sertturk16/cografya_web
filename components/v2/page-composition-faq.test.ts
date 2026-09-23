@@ -134,8 +134,14 @@ function ancestorWhere(
 }
 
 /**
- * Is the element at `from` written inside a `{…}` expression, at any level up to the top of its
- * tree? "Might not render", never "does not render" — see {@link ScannedElement.inExpression}.
+ * Is the element at `from` written under a condition, at any level up to the top of its tree?
+ * "Might not render", never "does not render" — see {@link ScannedElement.inExpression}.
+ *
+ * TWO QUESTIONS, ONE PER POSITION (T-052). A CHILD is under a condition when it is written inside
+ * a `{…}` expression of its parent's children — `inExpression`. A PROP-BORNE element is under one
+ * when it is anything but the attribute's whole value — `propValue !== "whole"`. `inExpression`
+ * cannot answer the second: an attribute's own `{` makes it `true` for `faq={<FaqSection/>}` and
+ * `faq={cond ? <FaqSection/> : null}` alike, which left every prop-borne site reading as gated.
  *
  * ELEMENTS WITH NO PARENT ARE SKIPPED, and that is a correction rather than a convenience.
  * `jsxElementsOf` scans the WHOLE MODULE, so the top-level walk's brace counter also counts the
@@ -145,7 +151,13 @@ function ancestorWhere(
  * written around a whole module-scope element is invisible (SCOPE note 5).
  */
 function writtenUnderCondition(elements: readonly ScannedElement[], from: number): boolean {
-  return ancestorWhere(elements, from, (e) => e.parent !== null && e.inExpression) !== null;
+  return (
+    ancestorWhere(
+      elements,
+      from,
+      (e) => e.parent !== null && (e.inProp ? e.propValue !== "whole" : e.inExpression),
+    ) !== null
+  );
 }
 
 /** The leading `a.b.c` member path of an expression, with a trailing `.map` call dropped. */
@@ -425,7 +437,7 @@ function surfaceFilesRenderingFaqSection(): string[] {
     .sort();
 }
 
-/** One written `<FaqSection>`: where it is, and whether it sits inside a `{…}` expression. */
+/** One written `<FaqSection>`: where it is, and whether it is written under a condition. */
 type FaqSectionSite = {
   readonly file: string;
   readonly conditional: boolean;
@@ -436,14 +448,12 @@ type FaqSectionSite = {
  * is it written under a condition?
  *
  * `conditional` reuses {@link writtenUnderCondition}'s exact rule — an ancestor (itself included)
- * that has a parent and is `inExpression` — so this counter and the JSON-LD one agree about what
- * "under a condition" means rather than having two definitions.
+ * that has a parent and is under a condition in its own position — so this counter and the
+ * JSON-LD one agree about what "under a condition" means rather than having two definitions.
  *
- * There is deliberately NO "is this prop-borne" field. Whether an element sits in an attribute or
- * in children is exactly the distinction this scanner cannot draw from `inExpression` alone — that
- * is the counter's documented limit, and inventing a half-right flag for it here would dress the
- * limit up as handled. It is stated in {@link FAQSECTION_SITES_WRITTEN_UNCONDITIONALLY} and pinned
- * by a control instead.
+ * The attribute-vs-child distinction is the SCANNER's (`ScannedElement.inProp` and
+ * `ScannedElement.propValue`, read by the one `readHeader` walk), not a flag derived here: a
+ * counter-side reading of the holder's attribute text would be a second parser of the same source.
  */
 function faqSectionSites(): FaqSectionSite[] {
   const sites: FaqSectionSite[] = [];
@@ -462,13 +472,13 @@ function faqSectionSites(): FaqSectionSite[] {
 }
 
 /**
- * `<FaqSection>` sites written WITHOUT any enclosing `{…}` expression. Pinned at 0: every FAQ
+ * `<FaqSection>` sites written WITHOUT any enclosing condition. Pinned at 0: every FAQ
  * block on the site is gated, four of them to `locale === "tr"` by the 2026-09-19 owner decision
  * and the rest for the reasons their own pages state.
  *
  * ## WHAT THIS ASSERTS, AND WHAT IT CANNOT — read this before trusting it
  *
- * It asserts a SHAPE: the element sits inside a `{…}`. SCOPE note 4's rule stands — no gate is
+ * It asserts a SHAPE: the element sits under a condition. SCOPE note 4's rule stands — no gate is
  * evaluated anywhere in this file — so every one of these is invisible here:
  *
  *   - a gate on the WRONG condition (`locale === "en"`, or `locale !== "en"`);
@@ -480,28 +490,25 @@ function faqSectionSites(): FaqSectionSite[] {
  * fetched all seven EN twins from a production server and confirmed each renders no
  * `<section id="sss"`. This counter cannot replace that and does not try to.
  *
- * ## IT IS INERT ON THE FOUR BASIN PAGES, measured rather than assumed
+ * ## IT READS ALL NINE SITES — the four basin pages included since T-052
  *
  * The basins write the element inside a JSX ATTRIBUTE — `faq={locale === "tr" ? <FaqSection …/> :
- * null}` — and an attribute's own `{` already makes `inExpression` true. Driven on the probe host,
- * all four shapes:
+ * null}` — and an attribute's own `{` makes `inExpression` true whether or not a ternary is there.
+ * Until T-052 that made this counter inert on those four: deleting a basin's ternary left it at 0,
+ * and a control pinned the blind spot. The scanner now records WHERE in the attribute value a
+ * prop-borne element sits, and {@link writtenUnderCondition} reads that for prop-borne elements
+ * instead of `inExpression`. Driven on the probe host, all four shapes:
  *
- * | shape                                              | `inExpression` |
- * | -------------------------------------------------- | -------------- |
- * | `faq={cond ? <FaqSection/> : null}` (prop, gated)   | true           |
- * | `faq={<FaqSection/>}` (prop, UNGATED)               | **true**       |
- * | `{cond && <FaqSection/>}` (child, gated)            | true           |
- * | `<FaqSection/>` (child, UNGATED)                    | **false**      |
+ * | shape                                               | `inExpression` | `propValue` | counted |
+ * | --------------------------------------------------- | -------------- | ----------- | ------- |
+ * | `faq={cond ? <FaqSection/> : null}` (prop, gated)   | true           | `"nested"`  | no      |
+ * | `faq={<FaqSection/>}` (prop, UNGATED)               | true           | `"whole"`   | **yes** |
+ * | `{cond && <FaqSection/>}` (child, gated)            | true           | `null`      | no      |
+ * | `<FaqSection/>` (child, UNGATED)                    | **false**      | `null`      | **yes** |
  *
- * So the discrimination is real for the five sites that write the element as a CHILD, and absent
- * for the four that write it as a PROP: deleting the ternary from a basin page would leave this
- * counter at 0. The `a prop-borne site is not discriminated` control below pins that limit
- * deliberately, so nobody later reads the zero as covering all nine.
- *
- * MUTATION-CHECKED 2026-09-19 at the pinned value: an ungated `<FaqSection …/>` written as a CHILD
- * in the probe host — RED, `expected 1 to be +0`, naming
- * `app/[locale]/(site)/hakkimizda/page.tsx`. The same probe written as a PROP — still 0, which is
- * the limit above, asserted rather than discovered later.
+ * MUTATION-CHECKED at the pinned value, both positions: an ungated `<FaqSection …/>` written as a
+ * CHILD in the probe host is RED naming `app/[locale]/(site)/hakkimizda/page.tsx`, and so is the
+ * `akdeniz` basin page with its own ternary deleted by injection — the controls below keep both.
  */
 export const FAQSECTION_SITES_WRITTEN_UNCONDITIONALLY = 0;
 
@@ -588,7 +595,8 @@ export const FAQSECTION_SITES_WRITTEN_UNCONDITIONALLY = 0;
  *      (a two-mechanism `.map(`), only the first styled one is credited — {@link faqBlocksIn}
  *      states that rule and why it is order-independent.
  *   4. **No gate is evaluated, anywhere.** `inExpression` records that an element is written inside
- *      a `{…}`, never what the expression is or whether it is true.
+ *      a `{…}` (`propValue`, for a prop-borne one, that it is not its attribute's whole value), never
+ *      what the expression is or whether it is true.
  *
  *      THIS BLIND SPOT IS LARGELY GONE, and not because the scanner got better. The shape it could
  *      not see was **a page whose JSON-LD gate and markup gate are both present but DIFFER** —
@@ -930,15 +938,12 @@ describe("the FAQ block scanner", () => {
   });
 
   /**
-   * THE LIMIT, PINNED SO IT CANNOT BE FORGOTTEN — not a passing test dressed as coverage.
-   *
-   * A JSX attribute's own `{` makes `inExpression` true, so an element written as a PROP reads as
-   * "conditional" whether or not a ternary gates it. The four basin pages write
-   * `faq={locale === "tr" ? <FaqSection …/> : null}`, so the counter above is inert for them: this
-   * asserts that deleting the ternary would NOT be caught, which is the honest statement of what
-   * the zero covers (five of nine sites).
+   * THE PROP-BORNE POSITION IS DISCRIMINATED (T-052). This control used to pin the opposite — "a
+   * prop-borne site is NOT discriminated" — because an attribute's own `{` made every prop-borne
+   * element read as conditional. `propValue` now separates the element that IS the attribute's
+   * value from one a condition decides, and the counter reads it.
    */
-  it("a prop-borne site is NOT discriminated — the documented blind spot", () => {
+  it("an ungated FaqSection written as a PROP is caught — and a gated one is not", () => {
     const importLine = `import { FaqSection } from "@/components/patterns/faq-section";\n`;
     const propBorne = (inner: string) =>
       [`function PropBorneFaqProbe() {`, `  return <Wrapper faq={${inner}} />;`, `}`].join("\n");
@@ -949,11 +954,38 @@ describe("the FAQ block scanner", () => {
 
     const gated = `show ? <FaqSection heading="h" locale="tr" items={PROBE_ITEMS} /> : null`;
     const bare = `<FaqSection heading="h" locale="tr" items={PROBE_ITEMS} />`;
-    // Both read as conditional. The second is UNGATED and still not counted — that is the blind
-    // spot, asserted. If a future scanner learns to tell an attribute from a child, this flips and
-    // the counter gets stronger; that is the moment to re-read the docblock above.
     expect(withProbe(`${importLine}${propBorne(gated)}`, ungated)).toEqual([]);
-    expect(withProbe(`${importLine}${propBorne(bare)}`, ungated)).toEqual([]);
+    expect(withProbe(`${importLine}${propBorne(bare)}`, ungated)).toEqual([
+      "app/[locale]/(site)/hakkimizda/page.tsx",
+    ]);
+    // Grouping parens do not make a bare prop look gated, and a bare prop nested one holder deep
+    // inside a gated one is still gated — the walk up reads the HOLDER's position too.
+    expect(withProbe(`${importLine}${propBorne(`(\n${bare}\n)`)}`, ungated)).toEqual([
+      "app/[locale]/(site)/hakkimizda/page.tsx",
+    ]);
+    expect(
+      withProbe(`${importLine}${propBorne(`show ? <Panel body={${bare}} /> : null`)}`, ungated),
+    ).toEqual([]);
+    expect(ungated()).toEqual([]);
+  });
+
+  it("deleting a basin page's ternary turns the counter red — on the real page, by injection", () => {
+    const basin = join(repoRoot, "app/[locale]/(site)/deniz/akdeniz/page.tsx");
+    const real = readFileSync(basin, "utf8");
+    // The exact gate the page writes today. If its spelling changes this `replace` finds nothing,
+    // and the assertion below that the text really moved goes red rather than passing vacuously.
+    const gate = /faq=\{\s*locale === "tr" \? \(\s*(<FaqSection[\s\S]*?\/>)\s*\) : null\s*\}/;
+    const ungatedSource = real.replace(gate, "faq={$1}");
+    expect(ungatedSource, "the basin page's FAQ gate was not found to delete").not.toBe(real);
+
+    const ungated = () =>
+      faqSectionSites()
+        .filter((site) => !site.conditional)
+        .map((s) => label(s.file));
+    expect(withInjectedSource([[basin, ungatedSource]], ungated)).toEqual([
+      "app/[locale]/(site)/deniz/akdeniz/page.tsx",
+    ]);
+    expect(ungated()).toEqual([]);
   });
 
   it("a FAQ projection is not a FAQ block — clause (2) is still live", () => {

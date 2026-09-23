@@ -602,7 +602,8 @@ export function classNamesOf(source: string, tag: string): string[] {
  * inside an attribute expression are NOT children — they are recorded with `inProp: true` and
  * the enclosing element as `parent`, because `<V2TurkeyMapExplorer regionsSection={<div …/>}>`
  * passes a sibling panel, not a child of the explorer. They still count as cards; they must not
- * count as grid tiles.
+ * count as grid tiles. Where in the attribute's value such an element sits — the whole of it, or
+ * under a condition inside it — is {@link ScannedElement.propValue}.
  */
 export type ScannedElement = {
   readonly tag: string;
@@ -683,8 +684,36 @@ export type ScannedElement = {
    * A counter that MUST see an element is free to ignore this. A counter that treats an element as
    * PROOF of something — as "this body is inside a container" does — must not, or a dead reference
    * is a certificate.
+   *
+   * ALWAYS `true` FOR A PROP-BORNE ELEMENT, because an attribute's own `{` is a brace like any
+   * other: `x={<X/>}` and `x={cond ? <X/> : null}` both read `true`, so for an element with
+   * `inProp` this field says nothing about a condition. Read {@link ScannedElement.propValue}
+   * there instead.
    */
   readonly inExpression: boolean;
+  /**
+   * WHERE A PROP-BORNE ELEMENT SITS IN ITS ATTRIBUTE'S VALUE — the child-position question
+   * {@link ScannedElement.inExpression} answers, asked of an attribute instead (T-052).
+   *
+   *   - `null` — not prop-borne: a JSX child, or a root. Exactly the elements with `inProp: false`,
+   *     which `composition-scan.test.ts` pins over the live surface;
+   *   - `"whole"` — the element IS the attribute's entire value, whitespace and grouping parens
+   *     aside: `faq={<X/>}`, `faq={(<X/>)}`. It is handed over whenever the holder is written,
+   *     the attribute counterpart of a plain child;
+   *   - `"nested"` — written somewhere INSIDE the value's expression: `faq={cond ? <X/> : null}`,
+   *     `faq={cond && <X/>}`, `faq={rows.map(…)}`, `render={() => <X/>}`, an array, and any
+   *     element inside a spread (`{...{ faq: <X/> }}`), which has no named value to be the whole
+   *     of. The attribute counterpart of `inExpression: true` — "might not be handed over".
+   *
+   * Decided by POSITION ONLY: `start`/`end` against the braced value's own range, read by the
+   * same `readHeader` walk that fills `attributes`. Nothing is evaluated, and "whole" says
+   * nothing about whether the holder ever renders the prop it is given.
+   *
+   * A counter asking "is this element under a condition" reads `inProp ? propValue !== "whole" :
+   * inExpression`. The `inExpression` half alone reads every prop-borne element as conditional,
+   * which is how the FAQ gate counter was blind on all four basin pages.
+   */
+  readonly propValue: "whole" | "nested" | null;
 };
 
 /**
@@ -804,12 +833,16 @@ export function scanJsx(source: string): ScannedElement[] {
     spelling: string | null;
     computed: string | null;
     attributes: Map<string, string>;
+    braced: Array<readonly [number, number]>;
     end: number;
     selfClosing: boolean;
   } => {
     let spelling: string | null = null;
     let computed: string | null = null;
     const attributes = new Map<string, string>();
+    // `[start, end)` of every NAMED attribute's braced value, between its `{` and `}` — what
+    // `propValue` measures a prop-borne element against. A spread is not a named value.
+    const braced: Array<readonly [number, number]> = [];
     let j = i;
     while (j < source.length) {
       const ch = source[j]!;
@@ -822,7 +855,14 @@ export function scanJsx(source: string): ScannedElement[] {
         continue;
       }
       if (ch === ">") {
-        return { spelling, computed, attributes, end: j + 1, selfClosing: source[j - 1] === "/" };
+        return {
+          spelling,
+          computed,
+          attributes,
+          braced,
+          end: j + 1,
+          selfClosing: source[j - 1] === "/",
+        };
       }
       // A name starts here only if this character could begin one AND the previous character
       // could not be part of one — the same boundary rule the old `className` test used, widened
@@ -859,6 +899,7 @@ export function scanJsx(source: string): ScannedElement[] {
         const end = skipBraced(k);
         const expression = source.slice(k + 1, end - 1);
         attributes.set(name, expression.trim().replace(/\s+/g, " "));
+        braced.push([k + 1, end - 1]);
         if (name === "className") {
           const literals = literalsIn(expression, true);
           spelling = literals.length > 0 ? literals.join(" ") : COMPUTED_CLASSNAME;
@@ -870,8 +911,24 @@ export function scanJsx(source: string): ScannedElement[] {
       attributes.set(name, "");
       j = k;
     }
-    return { spelling, computed, attributes, end: source.length, selfClosing: false };
+    return { spelling, computed, attributes, braced, end: source.length, selfClosing: false };
   };
+
+  /**
+   * Is `element` the WHOLE of one of these braced values — only whitespace and balanced grouping
+   * parens around it? Comments are already gone, so nothing else can sit there legally.
+   */
+  const isWholeValue = (
+    element: MutableElement,
+    braced: ReadonlyArray<readonly [number, number]>,
+  ): boolean =>
+    braced.some(([start, end]) => {
+      if (element.start < start || element.end > end) return false;
+      const before = source.slice(start, element.start);
+      const after = source.slice(element.end, end);
+      if (!/^[\s(]*$/.test(before) || !/^[\s)]*$/.test(after)) return false;
+      return before.split("(").length === after.split(")").length;
+    });
 
   /** Scans `[i, end)` as JSX children of `parent`; returns where it stopped. */
   const scanRange = (
@@ -938,12 +995,21 @@ export function scanJsx(source: string): ScannedElement[] {
           children: [],
           inProp,
           inExpression: braces > 0,
+          propValue: null,
           start: i,
           end: header.end,
           attributes: header.attributes,
         });
         if (parent !== null && !inProp) elements[parent]!.children.push(index);
         scanRange(nameEnd, header.end, index, true, depth + 1);
+        // Every element the header scan just recorded with this element as `parent` is one of its
+        // prop-borne elements, and each one's `end` is final by now — so this is where "whole
+        // value or nested in it" can be decided. Deeper records belong to their own holders.
+        for (let borne = index + 1; borne < elements.length; borne += 1) {
+          const element = elements[borne]!;
+          if (element.parent !== index) continue;
+          element.propValue = isWholeValue(element, header.braced) ? "whole" : "nested";
+        }
         if (header.selfClosing) {
           i = header.end;
           previous = ">";
@@ -1009,8 +1075,9 @@ export function opensElement(source: string, i: number): boolean {
  * walks cost.
  *
  * NOT an evaluation of anything. The element it returns may be inside `{false && …}`; read
- * {@link ScannedElement.inExpression} on it and its ancestors to learn that a position is written
- * under SOME condition, never which one.
+ * {@link ScannedElement.inExpression} on it and its ancestors — {@link ScannedElement.propValue}
+ * for the prop-borne ones — to learn that a position is written under SOME condition, never which
+ * one.
  */
 export function innermostElementAt(elements: readonly ScannedElement[], at: number): number | null {
   let best: number | null = null;

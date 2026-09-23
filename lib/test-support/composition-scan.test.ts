@@ -559,6 +559,96 @@ describe("element spans, containment and the attribute walk", () => {
 });
 
 /* =============================================================================================
+ * PROP-BORNE vs CHILD POSITION (T-052)
+ * ========================================================================================== */
+
+/**
+ * `inExpression` cannot tell an attribute from a child: a JSX attribute's own `{` is a brace like
+ * any other, so every prop-borne element reads `inExpression: true`, gated or not. `propValue` is
+ * the separate fact that closes that — where in its attribute's value a prop-borne element sits —
+ * and these controls pin the four shapes that matter plus the relation to `inProp`.
+ */
+describe("propValue — an attribute value is not a child position", () => {
+  const read = (source: string) => {
+    const elements = scanJsx(source);
+    const a = elements.find((element) => element.tag === "A")!;
+    return { inProp: a.inProp, inExpression: a.inExpression, propValue: a.propValue };
+  };
+
+  it("tells the four shapes apart — prop or child, whole or under an expression", () => {
+    // Child position: `propValue` is null whatever `inExpression` says.
+    expect(read("<H>{<A />}</H>")).toEqual({
+      inProp: false,
+      inExpression: true,
+      propValue: null,
+    });
+    expect(read("<H>{cond && <A />}</H>")).toEqual({
+      inProp: false,
+      inExpression: true,
+      propValue: null,
+    });
+    expect(read("<H><A /></H>")).toEqual({ inProp: false, inExpression: false, propValue: null });
+    // Prop position: `inExpression` is true either way — the blind spot — and `propValue` is
+    // what separates the element that IS the value from one a condition decides.
+    expect(read("<H x={<A />} />")).toEqual({
+      inProp: true,
+      inExpression: true,
+      propValue: "whole",
+    });
+    expect(read("<H x={cond ? <A /> : null} />")).toEqual({
+      inProp: true,
+      inExpression: true,
+      propValue: "nested",
+    });
+  });
+
+  it("whole means the entire value — whitespace and grouping parens aside, nothing else", () => {
+    expect(read("<H x={\n  (\n    <A>t</A>\n  )\n} />").propValue).toBe("whole");
+    expect(read("<H x={((<A />))} />").propValue).toBe("whole");
+    expect(read("<H x={cond && <A />} />").propValue).toBe("nested");
+    expect(read("<H x={rows.map((r) => <A key={r} />)} />").propValue).toBe("nested");
+    expect(read("<H x={() => <A />} />").propValue).toBe("nested");
+    expect(read("<H x={[<A key={1} />]} />").propValue).toBe("nested");
+    // A spread has no named value to be the whole of.
+    expect(read("<H {...{ x: <A /> }} />").propValue).toBe("nested");
+    // The ternary's parenthesised arm is still an arm: the parens are inside the condition.
+    expect(read('<H x={locale === "tr" ? (<A />) : null} />').propValue).toBe("nested");
+  });
+
+  it("is per attribute and per holder — a sibling attribute or a nested holder has its own", () => {
+    const elements = scanJsx("<H a={<A />} b={c ? <B inner={<C />} /> : null}><D /></H>");
+    const of = (tag: string) => elements.find((element) => element.tag === tag)!.propValue;
+    expect(of("A")).toBe("whole");
+    expect(of("B")).toBe("nested");
+    // `<C>` is the whole of `<B>`'s `inner`, whatever `<B>` itself sits under.
+    expect(of("C")).toBe("whole");
+    expect(of("D")).toBeNull();
+    expect(of("H")).toBeNull();
+    // A child of a prop-borne element is a CHILD — of `<B>` here — not prop-borne itself.
+    const nested = scanJsx("<H x={<A><B /></A>} />");
+    expect(nested.find((element) => element.tag === "B")!.propValue).toBeNull();
+  });
+
+  it("is set exactly where inProp is, on the real surface", () => {
+    let whole = 0;
+    let nested = 0;
+    for (const file of walkCardSurface()) {
+      for (const element of jsxElementsOf(file)) {
+        expect(
+          element.propValue !== null,
+          `${label(file)}: <${element.tag}> inProp ${element.inProp} but propValue ${element.propValue}`,
+        ).toBe(element.inProp);
+        if (element.propValue === "whole") whole += 1;
+        if (element.propValue === "nested") nested += 1;
+      }
+    }
+    // Both values occur on the live tree, so neither branch is dead code.
+    expect(whole).toBeGreaterThan(0);
+    expect(nested).toBeGreaterThan(0);
+  });
+});
+
+/* =============================================================================================
  * THE BINDING RESOLVER
  * ========================================================================================== */
 
