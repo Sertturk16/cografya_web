@@ -173,15 +173,37 @@ describe("saveMeasurement", () => {
     expect(JSON.parse(init.body as string)).toEqual(payload);
   });
 
-  it("maps a 403 to the quota-exceeded code, distinct from a generic failure", async () => {
+  it("maps the BFF's quota answer to the quota-exceeded code, distinct from a generic failure", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => Promise.resolve(new Response(null, { status: 403 }))),
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(403, { ok: false, code: "errors.measurements.quotaExceeded" }),
+        ),
+      ),
     );
     await expect(saveMeasurement(payload)).resolves.toEqual({
       ok: false,
       code: "quota-exceeded",
     });
+  });
+
+  it("maps the BFF's Origin-check 403 to a generic failure, not to quota", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(jsonResponse(403, { ok: false, code: "errors.transport.forbidden" })),
+      ),
+    );
+    await expect(saveMeasurement(payload)).resolves.toEqual({ ok: false, code: "failed" });
+  });
+
+  it("maps a 403 whose body is not JSON to a generic failure, never throws", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response("<html>Forbidden</html>", { status: 403 }))),
+    );
+    await expect(saveMeasurement(payload)).resolves.toEqual({ ok: false, code: "failed" });
   });
 
   it("maps any other non-200 to a generic failure", async () => {

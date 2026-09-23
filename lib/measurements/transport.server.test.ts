@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ACCESS_COOKIE_NAME } from "@/lib/auth/cookies";
+import { stripComments } from "@/lib/test-support/strip-comments";
+import { MEASUREMENT_POINTS_MAX } from "./shape";
 import {
   handleCreateMeasurement,
   handleDeleteMeasurement,
@@ -283,6 +286,32 @@ describe("T6 — POST (create): the request-side schema rejects a bad body BEFOR
     expect(result.status).toBe(400);
     expect(result.body).toEqual({ ok: false, code: "errors.transport.invalidRequest" });
     expect(mock).not.toHaveBeenCalled();
+  });
+
+  it("exactly MEASUREMENT_POINTS_MAX points is forwarded (the boundary the UI gate allows)", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValue(jsonResponse(200, measurementBody()));
+    const points = Array.from({ length: MEASUREMENT_POINTS_MAX }, (_, i) => ({ lon: i, lat: 0 }));
+    const result = await handleCreateMeasurement(
+      makeRequest("POST", "/api/measurements", {
+        origin: SITE_URL,
+        cookie: `${ACCESS_COOKIE_NAME}=token`,
+        body: JSON.stringify(validCreatePayload({ points })),
+      }),
+    );
+    expect(result.status).toBe(200);
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("bounds points with the shared MEASUREMENT_POINTS_MAX from shape.ts, not a literal", () => {
+    // The UI's save gate (`canSaveMeasurement`) and this schema must not drift apart: a literal
+    // here could change without the gate following, and a 21st point would fail silently again.
+    const code = stripComments(
+      readFileSync(new URL("./transport.server.ts", import.meta.url), "utf8"),
+    );
+    expect(code).toMatch(/import \{[^}]*\bMEASUREMENT_POINTS_MAX\b[^}]*\} from "\.\/shape";/);
+    expect(code).toContain(".max(MEASUREMENT_POINTS_MAX)");
+    expect(code).not.toMatch(/points: z\.array\([^)]*\)\.min\(1\)\.max\(\d+\)/);
   });
 
   it("more than 20 points is rejected locally", async () => {

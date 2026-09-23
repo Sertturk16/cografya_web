@@ -38,12 +38,16 @@ const MEASUREMENTS_KEYS = [
   "deleteAria",
   "deleteError",
   "minPointsHint",
+  "maxPointsHint",
+  "savingLabel",
+  "saveSuccess",
+  "signInHint",
 ] as const;
 
 /** Keys that carry a `{label}` interpolation placeholder — parametrized, unlike the rest. */
 const PARAMETRIZED_KEYS = new Set(["recallAria", "deleteAria"]);
-/** Keys that carry a `{count}` (ICU) placeholder — the per-type minimum point count. */
-const COUNT_KEYS = ["minPointsHint"] as const;
+/** Keys that carry a `{count}` (ICU) placeholder — the per-type minimum / maximum point count. */
+const COUNT_KEYS = ["minPointsHint", "maxPointsHint"] as const;
 
 const catalogues = { tr: trMessages.Measurements, en: enMessages.Measurements } as const;
 

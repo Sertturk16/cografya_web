@@ -276,7 +276,11 @@
     "deleteLabel": "Sil",
     "deleteAria": "{label} ölçümünü sil",
     "deleteError": "Silinemedi. Tekrar dene.",
-    "minPointsHint": "Kaydetmek için en az {count} nokta ekle."
+    "minPointsHint": "Kaydetmek için en az {count} nokta ekle.",
+    "maxPointsHint": "Kaydetmek için en fazla {count} nokta olabilir. Fazla noktaları geri al.",
+    "savingLabel": "Kaydediliyor…",
+    "saveSuccess": "Ölçüm bulut arşivine kaydedildi.",
+    "signInHint": "Ölçümlerini bulut arşivine kaydetmek için giriş yapmalısın."
   },
   "ProvinceDetail": {
     "metaTitle": "{name} Coğrafyası",
