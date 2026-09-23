@@ -370,6 +370,40 @@ describe("the world map's flat ocean", () => {
   );
 
   /**
+   * THE BORDER BETWEEN TWO COUNTRIES OF ONE CONTINENT (T-092). Both continent views draw it in
+   * `--map-ocean` on a non-scaling pixel stroke, so it reads as a gap in the fill. The ratio is
+   * the same pair as the fill-vs-ocean case above, and that is the point of naming it: the
+   * earlier border was the continent's own colour at /50 (1:1 against the fill it split by
+   * construction), and a fill-vs-ground assertion could never have caught that.
+   *
+   * Measured: Avrupa 3.35 is the worst light, 3.74 dark; Antarktika 13.15 / 14.65 the best.
+   * `stroke-white/80`, which the selected-continent view drew before, is NOT a passing border on
+   * this palette: over its own fill it measures 1.25 (Antarktika), 1.92 (Asya), 1.97 (Kuzey
+   * Amerika), 2.51 (Okyanusya), 2.72 (Afrika), 3.02 (Güney Amerika), 3.90 (Avrupa) — asserted
+   * below as the negative control, so a return to it has to argue with the numbers.
+   */
+  it.each(THEMES)(
+    "separates adjacent countries of every continent at 3:1 with --map-ocean in %s",
+    (theme, _s, table) => {
+      for (const [name, fill] of Object.entries(CONTINENTS)) {
+        expect(
+          ratio(table["--map-ocean"], fill),
+          `the --map-ocean border inside ${name} in ${theme}`,
+        ).toBeGreaterThanOrEqual(GRAPHICAL_MIN);
+      }
+    },
+  );
+
+  it("NEGATIVE CONTROL — stroke-white/80 cannot carry the border on five of seven continents", () => {
+    const failing = Object.entries(CONTINENTS)
+      .filter(([, fill]) => ratio(blendOver("#ffffff", 0.8, fill), fill) < GRAPHICAL_MIN)
+      .map(([name]) => name);
+    expect(failing.sort()).toEqual(
+      ["afrika", "antarktika", "asya", "kuzey-amerika", "okyanusya"].sort(),
+    );
+  });
+
+  /**
    * The hover/selected highlight. `--map-graticule` (above) clears `GRAPHICAL_MIN` too but sits
    * INSIDE the continent fills' own contrast range against `--map-ocean`, near the BOTTOM of it
    * (4.03/4.49 against a 3.35-13.15 / 3.74-14.65 range) — only Avrupa is dimmer — which is why a

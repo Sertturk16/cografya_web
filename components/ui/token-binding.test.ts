@@ -462,7 +462,9 @@ describe("every var() fallback in the product tree still equals its token", () =
     expect(Object.fromEntries([...byToken].sort())).toEqual({
       "--color-ink-dark": 7,
       "--color-primary": 4,
-      "--color-primary-dark": 4,
+      // 3, down from 4: T-092 moved `v2-continent-locator-map.tsx`'s default country border
+      // from `var(--color-primary-dark, #7e3a1e)` (1.63:1 on its fill) to `var(--card)`.
+      "--color-primary-dark": 3,
       "--region-akdeniz": 1,
       "--region-dogu-anadolu": 1,
       "--region-ege": 1,
