@@ -546,11 +546,12 @@ export const SEA_BASINS_DETAIL: Record<
       salinity: "‰38 – ‰39 (en yüksek)",
       coastalLengthTr: "1.577 km",
       coastalLengthWithIslandsTr: "1.707 km",
-      provincesCount: 4,
+      provincesCount: 5,
       stationsCount: 4,
     },
     stationSlugs: ["antalya", "mersin", "adana", "hatay"],
     coastalProvinces: [
+      { plate: "48", name: "Muğla (Fethiye/Dalaman)", slug: "mugla" },
       { plate: "07", name: "Antalya (Alanya/Kaş)", slug: "antalya" },
       { plate: "33", name: "Mersin (Silifke/Anamur)", slug: "mersin" },
       { plate: "01", name: "Adana (Karataş/Yumurtalık)", slug: "adana" },

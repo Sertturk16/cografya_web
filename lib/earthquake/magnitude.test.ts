@@ -3,6 +3,7 @@ import {
   MAGNITUDE_MARKER_RADIUS,
   magnitudeBucket,
   magnitudeBucketToken,
+  magnitudeTypeName,
   type MagnitudeBucket,
 } from "./magnitude";
 
@@ -50,5 +51,21 @@ describe("MAGNITUDE_MARKER_RADIUS", () => {
 
   it("declares exactly the five buckets, no more and no fewer", () => {
     expect(Object.keys(MAGNITUDE_MARKER_RADIUS).sort()).toEqual(["1", "2", "3", "4", "5"]);
+  });
+});
+
+describe("magnitudeTypeName", () => {
+  it("names each scale on its own instead of calling every non-Mw type ML", () => {
+    const name = (magnitudeType: string) =>
+      magnitudeTypeName({ magnitudeType, magnitudeTypeRaw: "x" });
+    expect(name("ML")).toBe("Yerel Büyüklük (ML)");
+    expect(name("Mw")).toBe("Moment Büyüklüğü (Mw)");
+    expect(name("Md")).toBe("Süre Büyüklüğü (Md)");
+    expect(name("mb")).toBe("Cisim Dalgası Büyüklüğü (mb)");
+    expect(name("Ms")).toBe("Yüzey Dalgası Büyüklüğü (Ms)");
+  });
+
+  it("shows the provider's own spelling for an unknown type", () => {
+    expect(magnitudeTypeName({ magnitudeType: "other", magnitudeTypeRaw: "MLv" })).toBe("MLv");
   });
 });

@@ -62,7 +62,7 @@ export const CONTINENTS_DATA: ContinentData[] = [
     countryCount: 48,
     population: "4,75 milyar",
     areaKm2: "44.579.000 km²",
-    highestPoint: { name: "Everest Dağı", elevation: "8.848 m", country: "Nepal / Çin" },
+    highestPoint: { name: "Everest Dağı", elevation: "8.849 m", country: "Nepal / Çin" },
     longestRiver: { name: "Yangtze Nehri", length: "6.300 km" },
     largestLake: { name: "Hazar Denizi", area: "371.000 km²" },
     dominantClimate: "Muson, Çöl, Step ve Sibirya Tundra İklimi",

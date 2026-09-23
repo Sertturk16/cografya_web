@@ -277,8 +277,8 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     code: "AS",
     taglineTr:
       "Dünyadaki her beş kişiden üçü Asya'da, Himalayaların ve muson yağmurlarının kıtasında yaşar.",
-    countryCount: 44,
-    countryCountNoteTr: "BM sınıflamasına göre, Türkiye dahil.",
+    countryCount: 48,
+    countryCountNoteTr: "BM M49 sınıflamasına göre 47 BM üyesi ve Filistin, Türkiye dahil.",
     population: 4750000000,
     populationFormattedTr: "4,75 Milyar",
     populationSharePercent: 59.3,
@@ -434,8 +434,8 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     nameEn: "Europe",
     code: "EU",
     taglineTr: "Denizin her yöne sokulduğu küçük bir kıta; kışlarını Golf Akıntısı yumuşatır.",
-    countryCount: 43,
-    countryCountNoteTr: "BM M49'a göre 43 bağımsız ülke, Rusya dahil.",
+    countryCount: 44,
+    countryCountNoteTr: "BM M49'a göre 43 BM üyesi ve Vatikan, Rusya dahil.",
     population: 745000000,
     populationFormattedTr: "745 Milyon",
     populationSharePercent: 9.3,
@@ -869,7 +869,7 @@ export const CONTINENTS_REGISTRY: Record<string, ContinentDetailData> = {
     },
     longestRiver: {
       name: "Murray-Darling",
-      lengthKm: 2530,
+      lengthKm: 3672,
       noteTr: "Avustralya'nın güneydoğu tarım havzasını drene eder.",
     },
     largestLake: {

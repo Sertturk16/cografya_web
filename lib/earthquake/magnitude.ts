@@ -62,3 +62,24 @@ export const MAGNITUDE_MARKER_RADIUS: Record<MagnitudeBucket, number> = {
   4: 8,
   5: 9.5,
 };
+
+/**
+ * The detail card's name for each magnitude scale AFAD reports. Every type gets its own name:
+ * labelling everything that is not Mw as "Yerel Büyüklük (ML)" misnamed Md, mb and Ms events.
+ * An unknown type (`other`) falls back to the provider's own spelling when it is known.
+ */
+const MAGNITUDE_TYPE_NAMES: Readonly<Record<string, string>> = {
+  ML: "Yerel Büyüklük (ML)",
+  Mw: "Moment Büyüklüğü (Mw)",
+  Mwp: "Moment Büyüklüğü (Mwp)",
+  Ms: "Yüzey Dalgası Büyüklüğü (Ms)",
+  mb: "Cisim Dalgası Büyüklüğü (mb)",
+  Md: "Süre Büyüklüğü (Md)",
+};
+
+export function magnitudeTypeName(event: {
+  magnitudeType: string;
+  magnitudeTypeRaw?: string;
+}): string {
+  return MAGNITUDE_TYPE_NAMES[event.magnitudeType] ?? event.magnitudeTypeRaw ?? event.magnitudeType;
+}
