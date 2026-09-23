@@ -1811,13 +1811,18 @@ export function V2ToolWorkbench({
               <div className="flex items-center justify-between">
                 <h5 className="font-heading font-bold text-xs text-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <Bookmark className="size-3.5 text-primary" />
+                  {/* No count and no "click to load" while a failed load left the list empty:
+                      "(0)" would claim there is nothing saved, which is exactly what is unknown. */}
                   <span>
-                    {tMeasurements("listHeading")} ({activeSavedList.length})
+                    {tMeasurements("listHeading")}
+                    {activeSavedList.length > 0 && ` (${activeSavedList.length})`}
                   </span>
                 </h5>
-                <span className="text-[10px] text-muted-foreground">
-                  {tMeasurements("listLoadHint")}
-                </span>
+                {activeSavedList.length > 0 && (
+                  <span className="text-[10px] text-muted-foreground">
+                    {tMeasurements("listLoadHint")}
+                  </span>
+                )}
               </div>
               {listLoadFailed && (
                 <div className="flex flex-wrap items-center justify-between gap-2">
