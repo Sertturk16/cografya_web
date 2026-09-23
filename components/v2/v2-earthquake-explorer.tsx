@@ -51,6 +51,7 @@ import {
 import { foldForSearch } from "@/lib/search/normalize";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 import { formatDayTime } from "@/lib/text/format-date";
+import { tr } from "@/lib/text/format-number";
 
 export interface V2EarthquakeItem {
   id: string;
@@ -349,8 +350,8 @@ export function V2EarthquakeExplorer({
               <div className="px-3.5 py-1.5 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-2">
                 <Flame className="size-3.5 text-destructive" />
                 <span className="text-xs font-bold text-destructive">
-                  En büyüğü: M {maxMagnitudeEvent.magnitude.toFixed(1)} (
-                  {maxMagnitudeEvent.placeNameTr})
+                  En büyüğü: M {tr(maxMagnitudeEvent.magnitude, 1)} ({maxMagnitudeEvent.placeNameTr}
+                  )
                 </span>
               </div>
             )}
@@ -575,7 +576,7 @@ export function V2EarthquakeExplorer({
                     tabIndex={isTabStop ? 0 : -1}
                     className="cursor-pointer outline-none select-none transition-transform duration-150 focus-visible:scale-125"
                     role="button"
-                    aria-label={`Deprem M ${eq.magnitude.toFixed(1)} - ${eq.placeNameTr}`}
+                    aria-label={`Deprem M ${tr(eq.magnitude, 1)} - ${eq.placeNameTr}`}
                     onPointerEnter={(e) => {
                       // A mouse only (T-087): a tap fires the mouse events too, and pinned this
                       // tooltip over a phone map with nothing to dismiss it.
@@ -710,7 +711,7 @@ export function V2EarthquakeExplorer({
                         fontWeight="bold"
                         className={`${MAGNITUDE_LABEL} pointer-events-none select-none font-mono`}
                       >
-                        {eq.magnitude.toFixed(1)}
+                        {tr(eq.magnitude, 1)}
                       </text>
                     )}
                   </g>
@@ -729,10 +730,10 @@ export function V2EarthquakeExplorer({
               >
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-foreground font-mono">
-                    M {hoveredEvent.magnitude.toFixed(1)} {hoveredEvent.magnitudeType}
+                    M {tr(hoveredEvent.magnitude, 1)} {hoveredEvent.magnitudeType}
                   </span>
                   <Badge variant="outline" size="sm" className="text-[9px] py-0 px-1 font-mono">
-                    {hoveredEvent.depthKm.toFixed(1)} km
+                    {tr(hoveredEvent.depthKm, 1)} km
                   </Badge>
                 </div>
                 <div className="font-semibold text-foreground text-xs">
@@ -758,7 +759,7 @@ export function V2EarthquakeExplorer({
       {/* Accessible Live Region for Selected Earthquake Announcement (WCAG 4.1.3, A11Y126-I4) */}
       <div role="status" aria-live="polite" className="sr-only">
         {selectedEvent &&
-          `Seçilen deprem: Büyüklük ${selectedEvent.magnitude.toFixed(1)}, ${selectedEvent.placeNameTr}, derinlik ${selectedEvent.depthKm} km.`}
+          `Seçilen deprem: Büyüklük ${tr(selectedEvent.magnitude, 1)}, ${selectedEvent.placeNameTr}, derinlik ${tr(selectedEvent.depthKm)} km.`}
       </div>
 
       {/* 3. TWO-COLUMN DASHBOARD: SPOTLIGHT INSPECTOR & RECENT EARTHQUAKES */}
@@ -787,7 +788,7 @@ export function V2EarthquakeExplorer({
               <div className="space-y-1">
                 <div className="flex items-baseline gap-2">
                   <span className="font-heading text-4xl sm:text-5xl font-extrabold text-foreground">
-                    M {selectedEvent.magnitude.toFixed(1)}
+                    M {tr(selectedEvent.magnitude, 1)}
                   </span>
                   <span className="text-xs font-mono font-semibold text-muted-foreground uppercase">
                     {selectedEvent.magnitudeType}
@@ -808,7 +809,7 @@ export function V2EarthquakeExplorer({
                 <div className="p-3 rounded-2xl bg-muted/60 border border-border space-y-0.5">
                   <span className="text-[10px] text-muted-foreground block">Odak Derinliği</span>
                   <span className="font-mono font-bold text-foreground sm:text-sm">
-                    {selectedEvent.depthKm.toFixed(2)} km
+                    {tr(selectedEvent.depthKm, 2)} km
                   </span>
                   <span className="text-[9px] text-muted-foreground block">
                     {selectedEvent.depthKm <= 60 ? "Sığ odaklı" : "Orta ya da derin odaklı"}
@@ -850,7 +851,7 @@ export function V2EarthquakeExplorer({
               <div className="p-3 rounded-2xl bg-muted/40 border border-border/70 text-xs flex items-center justify-between">
                 <span className="text-muted-foreground">Merkez üssü:</span>
                 <span className="font-mono font-medium text-foreground">
-                  {selectedEvent.latitude.toFixed(4)}° K, {selectedEvent.longitude.toFixed(4)}° D
+                  {tr(selectedEvent.latitude, 4)}° K, {tr(selectedEvent.longitude, 4)}° D
                 </span>
               </div>
             </div>
@@ -914,7 +915,7 @@ export function V2EarthquakeExplorer({
                     <span
                       className={`size-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center shrink-0 ${tone.badge}`}
                     >
-                      {eq.magnitude.toFixed(1)}
+                      {tr(eq.magnitude, 1)}
                     </span>
                     <div className="min-w-0">
                       <span className="text-xs font-semibold text-foreground block truncate">
@@ -927,7 +928,7 @@ export function V2EarthquakeExplorer({
                   </div>
                   <div className="text-right shrink-0">
                     <span className="text-[11px] font-mono font-medium text-foreground block">
-                      {eq.depthKm.toFixed(1)} km
+                      {tr(eq.depthKm, 1)} km
                     </span>
                     <span className="text-[9px] text-muted-foreground font-mono">derinlik</span>
                   </div>
@@ -988,7 +989,7 @@ export function V2EarthquakeExplorer({
                       id={`eq-row-${eq.id}`}
                       tabIndex={0}
                       aria-selected={isSelected}
-                      aria-label={`M ${eq.magnitude.toFixed(1)} - ${eq.placeNameTr} depremini seç`}
+                      aria-label={`M ${tr(eq.magnitude, 1)} - ${eq.placeNameTr} depremini seç`}
                       onClick={() => setSelectedEventId(eq.id)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
@@ -1006,7 +1007,7 @@ export function V2EarthquakeExplorer({
                         <span
                           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold ${tone.badge}`}
                         >
-                          {eq.magnitude.toFixed(1)} {eq.magnitudeType}
+                          {tr(eq.magnitude, 1)} {eq.magnitudeType}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -1022,10 +1023,10 @@ export function V2EarthquakeExplorer({
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs text-foreground">
-                        {eq.depthKm.toFixed(2)} km
+                        {tr(eq.depthKm, 2)} km
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs text-muted-foreground">
-                        {eq.latitude.toFixed(2)}° K, {eq.longitude.toFixed(2)}° D
+                        {tr(eq.latitude, 2)}° K, {tr(eq.longitude, 2)}° D
                       </TableCell>
                       <TableCell className="text-right font-mono text-xs text-foreground">
                         {formatTime(eq.occurredAtUtc)}

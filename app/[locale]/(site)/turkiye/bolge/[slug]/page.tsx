@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { SOURCE_NOTE } from "@/components/patterns/source-note";
+import { tr } from "@/lib/text/format-number";
 
 export const revalidate = 86400;
 
@@ -523,7 +524,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Nüfus Payı:</span>
                 <span className="font-mono font-semibold text-foreground">
-                  %{region.populationSharePercent.toFixed(2)}
+                  %{tr(region.populationSharePercent, 2)}
                 </span>
               </div>
             </Card>
@@ -540,7 +541,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Alan Payı:</span>
                 <span className="font-mono font-semibold text-foreground">
-                  %{region.areaSharePercent.toFixed(2)}
+                  %{tr(region.areaSharePercent, 2)}
                 </span>
               </div>
             </Card>
@@ -956,7 +957,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                     <div className="p-3.5 rounded-2xl bg-card border border-border/80 space-y-1">
                       <span className="text-[11px] text-muted-foreground block">Nüfus Payı</span>
                       <span className="font-heading font-extrabold text-xl text-foreground">
-                        %{region.populationSharePercent.toFixed(2)}
+                        %{tr(region.populationSharePercent, 2)}
                       </span>
                     </div>
                     <div className="p-3.5 rounded-2xl bg-card border border-border/80 space-y-1">
@@ -1385,7 +1386,7 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
                           {format.number(item.population)}
                         </td>
                         <td className="px-4 py-3 text-right font-mono text-xs">
-                          %{item.populationSharePercent.toFixed(2)}
+                          %{tr(item.populationSharePercent, 2)}
                         </td>
                         <td className="px-4 py-3 text-right font-mono text-xs">
                           {format.number(item.areaKm2)}
