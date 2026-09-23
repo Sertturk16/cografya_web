@@ -76,8 +76,10 @@ export function MapSelectionCard({
         data-map-card-stats=""
         className="col-span-3 sm:col-span-1 sm:col-start-2 m-0 flex flex-wrap gap-x-1.5 font-mono text-[11px] text-muted-foreground"
       >
+        {/* The separator trails its stat behind a no-break space, so a wrap between items
+          never opens a line with "·" (T-082). */}
         {stats.map((stat, i) => (
-          <span key={stat}>{i > 0 ? `· ${stat}` : stat}</span>
+          <span key={stat}>{i < stats.length - 1 ? `${stat}\u00a0·` : stat}</span>
         ))}
       </p>
     </div>

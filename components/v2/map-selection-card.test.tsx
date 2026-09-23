@@ -1,6 +1,11 @@
-import { NextIntlClientProvider } from "next-intl";
+import { createTranslator, NextIntlClientProvider } from "next-intl";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import enMessages from "@/messages/en.json";
+import trMessages from "@/messages/tr.json";
+import { stripComments } from "@/lib/test-support/strip-comments";
 import { MapSelectionCard } from "./map-selection-card";
 
 /**
@@ -41,6 +46,15 @@ describe("MapSelectionCard", () => {
     expect(html).not.toMatch(/\btruncate\b|whitespace-nowrap/);
   });
 
+  it("hangs each separator on the stat before it, so a wrapped line never starts with one", () => {
+    // T-082: the separator led the SECOND item ("· 25.632 km²"), so when the pair wrapped on
+    // /dunya the new line began with "·". It now trails the first, joined by a no-break space.
+    const stats = /<p data-map-card-stats="[^"]*"[^>]*>(.*?)<\/p>/.exec(html)?.[1] ?? "";
+    const items = [...stats.matchAll(/<span>(.*?)<\/span>/g)].map((m) => m[1]);
+    expect(items).toEqual(["5.910.320 kişi\u00a0·", "25.632 km²"]);
+    expect(items.some((item) => item?.trimStart().startsWith("·"))).toBe(false);
+  });
+
   it("renders the explore action as a styled link, not a button inside a link", () => {
     expect(html).toMatch(/<a [^>]*href="\/turkiye\/ankara"/);
     expect(html).not.toMatch(/<a [^>]*>(?:(?!<\/a>).)*<button/);
@@ -50,5 +64,40 @@ describe("MapSelectionCard", () => {
 
   it("names the close button", () => {
     expect(html).toMatch(/<button [^>]*aria-label="Seçimi kapat"/);
+  });
+});
+
+/**
+ * T-082. `/en/dunya`'s card said "5.910.320 kişi": the unit was a Turkish literal beside a
+ * locale-formatted number. Both stats now come from the catalogue, and ICU formats the number in
+ * the active locale, through the real next-intl pipeline here.
+ */
+describe("the card's stat strings", () => {
+  const translate = (locale: "tr" | "en") =>
+    createTranslator({
+      locale,
+      messages: locale === "tr" ? trMessages : enMessages,
+      namespace: "MapExplorer",
+      onError: (error) => {
+        throw error;
+      },
+    });
+
+  it("reads population and area in the active locale", () => {
+    expect(translate("tr")("statPopulation", { count: 5910320 })).toBe("5.910.320 kişi");
+    expect(translate("en")("statPopulation", { count: 5910320 })).toBe("5,910,320 people");
+    expect(translate("en")("statPopulation", { count: 1 })).toBe("1 person");
+    expect(translate("tr")("statArea", { area: 783562 })).toBe("783.562 km²");
+    expect(translate("en")("statArea", { area: 783562 })).toBe("783,562 km²");
+  });
+
+  it("is what both explorers hand the card, with no Turkish unit in the source", () => {
+    for (const file of ["v2-world-map-explorer.tsx", "v2-turkey-map-explorer.tsx"]) {
+      const source = stripComments(readFileSync(join(__dirname, file), "utf8"));
+      const card = /<MapSelectionCard[\s\S]*?onClose=/.exec(source)?.[0] ?? "";
+      expect(card, file).toMatch(/t\("statPopulation", \{ count: /);
+      expect(card, file).toMatch(/t\("statArea", \{ area: /);
+      expect(card, file).not.toMatch(/kişi|toLocaleString/);
+    }
   });
 });

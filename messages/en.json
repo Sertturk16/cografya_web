@@ -124,7 +124,9 @@
     "regionColorsShow": "Colour the regions (legend mode)",
     "regionColorsReset": "Default colours",
     "explore": "Explore",
-    "closeSelection": "Close selection"
+    "closeSelection": "Close selection",
+    "statPopulation": "{count, plural, one {# person} other {# people}}",
+    "statArea": "{area, number} km²"
   },
   "About": {
     "metaTitle": "About",
