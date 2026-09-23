@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import en from "@/messages/en.json";
 import tr from "@/messages/tr.json";
+import { CLIMATE_LICENCE_FRAGMENT } from "@/lib/climate/attribution-anchor";
 
 /**
  * The climate series' provider attribution is one of the user-facing strings in this repo
@@ -48,7 +49,7 @@ describe("the C3S / ERA5-Land attribution is verbatim", () => {
   });
 
   it("ships the same untranslated notice in tr.json", () => {
-    // Not "a Turkish equivalent" — the identical English text. The Turkish page renders this
+    // Not "a Turkish equivalent" — the identical English text. `/hakkimizda` renders this
     // exact sentence pair inside `lang="en"`, with the Turkish explanation alongside it
     // (`Climate.sourceC3sNoticeIntro`) rather than instead of it. Only a byte comparison
     // proves the two catalogues have not drifted.
@@ -84,19 +85,24 @@ describe("the C3S / ERA5-Land attribution is verbatim", () => {
 });
 
 /**
- * THE NOTICE TRAVELS WITH THE MATERIAL.
+ * THE NOTICE IS ONE HYPERLINK FROM THE MATERIAL.
  *
- * The byte pins above prove the string is intact. They cannot prove it is on the page that
- * carries the values. This repo's vitest environment is `node` and the climate section is an
- * async server component, so it cannot be rendered here; the honest guard at this level is
- * the source symbol, scoped to the one component the obligation is about.
+ * The byte pins above prove the string is intact. They cannot prove a reader can reach it. CC BY
+ * 4.0 §3(a)(2) lets the required information travel as a hyperlink to a resource that includes
+ * it, so the verbatim notice renders once, in `ClimateAttribution` on `/hakkimizda`, and every
+ * climate section links there — the arrangement `components/marine/marine-attribution-coverage.test.ts`
+ * guards for the marine notices. Both ends are asserted: the notice where it lives, and the link
+ * that discharges the attribution from the page carrying the values. The components are async
+ * server components and vitest here is node with no jsdom, so the guard is the source symbol.
  */
-describe("the climate section renders the notice next to the values", () => {
+describe("the C3S notice lives on /hakkimizda and every climate section links to it", () => {
   const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+  const block = read("../../components/climate/climate-attribution.tsx");
+  const about = read("../../app/[locale]/(site)/hakkimizda/page.tsx");
   const section = read("../../components/climate/climate-section.tsx");
 
-  it("renders the verbatim notice", () => {
-    expect(section).toMatch(/attribution\.c3sNotice/);
+  it("renders the verbatim notice in ClimateAttribution", () => {
+    expect(block).toMatch(/attribution\.c3sNotice/);
   });
 
   it('marks THE NOTICE ITSELF `lang="en"`, not merely something on the page', () => {
@@ -104,16 +110,35 @@ describe("the climate section renders the notice next to the values", () => {
     // attribute migrated to the Turkish intro paragraph and the English notice lost it —
     // the exact failure the attribute exists to prevent (a screen reader on the TR page
     // reading English with Turkish phonemes). So the two are pinned to the SAME element.
-    expect(section).toMatch(/lang="en"[^>]*>\s*\{t\("attribution\.c3sNotice"\)\}/);
+    expect(block).toMatch(/lang="en"[^>]*>\s*\{t\("attribution\.c3sNotice"\)\}/);
   });
 
   it("keeps the Turkish explanation alongside it, never instead of it", () => {
-    expect(section).toMatch(/sourceC3sNoticeIntro/);
+    expect(block).toMatch(/sourceC3sNoticeIntro/);
   });
 
-  it("keeps the licence text out of the component source — one copy, in messages", () => {
+  it("puts the block on /hakkimizda under the shared anchor", () => {
+    // A renamed `id` or a dropped render site breaks the hyperlink that IS the attribution.
+    expect(about).toMatch(/<ClimateAttribution\b/);
+    expect(block).toContain("id={CLIMATE_LICENCE_FRAGMENT}");
+    expect(CLIMATE_LICENCE_FRAGMENT.length, "the shared fragment is empty").toBeGreaterThan(0);
+  });
+
+  it("links every climate section to that anchor", () => {
+    expect(section).toContain("href={CLIMATE_LICENCE_ANCHOR}");
+    expect(section).toMatch(/t\("licenceLink"\)/);
+  });
+
+  it("keeps the licence text out of the component sources — one copy, in messages", () => {
     // A second copy of a verbatim licence is a breach waiting for the day someone edits one
-    // of them. The component references the key; the text lives only in the catalogues.
-    expect(section).not.toContain("Generated using Copernicus Climate Change Service");
+    // of them. The components reference the key; the text lives only in the catalogues.
+    for (const source of [block, section, about]) {
+      expect(source).not.toContain("Generated using Copernicus Climate Change Service");
+    }
+  });
+
+  it("ships the licence link label in both catalogues", () => {
+    expect(tr.Climate.licenceLink.trim().length).toBeGreaterThan(0);
+    expect(en.Climate.licenceLink.trim().length).toBeGreaterThan(0);
   });
 });

@@ -589,7 +589,9 @@ export const HAND_DRAWN_CARDS = 187;
 // language of the text binds, it is not a panel the page offers.
 // 162 → **159** in T-088: the three wells of the deleted `v2-sources-section.tsx`.
 // 159 → **158** in T-089: `/oyun`'s "Yeni Oyun Özellikleri" strip, a `bg-muted/40` well, deleted.
-export const HAND_DRAWN_WELLS = 158;
+// 158 → **156** in T-091: the two boxed attribution notes became footnotes — the AFAD disclaimer
+// in `earthquake-attribution.tsx` and `MarineDataNotice`'s panel. A notice is not a panel.
+export const HAND_DRAWN_WELLS = 156;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -604,8 +606,10 @@ export const HAND_DRAWN_WELLS = 158;
  * rather than a bar floating on it, which `/turkiye` still is.
  *
  * 234 → **230** in T-088: the deleted `v2-sources-section.tsx`'s four shapes, each its own string.
- * 230 → **229** in T-089: the deleted `/oyun` feature strip was the only element with its spelling. */
-export const HAND_DRAWN_CARD_SPELLINGS = 229;
+ * 230 → **229** in T-089: the deleted `/oyun` feature strip was the only element with its spelling.
+ * 229 → **227** in T-091: the two wells above ({@link HAND_DRAWN_WELLS}) were each a one-off
+ * spelling, so both left the set with them. */
+export const HAND_DRAWN_CARD_SPELLINGS = 227;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1381,8 +1385,10 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // and the English-reader notice.
     // 61 after T-079: `map-selection-card.tsx` joins the surface with the one card both map
     // explorers now render; the explorers stay on it through their other shapes.
-    // 60 after T-088: `v2-sources-section.tsx` was deleted.
-    expect(handDrawnTotals().files).toBe(60);
+    // 60 after T-088: `v2-sources-section.tsx` was deleted. 58 after T-091:
+    // `earthquake-attribution.tsx` and `marine-data-notice.tsx` each held one boxed notice and
+    // nothing else; both are footnotes now.
+    expect(handDrawnTotals().files).toBe(58);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

@@ -152,7 +152,8 @@
     "dataOsmOffer": "Türkiye il sınırları katmanı OpenStreetMap türevidir; ODbL 4.6 uyarınca türev veri kümesi ve onu üreten betik projenin açık kaynak deposunda sunulur: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts).",
     "dataFlagsLabel": "Ülke bayraklarının çoğu:",
     "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License",
-    "marineDataHeading": "Deniz verisi kaynakları ve lisans metinleri"
+    "marineDataHeading": "Deniz verisi kaynakları ve lisans metinleri",
+    "climateDataHeading": "İklim verisi (ERA5-Land) lisans bildirimi"
   },
   "Terms": {
     "metaTitle": "Kullanım Şartları",
@@ -496,6 +497,7 @@
     "colTempMean": "Ortalama sıcaklık (°C)",
     "colPrecip": "Toplam yağış (mm)",
     "sourceLine": "Aylık normaller: <source>ERA5-Land aylık ortalamalar (Copernicus İklim Veri Deposu)</source>, {start}–{end} referans dönemi. Yıllık ortalama, toplam ve mevsimsel yüzde değerleri bu seriden tarafımızca hesaplanmıştır; C3S tarafından yayımlanan değerler değildir.",
+    "licenceLink": "Lisans",
     "notice": {
       "reanalysis": "Bu değerler istasyon ölçümü değildir. ERA5-Land, yaklaşık 0,1 derecelik bir enlem-boylam ızgarasında yayımlanan bir model veri kümesidir.",
       "readingPoint": "Değer, il ortalaması değildir. İl merkezinin düştüğü ızgara hücresinden okunur.",
@@ -524,8 +526,8 @@
     "tableYear": "Yıl",
     "tableValue": "PM2.5 ({unit})",
     "noticeIntro": "Veri sağlayıcının kendi çekincesi, çeviri onu bozmasın diye İngilizce ve birebir yayımlanır:",
-    "sourceLine": "Kaynak: {provider}, <source>{workTitle}</source>.",
-    "licenceLine": "Lisans: <licence>{licenceName}</licence>.",
+    "sourceLine": "Kaynak: {provider}, <source>{workTitle}</source>",
+    "licenceLine": "Lisans: <licence>{licenceName}</licence>",
     "referenceLine": "Referans yayın: <ref>{citation}</ref>"
   },
   "Regions": {

@@ -933,7 +933,6 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           <EarthquakeAttribution
             attributions={provinceEarthquakes.meta.attributions}
             disclaimerTr={earthquakeMeta.disclaimerTr}
-            headingId="province-earthquake-sources"
             heading={t("earthquakeSourcesHeading")}
           />
         )}

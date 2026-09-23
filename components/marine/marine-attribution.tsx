@@ -18,7 +18,7 @@ import { Card } from "@/components/ui/card";
  * with no page padding of its own, so the licence text ran flush to the viewport edge inside the
  * V2 layout. All three problems have the same fix.
  */
-const BODY = "text-sm leading-relaxed text-muted-foreground";
+const BODY = "text-[0.8125rem] leading-relaxed text-muted-foreground";
 
 /**
  * The provider's own required wording, published verbatim in English (→ DEC 2026-08-02c). Set in
@@ -91,12 +91,11 @@ interface MarineAttributionProps {
  * page it now lives on, because there is no prop here that could switch it off and there must
  * not be one.
  *
- * NOR DID THE MAP CREDITS, NOR THE CLIMATE AND AIR NOTICES. OpenStreetMap's guidance asks for
- * the credit ON a browsable map, which is a different requirement from CC BY 4.0's, so
- * `MapAttribution` is untouched. `ClimateSection` and `AirPollutionSection` keep their inline
- * ERA5-Land and ACAG blocks: the decision recorded here was taken about the marine licences and
- * was not extended to them, and the criterion those two files cite from this docblock — visible
- * without a click on the page carrying the values — still governs them.
+ * NOR DID THE MAP CREDITS, NOR THE AIR NOTICE. OpenStreetMap's guidance asks for the credit ON a
+ * browsable map, which is a different requirement from CC BY 4.0's, so `MapAttribution` is
+ * untouched. The C3S / ERA5-Land notice later followed this block to `/hakkimizda`
+ * (`ClimateAttribution`, linked from every climate source line); `AirPollutionSection` keeps its
+ * ACAG caveat inline, because that text arrives per province in the API payload.
  *
  * A second copy of a verbatim licence text is a licence breach waiting for the day someone edits
  * one of them, so there is exactly ONE copy of each string, in `messages/{tr,en}.json`, read
@@ -149,7 +148,7 @@ export async function MarineAttribution({
   return (
     <Card as="section" variant="panel" space="3" aria-labelledby={headingId}>
       <div className="max-w-[70ch] space-y-3">
-        <h2 id={headingId} className="font-heading text-xl font-bold text-foreground">
+        <h2 id={headingId} className="font-heading text-lg font-bold text-foreground">
           {heading ?? t("sourcesHeading")}
         </h2>
         <p className={BODY}>{t("sourceEcmwf")}</p>
