@@ -7,6 +7,7 @@ import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/bre
 import { H1, H2, Lede } from "@/components/patterns/typography";
 import { PageContainer } from "@/components/patterns/page-container";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
+import { ClimateAttribution } from "@/components/climate/climate-attribution";
 import { getMarineLayersSafe } from "@/lib/api/marine";
 import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
 import { env } from "@/lib/env";
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: V2AboutPageProps): Promise<Me
  *    climate, marine and statistical sources; a heading promising them would be a
  *    completeness claim this section cannot honour.
  *
- * THIS PAGE IS NOW THE CENTRAL ATTRIBUTION SURFACE FOR THE MARINE LICENCES. ECMWF Open Data is
+ * THIS PAGE IS NOW THE CENTRAL ATTRIBUTION SURFACE FOR THE MARINE AND CLIMATE LICENCES. ECMWF Open Data is
  * CC BY 4.0, and §3(a)(2) permits the required information to be carried by "a URI or hyperlink
  * to a resource that includes" it; the owner took that option. So the full ECMWF and Copernicus
  * Marine notices are published HERE, exactly once, and the seven surfaces that publish a derived
@@ -60,6 +61,11 @@ export async function generateMetadata({ params }: V2AboutPageProps): Promise<Me
  * DISCHARGES the attribution — so the fragment is the shared constant
  * `MARINE_SOURCES_FRAGMENT`, not a string written out here, and
  * `components/marine/marine-attribution-coverage.test.ts` checks that this page still renders it.
+ *
+ * The C3S / ERA5-Land notice took the same route: `ClimateAttribution` renders it verbatim under
+ * its own anchor (`#iklim-verisi`, `lib/climate/attribution-anchor.ts`), and every province
+ * page's climate source line links there. The PM2.5 (ACAG) caveat did NOT move: its text arrives
+ * per province in the API payload, so it stays beside the values it comes with.
  *
  * The marine block is a SIBLING of the map/flag colophon rather than more bullets inside it, and
  * deliberately so: rationale 3 above is that `dataHeading` names MAPS and FLAGS and nothing else
@@ -177,6 +183,12 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
             headingId="veri-kaynaklari-deniz"
             heading={t("marineDataHeading")}
           />
+
+          {/* THE C3S / ERA5-LAND LICENCE NOTICE, in its one place, under its own anchor
+              (`#iklim-verisi`) — the target of every climate section's "Lisans" link. A
+              sibling block for the same reason the marine one is: `dataHeading` names maps
+              and flags only. */}
+          <ClimateAttribution heading={t("climateDataHeading")} />
         </div>
       </article>
     </PageContainer>

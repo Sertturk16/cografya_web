@@ -3,6 +3,7 @@ import type { Locale } from "@/i18n/routing";
 import { pm25NoticeFlags } from "@/lib/air/notice-keys";
 import { PM25_DECIMALS, pm25DisplayUnit, roundPm25 } from "@/lib/air/pm25-display";
 import type { Pm25Annual } from "@/lib/api/types";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 import { Pm25Chart } from "./pm25-chart";
 import { Pm25Table } from "./pm25-table";
 
@@ -53,22 +54,16 @@ const NOTICE = "mt-0 mb-1 last:mb-0 max-w-[78ch] text-[0.8rem] leading-[1.5] tex
 const GUIDELINE =
   "mt-3.5 mb-0 border-l-2 border-border py-0.5 pl-3.5 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground";
 /**
- * The attribution paragraphs. `overflow-wrap` is load-bearing: the reference citation is one
- * long unbroken string with a DOI in it, which without this can push a narrow viewport into
- * horizontal scroll (WCAG 1.4.10 reflow).
+ * The trailing attribution block, at the site's footnote scale (`SOURCE_NOTE`, shared with the
+ * climate section above it and every map credit). `overflow-wrap` is load-bearing: the reference
+ * citation is one long unbroken string with a DOI in it, which without this can push a narrow
+ * viewport into horizontal scroll (WCAG 1.4.10 reflow). Links carry no colour of their own: an
+ * `<a>` reads the dark-adapted `--link` from the base layer, and `SOURCE_NOTE` underlines it.
+ *
+ * The provider's verbatim caveat is set in the same scale with no indent rule of its own; its
+ * `lang="en"` and the Turkish sentence introducing it are what mark where our prose stops.
  */
-const SOURCE_LINE =
-  "mt-0 mb-1.5 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground [overflow-wrap:anywhere]";
-/**
- * Links inside the attribution carry no colour of their own: an `<a>` reads `--link` from the
- * base layer, which is dark-adapted, where the deleted rule pinned the frozen
- * `--color-primary-dark` (#7e3a1e, 2.04:1 on `--card`).
- */
-const SOURCE_LINK = "underline";
-/** The provider's mandatory method caveat, quieter and indented so the licensed text is
- *  visibly where the platform's own prose stops. Sized to match the climate licence notice. */
-const LICENCE_NOTICE =
-  "my-2 border-l-2 border-border py-0.5 pl-3.5 max-w-[78ch] text-[0.85rem] leading-[1.5] text-muted-foreground";
+const FOOTNOTES = "mt-5 max-w-[78ch] space-y-1.5 [overflow-wrap:anywhere]";
 
 /**
  * THERE IS NO `hideAttribution` PROP, AND THERE MUST NOT BE ONE.
@@ -83,7 +78,9 @@ const LICENCE_NOTICE =
  * docblock and that this repo applies everywhere else: the notice is "visible without a click
  * on the page that carries the derived material". A disclosure the reader has to find and open
  * is a click. CC BY 4.0 also wants the credit, the licence and the reference TOGETHER with the
- * material, which is a second reason none of the four paragraphs above was optional.
+ * material, which is a second reason none of it was optional. Unlike the climate section's C3S
+ * notice, which now lives on `/hakkimizda` behind a link, this caveat stays beside the values:
+ * its text arrives per province in the API payload, so there is no static page to move it to.
  *
  * So the three components that publish provider-licensed values now agree: `MarineAttribution`
  * has no such prop, and neither does this one nor `ClimateSection`. `V2SourcesSection` is the
@@ -225,71 +222,57 @@ export async function AirPollutionSection({
       <Pm25Table pm25={pm25} provinceName={provinceName} displayUnit={displayUnit} />
 
       {/* ALWAYS RENDERED — see the "no `hideAttribution` prop" note above. */}
-      <div className="mt-5">
-        {notices.satelliteDerived && <p className={NOTICE}>{t("notice.satelliteDerived")}</p>}
+      <div className={FOOTNOTES}>
+        {notices.satelliteDerived && <p className={SOURCE_NOTE}>{t("notice.satelliteDerived")}</p>}
 
-        <p className={SOURCE_LINE}>
+        {/* Dataset · licence · reference — the three things CC BY 4.0 asks to travel with the
+            material, as ONE footnote line. Three separately-keyed runs, so each keeps its own
+            ICU tag and payload fields; the `{" · "}` between them is what separates them in
+            `textContent` as well as on screen.
+
+            Every link is deliberately NOT `nofollow`: an editorial citation to the authority the
+            whole section rests on. `nofollow` is for untrusted / paid / UGC links and using it
+            here would understate a real attribution (the climate source line's reasoning). */}
+        <p className={SOURCE_NOTE}>
           {t.rich("sourceLine", {
             provider: pm25.attribution.providerName,
             workTitle: pm25.attribution.workTitle,
-            // Deliberately NOT `nofollow`: an editorial citation to the authority the whole
-            // section rests on. `nofollow` is for untrusted / paid / UGC links and using it
-            // here would understate a real attribution (the climate source line's reasoning).
             source: (chunks) => (
-              <a
-                className={SOURCE_LINK}
-                href={pm25.attribution.datasetUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={pm25.attribution.datasetUrl} target="_blank" rel="noopener noreferrer">
                 {chunks}
               </a>
             ),
           })}
-        </p>
-
-        <p className={SOURCE_LINE}>
+          {" · "}
           {t.rich("licenceLine", {
             licenceName: pm25.attribution.licenceName,
             licence: (chunks) => (
-              <a
-                className={SOURCE_LINK}
-                href={pm25.attribution.licenceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={pm25.attribution.licenceUrl} target="_blank" rel="noopener noreferrer">
                 {chunks}
               </a>
             ),
           })}
-        </p>
-
-        <p className={SOURCE_LINE}>
+          {" · "}
           {t.rich("referenceLine", {
             citation: pm25.attribution.referenceCitation,
             ref: (chunks) => (
-              <a
-                className={SOURCE_LINK}
-                href={pm25.attribution.referenceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={pm25.attribution.referenceUrl} target="_blank" rel="noopener noreferrer">
                 {chunks}
               </a>
             ),
           })}
         </p>
 
-        <p className={SOURCE_LINE}>{t("noticeIntro")}</p>
+        <p className={SOURCE_NOTE}>{t("noticeIntro")}</p>
         {/* The provider's own caveat, VERBATIM and untranslated. `lang="en"` so a screen
               reader on the Turkish page does not read it with Turkish phonemes (WCAG 3.1.2).
               The text lives ONLY in the payload — this repo keeps no second copy of it. */}
-        <p className={LICENCE_NOTICE} lang="en">
+        <p className={SOURCE_NOTE} lang="en">
           {pm25.attribution.methodNoticeText}
         </p>
         {/* The Turkish explanation stands BESIDE the English caveat, never instead of it
               (`data-provenance.md` write rule, ACAG row). */}
-        {notices.gridResolution && <p className={NOTICE}>{t("notice.gridResolution")}</p>}
+        {notices.gridResolution && <p className={SOURCE_NOTE}>{t("notice.gridResolution")}</p>}
       </div>
     </section>
   );

@@ -152,7 +152,8 @@
     "dataOsmOffer": "The provincial boundary layer of Türkiye is derived from OpenStreetMap; under ODbL 4.6 the derivative dataset and the script that produces it are offered in the project's open source repository: github.com/Sertturk16/cografya_web (data/tr-il-boundaries.geojson, scripts/generate-map-paths.mjs, lib/map/tr-provinces.generated.ts).",
     "dataFlagsLabel": "Most country flags:",
     "dataFlagsCredit": "flag-icons — Copyright (c) 2013 Panayiotis Lipiridis, MIT License",
-    "marineDataHeading": "Marine data sources and licence notices"
+    "marineDataHeading": "Marine data sources and licence notices",
+    "climateDataHeading": "Climate data (ERA5-Land) licence notice"
   },
   "Terms": {
     "metaTitle": "Terms of Use",
@@ -496,6 +497,7 @@
     "colTempMean": "Mean temperature (°C)",
     "colPrecip": "Total precipitation (mm)",
     "sourceLine": "Monthly normals: <source>ERA5-Land monthly averaged data (Copernicus Climate Data Store)</source>, {start}–{end} reference period. Annual mean, total and seasonal percentage figures are computed by us from this series; they are not values published by C3S.",
+    "licenceLink": "Licence",
     "notice": {
       "reanalysis": "These are not station measurements. ERA5-Land is a model dataset published on a roughly 0.1-degree latitude-longitude grid.",
       "readingPoint": "The value is not a provincial average. It is read from the grid cell the province centre falls in.",
@@ -524,8 +526,8 @@
     "tableYear": "Year",
     "tableValue": "PM2.5 ({unit})",
     "noticeIntro": "The data provider's own caveat appears in English, verbatim, so that no translation can change what it says:",
-    "sourceLine": "Source: {provider}, <source>{workTitle}</source>.",
-    "licenceLine": "Licence: <licence>{licenceName}</licence>.",
+    "sourceLine": "Source: {provider}, <source>{workTitle}</source>",
+    "licenceLine": "Licence: <licence>{licenceName}</licence>",
     "referenceLine": "Reference publication: <ref>{citation}</ref>"
   },
   "Regions": {

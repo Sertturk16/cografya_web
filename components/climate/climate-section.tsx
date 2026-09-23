@@ -1,6 +1,9 @@
 import { getFormatter, getTranslations } from "next-intl/server";
 import type { Climate } from "@/lib/api/types";
 import type { Locale } from "@/i18n/routing";
+import { Link } from "@/i18n/navigation";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
+import { CLIMATE_LICENCE_ANCHOR } from "@/lib/climate/attribution-anchor";
 import { cellFallbackDisplayKm } from "@/lib/climate/cell-fallback";
 import { ClimateChart } from "./climate-chart";
 import { ClimateTable } from "./climate-table";
@@ -8,8 +11,8 @@ import { ClimateTable } from "./climate-table";
 /**
  * Every colour below is a bridge token. This whole block renders on `--card` (the province page
  * wraps it in `<Card variant="panel">`), so it themes; measured in dark with `lib/theme/contrast.ts`,
- * `text-foreground` is 14.73:1, `text-muted-foreground` 7.79:1 and the source-line anchor's
- * `text-link` 8.20:1, all on `--card`. Only `climate-chart.tsx`'s plot stays frozen, and its own
+ * `text-foreground` is 14.73:1, `text-muted-foreground` 7.79:1 and the base-layer link colour
+ * 8.20:1, all on `--card`. Only `climate-chart.tsx`'s plot stays frozen, and its own
  * docblock says why.
  *
  * `scroll-mt-*`: the heading is a permanent, shareable deep-link target (`CHART_ANCHOR`). Without
@@ -31,26 +34,13 @@ const DETAIL_ROW = "block lg:flex lg:flex-wrap lg:items-start lg:gap-x-7 lg:gap-
 /** The notices already cap themselves at 78ch; inside a ~410px rail that cap never binds. */
 const DETAIL_ASIDE = "block lg:flex-[1_1_220px] lg:min-w-[280px] lg:mt-[22px]";
 
-/** The editorial source citation, and the Turkish sentence that introduces the licence block. */
-const SOURCE_LINE =
-  "mt-4 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground [&_a]:text-link [&_a]:underline";
 /**
- * Quieter than the licence notice on purpose, and sized to match `components/air`'s own
- * disclosure exactly. That is not a coincidence to be tidied away later: the PM2.5 block on the
- * SAME page carries the same class of statement about the same kind of value, and giving the two
- * different weights would tell a reader they are different kinds of claim. No border rule either —
- * the indented rule is what marks where our prose stops and licensed text begins.
+ * The trailing footnotes — source line with its licence link, then the method disclosure — share
+ * `SOURCE_NOTE`, the footnote scale `components/air`'s PM2.5 block on the SAME page uses for the
+ * same class of statement. Giving the two different weights would tell a reader they are
+ * different kinds of claim. Spacing lives here, on the stack, because `SOURCE_NOTE` resets it.
  */
-const NOTICE = "m-0 mb-1 last:mb-0 max-w-[78ch] text-[0.8rem] leading-[1.5] text-muted-foreground";
-/**
- * The mandatory C3S notice — an UNTOUCHABLE copy class, set in a quieter, indented block so a
- * Turkish reader can see at a glance where the platform's prose stops and the licence text begins.
- * Sized 0.85rem, a notch ABOVE the 0.8rem source line it follows: the licence asks for the notice
- * "prominently", so where the two precedents disagreed the larger one won. It is never hidden
- * behind a disclosure and never collapsed.
- */
-const LICENCE_NOTICE =
-  "mt-2 mb-0 border-l-2 border-border py-0.5 pl-3.5 max-w-[78ch] text-[0.85rem] leading-[1.5] text-muted-foreground";
+const FOOTNOTES = "mt-4 max-w-[78ch] space-y-1.5";
 
 interface ClimateSectionProps {
   climate: Climate;
@@ -65,20 +55,15 @@ interface ClimateSectionProps {
  * THERE IS NO `hideAttribution` PROP, AND THERE MUST NOT BE ONE.
  *
  * The province page used to pass one. It dropped this component's whole aside — the source
- * line, the model/reading-method disclosure AND the verbatim CC-BY-4.0 C3S notice — and
- * delegated the credit to `V2SourcesSection`, where a source's `legalQuote` sits inside a
- * `<details>` labelled "Atıf şartı & yasal metin", CLOSED BY DEFAULT.
+ * line, the model/reading-method disclosure AND the C3S licence notice — and delegated the
+ * credit to a `<details>` that was CLOSED BY DEFAULT. A disclosure the reader has to find and
+ * open is a click, and a mandated notice is visible without one.
  *
- * That contradicts the criterion `components/marine/marine-attribution.tsx` states in its own
- * docblock and that this repo applies everywhere else: the notice is "visible without a click
- * on the page that carries the derived material", the conservative reading of the licences'
- * "prominently". A disclosure the reader has to find and open is a click. So the three
- * components that publish provider-licensed values now agree — `MarineAttribution` has no such
- * prop, and neither does this one nor `AirPollutionSection`.
- *
- * `V2SourcesSection` is the BIBLIOGRAPHY: what the page is built on, in our words. Its
- * `<details>` quote is an echo of a notice rendered in full elsewhere on the page, and it may
- * never be the only place a mandated string appears.
+ * WHERE THE C3S NOTICE LIVES NOW. CC BY 4.0 §3(a)(2) lets the required information travel as a
+ * hyperlink to a resource that includes it — the option the marine notices already take. The
+ * verbatim notice is published once, in `ClimateAttribution` on `/hakkimizda#iklim-verisi`, and
+ * this section's source line carries a visible "Lisans" link to it. That link is the attribution,
+ * so it renders unconditionally, like the source line and the method disclosure beside it.
  */
 
 /**
@@ -149,9 +134,9 @@ export const D2_VARIANT = "rails" as const;
  * (`province.climate !== null`) and only on the TR locale (EN detail pages are noindex and
  * have no climate caveat text — SEO-POLICY §6). The gating lives in the page.
  *
- * Composes five things, in this order: the chart (visual), the always-visible table (the
- * readable numbers), the source line, the fixed model/reading-method disclosure, and the
- * provider's mandatory licence notice.
+ * Composes four things, in this order: the chart (visual), the always-visible table (the
+ * readable numbers), the source line with its link to the licence notice, and the fixed
+ * model/reading-method disclosure.
  *
  * ## The disclosure is a RULING's condition, not a footnote
  *
@@ -163,21 +148,11 @@ export const D2_VARIANT = "rails" as const;
  * görünürse sağlanır" (SPEC §9.2-2). Until this block existed, Antalya published numbers
  * sampled 7,55 km from its administrative point and said nothing about it.
  *
- * ## The series is ERA5-Land, and the copy below is licence-bearing
+ * ## The series is ERA5-Land, and its licence notice is one link away
  *
- * CC-BY-4.0 requires attribution and requires the licence to be named; it does not require
- * Copernicus's exact attribution sentence, but Copernicus's own licence terms do. It is
- * reproduced in the catalogue (`attribution.c3sNotice`) rather than assembled here: moving
- * or rephrasing any of it is a licence breach, so this file imports the string the ledger
- * verified (`data-provenance.md` §0b) and adds nothing.
- *
- * ## Turkish explanation sits BESIDE the licence, never instead of it
- *
- * `sourceC3sNoticeIntro` introduces the licence block in Turkish; the licence text itself
- * (`attribution.c3sNotice`) is published verbatim, in English, in BOTH locales, with its
- * required `lang="en"`. This is the rule the marine blocks established (A-2) and it holds
- * for the same reason: an untranslated licence cannot be translated on one page and not
- * another without asserting two different legal texts for the same asset.
+ * Copernicus's own terms require their exact attribution sentence (`attribution.c3sNotice`).
+ * It renders verbatim, `lang="en"`, with its Turkish explanation, in `ClimateAttribution` on
+ * `/hakkimizda` — see the note above on why a hyperlink discharges it — never in this file.
  *
  * ## No dead branches
  *
@@ -226,25 +201,30 @@ export async function ClimateSection({
 
         {/* ALWAYS RENDERED — see the "no `hideAttribution` prop" note above. */}
         <div className={DETAIL_ASIDE}>
-          <p className={SOURCE_LINE}>
-            {t.rich("sourceLine", {
-              // Strings so ICU never group-separates the years (1991, not 1.991).
-              start: String(climate.periodStartYear),
-              end: String(climate.periodEndYear),
-              // Deliberately NOT `nofollow`: this is an editorial citation to the authoritative
-              // source the whole section's information-gain thesis rests on. `nofollow` is for
-              // untrusted / paid / UGC links; using it here would understate a real attribution.
-              // The api now serves ONE dataset URL for all 81 provinces (there is no per-province
-              // page in the Copernicus Climate Data Store), so this link points at the dataset.
-              source: (chunks) => (
-                <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer">
-                  {chunks}
-                </a>
-              ),
-            })}
-          </p>
+          <div className={FOOTNOTES}>
+            <p className={SOURCE_NOTE}>
+              {t.rich("sourceLine", {
+                // Strings so ICU never group-separates the years (1991, not 1.991).
+                start: String(climate.periodStartYear),
+                end: String(climate.periodEndYear),
+                // Deliberately NOT `nofollow`: this is an editorial citation to the authoritative
+                // source the whole section's information-gain thesis rests on. `nofollow` is for
+                // untrusted / paid / UGC links; using it here would understate a real attribution.
+                // The api now serves ONE dataset URL for all 81 provinces (there is no per-province
+                // page in the Copernicus Climate Data Store), so this link points at the dataset.
+                source: (chunks) => (
+                  <a href={climate.sourceUrl} target="_blank" rel="noopener noreferrer">
+                    {chunks}
+                  </a>
+                ),
+              })}
+              {" · "}
+              {/* The C3S licence notice, one hyperlink away (CC BY 4.0 §3(a)(2)). Same tab: it is
+                this site's own page, and the reader comes back with the back button. */}
+              <Link href={CLIMATE_LICENCE_ANCHOR}>{t("licenceLink")}</Link>
+            </p>
 
-          {/* SPEC §9.2-1 / §9.2-2 — the model + reading-method disclosure, in the FIXED
+            {/* SPEC §9.2-1 / §9.2-2 — the model + reading-method disclosure, in the FIXED
             provenance block rather than in body prose, because §9.2-1 puts it there in as many
             words ("sabit provenance/caveat bloğunda (gövde prose'unda DEĞİL)") and §9.2-2 asks
             for the reading-method line in that SAME block.
@@ -276,11 +256,11 @@ export async function ClimateSection({
             the source line above: 1991-2020 is OUR chosen WMO normal window, not the dataset's
             coverage (which starts in 1950), and the copy says "referans dönemi" rather than
             claiming a dataset period. */}
-          {SOURCE_OWES_METHOD_DISCLOSURE[climate.source] && (
-            <div className="mt-3">
-              <p className={NOTICE}>{t("notice.reanalysis")}</p>
-              <p className={NOTICE}>{t("notice.readingPoint")}</p>
-              {/* A-1's declared shift, on the five provinces it applies to (A-5 ruled: static
+            {SOURCE_OWES_METHOD_DISCLOSURE[climate.source] && (
+              <>
+                <p className={SOURCE_NOTE}>{t("notice.reanalysis")}</p>
+                <p className={SOURCE_NOTE}>{t("notice.readingPoint")}</p>
+                {/* A-1's declared shift, on the five provinces it applies to (A-5 ruled: static
                     web copy, `lib/climate/cell-fallback.ts`). The other 76 render nothing here —
                     the line above already describes them correctly, and an "eksik veri"
                     placeholder for a province that HAS no shift would be a CONTENT-STYLE §22
@@ -290,35 +270,19 @@ export async function ClimateSection({
                     for nothing but the locale's decimal separator. Passing the already-formatted
                     string keeps ICU from touching the number a second time — the same reason the
                     source line above passes its years as strings. */}
-              {fallbackKm !== null && (
-                <p className={NOTICE}>
-                  {t("notice.cellFallback", {
-                    km: format.number(fallbackKm, {
-                      minimumFractionDigits: 1,
-                      maximumFractionDigits: 1,
-                    }),
-                  })}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* CC-BY-4.0's required notice for the ERA5-Land series (data-provenance.md §0b).
-            Published VERBATIM, in English, in BOTH locales and marked `lang="en"` so a screen
-            reader on the Turkish page does not read it with Turkish phonemes — the same
-            treatment, and the same obligation, as the marine provider notices
-            (`components/marine/marine-attribution.tsx`). The Turkish sentence above it
-            EXPLAINS the notice; it never replaces it. Shortening, restyling or translating
-            any of it is a licence breach.
-
-            The year is part of the pinned text rather than a wall-clock read: it states when
-            the Copernicus information was generated, and this series comes from a committed
-            2026 artifact. `new Date().getFullYear()` would silently claim a later year for
-            data that did not change. */}
-          <p className={SOURCE_LINE}>{t("sourceC3sNoticeIntro")}</p>
-          <p className={LICENCE_NOTICE} lang="en">
-            {t("attribution.c3sNotice")}
-          </p>
+                {fallbackKm !== null && (
+                  <p className={SOURCE_NOTE}>
+                    {t("notice.cellFallback", {
+                      km: format.number(fallbackKm, {
+                        minimumFractionDigits: 1,
+                        maximumFractionDigits: 1,
+                      }),
+                    })}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

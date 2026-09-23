@@ -586,7 +586,9 @@ export const HAND_DRAWN_CARDS = 188;
 // 161 → **162** in T-073: the terms page's English-reader notice
 // (`rounded-2xl border border-border bg-muted`), a well and not a card — it states which
 // language of the text binds, it is not a panel the page offers.
-export const HAND_DRAWN_WELLS = 162;
+// 162 → **160** in T-091: the two boxed attribution notes became footnotes — the AFAD disclaimer
+// in `earthquake-attribution.tsx` and `MarineDataNotice`'s panel. A notice is not a panel.
+export const HAND_DRAWN_WELLS = 160;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -598,8 +600,11 @@ export const HAND_DRAWN_WELLS = 162;
  * 233 → **234** in T-079, net of three moves: the two explorers' shared selection-card spelling
  * is gone (−1), `MapSelectionCard`'s grid is a new one (+1), and `/dunya`'s toolbar no longer
  * matches `/turkiye`'s (+1) — below `sm` it is a row above the map (`mb-2 ml-auto w-fit`)
- * rather than a bar floating on it, which `/turkiye` still is. */
-export const HAND_DRAWN_CARD_SPELLINGS = 234;
+ * rather than a bar floating on it, which `/turkiye` still is.
+ *
+ * 234 → **232** in T-091: the two wells above ({@link HAND_DRAWN_WELLS}) were each a one-off
+ * spelling, so both left the set with them. */
+export const HAND_DRAWN_CARD_SPELLINGS = 232;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1375,7 +1380,9 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // and the English-reader notice.
     // 61 after T-079: `map-selection-card.tsx` joins the surface with the one card both map
     // explorers now render; the explorers stay on it through their other shapes.
-    expect(handDrawnTotals().files).toBe(61);
+    // 59 after T-091: `earthquake-attribution.tsx` and `marine-data-notice.tsx` each held one
+    // boxed notice and nothing else; both are footnotes now.
+    expect(handDrawnTotals().files).toBe(59);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

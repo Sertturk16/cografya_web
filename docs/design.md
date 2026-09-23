@@ -298,6 +298,9 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   `MapLegend` component: the one that carried that name was reachable only from `/design-system`
   and T-042 deleted it. A classed legend still owes its reader the class boundaries (data-viz
   rule 5 below); a map that needs one draws it where it is used.
+- **Source and licence notes are footnotes**: `SOURCE_NOTE` in `components/patterns/source-note.ts`
+  (11px, muted, underlined links) at the end of the section, no card, no box. Still visible
+  without a click; a long verbatim licence text goes to `/hakkimizda` behind an anchor link.
 - **`Separator` takes `decorative`** for a rule that carries no meaning; Base UI announces
   every separator otherwise.
 

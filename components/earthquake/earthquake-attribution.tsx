@@ -1,15 +1,14 @@
 import { getTranslations } from "next-intl/server";
 import type { EarthquakeAttribution as EarthquakeAttributionRow } from "@/lib/api/types";
-import { Card } from "@/components/ui/card";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 /**
  * NO STYLESHEET IMPORT, AND THERE IS NO LONGER A STYLESHEET TO IMPORT. `earthquake.module.css`
  * used to style this block's paragraphs with `var(--color-slate)` and `var(--color-ink)` — RAW
  * Terra tokens, frozen at their light values and never redefined under `.dark`. Measured on
- * dark `--card` (#121e21), the fill of the `<Card variant="panel">` this block renders as:
- * `--color-slate` #57504a is **2.15:1** and `--color-ink` #2b2622 is **1.14:1**, so the mandated
- * AFAD notice was effectively unreadable on a dark page. This component moved to bridge tokens
- * first; `text-muted-foreground` is **7.79:1** and `text-foreground` **14.73:1** on the same
- * backdrop.
+ * dark `--card` (#121e21): `--color-slate` #57504a is **2.15:1** and `--color-ink` #2b2622 is
+ * **1.14:1**, so the mandated AFAD notice was effectively unreadable on a dark page. This
+ * component moved to bridge tokens first; `text-muted-foreground` is **7.79:1** and
+ * `text-foreground` **14.73:1** on the same backdrop.
  *
  * T-033 task 6 finished the job: it deleted the three classes this block had abandoned
  * (`.sources`, `.regulationReference`, `.disclaimer`), converted the file's other three
@@ -43,10 +42,9 @@ interface EarthquakeAttributionProps {
    * gap again.
    */
   disclaimerTr: string;
-  /** `id` of this block's `<h2>` — unique per page. */
-  headingId?: string;
   /**
-   * The block's heading. Defaults to `Earthquake.sourcesHeading` ("Kaynaklar") for the hub; the
+   * The block's accessible name (`aria-label` on its `<aside>`; there is no visible heading any
+   * more). Defaults to `Earthquake.sourcesHeading` ("Kaynaklar") for the hub; the
    * province page passes its own (`ProvinceDetail.earthquakeSourcesHeading`), because that page
    * already carries a Kaynaklar line for its own facts — the identical reuse-with-its-own-
    * heading pattern `MarineAttribution` already establishes for its own two render sites. ONLY
@@ -56,8 +54,20 @@ interface EarthquakeAttributionProps {
 }
 
 /**
+ * The disclaimer's own class: footnote-sized like the notices, but `text-foreground` rather than
+ * muted. It is not a credit — it tells the reader this data is not an early-warning system — so
+ * it stays the most readable line in the block even though the box around it is gone.
+ */
+const DISCLAIMER = "m-0 text-xs leading-snug text-foreground";
+
+/**
  * Attribution + the early-warning disclaimer — rendered verbatim, never re-authored (§5.8,
  * `deprem-sayfalari` plan).
+ *
+ * A FOOTNOTE, NOT A PANEL. It used to be a `Card` with a `text-xl` `<h2>` and a boxed disclaimer,
+ * the heaviest attribution on the site. A mandated notice has to be visible without a click, not
+ * loud, so it is now an `<aside>` at the site's footnote scale (`SOURCE_NOTE`), named by
+ * `aria-label` instead of a heading. Nothing in it is hidden, collapsed or switchable.
  *
  * Structurally simpler than `MarineAttribution`: unlike ECMWF/CMEMS (web-authored intro
  * sentences wrapped around an API-absent licence string), every substantive string here —
@@ -83,36 +93,23 @@ interface EarthquakeAttributionProps {
 export async function EarthquakeAttribution({
   attributions,
   disclaimerTr,
-  headingId = "deprem-sources",
   heading,
 }: EarthquakeAttributionProps) {
   const t = await getTranslations("Earthquake");
 
   return (
-    <Card as="section" variant="panel" aria-labelledby={headingId}>
-      <div className="max-w-[70ch] space-y-3">
-        <h2 id={headingId} className="font-heading text-xl font-bold text-foreground">
-          {heading ?? t("sourcesHeading")}
-        </h2>
-        {attributions.map((attribution) => (
-          <p
-            key={attribution.providerId}
-            lang="tr"
-            className="text-sm leading-relaxed text-muted-foreground"
-          >
-            {attribution.requiredNoticeTr}
-            {attribution.regulationReference !== "" && (
-              <span className="text-muted-foreground"> ({attribution.regulationReference})</span>
-            )}
-          </p>
-        ))}
-        <p
-          lang="tr"
-          className="mt-3.5 rounded-xl border border-border bg-muted/40 px-3.5 py-3 text-sm leading-relaxed text-foreground"
-        >
-          {disclaimerTr}
+    <aside aria-label={heading ?? t("sourcesHeading")} className="max-w-[70ch] space-y-1.5">
+      {attributions.map((attribution) => (
+        <p key={attribution.providerId} lang="tr" className={SOURCE_NOTE}>
+          {attribution.requiredNoticeTr}
+          {attribution.regulationReference !== "" && (
+            <span> ({attribution.regulationReference})</span>
+          )}
         </p>
-      </div>
-    </Card>
+      ))}
+      <p lang="tr" className={DISCLAIMER}>
+        {disclaimerTr}
+      </p>
+    </aside>
   );
 }

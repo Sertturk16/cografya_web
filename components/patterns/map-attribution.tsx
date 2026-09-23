@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { OSM_COPYRIGHT_URL } from "@/lib/map/osm-credit";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 import { cn } from "@/lib/utils";
 
 /**
@@ -84,7 +85,11 @@ export function MapAttribution({
         //
         // `leading-snug`, not `leading-relaxed`: 1.625 is a body-prose leading, and at 320px this
         // footnote wraps to five lines and stands 93px tall under a 105px map on `/deprem`.
-        "m-0 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] leading-snug text-muted-foreground",
+        //
+        // The scale itself (`m-0`, 11px, snug, muted, underlined links) is `SOURCE_NOTE`, which
+        // every other source line on the site now shares; only the flex row is this one's own.
+        SOURCE_NOTE,
+        "flex flex-wrap gap-x-4 gap-y-0.5",
         className,
       )}
     >

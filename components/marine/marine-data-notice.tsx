@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { TriangleAlert } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 
 /**
  * The notice that travels WITH a published marine value — and the smaller half of a split.
@@ -37,25 +38,17 @@ export async function MarineDataNotice() {
   const t = await getTranslations("Marine");
 
   return (
-    <aside
-      aria-label={t("notice.label")}
-      className="rounded-2xl border border-border bg-muted/40 px-4 py-3.5 sm:px-5 sm:py-4"
-    >
-      <div className="flex max-w-[70ch] gap-3">
-        <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning-strong" aria-hidden="true" />
-        <div className="min-w-0 space-y-1.5">
-          <p className="text-sm leading-relaxed text-foreground">
-            {t("disclaimer.educationalOnly")}
-          </p>
-          <p className="text-[0.8125rem] leading-relaxed text-muted-foreground">
-            <Link
-              href={MARINE_SOURCES_ANCHOR}
-              className="text-primary-strong underline underline-offset-2 hover:no-underline"
-            >
-              {t("notice.licenceLink")}
-            </Link>
-          </p>
-        </div>
+    // No box: a footnote beside the values, at `text-xs`. The safety sentence stays in
+    // `text-foreground` — it is the least optional line on the site, and quiet is not faint.
+    <aside aria-label={t("notice.label")} className="flex max-w-[70ch] gap-2">
+      <TriangleAlert className="mt-px size-3.5 shrink-0 text-warning-strong" aria-hidden="true" />
+      <div className="min-w-0 space-y-0.5">
+        <p className="m-0 text-xs leading-snug text-foreground">
+          {t("disclaimer.educationalOnly")}
+        </p>
+        <p className={SOURCE_NOTE}>
+          <Link href={MARINE_SOURCES_ANCHOR}>{t("notice.licenceLink")}</Link>
+        </p>
       </div>
     </aside>
   );
