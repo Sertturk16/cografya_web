@@ -119,6 +119,61 @@ export function viewBoxSize(viewBox: string): { width: number; height: number } 
   return { width, height };
 }
 
+/** Origin and size of an SVG `viewBox` string. */
+export function viewBoxRect(viewBox: string): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const [x = 0, y = 0, width = 0, height = 0] = viewBox.trim().split(/\s+/).map(Number);
+  return { x, y, width, height };
+}
+
+/** An axis-aligned rectangle, in whatever space the caller names. */
+export interface Rect {
+  readonly left: number;
+  readonly top: number;
+  readonly right: number;
+  readonly bottom: number;
+}
+
+export function rectsOverlap(a: Rect, b: Rect): boolean {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}
+
+/**
+ * The viewBox-unit rectangle under `rect`, given in the map box's own CSS px — an overlay such
+ * as the zoom toolbar (T-086) — for an SVG drawn `xMidYMid slice` inside a wrapper transformed
+ * `scale(zoom) translate(pan / zoom)` about its centre, which is the explorer's zoom and pan.
+ * A screen point p maps back to the unzoomed box as (p - centre - pan) / zoom + centre.
+ */
+export function boxRectToViewBox(
+  rect: Rect,
+  box: { width: number; height: number },
+  viewBox: { x: number; y: number; width: number; height: number },
+  zoom: number,
+  pan: { x: number; y: number },
+): Rect {
+  const s = sliceScale(box.width, box.height, viewBox.width, viewBox.height);
+  const toUnitX = (px: number) =>
+    ((px - box.width / 2 - pan.x) / zoom + box.width / 2 - (box.width - viewBox.width * s) / 2) /
+      s +
+    viewBox.x;
+  const toUnitY = (px: number) =>
+    ((px - box.height / 2 - pan.y) / zoom +
+      box.height / 2 -
+      (box.height - viewBox.height * s) / 2) /
+      s +
+    viewBox.y;
+  return {
+    left: toUnitX(rect.left),
+    top: toUnitY(rect.top),
+    right: toUnitX(rect.right),
+    bottom: toUnitY(rect.bottom),
+  };
+}
+
 /** CSS px per viewBox unit under `preserveAspectRatio="… slice"`: the larger axis wins. */
 export function sliceScale(boxWidth: number, boxHeight: number, vbWidth: number, vbHeight: number) {
   return Math.max(boxWidth / vbWidth, boxHeight / vbHeight);
@@ -148,6 +203,13 @@ export function horizontalRoom(rings: readonly (readonly ShapePoint[])[], x: num
   }
   if (crossingsLeft % 2 === 0) return 0;
   return Math.min(x - left, right - x);
+}
+
+/** The ink box of a neighbour label centred on (x, y) at `fontSize` viewBox units. */
+export function contextLabelRect(name: string, x: number, y: number, fontSize: number): Rect {
+  const halfWidth = (labelWidthEm(name) * fontSize) / 2;
+  const halfInk = INK_HALF_EM * fontSize;
+  return { left: x - halfWidth, top: y - halfInk, right: x + halfWidth, bottom: y + halfInk };
 }
 
 /** A country that may carry a label: its outline and the point the label is centred on. */
