@@ -10,8 +10,7 @@ import {
   unprojectMapPoint,
   polylineLengthKm,
   ringPerimeterKm,
-  ringAreaKm2,
-  ringSelfIntersects,
+  readRingArea,
   toDmsParts,
   parseLatLon,
   scaleBarKm,
@@ -277,7 +276,15 @@ export function V2ToolWorkbench({
   // The api refuses an under-count shape (a one-point distance, a two-point area) with a 400, and
   // the BFF refuses more than MEASUREMENT_POINTS_MAX points, so the save button is bound to the
   // same per-type rule instead of failing after the click.
-  const canSave = canSaveMeasurement(measurementType, points.length);
+  // T-094: a self-intersecting outline has no area, so the tool shows a warning instead of a
+  // number, and the same reading refuses to save, copy or export that shape.
+  const areaReading = React.useMemo(
+    () => (activeTool === "area" ? readRingArea(points.map((p) => p.geo)) : null),
+    [activeTool, points],
+  );
+  const isSelfIntersecting = areaReading?.kind === "selfIntersecting";
+  const areaKm2 = areaReading?.kind === "area" ? areaReading.km2 : 0;
+  const canSave = canSaveMeasurement(measurementType, points.length) && !isSelfIntersecting;
   const pointCountIssue = measurementPointCountIssue(measurementType, points.length);
   const minPointsToSave = MEASUREMENT_MIN_POINTS[measurementType];
   const maxPointsToSave = MEASUREMENT_MAX_POINTS[measurementType];
@@ -844,20 +851,6 @@ export function V2ToolWorkbench({
     return 0;
   }, [activeTool, geoPoints]);
 
-  const isSelfIntersecting = React.useMemo(() => {
-    if (activeTool === "area" && geoPoints.length >= 4) {
-      return ringSelfIntersects(geoPoints);
-    }
-    return false;
-  }, [activeTool, geoPoints]);
-
-  const areaKm2 = React.useMemo(() => {
-    if (activeTool === "area" && geoPoints.length >= 3) {
-      return ringAreaKm2(geoPoints) || 0;
-    }
-    return 0;
-  }, [activeTool, geoPoints]);
-
   const perimeterKm = React.useMemo(() => {
     if (activeTool === "area" && geoPoints.length >= 3) {
       return ringPerimeterKm(geoPoints) || 0;
@@ -912,6 +905,7 @@ export function V2ToolWorkbench({
 
   // Safe clipboard copy
   const handleCopy = async () => {
+    if (isSelfIntersecting) return;
     let text = "";
     if (activeTool === "distance") {
       text = t("copyDistance", {
@@ -1054,6 +1048,7 @@ export function V2ToolWorkbench({
 
   // PNG Export Handler
   const handleExportPng = () => {
+    if (isSelfIntersecting) return;
     if (!svgRef.current) return;
     const svgEl = svgRef.current;
     const serializer = new XMLSerializer();
@@ -1142,7 +1137,7 @@ export function V2ToolWorkbench({
                 variant="secondary"
                 size="sm"
                 onClick={handleCopy}
-                disabled={points.length === 0}
+                disabled={points.length === 0 || isSelfIntersecting}
                 leftIcon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
               >
                 {copied ? t("copied") : t("copySummary")}
@@ -1314,7 +1309,7 @@ export function V2ToolWorkbench({
                       variant="outline"
                       size="sm"
                       onClick={handleExportPng}
-                      disabled={points.length === 0}
+                      disabled={points.length === 0 || isSelfIntersecting}
                       leftIcon={<Download className="size-3.5 text-primary" />}
                     >
                       {t("downloadPng")}
@@ -1771,9 +1766,11 @@ export function V2ToolWorkbench({
               </div>
               {!canSave && (
                 <p id={saveHintId} className="text-[11px] text-muted-foreground">
-                  {pointCountIssue === "tooMany"
-                    ? tMeasurements("maxPointsHint", { count: maxPointsToSave })
-                    : tMeasurements("minPointsHint", { count: minPointsToSave })}
+                  {isSelfIntersecting
+                    ? t("selfIntersectSaveHint")
+                    : pointCountIssue === "tooMany"
+                      ? tMeasurements("maxPointsHint", { count: maxPointsToSave })
+                      : tMeasurements("minPointsHint", { count: minPointsToSave })}
                 </p>
               )}
               {visibleSaveFailure && (
@@ -1907,7 +1904,7 @@ export function V2ToolWorkbench({
                   variant="secondary"
                   size="sm"
                   onClick={handleCopy}
-                  disabled={points.length === 0}
+                  disabled={points.length === 0 || isSelfIntersecting}
                   leftIcon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
                 >
                   {copied ? t("copied") : t("copySummary")}
@@ -2044,33 +2041,36 @@ export function V2ToolWorkbench({
             {/* Area Output */}
             {activeTool === "area" && (
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <span className="text-xs text-muted-foreground font-medium">
-                    {t("areaTotal")}
-                  </span>
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-heading text-4xl font-extrabold text-accent font-mono">
-                      {areaKm2.toFixed(1)}
-                    </span>
-                    <span className="text-lg font-bold text-foreground">km²</span>
-                  </div>
-                </div>
-
-                {isSelfIntersecting && (
-                  <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 flex items-center justify-between gap-2 text-xs text-warning-strong">
-                    <div className="flex items-center gap-1.5 overflow-hidden">
-                      <AlertTriangle className="size-4 text-warning-strong shrink-0" />
-                      <span className="text-[11px]">{t("areaSelfIntersect")}</span>
+                {/* T-094: a self-intersecting outline gets a warning IN PLACE of the number, not
+                    beside it. The formula would still return a figure (the lobes cancel), and a
+                    figure next to a warning still reads as an answer. */}
+                {isSelfIntersecting ? (
+                  <div className="p-3 rounded-2xl bg-warning/10 border border-warning/30 space-y-2 text-xs text-warning-strong">
+                    <div className="flex items-start gap-1.5">
+                      <AlertTriangle className="size-4 text-warning-strong shrink-0 mt-0.5" />
+                      <span className="text-[11px] leading-relaxed">{t("areaSelfIntersect")}</span>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={handleSortConvexOrder}
                       leftIcon={<RefreshCw className="size-3 text-warning-strong" />}
-                      className="shrink-0 text-xs h-7 px-2.5 bg-background"
+                      className="text-xs h-7 px-2.5 bg-background"
                     >
                       {t("sort")}
                     </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground font-medium">
+                      {t("areaTotal")}
+                    </span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-heading text-4xl font-extrabold text-accent font-mono">
+                        {areaKm2.toFixed(1)}
+                      </span>
+                      <span className="text-lg font-bold text-foreground">km²</span>
+                    </div>
                   </div>
                 )}
 
@@ -2078,21 +2078,25 @@ export function V2ToolWorkbench({
                   <div className="p-3 rounded-2xl bg-card border border-border">
                     <span className="text-muted-foreground block text-[11px]">{t("hectares")}</span>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      {t("hectaresValue", {
-                        value: (areaKm2 * 100).toLocaleString(numberLocale, {
-                          maximumFractionDigits: 0,
-                        }),
-                      })}
+                      {isSelfIntersecting
+                        ? "—"
+                        : t("hectaresValue", {
+                            value: (areaKm2 * 100).toLocaleString(numberLocale, {
+                              maximumFractionDigits: 0,
+                            }),
+                          })}
                     </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border">
                     <span className="text-muted-foreground block text-[11px]">{t("decares")}</span>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      {t("decaresValue", {
-                        value: (areaKm2 * 1000).toLocaleString(numberLocale, {
-                          maximumFractionDigits: 0,
-                        }),
-                      })}
+                      {isSelfIntersecting
+                        ? "—"
+                        : t("decaresValue", {
+                            value: (areaKm2 * 1000).toLocaleString(numberLocale, {
+                              maximumFractionDigits: 0,
+                            }),
+                          })}
                     </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border col-span-2">

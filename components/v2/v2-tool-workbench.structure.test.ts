@@ -172,8 +172,9 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
 
     it("derives the gate from the shared shape rule", () => {
       expect(code).toContain('from "@/lib/measurements/shape"');
+      // T-094 adds the self-intersection refusal on top of the shared count rule.
       expect(code).toMatch(
-        /const canSave = canSaveMeasurement\(measurementType, points\.length\);/,
+        /const canSave =\s*canSaveMeasurement\(measurementType, points\.length\) && !isSelfIntersecting;/,
       );
     });
 
@@ -197,6 +198,53 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
    * BFF answer to an error kind lives in `lib/measurements/save-error.ts` and is tested there;
    * this pins that the workbench actually wires it up.
    */
+  /**
+   * T-094: a self-intersecting outline has no area. `readRingArea` (tested in
+   * `lib/map/measure.test.ts`) decides it once; this pins that the workbench shows no number for
+   * that reading and refuses to save, copy or export the shape.
+   */
+  describe("self-intersecting area outline (T-094)", () => {
+    const code = stripComments(source);
+
+    it("derives the flag and the number from the one reading", () => {
+      expect(code).toContain("readRingArea(points.map((p) => p.geo))");
+      expect(code).toContain(
+        'const isSelfIntersecting = areaReading?.kind === "selfIntersecting";',
+      );
+      expect(code).toContain('const areaKm2 = areaReading?.kind === "area" ? areaReading.km2 : 0;');
+      expect(code).not.toContain("ringAreaKm2(");
+    });
+
+    it("renders the area figure only on the non-crossing branch", () => {
+      const from = code.indexOf("{isSelfIntersecting ? (");
+      expect(from).toBeGreaterThan(-1);
+      const elseAt = code.indexOf(") : (", from);
+      const warning = code.slice(from, elseAt);
+      const figure = code.slice(elseAt, code.indexOf("km²", elseAt));
+      expect(warning).toContain('t("areaSelfIntersect")');
+      expect(warning).not.toContain("areaKm2");
+      expect(figure).toContain("areaKm2");
+    });
+
+    it("blocks copy and PNG export in the handlers and on the buttons", () => {
+      for (const handler of [
+        "const handleCopy = async () => {",
+        "const handleExportPng = () => {",
+      ]) {
+        const at = code.indexOf(handler);
+        expect(at, handler).toBeGreaterThan(-1);
+        expect(code.slice(at, at + 120)).toContain("if (isSelfIntersecting) return;");
+      }
+      expect(code.match(/disabled=\{points\.length === 0 \|\| isSelfIntersecting\}/g)).toHaveLength(
+        3,
+      );
+    });
+
+    it("tells the reader why save is off", () => {
+      expect(code).toContain('t("selfIntersectSaveHint")');
+    });
+  });
+
   describe("save failures and the upper point bound (T-077)", () => {
     const code = stripComments(source);
 

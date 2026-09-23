@@ -313,6 +313,33 @@ export function ringSelfIntersects(points: readonly GeoPoint[]): boolean {
 }
 
 /**
+ * What the area tool may say about a drawn ring (T-094), in the order the checks must run.
+ *
+ * - `tooFew`: under three points there is no closed shape yet.
+ * - `selfIntersecting`: the edges cross or the outline touches itself. The area formula would
+ *   still return a number (the lobes cancel by winding), so the tool shows a warning instead
+ *   of any area figure and refuses to save, copy or export it.
+ * - `antimeridian`: the ring steps across ±180°, where `ringAreaKm2` refuses a number.
+ * - `area`: a simple ring, and its area in km².
+ *
+ * One function so the display, the save gate and the export gate cannot disagree about which
+ * rings get a number.
+ */
+export type RingAreaReading =
+  | { readonly kind: "tooFew" }
+  | { readonly kind: "selfIntersecting" }
+  | { readonly kind: "antimeridian" }
+  | { readonly kind: "area"; readonly km2: number };
+
+export function readRingArea(points: readonly GeoPoint[]): RingAreaReading {
+  if (points.length < 3) return { kind: "tooFew" };
+  if (ringSelfIntersects(points)) return { kind: "selfIntersecting" };
+  const km2 = ringAreaKm2(points);
+  if (km2 === null) return { kind: "antimeridian" };
+  return { kind: "area", km2 };
+}
+
+/**
  * Removes the duplicate vertices that make ring POSITION an unreliable notion, so the
  * adjacency test above can be trusted.
  *

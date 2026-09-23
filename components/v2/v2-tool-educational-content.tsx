@@ -194,9 +194,9 @@ export function V2ToolEducationalContent({ mode }: V2ToolEducationalContentProps
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Köşeleri çapraz sırayla koyarsan kenarlar birbirini keser ve papyona benzeyen bir
                 şekil çıkar. Papyonun iki yarısı ters yönde dolaşılır; hesap bu yüzden birinin
-                alanını ötekinden düşer. Böyle bir şeklin tek bir alanı olmaz; araç uyarı verir ve o
-                sırada yazan sayı doğru değildir. Köşeleri sınır boyunca sırayla koy ya da uyarıdaki
-                düğmeyle dizdir.
+                alanını ötekinden düşer. Böyle bir şeklin tek bir alanı olmaz; araç alan yerine bir
+                uyarı gösterir; o şekli kaydetmez, kopyalamaz, PNG olarak da indirmez. Köşeleri
+                sınır boyunca sırayla koy ya da uyarıdaki düğmeyle dizdir.
               </p>
             </div>
           </div>
