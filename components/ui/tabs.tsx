@@ -54,7 +54,11 @@ function TabsList({ className, activateOnFocus = true, ...props }: TabsPrimitive
       // components/v2/tablist-adoption.test.ts: it is a defaulted destructure, so an ordinary
       // `{ className, ...props }` tidy-up would delete the whole keyboard argument in silence.
       activateOnFocus={activateOnFocus}
-      className={cn(listVariants[React.useContext(TabsVariantContext)], className)}
+      // `relative` makes the list its tabs' offsetParent. Base UI scrolls a focused tab into view
+      // from `offsetLeft`; with a static list that is measured from an outer box, so a scrolling
+      // strip inside the page gutter overshot by the gutter (16px at 390px, `/hesabim`) and hid
+      // the start of the focused tab. Pinned by components/v2/tablist-adoption.test.ts.
+      className={cn("relative", listVariants[React.useContext(TabsVariantContext)], className)}
       {...props}
     />
   );

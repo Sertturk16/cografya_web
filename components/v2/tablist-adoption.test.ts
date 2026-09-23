@@ -118,4 +118,12 @@ describe("components/ui/tabs.tsx keeps automatic activation", () => {
     // and nothing else in the suite would notice.
     expect(stripComments(primitive)).toMatch(/activateOnFocus\s*=\s*true/);
   });
+
+  it("TabsList is positioned, so a scrolling strip scrolls the focused tab fully into view", () => {
+    // Base UI scrolls a focused tab into view from `offsetLeft`, which is measured from the
+    // nearest positioned ancestor. With a static list that was an outer box, and `/hesabim`'s
+    // scrolling strip overshot by the 16px page gutter at 390px, hiding the start of the
+    // focused tab (measured in the browser, T-058).
+    expect(stripComments(primitive)).toMatch(/className=\{cn\("relative",\s*listVariants\[/);
+  });
 });

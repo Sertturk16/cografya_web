@@ -446,11 +446,13 @@ export function V2MemberHub({
           labels. `scrollbar-none` stays here rather than on the `line` variant — the variant
           sets no overflow of its own, so a non-scrolling `line` list has no scrollbar to hide,
           and hiding one costs a scroll affordance that each scrolling consumer should give up
-          deliberately.
+          deliberately. A scroller clips on both axes, and a tab sits flush with its top edge,
+          so the site's outset focus outline lost its top side here; the `*:` pair draws the
+          same `--ring` outline inside each tab instead of widening the strip.
         */}
         <TabsList
           aria-label="Üyelik Panelleri"
-          className="flex h-auto w-full overflow-x-auto pb-2 scrollbar-none"
+          className="flex h-auto w-full overflow-x-auto pb-2 scrollbar-none *:focus-visible:outline-2 *:focus-visible:-outline-offset-2"
         >
           <TabsTrigger value="favorites" className="gap-2">
             <Heart className="size-3.5" />

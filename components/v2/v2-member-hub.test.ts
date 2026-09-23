@@ -73,6 +73,14 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
       );
     });
 
+    it("draws the tab focus outline inside the scrolling strip, where an outset one is clipped", () => {
+      // The strip is `overflow-x-auto`, which clips vertically too, and each tab sits flush with
+      // its top edge: the site's outset 3px outline lost its top side at every width (T-058).
+      expect(hubSource).toMatch(
+        /<TabsList[^>]*overflow-x-auto[^>]*\*:focus-visible:outline-2 \*:focus-visible:-outline-offset-2/,
+      );
+    });
+
     it("keeps the games panel mounted while it is deselected", () => {
       // Base UI's Tabs.Panel unmounts a deselected panel by default. V2GameHistoryStats fetches
       // /game-rounds from a mount effect into its own state, so without this the panel refetches
