@@ -40,6 +40,7 @@ import {
 import { foldForSearch } from "@/lib/search/normalize";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
 import { contextLabelLayout, sliceScale, viewBoxSize } from "@/lib/map/context-label-fit";
+import { SEA_LINE_HEIGHT_EM, seaLabelLayout } from "@/lib/map/sea-label-layout";
 import { parseSubpaths } from "@/lib/map/shape-geometry";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 
@@ -176,13 +177,6 @@ const CONTEXT_LABEL_CANDIDATES = TALL_CONTEXT_SHAPES.filter(
   target: { rings: parseSubpaths(country.d), x: country.labelPoint.x, y: country.labelPoint.y },
 }));
 
-const SEA_LABELS = [
-  { name: "KARADENİZ", x: 480, y: -20, fontSize: 18 },
-  { name: "MARMARA DENİZİ", x: 145, y: 108, fontSize: 9.5 },
-  { name: "EGE DENİZİ", x: -25, y: 240, fontSize: 14 },
-  { name: "AKDENİZ", x: 228, y: 480, fontSize: 18 },
-];
-
 const ALPHABET_TURKISH = [
   "A",
   "B",
@@ -284,6 +278,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
       items: CONTEXT_LABEL_CANDIDATES.filter(({ name, target }) => layout.fits(name, target)),
     };
   }, [boxScale, zoomLevel]);
+  const seaLabels = React.useMemo(
+    () => seaLabelLayout(boxScale === null ? null : boxScale * zoomLevel),
+    [boxScale, zoomLevel],
+  );
 
   const provinceMap = React.useMemo(() => {
     const map = new Map<string, ProvinceItem>();
@@ -800,10 +798,31 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   TEXT_MIN, while the commit justified it with the UNBLENDED 4.85/5.19. At
                   full strength those 4.85/5.19 are what renders. `/deprem`'s sea labels lost
                   the same utility one round earlier; this is the other two. */}
-                  <g className="fill-accent font-heading font-bold tracking-wider pointer-events-none select-none">
-                    {SEA_LABELS.map((sea, i) => (
-                      <text key={i} x={sea.x} y={sea.y} textAnchor="middle" fontSize={sea.fontSize}>
-                        {sea.name}
+                  <g className="fill-accent font-heading font-bold pointer-events-none select-none">
+                    {/* Floored to a legible on-screen size, stacked, turned or dropped by what
+                    fits (T-084, `lib/map/sea-label-layout.ts`). `tracking-wider` sits on the
+                    text, not the group, so its 0.05em resolves against the label's own size. */}
+                    {seaLabels.map((sea) => (
+                      <text
+                        key={sea.name}
+                        x={sea.x}
+                        y={sea.y}
+                        textAnchor="middle"
+                        fontSize={sea.fontSize}
+                        transform={
+                          sea.rotate ? `rotate(${sea.rotate} ${sea.x} ${sea.y})` : undefined
+                        }
+                        className="tracking-wider"
+                      >
+                        {sea.lines.map((line, i) => (
+                          <tspan
+                            key={line}
+                            x={sea.x}
+                            dy={i === 0 ? undefined : `${SEA_LINE_HEIGHT_EM}em`}
+                          >
+                            {line}
+                          </tspan>
+                        ))}
                       </text>
                     ))}
                   </g>
