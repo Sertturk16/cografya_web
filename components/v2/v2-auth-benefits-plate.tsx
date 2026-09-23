@@ -64,6 +64,10 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
             </div>
           ))}
         </div>
+
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Şifren geri çözülemeyecek biçimde saklanır; reklam ya da takip çerezi kullanılmaz.
+        </p>
       </div>
     </div>
   );

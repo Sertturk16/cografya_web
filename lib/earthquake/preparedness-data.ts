@@ -70,7 +70,7 @@ export const PREPAREDNESS_DATA: PreparednessPhase[] = [
         title: "Çök, Kapan, Tutun",
         summary: "Yere yakın dur, başını koru, sabit bir şeye tutun.",
         content:
-          "Sarsıntıda ayakta durmaya çalışma; güçlü bir sarsıntı insanı kolayca savurabilir. Hemen sağlam bir masa, baza ya da koltuğun yanına geç ve yere ÇÖK. Bir elinle başını ve enseni KAPAN, öbür elinle o sabit eşyaya TUTUN.",
+          "Sarsıntıda ayakta durmaya çalışma; güçlü bir sarsıntı insanı kolayca savurabilir. Hemen sağlam bir masa, baza ya da koltuğun yanına geç ve yere ÇÖK; AFAD buna eşyanın yanında hayat üçgeni oluşturmak der. Bir elinle başını ve enseni KAPAN, öbür elinle o sabit eşyaya TUTUN. Tutunmak seni düşmekten korur; sarsıntı eşyayı kaydırırsa onunla birlikte hareket eder, korunduğun yerde kalırsın.",
         callout:
           "Eskiden yaygın bir inanıştı ama kapı pervazının altına sığınma. Bugünkü binalarda kapı kasası yük taşımaz; sarsıntıda çabucak eğilip sıkışabilir ya da üstüne yıkılabilir.",
       },

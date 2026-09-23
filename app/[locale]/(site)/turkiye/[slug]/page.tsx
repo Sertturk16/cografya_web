@@ -13,6 +13,7 @@ import { V2ProvinceLocatorMap } from "@/components/v2/v2-province-locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { SOURCE_NOTE } from "@/components/patterns/source-note";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -455,7 +456,11 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {/* 1. Nüfus */}
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Nüfus</span>
+                <span className="text-xs font-medium">
+                  {province.populationYear !== null
+                    ? `Nüfus (${province.populationYear})`
+                    : "Nüfus"}
+                </span>
                 <Users className="size-4 text-primary" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
@@ -523,6 +528,19 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               </div>
             </Card>
           </div>
+
+          {/* The providers behind the four cards above. Only the base figures and, when the
+              Köppen row is on screen, MGM's classification: the other sections carry their own
+              source lines (ERA5-Land, ACAG, AFAD, Copernicus) where they render. */}
+          <p className={SOURCE_NOTE}>
+            <span className="font-semibold text-foreground">{t("sourcesLabel")}: </span>
+            {t("sources", {
+              year: province.populationYear !== null ? String(province.populationYear) : "none",
+            })}
+            {climate.citeClassSource && (
+              <> {t("sourcesExtra", { list: t("sourcesClimateClass") })}</>
+            )}
+          </p>
         </PageContainer>
       </section>
 

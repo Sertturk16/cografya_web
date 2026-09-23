@@ -982,7 +982,8 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // T-054: 195 → **176**. Nineteen elements left with the unmounted `variant="default"` branch of
 // `search-combobox.tsx`: three in its pre-hydration fallback (`SLOT`, `TRIGGER`, `TRIGGER_TEXT`)
 // and sixteen in its panel. The file's two remaining identifiers are the icons' `ICON`.
-export const COMPUTED_CARD_CLASSNAMES = 176;
+// T-100: 176 → **177**. The province page's `Kaynaklar` footnote (`SOURCE_NOTE`); not a card.
+export const COMPUTED_CARD_CLASSNAMES = 177;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -1001,8 +1002,9 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   // 198 → 192 in T-061: six hand-drawn `<select>` elements moved onto the `Select`
   // primitive. 192 → 193 in T-067: the command dialog's `CloseIcon`. 193 → 195 in T-070: the
   // index row's `<summary>` and its chevron. 195 → 176 in T-054: the search combobox's
-  // unmounted `default` branch. See {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 176],
+  // unmounted `default` branch. 176 → 177 in T-100: the province page's `SOURCE_NOTE`
+  // footnote. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 177],
   // 9 → 8 in T-090: `/dunya/kita` dropped the continent-name chip that repeated each card's title.
   ["member", 8],
   ["ternary", 2],

@@ -266,8 +266,8 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
                 1. Çök - Kapan - Tutun
               </span>
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                Sağlam bir eşyanın yanında yere çök, başını ve enseni kapat, eşyaya tutun. Sarsıntı
-                geçene kadar böyle bekle.
+                Sağlam bir eşyanın yanında yere çök, hayat üçgeni oluştur; başını ve enseni kapat,
+                eşyaya tutun. Sarsıntı geçene kadar böyle bekle.
               </p>
             </div>
             <div className="p-3.5 rounded-xl bg-card border border-border/80 space-y-1">
