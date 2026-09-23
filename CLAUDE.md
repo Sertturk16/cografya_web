@@ -11,6 +11,7 @@ Read on demand, not every session:
 - `docs/design.md` — Terra tokens, typography, dark mode state, a11y floor, data-viz colour
   doctrine, component patterns. Read before any visible UI change.
 - `docs/conventions.md` — style, tests, commits, generated-file hygiene.
+- `docs/copy.md` — rules for any user-facing Turkish copy. Read before writing or changing it.
 - `README.md` — human onboarding (setup, scripts, layout).
 
 ## Commands

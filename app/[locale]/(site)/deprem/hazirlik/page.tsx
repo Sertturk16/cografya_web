@@ -5,7 +5,6 @@ import type { Locale } from "@/i18n/routing";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -237,9 +236,6 @@ export default async function V2PreparednessPage({ params }: PageProps) {
             </div>
           </div>
         </div>
-
-        {/* Sources Section */}
-        <V2SourcesSection scope="deprem" />
       </PageContainer>
     </>
   );

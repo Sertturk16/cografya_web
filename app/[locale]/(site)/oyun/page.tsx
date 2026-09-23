@@ -7,7 +7,6 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2GameHub } from "@/components/v2/v2-game-hub";
 import { V2GameHistoryStats } from "@/components/v2/v2-game-history-stats";
 import { V2GamePedagogyGuide } from "@/components/v2/v2-game-pedagogy-guide";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -117,9 +116,6 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
 
         {/* SECTION 3: PEDAGOGICAL LEARNING GUIDE */}
         <V2GamePedagogyGuide />
-
-        {/* SECTION 4: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-        <V2SourcesSection scope="oyun" />
       </PageContainer>
     </>
   );

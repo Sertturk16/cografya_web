@@ -9,7 +9,6 @@ import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
@@ -216,11 +215,6 @@ export default async function V2KaradenizPage({ params }: PageProps) {
             published nothing and the cells read "—". The notice is owed to the claim as much as
             to the numbers. */}
         <MarineDataNotice />
-
-        {/* The bibliography — what this page is built on, in our words. It sits AFTER the
-            notice above and never in place of it, and its `cmems` / `ecmwf-marine` cards carry
-            no `legalQuote`: the licence text lives on `/hakkimizda`, linked from that notice. */}
-        <V2SourcesSection scope="deniz" />
       </PageContainer>
     </>
   );

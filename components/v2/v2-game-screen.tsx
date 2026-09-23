@@ -14,6 +14,8 @@ import {
   type RegionLabels,
 } from "@/lib/game/target";
 import { SLUG_PLACEHOLDER } from "@/lib/game/province-url";
+import { regionHint } from "@/lib/game/region-hints";
+import { REGION_KEYS } from "@/lib/game/region-slug";
 import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
@@ -470,7 +472,7 @@ export function V2GameScreen({
           Math.round(GAME_CONFIG.fullQuestionPoints / GAME_CONFIG.halvingBase ** questionWrongs),
         );
         const finalQuestionPoints = showHint
-          ? Math.round(baseQuestionPoints * 0.5)
+          ? Math.round(baseQuestionPoints * GAME_CONFIG.hintMultiplier)
           : baseQuestionPoints;
 
         // XP bonus with streak multiplier
@@ -530,9 +532,14 @@ export function V2GameScreen({
       if (isCorrect) {
         // Correct Region Click!
         playSuccessSound(soundEnabled);
-        const earnedXP = 150 + streak * 30;
+        // Region scoring is flat per question; the hint costs the same share as in province mode.
+        const hintMultiplier = showHint ? GAME_CONFIG.hintMultiplier : 1;
+        const earnedXP = Math.round(150 * hintMultiplier) + streak * 30;
         setScore((prev) => prev + earnedXP);
-        setQuestionScores((prev) => [...prev, 100]);
+        setQuestionScores((prev) => [
+          ...prev,
+          Math.round(GAME_CONFIG.fullQuestionPoints * hintMultiplier),
+        ]);
         const newStreak = streak + 1;
         setStreak(newStreak);
         if (newStreak > bestStreak) setBestStreak(newStreak);
@@ -612,7 +619,9 @@ export function V2GameScreen({
   const getSmartHint = () => {
     if (!currentTarget) return "";
     if (mode === "regions") {
-      return `İpucu: Bu coğrafi bölgenin doğru sınırlarını bulmak için kıyı şeritleri ve komşu havzaları referans alın.`;
+      // Region mode's target id IS the region key (see `buildRegionTargetSet`).
+      const region = REGION_KEYS.find((key) => key === currentTarget.id);
+      return region ? regionHint(region, regionLabels) : "";
     }
 
     const shapeEntry = targetEntries.find((s) => s.plateCode === currentTarget.id);

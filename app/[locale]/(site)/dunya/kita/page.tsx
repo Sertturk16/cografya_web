@@ -403,7 +403,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
               </table>
             </div>
 
-            {/* THE METHODOLOGY NOTE, RE-HOMED. It used to ride into `V2SourcesSection` as
+            {/* THE METHODOLOGY NOTE, RE-HOMED. It used to ride into the old sources card as
                 `regionalNote`, under a "Bölgesel Metodoloji & Yasal Dayanak" badge, inside a
                 block that also named five institutions this page cannot trace a figure to. The
                 block is gone; the note is not a citation and never was. It says the figures are
@@ -482,7 +482,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
             `lib/geo/continents.ts`, a hand-written registry — and draws no map, so every one of
             the five institutions the `dunya` list named (Natural Earth, the UN & World Bank, the
             CIA World Factbook, USGS/NASA, IHO GEBCO) was traceable to nothing here. The scope is
-            gone; `V2SourcesSection`'s docblock carries the reasoning.
+            gone, and T-088 deleted the sources card from every other page too.
 
             What that block DID carry that was worth keeping is `Dunya.continentFiguresNote`, and
             it is not a citation: it is the methodology note that replaced a false "UN M49, Dünya

@@ -30,6 +30,8 @@ export interface GameConfig {
   readonly minQuestionPoints: number;
   /** Divisor applied per wrong click — the question halves. */
   readonly halvingBase: number;
+  /** What a question keeps after the player opens its hint, in both game modes. */
+  readonly hintMultiplier: number;
   /** Final-score thresholds for 3 / 2 / 1 stars, descending. */
   readonly starThresholds: readonly number[];
   /**
@@ -53,6 +55,7 @@ export const GAME_CONFIG: GameConfig = {
   fullQuestionPoints: 100,
   minQuestionPoints: 1,
   halvingBase: 2,
+  hintMultiplier: 0.5,
   starThresholds: [85, 60, 40],
   reviewWrongThreshold: 1,
 };

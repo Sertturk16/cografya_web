@@ -1212,7 +1212,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
           `EN_CONTENT_READY` tripwire, precise enough to drop the population clause entirely for
           the one country whose population is null rather than name a source that did not supply
           it, and rendered BESIDE the number it credits, in the population KPI above. The loose
-          one was `V2SourcesSection`'s hand-written `dunya` list under the heading "Bu Sayfada
+          one was the old sources card's hand-written `dunya` list under the heading "Bu Sayfada
           Kullanılan Veri Setleri & Bilimsel Künye" — a stronger claim than the careful system
           ever makes, about institutions (the UN, the World Bank, the CIA World Factbook) whose
           data is traceable to nothing in this repo. The narrowing this page already did, by

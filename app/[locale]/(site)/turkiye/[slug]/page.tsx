@@ -10,7 +10,6 @@ import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { EarthquakeAttribution } from "@/components/earthquake/earthquake-attribution";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ProvinceLocatorMap } from "@/components/v2/v2-province-locator-map";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -937,28 +936,6 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             heading={t("earthquakeSourcesHeading")}
           />
         )}
-
-        {/* UNIFIED COMPREHENSIVE DATA SOURCES (KAYNAKÇA)
-            Bound to the SAME signals the sections above are gated on, so the bibliography
-            cites what this province actually shows and nothing else.
-            - `include`: the marine block renders CMEMS/ECMWF-derived sea-surface values, and
-              both licences require the attribution to travel with the values. ECMWF's terms say
-              the notice "shall be attached" and, unlike the Copernicus framework, allow no
-              "or similar" wording, so this is a licence term rather than a courtesy.
-            - `omit` `acag-pm25`: it is in the `turkiye` scope list, but the air-quality section
-              only renders when the API published a series. Citing it on a province with no
-              PM2.5 figure sources content that is not on the page.
-            - `omit` `era5`: the same defect, and it had no counterpart until now. `climateSeries`
-              is `isTr ? province.climate : null`, so the climate block renders on NO English
-              province page — while the ERA5-Land card and its verbatim ECMWF quote were cited on
-              all 81 of them, for a section that is not there. It is bound to `climateSeries`
-              rather than to `isTr` because that is the expression the section itself reads: a
-              TR province the api publishes no series for is the same case. */}
-        <V2SourcesSection
-          scope="turkiye"
-          include={showMarine ? ["cmems", "ecmwf-marine"] : []}
-          omit={[...(pm25Annual ? [] : ["acag-pm25"]), ...(climateSeries ? [] : ["era5"])]}
-        />
       </PageContainer>
     </>
   );

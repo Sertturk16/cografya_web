@@ -42,7 +42,6 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2Hero } from "@/components/v2/v2-hero";
 import { V2LearningPaths } from "@/components/v2/v2-learning-paths";
 import { V2InteractiveTools } from "@/components/v2/v2-interactive-tools";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 
 interface V2PageProps {
@@ -561,9 +560,6 @@ export default async function V2HomePage({ params }: V2PageProps) {
             </Link>
           </div>
         </section>
-
-        {/* SECTION 7: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA) */}
-        <V2SourcesSection scope="home" />
       </PageContainer>
     </>
   );
