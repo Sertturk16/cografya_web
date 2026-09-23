@@ -407,11 +407,12 @@ export const SEA_BASINS_DETAIL: Record<
       salinity: "‰33 – ‰37",
       coastalLengthTr: "2.805 km",
       coastalLengthWithIslandsTr: "3.484 km",
-      provincesCount: 5,
+      provincesCount: 6,
       stationsCount: 5,
     },
     stationSlugs: ["canakkale-ege", "balikesir-ege", "izmir", "aydin", "mugla"],
     coastalProvinces: [
+      { plate: "22", name: "Edirne (Enez/Saros)", slug: "edirne" },
       { plate: "17", name: "Çanakkale (Ege/Bozcaada)", slug: "canakkale" },
       { plate: "10", name: "Balıkesir (Ayvalık/Edremit)", slug: "balikesir" },
       { plate: "35", name: "İzmir (Çeşme/Karaburun)", slug: "izmir" },

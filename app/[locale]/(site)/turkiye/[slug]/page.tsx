@@ -30,7 +30,8 @@ import {
   getProvincesResilient,
 } from "@/lib/api/provinces";
 import type { ProvinceDetail, ProvinceListItem } from "@/lib/api/types";
-import { isCoastalPlate, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
+import { hasMarinePoint, provinceMarineBlocks, provinceShowsMarine } from "@/lib/marine/coastal";
+import { hasSeaCoast } from "@/lib/geo/coastal-provinces";
 import { Link } from "@/i18n/navigation";
 import { routing, type AppPathname, type Locale } from "@/i18n/routing";
 import { selectSimilarClimateProvinces } from "@/lib/climate/similar-climate";
@@ -259,8 +260,11 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
   }
 
   const marinePoints = await marinePointsPromise;
-  const isCoastal = isCoastalPlate(marinePoints, province.plateCode);
-  const [marineLayers, marineConditions] = isCoastal
+  // Marine data is fetched only for provinces with a reference point; the "Kıyı İli" badge
+  // reads the fixed coastal list instead, because Edirne has a coast but no point.
+  const provinceHasMarinePoint = hasMarinePoint(marinePoints, province.plateCode);
+  const isCoastal = hasSeaCoast(province.plateCode);
+  const [marineLayers, marineConditions] = provinceHasMarinePoint
     ? await Promise.all([
         getMarineLayersSafe(),
         getMarineProvinceConditionsSafe(province.plateCode),

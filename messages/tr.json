@@ -83,7 +83,7 @@
     "seaTemperature": "Deniz suyu sıcaklığı",
     "seaWave": "Dalga yüksekliği",
     "seaMedian": "{count} noktanın ortancası",
-    "seaScope": "{basins} denizde {points} referans noktası, {provinces} kıyı ili.",
+    "seaScope": "{basins} denizde, {provinces} kıyı ilinin açığında {points} referans noktası.",
     "seaScopeFallback": "Türkiye kıyılarındaki referans noktaları ve ölçüm kataloğu deniz sayfasında.",
     "seaLink": "Tüm kıyılarda deniz durumu",
     "discoverProvinces": "Bugünün illeri",

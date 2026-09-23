@@ -5,20 +5,19 @@ import type {
 } from "@/lib/api/types";
 
 /**
- * THE COASTAL GATE, and the province surface's publish decision — the two questions
+ * THE MARINE-DATA GATE, and the province surface's publish decision — the two questions
  * `/turkiye/{il}` has to answer before it can show a marine section, both as pure functions.
  *
- * WHY THE 27-PROVINCE LIST DOES NOT LIVE ON THE WEB. "Which provinces have a coast" is a
- * geographic fact, and the api already publishes it: the reference-point set names a plaka
- * for every point it carries. Writing the twenty-seven codes into this repo would create a
- * second source for that fact (`CONVENTIONS.md` §4 / `ENGINEERING.md` §1) — one that would
- * silently disagree the day a point is added, retired or moved to a different province.
+ * This answers "does this province have a marine reference point", NOT "does it have a coast".
+ * The points cover 27 provinces; Türkiye has 28 coastal provinces (Edirne has a coast and no
+ * point). Coastline membership is a fixed geographic list in `lib/geo/coastal-provinces.ts`;
+ * the point list is read here only to decide about marine data.
  *
  * The gate also does two other jobs for free:
  *
  * - it skips the ~54 `/conditions` calls the inland provinces would otherwise make, and
  * - it steps around the ONE piece of the contract that is not written down: what
- *   `/api/marine/provinces/{plaka}/conditions` answers for a province with no coast (404? a
+ *   `/api/marine/provinces/{plaka}/conditions` answers for a province with no point (404? a
  *   200 with an empty array?). We never ask, so we never depend on the answer.
  */
 
@@ -27,9 +26,9 @@ import type {
  * whatever shape the api sends it today.
  *
  * A province with two points (İstanbul, Çanakkale, Balıkesir) appears once: this answers
- * "does this province have a coast", not "how many points does it have".
+ * "does this province have a point", not "how many points does it have".
  */
-export function coastalPlateCodes(points: readonly MarinePointListItem[]): Set<string> {
+export function marinePointPlateCodes(points: readonly MarinePointListItem[]): Set<string> {
   return new Set(points.map((point) => point.plateCode));
 }
 
@@ -37,11 +36,11 @@ export function coastalPlateCodes(points: readonly MarinePointListItem[]): Set<s
  * Whether this province may show a marine section at all.
  *
  * An empty point list answers `false` for every province — which is the correct degraded
- * answer, not a bug: with no point list we do not know which provinces have a coast, and a
- * section built on a guess is worse than no section.
+ * answer, not a bug: with no point list we do not know which provinces have marine data, and
+ * a section built on a guess is worse than no section.
  */
-export function isCoastalPlate(points: readonly MarinePointListItem[], plateCode: string): boolean {
-  return coastalPlateCodes(points).has(plateCode);
+export function hasMarinePoint(points: readonly MarinePointListItem[], plateCode: string): boolean {
+  return marinePointPlateCodes(points).has(plateCode);
 }
 
 /**

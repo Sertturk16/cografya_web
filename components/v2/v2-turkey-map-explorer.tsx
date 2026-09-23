@@ -52,6 +52,7 @@ import {
   useMapBoxMetrics,
 } from "@/components/v2/map-context-labels";
 import { MapAttribution } from "@/components/patterns/map-attribution";
+import { COASTAL_PLATE_CODES } from "@/lib/geo/coastal-provinces";
 
 export interface ProvinceItem {
   id: string;
@@ -526,7 +527,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   }, [filteredProvinces]);
 
   const coastalCount = React.useMemo(() => {
-    return provinces.filter((p) => p.coastal).length || 27;
+    return provinces.filter((p) => p.coastal).length || COASTAL_PLATE_CODES.size;
   }, [provinces]);
 
   return (

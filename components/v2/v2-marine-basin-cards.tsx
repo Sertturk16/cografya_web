@@ -85,7 +85,7 @@ export const BASIN_DATA: SeaBasinInfo[] = [
     identity: basinIdentityOf("aegean"),
     icon: "Sailboat",
     stationCount: 5,
-    coastalProvinceCount: 5,
+    coastalProvinceCount: 6,
     avgSummerTemp: "25.0°C – 27.5°C",
     avgWinterTemp: "12.0°C – 14.5°C",
     salinity: "‰33 – ‰37",

@@ -83,7 +83,7 @@
     "seaTemperature": "Sea surface temperature",
     "seaWave": "Wave height",
     "seaMedian": "{count, plural, one {median of # point} other {median of # points}}",
-    "seaScope": "{points, plural, one {# reference point} other {# reference points}} across {basins, plural, one {# sea} other {# seas}}, in {provinces, plural, one {# coastal province} other {# coastal provinces}}.",
+    "seaScope": "{points, plural, one {# reference point} other {# reference points}} across {basins, plural, one {# sea} other {# seas}}, off {provinces, plural, one {# coastal province} other {# coastal provinces}}.",
     "seaScopeFallback": "The offshore reference points and the measurement catalogue are on the sea page.",
     "seaLink": "Sea conditions along every coast",
     "discoverProvinces": "Discover today: provinces",

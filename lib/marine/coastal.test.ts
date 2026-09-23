@@ -8,17 +8,16 @@ import type {
 import singlePointFixture from "@/test/fixtures/marine/province-conditions-single-point.json";
 import twoPointFixture from "@/test/fixtures/marine/province-conditions-two-point.json";
 import {
-  coastalPlateCodes,
-  isCoastalPlate,
+  marinePointPlateCodes,
+  hasMarinePoint,
   provinceMarineBlocks,
   provinceShowsMarine,
 } from "./coastal";
 
 /**
- * The coastal gate and the province publish signal — structural only
- * (`CONVENTIONS.md` §2). Nothing here asserts WHICH provinces have a coast: that is a
- * geographic fact, it lives in the api, and a test that pinned the twenty-seven codes would
- * be the second source this module exists to avoid.
+ * The marine-data gate and the province publish signal — structural only. Nothing here
+ * asserts WHICH provinces have a point: that is the api's probe set. Which provinces have a
+ * COAST is pinned separately, in `lib/geo/coastal-provinces.test.ts`.
  */
 
 /** A point carrying only the fields the gate reads; the rest is contract padding. */
@@ -37,9 +36,9 @@ function point(overrides: Pick<MarinePointListItem, "slugTr" | "plateCode">): Ma
   };
 }
 
-describe("coastalPlateCodes — the coastal set is derived, never listed", () => {
+describe("marinePointPlateCodes — the marine-point set is derived, never listed", () => {
   it("returns one entry per distinct plaka", () => {
-    const codes = coastalPlateCodes([
+    const codes = marinePointPlateCodes([
       point({ slugTr: "a", plateCode: "57" }),
       point({ slugTr: "b", plateCode: "35" }),
     ]);
@@ -49,8 +48,8 @@ describe("coastalPlateCodes — the coastal set is derived, never listed", () =>
 
   it("counts a two-point province ONCE", () => {
     // İstanbul, Çanakkale and Balıkesir each publish two points. The question this set
-    // answers is "has a coast", not "how many points" — 30 points, 27 plakas.
-    const codes = coastalPlateCodes([
+    // answers is "has a point", not "how many points" — 30 points, 27 plakas.
+    const codes = marinePointPlateCodes([
       point({ slugTr: "istanbul-karadeniz-aciklari", plateCode: "34" }),
       point({ slugTr: "istanbul-marmara-aciklari", plateCode: "34" }),
     ]);
@@ -60,30 +59,30 @@ describe("coastalPlateCodes — the coastal set is derived, never listed", () =>
   });
 
   it("is empty for an empty point list", () => {
-    expect(coastalPlateCodes([])).toEqual(new Set());
+    expect(marinePointPlateCodes([])).toEqual(new Set());
   });
 });
 
-describe("isCoastalPlate — the gate that decides whether a /conditions call happens", () => {
+describe("hasMarinePoint — the gate that decides whether a /conditions call happens", () => {
   const points = [point({ slugTr: "sinop-aciklari", plateCode: "57" })];
 
   it.each([
     ["a plaka in the point set", "57", true],
     ["a plaka that is not", "42", false],
   ] as const)("%s → %s", (_label, plateCode, expected) => {
-    expect(isCoastalPlate(points, plateCode)).toBe(expected);
+    expect(hasMarinePoint(points, plateCode)).toBe(expected);
   });
 
   it("gates EVERY province off when the point list could not be read", () => {
     // The fail-soft points read answers `[]` on an outage. "We cannot tell which provinces
-    // have a coast" must mean no section — never a section assembled from a guess.
-    expect(isCoastalPlate([], "57")).toBe(false);
+    // have marine data" must mean no section — never a section assembled from a guess.
+    expect(hasMarinePoint([], "57")).toBe(false);
   });
 
   it("matches on the plaka string exactly, with no numeric coercion", () => {
     // Plakas are zero-padded strings in the contract ("08"), and "8" is a different province
     // page's parameter, not the same one written differently.
-    expect(isCoastalPlate([point({ slugTr: "a", plateCode: "08" })], "8")).toBe(false);
+    expect(hasMarinePoint([point({ slugTr: "a", plateCode: "08" })], "8")).toBe(false);
   });
 });
 

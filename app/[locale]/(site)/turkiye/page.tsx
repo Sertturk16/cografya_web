@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getProvincesResilient, getMapSummaryResilient } from "@/lib/api/provinces";
-import { getMarinePointsSafe } from "@/lib/api/marine";
-import { coastalPlateCodes } from "@/lib/marine/coastal";
+import { hasSeaCoast } from "@/lib/geo/coastal-provinces";
 import { regionSlug } from "@/lib/game/region-slug";
 import type { ProvinceListItem, ProvinceMapSummary } from "@/lib/api/types";
 import { Link } from "@/i18n/navigation";
@@ -72,13 +71,10 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "Turkiye" });
 
-  const [rawProvinces, rawSummary, rawMarinePoints] = await Promise.all([
+  const [rawProvinces, rawSummary] = await Promise.all([
     getProvincesResilient(),
     getMapSummaryResilient(),
-    getMarinePointsSafe(),
   ]);
-
-  const coastalSet = coastalPlateCodes(rawMarinePoints);
 
   const summaryMap = new Map<string, ProvinceMapSummary>();
   for (const s of rawSummary) {
@@ -101,7 +97,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
       populationYear: sum?.populationYear ?? null,
       areaKm2: sum?.areaKm2 ?? null,
       districtCount: sum?.districtCount ?? null,
-      coastal: coastalSet.has(prov.plateCode),
+      coastal: hasSeaCoast(prov.plateCode),
     };
   });
 
