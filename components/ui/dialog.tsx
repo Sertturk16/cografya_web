@@ -36,6 +36,16 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
   );
 }
 
+/**
+ * The bare popup, for a dialog that does not sit centred in a padded card — the header search
+ * places its panel near the top of the viewport and over a transparent overlay. Base UI still
+ * supplies `role="dialog"`, the focus trap, Escape and focus return; the caller supplies the
+ * position and, since there is no `DialogTitle` in such a panel, an `aria-label`.
+ */
+function DialogPopup({ ...props }: DialogPrimitive.Popup.Props) {
+  return <DialogPrimitive.Popup data-slot="dialog-popup" {...props} />;
+}
+
 const dialogContentVariants = cva(
   "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-card p-6 text-card-foreground shadow-xl border border-border duration-150 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
   {
@@ -162,6 +172,7 @@ export {
   DialogFooter,
   DialogHeader,
   DialogOverlay,
+  DialogPopup,
   DialogPortal,
   DialogTitle,
   DialogTrigger,

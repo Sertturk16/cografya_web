@@ -75,8 +75,9 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "flag-gated (`MARINE_ENABLED`) and is still swept as markup, just no longer as a module. " +
       "It claimed `site-search.module.css` too, through the header combobox that every page " +
       "carries; T-033 task 5 converted that component and deleted the stylesheet, so this shape " +
-      "now renders none of the surviving four. The header is still swept here at every width, " +
-      "and it is the only route that sweeps the combobox panel at all.",
+      "now renders none of the surviving four. The header, with its collapsed search " +
+      "triggers, is still swept here at every width. The search dialog itself is NOT swept: " +
+      "the sweep never opens it, so its panel is checked in the browser, not by this map.",
   },
   {
     id: "about",

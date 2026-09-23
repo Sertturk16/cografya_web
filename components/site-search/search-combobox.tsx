@@ -9,9 +9,17 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
+import {
+  Dialog,
+  DialogClose,
+  DialogOverlay,
+  DialogPopup,
+  DialogPortal,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { nextActiveIndex } from "@/lib/search/active-option";
+import { focusReturnTarget } from "@/lib/search/focus-return";
 import { prepareSearchIndex, type PreparedEntry, searchPrepared } from "@/lib/search/match";
 import { isSearchIndexPayload } from "@/lib/search/types";
 
@@ -94,8 +102,13 @@ interface SearchComboboxProps {
  * the intervening listitem breaks the chain and the "1 of 8" position announcements the
  * option role exists for never happen. Options are real `<a href>` carrying `role="option"`
  * and `tabIndex={-1}`: the role is what AT announces, the href keeps middle-click working,
- * and the negative tabindex preserves the combobox's single-tab-stop invariant. Focus
- * restoration happens after commit, never inside the handler that hides the target.
+ * and the negative tabindex preserves the combobox's single-tab-stop invariant.
+ *
+ * The combobox lives inside a MODAL dialog (T-078): the repo's Base UI `Dialog`, so the focus
+ * trap, Escape, outside press and focus return are the primitive's, not this file's. The
+ * hand-rolled overlay it replaced let Tab walk out into the page behind while it stayed open,
+ * and at 390px returned focus to a desktop trigger that is `display: none` there. Where focus
+ * lands on close is {@link focusReturnTarget}'s decision; see `lib/search/focus-return.ts`.
  */
 export function SearchCombobox({
   provinceIndexHref,
@@ -114,11 +127,12 @@ export function SearchCombobox({
   const [announcement, setAnnouncement] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const triggerRef = useRef<HTMLElement>(null);
+  const desktopTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileTriggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const inFlight = useRef(false);
-  /** Set by `close(true)`; consumed after commit so `focus()` never runs on a hidden node. */
-  const restoreFocus = useRef(false);
+  /** What opened the dialog: the pressed trigger, or whatever had focus when Ctrl/Cmd+K fired. */
+  const openerRef = useRef<HTMLElement | null>(null);
 
   const baseId = useId();
   const inputId = `${baseId}-input`;
@@ -224,16 +238,6 @@ export function SearchCombobox({
     return () => clearTimeout(timer);
   }, [open, hasQuery, isLoading, indexUnavailable, hits.length, t]);
 
-  // Focus restoration AFTER commit, never inside `close()` (review C1 and I5). The rule was
-  // written for a trigger that `[hidden]` removed while its panel was open, where a pre-commit
-  // `focus()` was a silent no-op; the command dialog's triggers stay mounted, so today the
-  // after-commit order is the safe one rather than the only one that works.
-  useEffect(() => {
-    if (open || !restoreFocus.current) return;
-    restoreFocus.current = false;
-    triggerRef.current?.focus();
-  }, [open]);
-
   // Keep the active option visible: eight rows overflow the panel's max-height on a short
   // viewport, where ArrowDown would otherwise move an off-screen highlight while
   // `aria-activedescendant` pointed at something nobody can see (review M8).
@@ -244,8 +248,7 @@ export function SearchCombobox({
       ?.scrollIntoView({ block: "nearest" });
   }, [activeIndex, optionId]);
 
-  const close = useCallback((restore: boolean) => {
-    restoreFocus.current = restore;
+  const close = useCallback(() => {
     setOpen(false);
     setActiveIndex(-1);
   }, []);
@@ -260,42 +263,53 @@ export function SearchCombobox({
     setActiveIndex(-1);
   }, []);
 
-  const openAndFocus = useCallback(() => {
-    void ensureIndex();
-    setOpen(true);
-    requestAnimationFrame(() => inputRef.current?.focus());
-  }, [ensureIndex]);
+  /**
+   * Opens the dialog and remembers what opened it. The caret is placed by the popup's
+   * `initialFocus`, after Base UI has mounted it, so there is no `requestAnimationFrame` race.
+   * `<body>` is not an opener: it cannot take focus back, so the triggers stand in for it.
+   */
+  const openSearch = useCallback(
+    (opener: Element | null | undefined) => {
+      openerRef.current = opener instanceof HTMLElement && opener !== document.body ? opener : null;
+      void ensureIndex();
+      setOpen(true);
+    },
+    [ensureIndex],
+  );
 
+  /**
+   * The popup's `finalFocus`. The opener first, then the two triggers: whichever is still
+   * connected and rendered. `true` hands the decision back to Base UI when none is.
+   */
+  const returnFocus = useCallback(
+    () =>
+      focusReturnTarget([openerRef.current, desktopTriggerRef.current, mobileTriggerRef.current]) ??
+      true,
+    [],
+  );
+
+  const prefetchIndex = useCallback(() => void ensureIndex(), [ensureIndex]);
+
+  // Ctrl/Cmd+K toggles from anywhere on the page. Escape is not handled here or anywhere else in
+  // this file: the modal dialog owns it, and it is the dialog that returns focus.
   useEffect(() => {
     if (!enableGlobalShortcut) return;
     function handleGlobalKeyDown(event: KeyboardEvent) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         if (open) {
-          close(true);
+          close();
         } else {
-          openAndFocus();
+          openSearch(document.activeElement);
         }
-        return;
-      }
-      if (open && event.key === "Escape") {
-        event.preventDefault();
-        close(true);
       }
     }
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [enableGlobalShortcut, open, openAndFocus, close]);
+  }, [enableGlobalShortcut, open, openSearch, close]);
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      close(true);
-      return;
-    }
-    // Tab is deliberately NOT handled here. Closing on keydown unmounted the focused input
-    // before the browser performed its default focus move, so sequential navigation restarted
-    // from the document start (review I4 / A45-I2).
+    // Tab is deliberately NOT handled here: the modal dialog keeps it inside the panel.
     if (hits.length === 0) return;
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -334,7 +348,6 @@ export function SearchCombobox({
     return (
       <div className="flex items-center">
         <a
-          ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
           className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 text-xs text-muted-foreground font-medium shadow-2xs"
           href={provinceIndexHref}
           aria-label={t("label")}
@@ -357,165 +370,150 @@ export function SearchCombobox({
 
   return (
     <div className="flex items-center">
-      {/* Desktop trigger: command bar button */}
-      <button
-        ref={triggerRef as unknown as React.RefObject<HTMLButtonElement>}
-        type="button"
-        data-testid="global-search"
-        aria-label={t("openLabel")}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        onClick={() => openAndFocus()}
-        onFocus={() => void ensureIndex()}
-        className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs"
+      <Dialog
+        open={open}
+        onOpenChange={(next, details) => (next ? openSearch(details.trigger) : close())}
       >
-        <SearchIcon />
-        <span>{t("triggerLabel")}...</span>
-      </button>
+        {/* Desktop trigger: command bar button */}
+        <DialogTrigger
+          ref={desktopTriggerRef}
+          data-testid="global-search"
+          aria-label={t("openLabel")}
+          onFocus={prefetchIndex}
+          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs"
+        >
+          <SearchIcon />
+          <span>{t("triggerLabel")}...</span>
+        </DialogTrigger>
 
-      {/* Mobile trigger: icon button */}
-      <button
-        type="button"
-        className="sm:hidden size-9 rounded-xl border border-border/80 bg-card hover:bg-muted flex items-center justify-center text-foreground transition-colors cursor-pointer shadow-2xs"
-        aria-label={t("openLabel")}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        data-testid="global-search-mobile"
-        onClick={() => openAndFocus()}
-        onFocus={() => void ensureIndex()}
-      >
-        <SearchIcon />
-      </button>
+        {/* Mobile trigger: icon button */}
+        <DialogTrigger
+          ref={mobileTriggerRef}
+          data-testid="global-search-mobile"
+          aria-label={t("openLabel")}
+          onFocus={prefetchIndex}
+          className="sm:hidden size-9 rounded-xl border border-border/80 bg-card hover:bg-muted flex items-center justify-center text-foreground transition-colors cursor-pointer shadow-2xs"
+        >
+          <SearchIcon />
+        </DialogTrigger>
 
-      {/* THE COMMAND DIALOG, AND IT IS PORTALLED OUT OF THE HEADER ON PURPOSE (T-067).
-          The trigger above lives inside `<nav>`, and that `<nav>` paints itself with
-          `backdrop-blur-xl`. A `backdrop-filter` makes its element a CONTAINING BLOCK for
-          every `position: fixed` descendant (CSS Filter Effects §2.2, the same rule
-          `transform` and `filter` carry), so this dialog's `fixed inset-0` resolved
-          against the 64px header box rather than the viewport: measured at
-          `{top: 0, left: 0, width: 1467, height: 64}`. What a reader saw was a dark band
-          across the top of the page and nothing over the content the palette covers.
-          Widening the box would not fix it and removing the header's blur would cost the
-          header its own look, so the dialog is rendered into `document.body`, which has no
-          filtered ancestor. `open` is only ever true after a press, so there is no server
-          render of this branch — the `mounted` guard is belt and braces for a future
-          caller that opens it from state.
-          The backdrop that band came from is now TRANSPARENT rather than `bg-black/60`:
-          it exists to catch the click that closes the palette, not to dim the page. */}
-      {open && mounted
-        ? createPortal(
-            <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4 sm:px-0">
-              <div className="fixed inset-0" onClick={() => close(true)} aria-hidden="true" />
-              <div
-                className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    e.stopPropagation();
-                    close(true);
-                  }
-                }}
+        {/* THE COMMAND DIALOG, AND IT IS PORTALLED OUT OF THE HEADER ON PURPOSE (T-067).
+            The triggers above live inside `<nav>`, and that `<nav>` paints itself with
+            `backdrop-blur-xl`. A `backdrop-filter` makes its element a CONTAINING BLOCK for
+            every `position: fixed` descendant (CSS Filter Effects §2.2, the same rule
+            `transform` and `filter` carry), so a `fixed inset-0` rendered in place resolved
+            against the 64px header box rather than the viewport: measured at
+            `{top: 0, left: 0, width: 1467, height: 64}`. What a reader saw was a dark band
+            across the top of the page and nothing over the content the palette covers.
+            `DialogPortal` renders into `document.body`, which has no filtered ancestor.
+            The overlay is TRANSPARENT rather than the primitive's dimmed default: it exists
+            to catch the click that closes the palette, not to dim the page.
+            `aria-modal` is stated because Base UI hides the page behind a modal dialog with
+            `aria-hidden` but does not write the attribute itself; the name is `aria-label`
+            because a visible title would add a heading to every page's outline. */}
+        <DialogPortal>
+          <DialogOverlay className="bg-transparent backdrop-blur-none" />
+          <DialogPopup
+            aria-modal="true"
+            aria-label={t("label")}
+            initialFocus={inputRef}
+            finalFocus={returnFocus}
+            className="fixed top-[12vh] left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
+          >
+            <label className="sr-only" htmlFor={inputId}>
+              {t("label")}
+            </label>
+            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
+              <SearchIcon />
+              <input
+                ref={inputRef}
+                id={inputId}
+                /* No `outline-none`: this input's row draws no ring of its own, so
+                   suppressing here would leave the command dialog's only control with no
+                   visible focus once T-053 made suppression work. Site default applies. */
+                className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
+                type="text"
+                role="combobox"
+                autoComplete="off"
+                placeholder={t("placeholder")}
+                value={query}
+                aria-expanded={hits.length > 0}
+                aria-controls={listboxId}
+                aria-autocomplete="list"
+                aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
+                onChange={(event) => updateQuery(event.target.value)}
+                onKeyDown={onKeyDown}
+              />
+              <DialogClose className="size-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer">
+                <span className="sr-only">{t("closeLabel")}</span>
+                <CloseIcon />
+              </DialogClose>
+            </div>
+
+            {indexUnavailable ? (
+              <p className="p-4 text-center text-xs text-muted-foreground">{t("loadFailed")}</p>
+            ) : null}
+
+            {hits.length > 0 ? (
+              <ul
+                ref={listRef}
+                id={listboxId}
+                role="listbox"
+                aria-label={t("label")}
+                data-combobox-items="true"
+                className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
               >
-                <label className="sr-only" htmlFor={inputId}>
-                  {t("label")}
-                </label>
-                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
-                  <SearchIcon />
-                  <input
-                    ref={inputRef}
-                    id={inputId}
-                    /* No `outline-none`: this input's row draws no ring of its own, so
-                       suppressing here would leave the command dialog's only control with no
-                       visible focus once T-053 made suppression work. Site default applies. */
-                    className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
-                    type="text"
-                    role="combobox"
-                    autoComplete="off"
-                    placeholder={t("placeholder")}
-                    value={query}
-                    aria-expanded={hits.length > 0}
-                    aria-controls={listboxId}
-                    aria-autocomplete="list"
-                    aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
-                    onChange={(event) => updateQuery(event.target.value)}
-                    onKeyDown={onKeyDown}
-                  />
-                  <button
-                    type="button"
-                    className="size-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => close(true)}
-                  >
-                    <span className="sr-only">{t("closeLabel")}</span>
-                    <CloseIcon />
-                  </button>
-                </div>
+                {hits.map((hit, index) => {
+                  const resolvedPath = resolvePath(hit.path);
+                  return (
+                    <li key={hit.path} role="presentation">
+                      <a
+                        id={optionId(index)}
+                        role="option"
+                        tabIndex={-1}
+                        aria-selected={index === activeIndex}
+                        href={resolvedPath}
+                        className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                          index === activeIndex
+                            ? "bg-primary/10 text-primary"
+                            : "text-foreground hover:bg-muted"
+                        }`}
+                        onMouseEnter={() => setActiveIndex(index)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          window.location.assign(resolvedPath);
+                        }}
+                      >
+                        <span className="font-bold">{hit.name}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
+                          {hit.kind === "p" ? t("province") : t("country")}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
 
-                {indexUnavailable ? (
-                  <p className="p-4 text-center text-xs text-muted-foreground">{t("loadFailed")}</p>
-                ) : null}
+            {showNoResults ? (
+              <p className="p-6 text-center text-xs text-muted-foreground">{t("noResults")}</p>
+            ) : null}
 
-                {hits.length > 0 ? (
-                  <ul
-                    ref={listRef}
-                    id={listboxId}
-                    role="listbox"
-                    aria-label={t("label")}
-                    data-combobox-items="true"
-                    className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
-                  >
-                    {hits.map((hit, index) => {
-                      const resolvedPath = resolvePath(hit.path);
-                      return (
-                        <li key={hit.path} role="presentation">
-                          <a
-                            id={optionId(index)}
-                            role="option"
-                            tabIndex={-1}
-                            aria-selected={index === activeIndex}
-                            href={resolvedPath}
-                            className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                              index === activeIndex
-                                ? "bg-primary/10 text-primary"
-                                : "text-foreground hover:bg-muted"
-                            }`}
-                            onMouseEnter={() => setActiveIndex(index)}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              window.location.assign(resolvedPath);
-                            }}
-                          >
-                            <span className="font-bold">{hit.name}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
-                              {hit.kind === "p" ? t("province") : t("country")}
-                            </span>
-                          </a>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : null}
+            <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs font-medium text-muted-foreground">
+              <a href={provinceIndexHref} className="hover:text-primary transition-colors">
+                {t("seeAllProvinces")} →
+              </a>
+              <a href={countryIndexHref} className="hover:text-primary transition-colors">
+                {t("seeAllCountries")} →
+              </a>
+            </div>
 
-                {showNoResults ? (
-                  <p className="p-6 text-center text-xs text-muted-foreground">{t("noResults")}</p>
-                ) : null}
-
-                <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs font-medium text-muted-foreground">
-                  <a href={provinceIndexHref} className="hover:text-primary transition-colors">
-                    {t("seeAllProvinces")} →
-                  </a>
-                  <a href={countryIndexHref} className="hover:text-primary transition-colors">
-                    {t("seeAllCountries")} →
-                  </a>
-                </div>
-
-                <div role="status" aria-live="polite" className="sr-only">
-                  {announcement}
-                </div>
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
+            <div role="status" aria-live="polite" className="sr-only">
+              {announcement}
+            </div>
+          </DialogPopup>
+        </DialogPortal>
+      </Dialog>
     </div>
   );
 }
