@@ -988,9 +988,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               </h3>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+            <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
               {/* Search Input */}
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full md:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   type="text"
@@ -1011,7 +1011,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               </div>
 
               {/* Sort Filter */}
-              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border text-xs w-full sm:w-auto justify-between">
+              <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border border-border text-xs w-full md:w-auto justify-between">
                 <button
                   type="button"
                   onClick={() => setSortBy("plate")}
