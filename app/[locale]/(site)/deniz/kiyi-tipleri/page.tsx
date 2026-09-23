@@ -5,7 +5,6 @@ import type { Locale } from "@/i18n/routing";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -364,14 +363,6 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
             </Link>
           </div>
         </section>
-
-        {/* Sources Section.
-            `omit` the two telemetry providers: this page renders ZERO marine values. Its whole
-            content is `lib/marine/coastal-types-detail` — static, hand-written coastal-landform
-            copy — so CMEMS and ECMWF Open Data were cited for material that is not here. The
-            remaining cards (HGM/TÜİK coast lengths, SHOD, IMS-METU, MEB & Erinç) are what the
-            page is actually built on. */}
-        <V2SourcesSection scope="deniz" omit={["cmems", "ecmwf-marine"]} />
       </PageContainer>
     </>
   );

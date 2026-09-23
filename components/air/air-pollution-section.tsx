@@ -75,8 +75,8 @@ const LICENCE_NOTICE =
  *
  * The province page used to pass one. It dropped this component's whole attribution block —
  * the ACAG source line, the CC-BY-4.0 licence line, the reference citation AND the provider's
- * own verbatim `methodNoticeText` — and delegated the credit to `V2SourcesSection`, where a
- * source's `legalQuote` sits inside a `<details>` labelled "Atıf şartı & yasal metin", CLOSED
+ * own verbatim `methodNoticeText` — and delegated the credit to a per-page sources card (since
+ * deleted), where the quote sat inside a `<details>` labelled "Atıf şartı & yasal metin", CLOSED
  * BY DEFAULT.
  *
  * That contradicts the criterion `components/marine/marine-attribution.tsx` states in its own
@@ -86,9 +86,7 @@ const LICENCE_NOTICE =
  * material, which is a second reason none of the four paragraphs above was optional.
  *
  * So the three components that publish provider-licensed values now agree: `MarineAttribution`
- * has no such prop, and neither does this one nor `ClimateSection`. `V2SourcesSection` is the
- * bibliography; its `<details>` quote echoes a notice rendered in full elsewhere on the page
- * and may never be the only place a mandated string appears.
+ * has no such prop, and neither does this one nor `ClimateSection`.
  */
 
 /**

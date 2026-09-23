@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getFormatter, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2RegionLocatorMap } from "@/components/v2/v2-region-locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
@@ -645,12 +644,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               SSS
             </a>
           )}
-          <a
-            href="#kaynakca"
-            className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-          >
-            Metodoloji &amp; Kaynakça
-          </a>
         </div>
       </nav>
 
@@ -1522,20 +1515,6 @@ export default async function V2RegionDetailPage({ params }: PageProps) {
               Ana Sayfa
             </Button>
           </Link>
-        </div>
-
-        {/* SECTION 9: BİLİMSEL KAYNAKÇA & BÖLGESEL METODOLOJİ */}
-        <div id="kaynakca" className="scroll-mt-28" tabIndex={-1}>
-          <V2SourcesSection
-            scope="turkiye"
-            regionalNote={
-              <V2RichProse
-                text={region.sourcesNoteTr}
-                className="space-y-1.5"
-                paragraphClassName="text-[11px] text-muted-foreground leading-relaxed"
-              />
-            }
-          />
         </div>
       </PageContainer>
     </>

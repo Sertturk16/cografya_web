@@ -11,7 +11,7 @@
  *     wrapping opportunity;
  *   - `/turkiye/istanbul` scrolling 36px sideways at 320 because `climate.module.css`'s
  *     `.chartFrame` carried a bare `min-width: 300px` (T-046) — a CSS-Module declaration;
- *   - `v2-sources-section.tsx`'s `shrink-0` badge row overflowing on 7 region routes
+ *   - the (since deleted) sources card's `shrink-0` badge row overflowing on 7 region routes
  *     (introduced and fixed inside T-046) — a flex child's shrink behaviour.
  *
  * All three were found the same way: `document.documentElement.scrollWidth` compared with
@@ -128,7 +128,7 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
     params: { slug: "marmara" },
     locales: ["tr"],
     why:
-      "The region detail. `v2-sources-section.tsx`'s `shrink-0` badge row overflowed on all " +
+      "The region detail. The since-deleted sources card's `shrink-0` badge row overflowed on all " +
       "seven of these routes inside T-046 — a flex child's shrink behaviour, invisible to " +
       "every source-text scanner in the suite.",
   },

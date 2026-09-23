@@ -15,9 +15,9 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  * verbatim wording — on the understanding that the credit was "delegated to the page
  * footer/sources".
  *
- * The delegated target was `V2SourcesSection`, which renders a source's `legalQuote` inside a
- * `<details>` labelled "Atıf şartı & yasal metin", CLOSED BY DEFAULT. That is a bibliography
- * echo, not a notice: the criterion this repo applies — stated in
+ * The delegated target was a per-page sources card (since deleted), which rendered the quote
+ * inside a `<details>` labelled "Atıf şartı & yasal metin", CLOSED BY DEFAULT. That is a
+ * bibliography echo, not a notice: the criterion this repo applies — stated in
  * `components/marine/marine-attribution.tsx`'s own docblock, from the reading of CC BY 4.0 and
  * ECMWF's "shall be attached" wording — is VISIBLE WITHOUT A CLICK on the page carrying the
  * derived material. So on every province page with a climate chart, ERA5-Land's required
@@ -129,7 +129,7 @@ describe("an attribution is not a prop", () => {
       expect(
         offender?.[0] ?? null,
         `${name} takes "${offender?.[0]}" — a mandated notice may not be optional; ` +
-          "V2SourcesSection's closed <details> is an echo, never the sole carrier",
+          "it renders in full, visible without a click, beside the material it credits",
       ).toBeNull();
     }
   });

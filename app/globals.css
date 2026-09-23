@@ -959,8 +959,8 @@
      So the AXIS is standard and is not restyled to Terra, exactly as the magnitude ramp above
      and the SST bands below are not. No institution is named for it: this repo already ruled
      that citing a published fault map for prose it did not read is an unearned claim
-     (`components/v2/v2-sources-section.tsx`, and `components/v2/v2-earthquake-a11y.test.ts`
-     holds it), and the classification is legible from the product's own data.
+     (`components/v2/v2-earthquake-a11y.test.ts` holds it), and the classification is legible
+     from the product's own data.
 
      NOT `destructive` / `info` / `success`. Three data categories on three semantic hues is the
      data-viz rule run backwards (`docs/design.md` rule 1): red would then mean both "KAF" and

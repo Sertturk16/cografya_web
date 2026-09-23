@@ -567,7 +567,7 @@ type Containment = "contained" | "uncontained" | "not-applicable";
  * A LEAF THAT IS NOT A CONTAINER IS NOT CONTAINED, and this is the line that stops the whole
  * recursion being vacuous rather than a refinement of it: `children.every(…)` is vacuously TRUE
  * over an empty list, so making a leaf "contained" does not merely rescue the childless
- * `<V2SourcesSection />` — it cascades, and every node whose descendants bottom out in leaves
+ * `<MarineDataNotice />` — it cascades, and every node whose descendants bottom out in leaves
  * (which is every node) reads as contained. Measured, not reasoned: see the mutation record on
  * {@link RENDER_ROOTS_WITH_UNCONTAINED_BODY}, where flipping it takes the counter to 0 of 5.
  *
@@ -852,9 +852,9 @@ describe("the uncontained-body scan", () => {
 
   it("a childless top-level component is not contained by having no children — base case", () => {
     // `children.every(…)` over an empty list is vacuously true, so without an explicit base case
-    // a leaf is "contained" — and that does not merely rescue the childless `<V2SourcesSection />`
-    // and `<MarineDataNotice />`, it CASCADES: every node whose descendants bottom out in leaves,
-    // which is every node, reads as contained too.
+    // a leaf is "contained" — and that does not merely rescue a childless `<MarineDataNotice />`,
+    // it CASCADES: every node whose descendants bottom out in leaves, which is every node, reads
+    // as contained too.
     //
     // RULING BN, L1. This comment used to say "the counter would have measured 3 pages, not 5",
     // reasoning about the two named components rather than measuring. Re-measured against the
@@ -863,8 +863,8 @@ describe("the uncontained-body scan", () => {
     // recursion, it is the thing that stops the recursion being vacuous — flip it and the whole
     // counter goes dark rather than losing two pages. Caught loudly: 11 assertions red, 10 of them
     // behavioural controls including this one.
-    expect(fixture("    <V2SourcesSection />")).toEqual([
-      "<V2SourcesSection> (no className attribute)",
+    expect(fixture("    <MarineDataNotice />")).toEqual([
+      "<MarineDataNotice> (no className attribute)",
     ]);
   });
 

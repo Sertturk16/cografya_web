@@ -37,7 +37,9 @@ describe("V2 Region locator map and page design invariants", () => {
     expect(content).toContain("lg:col-span-5");
     expect(content).toContain("scrollbar-none");
     // Ensure no raw developer prompt text leaked
-    expect(content).not.toContain("Sayfanın altında `V2SourcesSection");
+    expect(content).not.toContain("Sayfanın altında `");
+    // The sources card and its `#kaynakca` anchor are gone; a jump link to it would be dead.
+    expect(content).not.toContain("kaynakca");
   });
 
   it("provides cross-links from province detail page to region detail page", () => {

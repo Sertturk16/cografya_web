@@ -192,9 +192,7 @@ Details and the open dark-mode bugs: `docs/design.md`.
      warning system" — is short, and it matters more beside a live magnitude than in a footer).
      Both change what 33 pages show. The exclusion is PINNED by an assertion in
      `components/marine/marine-attribution-coverage.test.ts`, so it cannot quietly outlive the
-     question. Two consequences hang off it and must move with it: the `afad` card in
-     `V2SourcesSection`'s `home` scope and the two AFAD cards on `/deprem/fay-hatlari` are cited
-     for ticker-only values, so whether they are earned is the same question.
+     question.
 - `NEXT_PUBLIC_SITE_URL` and `API_BASE_URL` reach the container only at runtime, not in the
   Docker build stage. This works today (verified on prod 2026-09-15: canonicals, hreflang and
   a 307-URL sitemap all carry the real origin) because `lib/env.ts` parses `process.env` as

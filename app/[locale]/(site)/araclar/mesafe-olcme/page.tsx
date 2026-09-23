@@ -10,7 +10,6 @@ import { V2RelatedTools } from "@/components/v2/v2-related-tools";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
 import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-content";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -136,12 +135,9 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
         {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}
         <V2ToolEducationalContent mode="distance" />
 
-        {/* SECTION 3: SCIENTIFIC ATTRIBUTIONS & SOURCES */}
         {/* The tier exit. Both locales — an English reader was as stuck as a Turkish
               one, and the labels are already bilingual. */}
         <V2RelatedTools current={DISTANCE_TOOL.pathname} />
-
-        <V2SourcesSection scope="araclar" />
       </PageContainer>
     </>
   );

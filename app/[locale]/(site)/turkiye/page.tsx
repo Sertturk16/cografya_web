@@ -12,7 +12,6 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { pickHubDescription } from "@/lib/seo/hub-description";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turkey-map-explorer";
-import { V2SourcesSection } from "@/components/v2/v2-sources-section";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
@@ -325,13 +324,6 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
             </Link>
           </div>
         </section>
-
-        {/* SECTION 4: SCIENTIFIC ATTRIBUTIONS & SOURCES (KAYNAKÇA)
-              `omit` the two the `turkiye` scope carries for the PROVINCE page and this hub does
-              not show: there are no monthly climate normals here (and the `era5` card carries
-              the verbatim ECMWF quote with them) and no PM2.5 figure. The map, its inland-water
-              layer and the province index earn the rest. */}
-        <V2SourcesSection scope="turkiye" omit={["era5", "acag-pm25"]} />
       </PageContainer>
     </>
   );

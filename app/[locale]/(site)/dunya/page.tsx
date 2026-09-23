@@ -256,11 +256,10 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
           </div>
         </section>
 
-        {/* NO SOURCES SECTION. The `dunya` scope is gone (`V2SourcesSection`'s own docblock has
-            the reasoning): this hub draws no map and reads five api fields, none of which
-            carries a source this page could name. The block listed the UN, the World Bank, the
-            CIA World Factbook, USGS/NASA and IHO GEBCO under "Bu Sayfada Kullanılan Veri
-            Setleri" — five institutions whose data is traceable to nothing here. */}
+        {/* NO SOURCES SECTION. The `dunya` scope is gone: this hub draws no map and reads five
+            api fields, none of which carries a source this page could name. The block listed the
+            UN, the World Bank, the CIA World Factbook, USGS/NASA and IHO GEBCO under "Bu Sayfada
+            Kullanılan Veri Setleri" — five institutions whose data is traceable to nothing here. */}
       </PageContainer>
     </>
   );
