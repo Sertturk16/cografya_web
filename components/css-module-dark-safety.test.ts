@@ -65,8 +65,8 @@ const SURVIVING_MODULES: readonly string[] = [
  * !== "v2"` branch, and the tree's only mount passes `variant="v2"`, so the stylesheet was
  * REACHABLE — which is all `orphan-stylesheets.test.ts` asks — and rendered by no route. The
  * header search a reader actually meets is the v2 command dialog, which was already Tailwind.
- * T-054 owns what to do with the unrendered branch; this task converted it rather than deleting
- * it, because deleting it changes the `variant` contract.
+ * This task converted the unrendered branch rather than deleting it, because deleting it changes
+ * the `variant` contract; T-054 then deleted the branch and the prop together.
  *
  * 57 once `earthquake.module.css` lost the three classes with no call site — `.sources`,
  * `.regulationReference` and `.disclaimer`, the rules `earthquake-attribution.tsx` abandoned

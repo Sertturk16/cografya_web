@@ -53,7 +53,7 @@ const SUPPRESSION = /(?:^|[\s"'`])(?:[\w-]+:)*outline-none!?(?![\w-])/;
 /**
  * Anything that makes focus visible. `focus:` as well as `focus-visible:` because
  * `ui/custom-select.tsx` uses the former; `focus-within:` and `has-[input:focus]:` because a row
- * owning its input's ring is this repo's documented pattern (`search-combobox.tsx`).
+ * owning its input's ring is a legitimate pattern (`v2-hero.tsx`'s search row draws one).
  */
 const TREATMENT =
   /(?:focus-visible:|focus:|focus-within:|has-\[input:focus\]:)(?:ring|outline-(?!none)|border|stroke|scale|bg|shadow|text)/;
@@ -70,9 +70,7 @@ interface Exemption {
  * still visible, or why DOM focus never lands on the suppressed element.
  *
  * Keyed by DECLARATION and not by file, so exempting one does not blind the scanner to a second,
- * unrelated suppression appearing in the same file later. `search-combobox.tsx` is exactly that
- * risk: `INPUT` below is legitimately exempt, and the v2 dialog input a few hundred lines down
- * is the site T-053 had to fix.
+ * unrelated suppression appearing in the same file later.
  */
 const EXEMPTIONS: readonly Exemption[] = [
   {
@@ -83,16 +81,6 @@ const EXEMPTIONS: readonly Exemption[] = [
       "opens. Tab never lands there, so a ring could not tell a keyboard user 'you are here' -- " +
       "it would draw a box around a page-sized region. Exactly the case app/globals.css already " +
       'sanctions for `:where([tabindex="-1"]):focus-visible`, with the same reasoning.',
-  },
-  {
-    file: "components/site-search/search-combobox.tsx",
-    declaration: "const INPUT =",
-    reason:
-      "The row owns the ring, on purpose and measured: `INPUT_ROW`, the declaration immediately " +
-      "above, carries `has-[input:focus]:outline-3 has-[input:focus]:outline-offset-2 " +
-      "has-[input:focus]:outline-ring`, and that file's own docblock records why the inner ring " +
-      "is suppressed with `!` rather than plainly. A separate declaration, so the scanner is " +
-      "right to see the two apart -- this entry is what puts them back together.",
   },
 ];
 

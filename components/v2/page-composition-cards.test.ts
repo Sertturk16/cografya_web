@@ -957,7 +957,10 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // T-070: 193 → **195**. Two more, both on the book page's index row: the `<summary>` the
 // accordion needed (`DENEME_SUMMARY`) and the chevron inside it (`DENEME_CHEVRON`). Neither is
 // a card; this population is "className is a bare identifier", which the whole page already is.
-export const COMPUTED_CARD_CLASSNAMES = 195;
+// T-054: 195 → **176**. Nineteen elements left with the unmounted `variant="default"` branch of
+// `search-combobox.tsx`: three in its pre-hydration fallback (`SLOT`, `TRIGGER`, `TRIGGER_TEXT`)
+// and sixteen in its panel. The file's two remaining identifiers are the icons' `ICON`.
+export const COMPUTED_CARD_CLASSNAMES = 176;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -975,8 +978,9 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   ["call", 1],
   // 198 → 192 in T-061: six hand-drawn `<select>` elements moved onto the `Select`
   // primitive. 192 → 193 in T-067: the command dialog's `CloseIcon`. 193 → 195 in T-070: the
-  // index row's `<summary>` and its chevron. See {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 195],
+  // index row's `<summary>` and its chevron. 195 → 176 in T-054: the search combobox's
+  // unmounted `default` branch. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 176],
   ["member", 9],
   ["ternary", 2],
 ];

@@ -37,9 +37,8 @@ const TABLE = "w-full min-w-[520px] border-collapse text-[0.9rem]";
  * triggered: with nothing to overflow, the box simply grew with its content — ~2300px at 50
  * rows — and dragged the whole page down with it. The ceiling is what gives `overflow-y`
  * something to act on. It follows this repo's `min(vh, px)` scrollable-list convention and is
- * deliberately TALLER than the search dropdown's `min(50vh,360px)` (`search-combobox.tsx`'s
- * `RESULTS`, which was that stylesheet's `.results` until T-033 converted it): this is the
- * page's primary content list, up to 50 rows, not a small transient popover.
+ * deliberately TALLER than a search dropdown's result list: this is the page's primary content
+ * list, up to 50 rows, not a small transient popover.
  *
  * `rounded-lg` is `var(--radius-lg)`, which `app/globals.css` defines as `var(--radius)` — the
  * exact value the stylesheet wrote.
@@ -47,8 +46,7 @@ const TABLE = "w-full min-w-[520px] border-collapse text-[0.9rem]";
  * THE FOCUS RING. The stylesheet painted `outline: 3px solid var(--color-accent)` here, a raw
  * Terra token frozen at its light value: #276b70 measures **2.78:1 on dark `--card`**, under
  * WCAG 1.4.11's 3:1 floor for the one reader who cannot do without a ring. `outline-ring` is
- * `--ring`, which IS redefined in `.dark` — **5.44:1 on dark `--card`, 6.13:1 on light** — the
- * same reading `search-combobox.tsx` recorded for the same swap.
+ * `--ring`, which IS redefined in `.dark` — **5.44:1 on dark `--card`, 6.13:1 on light**.
  *
  * These three utilities are belt-and-braces rather than load-bearing today, and that is worth
  * stating rather than implying: `app/globals.css`'s `:focus-visible { outline: 3px solid

@@ -408,7 +408,6 @@ export function V2Header() {
         <div className="flex items-center gap-2 shrink-0">
           {/* Global Search Combobox (Ctrl+K) */}
           <SearchCombobox
-            variant="v2"
             pathPrefix="/"
             enableGlobalShortcut={true}
             provinceIndexHref="/turkiye"

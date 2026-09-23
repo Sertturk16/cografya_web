@@ -41,194 +41,8 @@ const NEVER_CHANGES = () => () => {};
 const onClient = () => true;
 const onServer = () => false;
 
-/* ---------------------------------------------------------------------------------------------
- * THE HEADER SEARCH'S OWN CHROME, AS BRIDGE-TOKEN UTILITIES.
- *
- * T-033 retired `site-search.module.css`. Every colour in it was a raw Terra token and `.dark`
- * redefines none of the thirteen, so the panel rendered as a WHITE card carrying `--color-ink`
- * text on a dark page: 1.14:1 for the input's own text against dark `--card` #121e21, measured
- * with `lib/theme/contrast.ts`. Each string below is the deleted rule, value for value, with
- * colour rebound to the bridge. Comments that recorded a MEASUREMENT or a defect came with it;
- * the ones that only restated CSS did not.
- *
- * `min-[70rem]` is the stylesheet's `@media (min-width: 70rem)` verbatim — the measured
- * single-row header breakpoint, which is not one of Tailwind's own (lg is 64rem, xl 80rem).
- *
- * The strings are HOISTED rather than inlined on the JSX because
- * `lib/test-support/converted-floor.ts`'s extractor reads a top-level `const NAME = …;` and hands
- * back `null` for an inline class string — a floor left inline pins nothing, and does it quietly.
- * `search-combobox.structure.test.ts` carries the pin for the 28px one.
- *
- * Unchanged geometry rule: the SLOT is fixed-size and the island only swaps what is inside it, so
- * hydration and opening never move the header (CLS).
- * ------------------------------------------------------------------------------------------ */
-
-/**
- * No width or height of its own on mobile: the trigger below IS the box, and the header must not
- * grow by a single pixel with the search closed.
- *
- * `ml-auto` on the FIRST item of the trailing group pushes that whole group — this slot and every
- * sibling after it — to the header's right edge. Below the nav-collapse breakpoint nothing else
- * fills that role; from 70rem up the desktop nav's own auto margin already does, so the slot goes
- * back to normal flow and becomes the panel's containing block instead (see PANEL).
- */
-const SLOT = "flex items-center ml-auto min-[70rem]:relative min-[70rem]:ml-0";
-
-/**
- * 28x28, and the exact number is MEASURED, not chosen for looks. The binding acceptance criterion
- * is that the header does not grow by a single pixel with search closed, and on a 390px viewport
- * the trigger shares the header's first row with the brand link, whose line box is 30.72px: at
- * 44px the header grew 177 -> 190px, at 32px it still grew by 1.09px. 28px sits below the brand
- * with ~2.7px of headroom and still clears the WCAG 2.5.8 (AA) 24x24 target floor.
- *
- * `border-input`, not `border-border`. A control boundary must be perceivable and WCAG 1.4.11 asks
- * 3:1 of it; `--input` is the bridge token for exactly that job, and its light value IS the
- * `--color-taupe` this rule already carried (3.86:1 on `--card`, 3.64:1 on the header's
- * `--background` plate). Unlike the raw token it is redefined in `.dark` — #5c8189, 4.02:1 on dark
- * `--card`. `border-border` is the decorative edge at 1.45:1 light / 1.53:1 dark and was rejected
- * here for that reason when the rule was first written.
- *
- * NOTHING here hides the collapsed trigger, and that is now correct rather than a gap. The
- * stylesheet carried a `.trigger[hidden] { visibility: hidden }` rule and a comment saying the
- * `hidden` attribute does not hide this control on its own, because the repo shipped no
- * `[hidden]` reset and the author-origin `display: inline-flex` beat the UA sheet. **Both halves
- * of that are false today** and this conversion re-measured rather than carrying the comment
- * over: Tailwind v4's preflight ships `[hidden]:where(:not([hidden="until-found"])) { display:
- * none !important }` (`node_modules/tailwindcss/preflight.css:396`), which is author-origin and
- * important, so it beats `inline-flex` outright. Measured through CDP on the open panel at 390
- * and 1280: the trigger matches that rule, computes `display: none`, has a 0x0 rect and is not
- * tabbable — so the WCAG 4.1.2 defect the old rule existed for (a focusable, NAMELESS control
- * behind an open panel) cannot occur. A `[&[hidden]]:invisible` utility was written here first
- * and removed once measured: it matched, set `visibility: hidden`, and changed nothing.
- *
- * The layout-shift worry that chose `visibility` over `display` is also measured away in this
- * header: nav height is 65px with the panel closed AND open, at both widths.
- */
-const TRIGGER =
-  "inline-flex items-center justify-center gap-1.5 min-w-[28px] min-h-[28px] px-[7px] " +
-  "rounded-lg border border-input bg-card text-muted-foreground no-underline " +
-  "text-[0.9rem] font-semibold hover:border-primary hover:text-primary min-[70rem]:justify-start";
-
-/**
- * Hidden on narrow viewports: the trigger collapses to the icon alone so it fits beside the brand
- * on the header's FIRST row and adds no row of its own. From the measured breakpoint up it shows a
- * SHORT word next to the icon, and the trigger has no fixed width — it sizes to its content.
- * Measured why: with a 210px fixed trigger the Turkish header needed 985px of a 984px line at
- * 1024px wide and wrapped the nav onto a second row.
- */
-const TRIGGER_TEXT = "hidden whitespace-nowrap min-[70rem]:inline";
-
+/** Keeps the icons at their drawn size inside a flex row. */
 const ICON = "flex-none";
-
-/**
- * The open panel is ABSOLUTELY positioned, so opening the search overlays content instead of
- * pushing it — no layout shift at any viewport.
- *
- * WHICH element it is positioned against changes with the viewport, and that is the point.
- * Narrow: the slot is unpositioned, so the panel resolves against the sticky header and spans the
- * viewport with a 16px inset — the mobile sheet. Anchoring it to the slot there was a real bug:
- * the trigger sits ~250px in on a 390px screen, so a right-aligned 92vw panel started at -109px
- * and the result names were clipped off-screen. Wide: the slot becomes the containing block, so
- * the panel hangs directly under the trigger. The 15px top margin there is measured — the
- * trigger's bottom edge sits 42px below the header's top and the header is 57px tall, so 15px puts
- * the panel flush with the header's lower border instead of overlapping it.
- *
- * `rounded-[16px]` is the deleted rule's `var(--radius-lg)`, which resolves to 16px at runtime;
- * Tailwind's own `rounded-lg` is `--radius` (10px) and `rounded-2xl` is 18px, so neither spells it.
- * `shadow-xl` replaces a hand-rolled `rgb(43 38 34 / 14%)` shadow — a raw Terra ink frozen at its
- * light value — and is what the header's sibling dropdowns already use.
- *
- * NOT `components/ui/card.tsx`, and the exemption is measured rather than asserted. This is a
- * popover, not a section panel: `Card`'s `panel` variant is `rounded-3xl border border-border
- * bg-card p-6 sm:p-8`, which is a 22px radius, 24-32px of padding on a dropdown whose padding is
- * 10px, and a `border-border` edge at 1.45:1 light / 1.53:1 dark where this panel needs the same
- * 3:1 control boundary as the trigger it hangs from (`border-input`, 3.86:1 / 4.02:1 on `--card`).
- * The header's sibling dropdowns hand-draw their surface for the same reason.
- */
-const PANEL =
-  "absolute top-full left-4 right-4 mt-2 z-50 p-2.5 rounded-[16px] border border-input " +
-  "bg-card shadow-xl min-[70rem]:left-0 min-[70rem]:right-auto min-[70rem]:w-[420px] " +
-  "min-[70rem]:mt-[15px]";
-
-/**
- * ONE ring, on the OUTER box, and it is the row that owns it.
- *
- * Before the rule existed the row drew its border while the `<input>` inside it drew the global
- * 3px ring, so a focused search box showed two nested rings clipping each other. The ring belongs
- * to the row, which is what the reader perceives as the search box.
- *
- * Scoped to the INPUT, not `:focus-within`. The row has a second focusable child — the close
- * button, which is genuinely Tab-reachable — and with `:focus-within` the row drew its ring at the
- * same time as the button drew the global one: two concentric rings on the very tab stop this rule
- * was written to clean up, and the outer one then named the wrong component. `input:focus` rather
- * than `:focus-visible` keeps today's behaviour exactly: a text input matches `:focus-visible` on
- * pointer focus too, so the box is ringed when clicked into.
- *
- * `outline-ring`, not the `--color-accent` the deleted rule painted. That raw token is frozen at
- * #276b70 in both themes: on the panel's old frozen-white ground it measured 6.13:1, but the panel
- * is `bg-card` now, and #276b70 on dark `--card` is 2.78:1 — a focus ring BELOW WCAG 1.4.11's 3:1
- * floor for the one user who cannot do without it. `--ring` is redefined in `.dark` and lands at
- * 5.44:1 dark / 6.13:1 light on `--card`, at the same 3px width and 2px offset.
- */
-const INPUT_ROW =
-  "flex items-center gap-2 px-2.5 rounded-lg border border-input text-muted-foreground " +
-  "has-[input:focus]:outline-3 has-[input:focus]:outline-offset-2 has-[input:focus]:outline-ring";
-
-/**
- * Suppressing the INNER ring needs `!`, and that is a fact about layers rather than a shortcut.
- *
- * `app/globals.css`'s `:focus-visible { outline: 3px solid var(--ring) }` sits OUTSIDE every
- * `@layer`, and an unlayered rule beats every rule in `@layer utilities` whatever its specificity —
- * the trap that file's own T-041 note records. A plain `focus-visible:outline-none` is a layered
- * utility, so it loses and the input draws the global ring INSIDE the row's: the two concentric
- * rings again. Measured, not assumed: the v2 command dialog's input carries `outline-none` today
- * and its computed outline is still `3px solid`. The important form wins because importance
- * reverses layer order. The ring is not lost, it moved — INPUT_ROW above owns it.
- *
- * `text-[1rem]` rather than `text-base`, and it is the same class of trap: `text-base` would also
- * set `line-height: 1.5`, which the deleted rule did not — the input inherits 1.6 from the body.
- */
-const INPUT =
-  "flex-1 min-w-0 min-h-10 border-none bg-transparent font-sans text-[1rem] text-foreground " +
-  "placeholder:text-muted-foreground focus-visible:outline-none!";
-
-const CLOSE =
-  "inline-flex items-center justify-center min-w-[32px] min-h-[32px] border-none bg-transparent " +
-  "cursor-pointer text-muted-foreground text-[1.3rem] leading-none hover:text-primary";
-
-/** Eight rows overflow a short viewport, so the listbox scrolls rather than the panel growing. */
-const RESULTS = "list-none mt-2 mb-0 p-0 max-h-[min(50vh,360px)] overflow-y-auto";
-
-const RESULT_ITEM = "m-0";
-
-const RESULT =
-  "flex items-center justify-between gap-2.5 px-2.5 py-[9px] rounded-lg text-link no-underline " +
-  "font-semibold text-[0.95rem] hover:bg-chip";
-
-/** The highlighted option, and the hover state above paint the same ground on purpose. */
-const RESULT_ACTIVE = "bg-chip";
-
-const RESULT_NAME = "min-w-0 wrap-anywhere";
-
-/**
- * A TEXT badge: the province/country distinction is never carried by colour alone.
- * `text-chip-foreground` on `bg-chip` is 6.59:1 light and 8.01:1 dark.
- */
-const RESULT_KIND =
-  "flex-none px-2 py-0.5 rounded-full bg-chip text-chip-foreground text-[0.75rem] font-bold";
-
-/** `mb-0` is deliberate: this is a `<p>`, and dropping the explicit zero lets a base margin back. */
-const NOTICE = "mt-2.5 mx-1 mb-0 text-muted-foreground text-[0.9rem]";
-
-/**
- * The closing row: province index + country index, side by side. The separator lives on the ROW,
- * once, so the two links do not each draw one; a gap rather than a margin so the row stays
- * symmetric when it wraps on a narrow panel.
- */
-const SEE_ALL_ROW = "flex flex-wrap gap-x-[18px] gap-y-0.5 mt-2 pt-0.5 border-t border-border";
-
-const SEE_ALL_LINK =
-  "px-2.5 py-[9px] text-link no-underline text-[0.9rem] font-bold hover:text-primary hover:underline";
 
 interface SearchComboboxProps {
   /**
@@ -241,7 +55,6 @@ interface SearchComboboxProps {
   readonly countryIndexHref: string;
   readonly indexUrl: string;
   readonly pathPrefix?: string;
-  readonly variant?: "default" | "v2";
   readonly enableGlobalShortcut?: boolean;
 }
 
@@ -289,7 +102,6 @@ export function SearchCombobox({
   countryIndexHref,
   indexUrl,
   pathPrefix,
-  variant = "default",
   enableGlobalShortcut = false,
 }: SearchComboboxProps) {
   const t = useTranslations("Search");
@@ -412,9 +224,10 @@ export function SearchCombobox({
     return () => clearTimeout(timer);
   }, [open, hasQuery, isLoading, indexUnavailable, hits.length, t]);
 
-  // Focus restoration AFTER commit. Doing it inside `close()` used to work only because the
-  // trigger was never really hidden; now that `[hidden]` genuinely removes it from the a11y
-  // tree, a pre-commit `focus()` would be a silent no-op (review C1 and I5 are one fix).
+  // Focus restoration AFTER commit, never inside `close()` (review C1 and I5). The rule was
+  // written for a trigger that `[hidden]` removed while its panel was open, where a pre-commit
+  // `focus()` was a silent no-op; the command dialog's triggers stay mounted, so today the
+  // after-commit order is the safe one rather than the only one that works.
   useEffect(() => {
     if (open || !restoreFocus.current) return;
     restoreFocus.current = false;
@@ -482,8 +295,7 @@ export function SearchCombobox({
     }
     // Tab is deliberately NOT handled here. Closing on keydown unmounted the focused input
     // before the browser performed its default focus move, so sequential navigation restarted
-    // from the document start; `onBlur` closes the panel once focus has settled on whatever
-    // Tab actually reached (review I4 / A45-I2).
+    // from the document start (review I4 / A45-I2).
     if (hits.length === 0) return;
 
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
@@ -514,343 +326,196 @@ export function SearchCombobox({
     }
   };
 
-  /**
-   * Closes once focus has genuinely left the control. Clicking an option keeps focus inside
-   * the root, so navigation is never cancelled; tabbing or clicking away closes the panel
-   * without moving focus anywhere, which is what makes the keyboard tour coherent. This
-   * replaces the previous outside-`pointerdown` listener, which closed the panel but left
-   * focus on `<body>`.
-   */
-  const onBlur = (event: React.FocusEvent<HTMLDivElement>) => {
-    if (variant === "v2") return;
-    // A deliberate close (Escape, ×) is already restoring focus through the effect above;
-    // the blur it causes must not cancel that by re-closing with `restore: false`.
-    if (restoreFocus.current) return;
-    if (event.currentTarget.contains(event.relatedTarget)) return;
-    close(false);
-  };
-
-  // Pre-hydration and no-JS: a real link to the alphabetical province index. It carries
-  // `aria-label` because the visible word is `display: none` below the desktop breakpoint,
-  // which would otherwise leave a NAMELESS link in the first HTML response — and that is the
-  // state the no-JS reader never leaves (review C2).
+  // Pre-hydration and no-JS: a real link to the alphabetical province index. Both anchors
+  // carry `aria-label` because the mobile one is the icon alone, which would otherwise leave a
+  // NAMELESS link in the first HTML response — and that is the state the no-JS reader never
+  // leaves (review C2).
   if (!mounted) {
-    if (variant === "v2") {
-      return (
-        <div className="flex items-center">
-          <a
-            ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
-            className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 text-xs text-muted-foreground font-medium shadow-2xs"
-            href={provinceIndexHref}
-            aria-label={t("label")}
-            data-testid="global-search"
-          >
-            <SearchIcon />
-            <span>{t("triggerLabel")}...</span>
-          </a>
-          <a
-            className="sm:hidden size-9 rounded-xl border border-border/80 bg-card flex items-center justify-center text-foreground shadow-2xs"
-            href={provinceIndexHref}
-            aria-label={t("label")}
-            data-testid="global-search-mobile"
-          >
-            <SearchIcon />
-          </a>
-        </div>
-      );
-    }
     return (
-      <div className={SLOT}>
+      <div className="flex items-center">
         <a
           ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
-          className={TRIGGER}
+          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 text-xs text-muted-foreground font-medium shadow-2xs"
           href={provinceIndexHref}
           aria-label={t("label")}
+          data-testid="global-search"
         >
           <SearchIcon />
-          <span className={TRIGGER_TEXT}>{t("triggerLabel")}</span>
+          <span>{t("triggerLabel")}...</span>
+        </a>
+        <a
+          className="sm:hidden size-9 rounded-xl border border-border/80 bg-card flex items-center justify-center text-foreground shadow-2xs"
+          href={provinceIndexHref}
+          aria-label={t("label")}
+          data-testid="global-search-mobile"
+        >
+          <SearchIcon />
         </a>
       </div>
     );
   }
 
-  if (variant === "v2") {
-    return (
-      <div className="flex items-center">
-        {/* Desktop trigger: command bar button with Ctrl+K badge */}
-        <button
-          ref={triggerRef as unknown as React.RefObject<HTMLButtonElement>}
-          type="button"
-          data-testid="global-search"
-          aria-label={t("openLabel")}
-          aria-expanded={open}
-          aria-haspopup="listbox"
-          onClick={() => openAndFocus()}
-          onFocus={() => void ensureIndex()}
-          className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs"
-        >
-          <SearchIcon />
-          <span>{t("triggerLabel")}...</span>
-        </button>
-
-        {/* Mobile trigger: icon button */}
-        <button
-          type="button"
-          className="sm:hidden size-9 rounded-xl border border-border/80 bg-card hover:bg-muted flex items-center justify-center text-foreground transition-colors cursor-pointer shadow-2xs"
-          aria-label={t("openLabel")}
-          aria-expanded={open}
-          aria-haspopup="listbox"
-          data-testid="global-search-mobile"
-          onClick={() => openAndFocus()}
-          onFocus={() => void ensureIndex()}
-        >
-          <SearchIcon />
-        </button>
-
-        {/* THE COMMAND DIALOG, AND IT IS PORTALLED OUT OF THE HEADER ON PURPOSE (T-067).
-            The trigger above lives inside `<nav>`, and that `<nav>` paints itself with
-            `backdrop-blur-xl`. A `backdrop-filter` makes its element a CONTAINING BLOCK for
-            every `position: fixed` descendant (CSS Filter Effects §2.2, the same rule
-            `transform` and `filter` carry), so this dialog's `fixed inset-0` resolved
-            against the 64px header box rather than the viewport: measured at
-            `{top: 0, left: 0, width: 1467, height: 64}`. What a reader saw was a dark band
-            across the top of the page and nothing over the content the palette covers.
-            Widening the box would not fix it and removing the header's blur would cost the
-            header its own look, so the dialog is rendered into `document.body`, which has no
-            filtered ancestor. `open` is only ever true after a press, so there is no server
-            render of this branch — the `mounted` guard is belt and braces for a future
-            caller that opens it from state.
-            The backdrop that band came from is now TRANSPARENT rather than `bg-black/60`:
-            it exists to catch the click that closes the palette, not to dim the page. */}
-        {open && mounted
-          ? createPortal(
-              <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4 sm:px-0">
-                <div className="fixed inset-0" onClick={() => close(true)} aria-hidden="true" />
-                <div
-                  className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      e.stopPropagation();
-                      close(true);
-                    }
-                  }}
-                >
-                  <label className="sr-only" htmlFor={inputId}>
-                    {t("label")}
-                  </label>
-                  <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
-                    <SearchIcon />
-                    <input
-                      ref={inputRef}
-                      id={inputId}
-                      /* No `outline-none`, unlike the `INPUT` constant above: that one sits in a row
-                     that owns the ring (`has-[input:focus]:outline-3`), this one's row does not,
-                     so suppressing here would leave the command dialog's only control with no
-                     visible focus once T-053 made suppression work. Site default applies. */
-                      className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
-                      type="text"
-                      role="combobox"
-                      autoComplete="off"
-                      placeholder={t("placeholder")}
-                      value={query}
-                      aria-expanded={hits.length > 0}
-                      aria-controls={listboxId}
-                      aria-autocomplete="list"
-                      aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
-                      onChange={(event) => updateQuery(event.target.value)}
-                      onKeyDown={onKeyDown}
-                    />
-                    <button
-                      type="button"
-                      className="size-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
-                      onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => close(true)}
-                    >
-                      <span className="sr-only">{t("closeLabel")}</span>
-                      <CloseIcon />
-                    </button>
-                  </div>
-
-                  {indexUnavailable ? (
-                    <p className="p-4 text-center text-xs text-muted-foreground">
-                      {t("loadFailed")}
-                    </p>
-                  ) : null}
-
-                  {hits.length > 0 ? (
-                    <ul
-                      ref={listRef}
-                      id={listboxId}
-                      role="listbox"
-                      aria-label={t("label")}
-                      data-combobox-items="true"
-                      className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
-                    >
-                      {hits.map((hit, index) => {
-                        const resolvedPath = resolvePath(hit.path);
-                        return (
-                          <li key={hit.path} role="presentation">
-                            <a
-                              id={optionId(index)}
-                              role="option"
-                              tabIndex={-1}
-                              aria-selected={index === activeIndex}
-                              href={resolvedPath}
-                              className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                                index === activeIndex
-                                  ? "bg-primary/10 text-primary"
-                                  : "text-foreground hover:bg-muted"
-                              }`}
-                              onMouseEnter={() => setActiveIndex(index)}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                window.location.assign(resolvedPath);
-                              }}
-                            >
-                              <span className="font-bold">{hit.name}</span>
-                              <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
-                                {hit.kind === "p" ? t("province") : t("country")}
-                              </span>
-                            </a>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : null}
-
-                  {showNoResults ? (
-                    <p className="p-6 text-center text-xs text-muted-foreground">
-                      {t("noResults")}
-                    </p>
-                  ) : null}
-
-                  <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs font-medium text-muted-foreground">
-                    <a href={provinceIndexHref} className="hover:text-primary transition-colors">
-                      {t("seeAllProvinces")} →
-                    </a>
-                    <a href={countryIndexHref} className="hover:text-primary transition-colors">
-                      {t("seeAllCountries")} →
-                    </a>
-                  </div>
-
-                  <div role="status" aria-live="polite" className="sr-only">
-                    {announcement}
-                  </div>
-                </div>
-              </div>,
-              document.body,
-            )
-          : null}
-      </div>
-    );
-  }
-
   return (
-    <div className={SLOT} onBlur={onBlur}>
-      <a
-        ref={triggerRef as unknown as React.RefObject<HTMLAnchorElement>}
-        className={TRIGGER}
-        href={provinceIndexHref}
+    <div className="flex items-center">
+      {/* Desktop trigger: command bar button */}
+      <button
+        ref={triggerRef as unknown as React.RefObject<HTMLButtonElement>}
+        type="button"
+        data-testid="global-search"
         aria-label={t("openLabel")}
         aria-expanded={open}
         aria-haspopup="listbox"
-        hidden={open}
-        onClick={(event) => {
-          event.preventDefault();
-          openAndFocus();
-        }}
+        onClick={() => openAndFocus()}
+        onFocus={() => void ensureIndex()}
+        className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-border/80 bg-muted/40 hover:bg-muted text-xs text-muted-foreground hover:text-foreground font-medium transition-all cursor-pointer shadow-2xs"
+      >
+        <SearchIcon />
+        <span>{t("triggerLabel")}...</span>
+      </button>
+
+      {/* Mobile trigger: icon button */}
+      <button
+        type="button"
+        className="sm:hidden size-9 rounded-xl border border-border/80 bg-card hover:bg-muted flex items-center justify-center text-foreground transition-colors cursor-pointer shadow-2xs"
+        aria-label={t("openLabel")}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        data-testid="global-search-mobile"
+        onClick={() => openAndFocus()}
         onFocus={() => void ensureIndex()}
       >
         <SearchIcon />
-        <span className={TRIGGER_TEXT}>{t("triggerLabel")}</span>
-      </a>
+      </button>
 
-      {open ? (
-        <div className={PANEL}>
-          <label className="sr-only" htmlFor={inputId}>
-            {t("label")}
-          </label>
-          <div className={INPUT_ROW}>
-            <SearchIcon />
-            <input
-              ref={inputRef}
-              id={inputId}
-              className={INPUT}
-              type="text"
-              role="combobox"
-              autoComplete="off"
-              placeholder={t("placeholder")}
-              value={query}
-              // Tracks the popup's ACTUAL presence: the listbox below renders only when there
-              // are hits, so the attribute and the element can never disagree (review M12).
-              aria-expanded={hits.length > 0}
-              aria-controls={listboxId}
-              aria-autocomplete="list"
-              aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
-              onChange={(event) => updateQuery(event.target.value)}
-              onKeyDown={onKeyDown}
-            />
-            <button
-              type="button"
-              className={CLOSE}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => close(true)}
-            >
-              <span className="sr-only">{t("closeLabel")}</span>
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
+      {/* THE COMMAND DIALOG, AND IT IS PORTALLED OUT OF THE HEADER ON PURPOSE (T-067).
+          The trigger above lives inside `<nav>`, and that `<nav>` paints itself with
+          `backdrop-blur-xl`. A `backdrop-filter` makes its element a CONTAINING BLOCK for
+          every `position: fixed` descendant (CSS Filter Effects §2.2, the same rule
+          `transform` and `filter` carry), so this dialog's `fixed inset-0` resolved
+          against the 64px header box rather than the viewport: measured at
+          `{top: 0, left: 0, width: 1467, height: 64}`. What a reader saw was a dark band
+          across the top of the page and nothing over the content the palette covers.
+          Widening the box would not fix it and removing the header's blur would cost the
+          header its own look, so the dialog is rendered into `document.body`, which has no
+          filtered ancestor. `open` is only ever true after a press, so there is no server
+          render of this branch — the `mounted` guard is belt and braces for a future
+          caller that opens it from state.
+          The backdrop that band came from is now TRANSPARENT rather than `bg-black/60`:
+          it exists to catch the click that closes the palette, not to dim the page. */}
+      {open && mounted
+        ? createPortal(
+            <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4 sm:px-0">
+              <div className="fixed inset-0" onClick={() => close(true)} aria-hidden="true" />
+              <div
+                className="relative z-50 w-full max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    close(true);
+                  }
+                }}
+              >
+                <label className="sr-only" htmlFor={inputId}>
+                  {t("label")}
+                </label>
+                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
+                  <SearchIcon />
+                  <input
+                    ref={inputRef}
+                    id={inputId}
+                    /* No `outline-none`: this input's row draws no ring of its own, so
+                       suppressing here would leave the command dialog's only control with no
+                       visible focus once T-053 made suppression work. Site default applies. */
+                    className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
+                    type="text"
+                    role="combobox"
+                    autoComplete="off"
+                    placeholder={t("placeholder")}
+                    value={query}
+                    aria-expanded={hits.length > 0}
+                    aria-controls={listboxId}
+                    aria-autocomplete="list"
+                    aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
+                    onChange={(event) => updateQuery(event.target.value)}
+                    onKeyDown={onKeyDown}
+                  />
+                  <button
+                    type="button"
+                    className="size-7 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => close(true)}
+                  >
+                    <span className="sr-only">{t("closeLabel")}</span>
+                    <CloseIcon />
+                  </button>
+                </div>
 
-          {indexUnavailable ? <p className={NOTICE}>{t("loadFailed")}</p> : null}
+                {indexUnavailable ? (
+                  <p className="p-4 text-center text-xs text-muted-foreground">{t("loadFailed")}</p>
+                ) : null}
 
-          {hits.length > 0 ? (
-            <ul
-              ref={listRef}
-              id={listboxId}
-              role="listbox"
-              aria-label={t("label")}
-              className={RESULTS}
-            >
-              {hits.map((hit, index) => {
-                const resolvedPath = resolvePath(hit.path);
-                return (
-                  <li key={hit.path} role="presentation" className={RESULT_ITEM}>
-                    <a
-                      id={optionId(index)}
-                      role="option"
-                      tabIndex={-1}
-                      aria-selected={index === activeIndex}
-                      href={resolvedPath}
-                      className={`${RESULT} ${index === activeIndex ? RESULT_ACTIVE : ""}`}
-                      onMouseEnter={() => setActiveIndex(index)}
-                    >
-                      <span className={RESULT_NAME}>{hit.name}</span>
-                      <span className={RESULT_KIND}>
-                        {hit.kind === "p" ? t("province") : t("country")}
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          ) : null}
+                {hits.length > 0 ? (
+                  <ul
+                    ref={listRef}
+                    id={listboxId}
+                    role="listbox"
+                    aria-label={t("label")}
+                    data-combobox-items="true"
+                    className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
+                  >
+                    {hits.map((hit, index) => {
+                      const resolvedPath = resolvePath(hit.path);
+                      return (
+                        <li key={hit.path} role="presentation">
+                          <a
+                            id={optionId(index)}
+                            role="option"
+                            tabIndex={-1}
+                            aria-selected={index === activeIndex}
+                            href={resolvedPath}
+                            className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                              index === activeIndex
+                                ? "bg-primary/10 text-primary"
+                                : "text-foreground hover:bg-muted"
+                            }`}
+                            onMouseEnter={() => setActiveIndex(index)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              window.location.assign(resolvedPath);
+                            }}
+                          >
+                            <span className="font-bold">{hit.name}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
+                              {hit.kind === "p" ? t("province") : t("country")}
+                            </span>
+                          </a>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : null}
 
-          {showNoResults ? <p className={NOTICE}>{t("noResults")}</p> : null}
+                {showNoResults ? (
+                  <p className="p-6 text-center text-xs text-muted-foreground">{t("noResults")}</p>
+                ) : null}
 
-          <div className={SEE_ALL_ROW}>
-            <a className={SEE_ALL_LINK} href={provinceIndexHref}>
-              {t("seeAllProvinces")}
-            </a>
-            <a className={SEE_ALL_LINK} href={countryIndexHref}>
-              {t("seeAllCountries")}
-            </a>
-          </div>
+                <div className="p-3 border-t border-border bg-muted/20 flex items-center justify-between text-xs font-medium text-muted-foreground">
+                  <a href={provinceIndexHref} className="hover:text-primary transition-colors">
+                    {t("seeAllProvinces")} →
+                  </a>
+                  <a href={countryIndexHref} className="hover:text-primary transition-colors">
+                    {t("seeAllCountries")} →
+                  </a>
+                </div>
 
-          <div role="status" aria-live="polite" className="sr-only">
-            {announcement}
-          </div>
-        </div>
-      ) : null}
+                <div role="status" aria-live="polite" className="sr-only">
+                  {announcement}
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
