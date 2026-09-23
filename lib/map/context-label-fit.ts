@@ -24,7 +24,7 @@ const DEFAULT_FONT_UNITS = 12;
  * CSS px per viewBox unit in the 1440px desktop box: its 1148px content width (1150px less the
  * 1px borders) over the tall frame's 1270 units.
  */
-const DESKTOP_SCALE = 1148 / 1270;
+export const DESKTOP_SCALE = 1148 / 1270;
 
 /** On-screen label size in CSS px: what 12 units measure at 1440px (10.85px). */
 export const CONTEXT_LABEL_PX = DEFAULT_FONT_UNITS * DESKTOP_SCALE;
