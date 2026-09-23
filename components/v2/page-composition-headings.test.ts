@@ -763,7 +763,9 @@ function pagesWithMultipleH1(): string[] {
  *
  *   7. WHETHER THE HEADING IS CORRECT. Nothing here reads the heading's TEXT, its position in the
  *      document, whether it precedes an `h2`, or whether the page's `<title>` agrees with it.
- *      "Has exactly one `h1`" is not "has a correct heading outline".
+ *      "Has exactly one `h1`" is not "has a correct heading outline". For the three `(play)`
+ *      screens the level half of that question is answered at the bottom of this file ("the
+ *      (play) outline steps one level at a time"); for the reading surface it is not.
  *
  *   8. WHERE A DECLARATION CANNOT BE ISOLATED. Crediting a heading to the declaration that writes
  *      it needs that declaration's span. `import * as Ns` and any shape
@@ -1008,9 +1010,9 @@ export const H1_ELEMENTS = 15;
  *     which stays `auto`) with `display: block` and `visibility: visible` — in the accessibility
  *     tree and reachable by heading navigation, never `display: none`.
  *
- * Not claimed: that these five now have a CORRECT OUTLINE. SCOPE note 7 still holds, and the play
- * screens still step `h1` → `h3`. What is claimed is that no render root on this surface leaves a
- * reader with no level-1 heading.
+ * Not claimed HERE: that these five have a CORRECT OUTLINE (SCOPE note 7). What is claimed is that
+ * no render root on this surface leaves a reader with no level-1 heading. The play screens' levels
+ * are held separately, at the bottom of this file.
  *
  * RE-MUTATION-CHECKED 2026-09-18 AT 0 — a zero target that has never failed has not been shown to
  * work, the doctrine `PAGE_BODY_SPELLINGS` records in
@@ -1813,5 +1815,194 @@ describe("no h1 spelling is partly uncountable", () => {
       "h1 spellings containing a template hole",
     ).toEqual([]);
     expect(h1SitesBySpelling().size).toBe(H1_SPELLINGS);
+  });
+});
+
+/**
+ * THE `(play)` OUTLINE — NO SKIPPED LEVEL. The counters above answer "is there exactly one `<h1>`"
+ * (SCOPE note 7); this block answers the next question for the three fullscreen game screens:
+ * does the outline under that `<h1>` step down one level at a time.
+ *
+ * It reuses the render walk rather than a second resolver: every node `h1SitesOf` visits from a
+ * `(play)` root contributes the `<h1>`–`<h6>` elements written inside its own span, read from
+ * {@link maskedSource} so a heading inside a string literal is prose.
+ *
+ * TWO OUTLINES, NOT ONE. A modal dialog is announced as its own context and its title is its top
+ * heading, so a dialog's headings are not measured against the page's:
+ *
+ *   - the PAGE outline — every explicit heading outside a dialog — must be exactly 1..N;
+ *   - a DIALOG outline — the explicit headings in a declaration that renders one of
+ *     {@link IMPLICIT_H2_TITLES} — sits under that implicit `<h2>` and must be exactly 3..N (or
+ *     empty).
+ *
+ * The dialog title never appears as a literal `<h2` in this repo: `DialogTitle` / `SheetTitle`
+ * wrap Base UI's `Dialog.Title`, which renders the `<h2>` itself. The table below names those
+ * wrappers, and its liveness check reads both the wrapper and the installed Base UI source, so a
+ * wrapper that stops rendering `Dialog.Title` or a Base UI upgrade that changes the tag goes red
+ * here instead of quietly moving a dialog's outline.
+ *
+ * Granularity is the declaration, the walk's own unit: a component rendered INSIDE a dialog but
+ * declared elsewhere is measured against the page outline. None exists on the play surface.
+ *
+ * WHY THERE IS ALSO AN EXACT PIN. The two rules above read level SETS, and a set cannot see
+ * mutually exclusive branches. `V2GameScreen`'s two `<h2>` panels are alternatives (ready to start
+ * vs round finished), and so are the leaderboard's two `<h3>` empty states: turn ONE of either pair
+ * back to its old level and the set still reads `1,2,3` / `3,4`, green, while that branch renders
+ * a skip. {@link PLAY_OUTLINE} therefore pins every heading's level per declaration, in source
+ * order, so any single element moving goes red and has to be re-decided here.
+ *
+ * Not measured: anything mounted by `app/[locale]/layout.tsx` (the auth and unsaved-changes
+ * dialogs), which no render root's walk reads — SCOPE note 5.
+ *
+ * MUTATION-CHECKED: on the tree before this block, the page outline read `1,3` on all three roots
+ * and the leaderboard dialog read `4`; both rules were RED, naming the file. With the fix in place,
+ * reverting ONE leaderboard `<h3>` to `<h4>`, or ONE game-screen `<h2>` to `<h3>`, leaves both
+ * set rules green and takes the {@link PLAY_OUTLINE} pin RED; reverted, GREEN.
+ */
+/**
+ * Every explicit heading the play roots render, per declaration, in source order. `page` or
+ * `dialog` is the outline it belongs to (see above). Declarations with no heading are omitted.
+ */
+const PLAY_OUTLINE: Readonly<Record<string, { scope: "page" | "dialog"; levels: number[] }>> = {
+  // sr-only h1, then the two mutually exclusive overlay panels (ready to start / round result).
+  "components/v2/v2-game-screen.tsx — V2GameScreen": { scope: "page", levels: [1, 2, 2] },
+  // The two mutually exclusive empty states under the dialog's implicit `<h2>` title.
+  "components/v2/v2-leaderboard-modal.tsx — V2LeaderboardModal": {
+    scope: "dialog",
+    levels: [3, 3],
+  },
+};
+const IMPLICIT_H2_TITLES: ReadonlyArray<{
+  readonly file: string;
+  readonly name: string;
+  readonly primitive: string;
+}> = [
+  { file: "components/ui/dialog.tsx", name: "DialogTitle", primitive: "DialogPrimitive" },
+  { file: "components/ui/sheet.tsx", name: "SheetTitle", primitive: "SheetPrimitive" },
+];
+
+/** Base UI's `Dialog.Title`, whose default element is what the table above relies on. */
+const BASE_UI_DIALOG_TITLE = "node_modules/@base-ui/react/dialog/title/DialogTitle.js";
+
+const HEADING_ELEMENT = /<h([1-6])[\s>]/g;
+
+type OutlineSite = { readonly key: string; readonly owner: string; readonly level: number };
+type PlayOutline = { readonly page: OutlineSite[]; readonly dialogs: Map<string, OutlineSite[]> };
+
+function rendersImplicitTitle(file: string, masked: string): boolean {
+  const bindings = importBindingsOf(file);
+  return [...masked.matchAll(JSX_ELEMENT)].some((match) => {
+    const bound = bindings.get(match[1]!);
+    return (
+      bound !== undefined &&
+      IMPLICIT_H2_TITLES.some(
+        (title) => label(bound.file) === title.file && bound.name === title.name,
+      )
+    );
+  });
+}
+
+function playOutlineOf(root: string): PlayOutline {
+  const nodes: RenderNode[] = [];
+  h1SitesOf(root, (node) => nodes.push(node));
+
+  const page = new Map<string, OutlineSite>();
+  const dialogs = new Map<string, OutlineSite[]>();
+  for (const node of nodes) {
+    if (!node.file.endsWith(".tsx")) continue;
+    const span = nodeSpan(node);
+    if (span.kind === "forward") continue;
+    const masked = maskedSource(node.file).slice(span.from, span.to);
+    const owner = `${label(node.file)} — ${node.name ?? "*whole*"}`;
+    const sites = [...masked.matchAll(HEADING_ELEMENT)].map((match) => ({
+      key: `${owner} @${span.from + match.index}`,
+      owner,
+      level: Number(match[1]),
+    }));
+    if (rendersImplicitTitle(node.file, masked)) dialogs.set(owner, sites);
+    else for (const site of sites) page.set(site.key, site);
+  }
+  return { page: [...page.values()], dialogs };
+}
+
+function levelsOf(sites: readonly OutlineSite[]): number[] {
+  return [...new Set(sites.map((site) => site.level))].sort((a, b) => a - b);
+}
+
+/** `from..max` with no gap, or `[]` for an outline that may be empty. */
+function unbrokenFrom(from: number, levels: readonly number[]): number[] {
+  const top = levels.length === 0 ? from - 1 : Math.max(from - 1, ...levels);
+  return Array.from({ length: top - from + 1 }, (_, i) => from + i);
+}
+
+const playRoots = () => walkRenderRoots().filter((root) => label(root).includes("/(play)/"));
+
+describe("the (play) outline steps one level at a time", () => {
+  it("covers exactly the three game screens — anti-vacuity", () => {
+    expect(playRoots().map(label)).toEqual([
+      "app/[locale]/(play)/oyun/81-il/page.tsx",
+      "app/[locale]/(play)/oyun/bolge-bolge-il/[bolge]/page.tsx",
+      "app/[locale]/(play)/oyun/bolge-bulma/page.tsx",
+    ]);
+  });
+
+  it("the page outline is 1..N with no skipped level", () => {
+    const broken = playRoots().flatMap((root) => {
+      const { page } = playOutlineOf(root);
+      const levels = levelsOf(page);
+      return levels[0] === 1 && levels.join() === unbrokenFrom(1, levels).join()
+        ? []
+        : [
+            `${label(root)} — levels ${levels.join(",")}: ${page.map((s) => `h${s.level} ${s.key}`).join("; ")}`,
+          ];
+    });
+    expect(broken, "play roots whose page outline skips a level").toEqual([]);
+  });
+
+  it("every dialog outline starts under its implicit h2, at 3..N", () => {
+    const broken = new Set<string>();
+    let dialogsSeen = 0;
+    for (const root of playRoots()) {
+      for (const [owner, sites] of playOutlineOf(root).dialogs) {
+        dialogsSeen += 1;
+        const levels = levelsOf(sites);
+        if (levels.join() !== unbrokenFrom(3, levels).join()) {
+          broken.add(`${owner} — levels ${levels.join(",")}`);
+        }
+      }
+    }
+    // The leaderboard dialog and the header's mobile-nav sheet, on each of the three roots.
+    expect(dialogsSeen).toBe(6);
+    expect([...broken], "dialogs whose outline does not sit at 3..N").toEqual([]);
+  });
+
+  it("every play heading sits at its pinned level — the per-element check the sets cannot make", () => {
+    for (const root of playRoots()) {
+      const { page, dialogs } = playOutlineOf(root);
+      const actual: Record<string, { scope: "page" | "dialog"; levels: number[] }> = {};
+      for (const site of page) {
+        (actual[site.owner] ??= { scope: "page", levels: [] }).levels.push(site.level);
+      }
+      for (const [owner, sites] of dialogs) {
+        if (sites.length > 0)
+          actual[owner] = { scope: "dialog", levels: sites.map((s) => s.level) };
+      }
+      expect(actual, label(root)).toEqual(PLAY_OUTLINE);
+    }
+  });
+
+  it("the implicit-title table is live: each wrapper renders Base UI's Dialog.Title, an h2", () => {
+    for (const title of IMPLICIT_H2_TITLES) {
+      const file = join(repoRoot, title.file);
+      const region = declarationRegions(file).get(title.name);
+      expect(region, `${title.file} declares ${title.name}`).toBeDefined();
+      expect(readSource(file).slice(region![0], region![1])).toContain(`<${title.primitive}.Title`);
+      expect(readSource(file)).toMatch(
+        new RegExp(`import \\{ Dialog as ${title.primitive} \\} from "@base-ui/react/dialog"`),
+      );
+    }
+    expect(readFileSync(join(repoRoot, BASE_UI_DIALOG_TITLE), "utf8")).toContain(
+      "useRenderElement)('h2'",
+    );
   });
 });

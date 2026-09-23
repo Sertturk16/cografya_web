@@ -727,8 +727,10 @@ export function V2GameScreen({
           `modeName` is the same string each page already passes to the breadcrumb trail and to
           its own `<title>`, so the heading cannot drift from either.
 
-          NOT CLOSED HERE: the outline still steps h1 -> h3 (the result panels below are `<h3>`).
-          One defect at a time; this is the one that left the document with no level-1 entry.
+          The two overlay panels below (ready-to-start and round result) are this heading's
+          `<h2>`s, so the outline steps h1 -> h2 with no skipped level; their classes set size,
+          weight and colour, so the level carries no visual change. The "(play) outline steps one
+          level at a time" block in `components/v2/page-composition-headings.test.ts` holds it.
         */}
         <h1 className="sr-only">{modeName}</h1>
 
@@ -1267,9 +1269,9 @@ export function V2GameScreen({
                     <Gamepad2 className="size-8" />
                   </div>
                   <div className="max-w-md space-y-1">
-                    <h3 className="font-heading text-2xl font-bold text-foreground">
+                    <h2 className="font-heading text-2xl font-bold text-foreground">
                       {modeName} Başlamaya Hazır
-                    </h3>
+                    </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       Seçtiğiniz zorluk seviyesine göre harita üzerinde doğru konumları en yüksek
                       başarı yüzdesiyle işaretleyin.
@@ -1322,7 +1324,7 @@ export function V2GameScreen({
                             ? "3 Hata Limiti Doldu"
                             : "Tur Tamamlandı"}
                     </Badge>
-                    <h3
+                    <h2
                       ref={resultHeadingRef}
                       tabIndex={-1}
                       className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-2 outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
@@ -1335,7 +1337,7 @@ export function V2GameScreen({
                           : wrongCount >= 3 && difficulty === "klasik"
                             ? "Tur Tamamlanamadı — Tekrar Dene!"
                             : "Tebrikler, Harita Turunu Tamamladın!"}
-                    </h3>
+                    </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       {correctPlates.size + correctRegions.size === 0 ||
                       normalizedAcademicScore === 0
