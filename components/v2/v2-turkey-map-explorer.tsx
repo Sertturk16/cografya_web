@@ -535,15 +535,12 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
       <div className="rounded-3xl border border-primary/30 bg-gradient-to-b from-card via-card to-muted/40 p-5 sm:p-8 shadow-xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <Badge variant="primary" size="sm" dot>
-                Genişletilmiş Vektör Tuvali
-              </Badge>
-              <span className="text-xs text-muted-foreground">81 İl + Komşular + Denizler</span>
-            </div>
-            <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-              İnteraktif Türkiye Haritası &amp; Civar Coğrafya
+            <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+              81 İl Haritası
             </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              Bir ile tıkla, kısa bilgisini gör. Yakınlaştırıp sürükleyerek haritada gezinebilirsin.
+            </p>
           </div>
 
           {/* Region Tabs (Fully Functional Filter Bar) */}
@@ -704,7 +701,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   viewBox={TR_CONTEXT_TALL_VIEWBOX}
                   preserveAspectRatio="xMidYMid slice"
                   className="w-full h-full select-none block"
-                  aria-label="Türkiye 81 İl ve Komşular İnteraktif Haritası"
+                  aria-label="Türkiye'nin 81 ili ve komşu ülkeler haritası"
                 >
                   {/* 1. Surrounding Foreign Countries */}
                   <g
@@ -861,7 +858,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                         </div>
 
                         <div className="pt-1 text-[10px] text-primary font-semibold flex items-center justify-between border-t border-border/60">
-                          <span>Tıkla ve İncele</span>
+                          <span>Seçmek için tıkla</span>
                           <ArrowRight className="size-3" />
                         </div>
                       </>
@@ -930,19 +927,9 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
           className="space-y-6"
         >
           <div className="border-b border-border pb-4 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" size="sm">
-                  81 İl Kataloğu
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {filteredProvinces.length} İl Listeleniyor
-                </span>
-              </div>
-              <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-                İller Listesi &amp; Coğrafi Detaylar
-              </h3>
-            </div>
+            <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+              İl Listesi
+            </h3>
 
             <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto">
               {/* Search Input */}
@@ -988,7 +975,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  A-Z İsim
+                  A-Z
                 </button>
                 <button
                   type="button"
@@ -1022,7 +1009,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   aria-label={t("regionGroupedView")}
                 >
                   <Layers className="size-3.5" />
-                  <span className="hidden sm:inline">Bölge Gruplu</span>
+                  <span className="hidden sm:inline">Bölgelere Göre</span>
                 </TabsTrigger>
                 <TabsTrigger value="table" className="px-1.5" aria-label={t("tableView")}>
                   <List className="size-4" />
@@ -1065,7 +1052,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                           ?.name
                       : "Seçili Bölge"}
                   </strong>{" "}
-                  filtresi etkinken &quot;{searchQuery}&quot; bulunamadı.
+                  seçiliyken &quot;{searchQuery}&quot; bulunamadı.
                 </span>
               </div>
               <Button
@@ -1135,7 +1122,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 }}
                 className="text-primary hover:underline flex items-center gap-1 cursor-pointer font-medium"
               >
-                <X className="size-3" /> Tüm Filtreleri Temizle
+                <X className="size-3" /> Filtreleri Temizle
               </button>
             )}
           </div>
@@ -1169,7 +1156,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                       <span className="text-[11px] text-muted-foreground font-mono">
                         {group.items.length} İl ·{" "}
                         {group.totalPopulation > 0
-                          ? `${group.totalPopulation.toLocaleString("tr-TR")} Nüfus`
+                          ? `${group.totalPopulation.toLocaleString("tr-TR")} kişi`
                           : ""}{" "}
                         ·{" "}
                         {group.totalArea > 0
@@ -1178,10 +1165,6 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                       </span>
                     </div>
                   </div>
-
-                  <Badge variant="outline" className="text-xs">
-                    Coğrafi Bölüm
-                  </Badge>
                 </div>
 
                 {/* Provinces Compact Mini-Card Grid */}
@@ -1199,7 +1182,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                         {province.coastal && (
                           <span className="size-5 rounded-md bg-accent/10 text-accent flex items-center justify-center">
                             <Waves className="size-3" aria-hidden="true" />
-                            <span className="sr-only">Kıyı İli (Deniz Telemetrisi Var)</span>
+                            <span className="sr-only">Kıyı ili</span>
                           </span>
                         )}
                       </div>
@@ -1245,7 +1228,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   <TableHead className="text-right">Nüfus</TableHead>
                   <TableHead className="text-right">Yüzölçümü (km²)</TableHead>
                   <TableHead className="text-center w-24">İlçe</TableHead>
-                  <TableHead className="text-right w-24">İşlem</TableHead>
+                  <TableHead className="text-right w-24">Sayfası</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1276,7 +1259,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                           <Waves className="size-3" /> Kıyı
                         </span>
                       ) : (
-                        <span className="text-muted-foreground text-[10px]">İç İl</span>
+                        <span className="text-muted-foreground text-[10px]">Yok</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right font-mono font-bold text-primary">

@@ -16,11 +16,10 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
-import { Map as MapIcon, Gamepad2, ArrowRight, Home, Waves, Flame } from "lucide-react";
+import { Gamepad2, ArrowRight, Home, Waves, Flame } from "lucide-react";
 
 /**
  * `force-dynamic`: same reasoning as the V1 `/turkiye` twin — a build-time api outage would
@@ -149,7 +148,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Türkiye İller Atlası", path: "/turkiye" },
+              { label: "Türkiye İlleri", path: "/turkiye" },
             ]}
             locale={locale}
             surface="localized"
@@ -158,21 +157,11 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Türkiye İlleri & Coğrafi Bölgeler Atlası"
-              badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<MapIcon className="size-3.5" />}>
-                    Coğrafya Atlası
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    {totalProvinces} İl &amp; 7 Bölge
-                  </Badge>
-                </>
-              }
+              heading="Türkiye İlleri"
               lede={
                 <>
-                  81 ilin jeomorfolojik yapısı, demografik dağılımı, iklim normalleri, canlı deniz
-                  suyu sıcaklıkları ve aktif fay hatları tek ekranda.
+                  Haritada bir ile tıkla ya da aşağıdaki listeden seç. Her ilin nüfusu, yüzölçümü,
+                  yeryüzü şekilleri ve iklimi kendi sayfasında.
                 </>
               }
             />
@@ -201,20 +190,20 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                 it is not a defect to paper over with a `> 0` guard that changes live copy. */}
             <StatGrid gutter="hero">
               <StatTile
-                label="Mülki İdare Birimi"
+                label="İl sayısı"
                 value={totalProvinces}
                 unit="İl"
                 tone="primary"
-                absent={{ label: "İl listesi yok", hint: "Katalog yüklenemedi" }}
+                absent={{ label: "İl listesi yok", hint: "Liste yüklenemedi" }}
               />
-              <StatTile label="Coğrafi Bölüm & Havza" fact="7 Bölge" tone="secondary" />
+              <StatTile label="Coğrafi bölge" fact="7" tone="secondary" />
               <StatTile
-                label="Toplam İlçe Sayısı"
+                label="İlçe sayısı"
                 value={totalDistricts}
                 tone="accent"
                 absent={{ label: "İlçe sayısı yok", hint: "Özet verisi gelmedi" }}
               />
-              <StatTile label="Resmî Yüzölçümü (HGM)" fact="783.562 km²" tone="primary" />
+              <StatTile label="Yüzölçümü (HGM)" fact="783.562 km²" tone="primary" />
             </StatGrid>
           </Card>
         </div>
@@ -225,24 +214,18 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
           regionsSection={
             <div className="rounded-3xl border border-border bg-gradient-to-r from-card via-card to-muted/40 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="space-y-2 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <Badge variant="primary" size="sm">
-                    Doğal &amp; Fiziki Coğrafya
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">1941 Kongre Tasnifi</span>
-                </div>
+                <span className="text-xs text-muted-foreground">1941 Coğrafya Kongresi</span>
                 <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-                  Türkiye&apos;nin 7 Coğrafi Bölgesi &amp; 21 Alt Bölümü
+                  7 Coğrafi Bölge, 21 Bölüm
                 </h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  İllerimizin ait olduğu 7 coğrafi bölgenin fiziki sınırları, iklim normalleri,
-                  jeomorfolojik havzaları ve analitik karşılaştırma matrisini yeni rehberimizde
-                  inceleyin.
+                  Yedi bölgeyi bir tabloda yan yana karşılaştır: illeri, nüfusu, yüzölçümü ve en
+                  yüksek zirveleri.
                 </p>
               </div>
               <Link href="/turkiye/bolge" className="shrink-0">
                 <Button variant="primary" size="md" rightIcon={<ArrowRight className="size-4" />}>
-                  Bölgeler Atlası&apos;na Git
+                  Bölgelere Git
                 </Button>
               </Link>
             </div>
@@ -252,14 +235,9 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
         {/* SECTION 3: 3-HUB CROSS-LINK CARDS */}
         <section className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <span className="text-xs font-bold text-primary tracking-wider uppercase">
-                İlişkili Modüller
-              </span>
-              <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
-                Türkiye Atlası Ekosistem Araçları
-              </h2>
-            </div>
+            <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
+              Oyun, Deniz ve Deprem Sayfaları
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -270,13 +248,13 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                   <div className="size-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center mb-3 group-hover:bg-secondary group-hover:text-white transition-colors">
                     <Gamepad2 className="size-6" />
                   </div>
-                  <CardTitle className="text-xl">Harita Sınavı &amp; İl Bulma</CardTitle>
+                  <CardTitle className="text-xl">Dilsiz Haritada İl Bul</CardTitle>
                   <CardDescription className="text-xs leading-relaxed">
-                    Dilsiz harita üzerinde 81 ili en kısa sürede bulup puan toplayın, bölge
-                    testlerinde hızınızı sınayın.
+                    Sorulan yeri haritada bulup puan topla. Üç mod var: bölgeleri bul, 81 ili bul ya
+                    da bir bölge seçip yalnız onun illerini bul.
                   </CardDescription>
                   <div className="pt-3 flex items-center text-xs font-semibold text-secondary group-hover:translate-x-1 transition-transform">
-                    <span>Oyunu Başlat</span>
+                    <span>Oyunu Aç</span>
                     <ArrowRight className="size-3.5 ml-1" />
                   </div>
                 </CardHeader>
@@ -290,13 +268,13 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                   <div className="size-12 rounded-2xl bg-accent/10 text-accent flex items-center justify-center mb-3 group-hover:bg-accent group-hover:text-white transition-colors">
                     <Waves className="size-6" />
                   </div>
-                  <CardTitle className="text-xl">Canlı Deniz Telemetrisi</CardTitle>
+                  <CardTitle className="text-xl">Denizler ve Kıyılar</CardTitle>
                   <CardDescription className="text-xs leading-relaxed">
-                    27 kıyı ilimizin çevre denizlerindeki Copernicus SST deniz suyu sıcaklıkları,
-                    dalga boyu ve rüzgar vektörleri.
+                    Dört denizi karşılaştır. Kıyı illerinin açığında seçilen 30 noktada su
+                    sıcaklığı, dalga ve rüzgâr izlenir; sıcaklık verisi Copernicus&apos;tan gelir.
                   </CardDescription>
                   <div className="pt-3 flex items-center text-xs font-semibold text-accent group-hover:translate-x-1 transition-transform">
-                    <span>Denizleri İncele</span>
+                    <span>Denizlere Bak</span>
                     <ArrowRight className="size-3.5 ml-1" />
                   </div>
                 </CardHeader>
@@ -310,13 +288,13 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                   <div className="size-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mb-3 group-hover:bg-destructive group-hover:text-white transition-colors">
                     <Flame className="size-6" />
                   </div>
-                  <CardTitle className="text-xl">Canlı Deprem Radarı</CardTitle>
+                  <CardTitle className="text-xl">Son Depremler</CardTitle>
                   <CardDescription className="text-xs leading-relaxed">
-                    81 ilimizi etkileyen Kuzey, Doğu ve Batı Anadolu aktif fay hatları ve AFAD son
-                    sarsıntılar.
+                    AFAD&apos;ın kaydettiği son depremler. Kuzey Anadolu, Doğu Anadolu ve Batı
+                    Anadolu fay hatlarını anlatan sayfa da oradan açılır.
                   </CardDescription>
                   <div className="pt-3 flex items-center text-xs font-semibold text-destructive group-hover:translate-x-1 transition-transform">
-                    <span>Radarı Aç</span>
+                    <span>Depremlere Bak</span>
                     <ArrowRight className="size-3.5 ml-1" />
                   </div>
                 </CardHeader>

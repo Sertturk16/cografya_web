@@ -141,7 +141,7 @@ export function V2LiveTicker() {
   return (
     <aside
       role="region"
-      aria-label="Canlı Telemetri ve Afet Akışı"
+      aria-label="Son deprem ve deniz durumu"
       aria-live="off"
       className="w-full border-b border-border/70 bg-muted/40 backdrop-blur-md overflow-hidden text-xs py-2 px-4 select-none"
     >
@@ -149,7 +149,7 @@ export function V2LiveTicker() {
         {/* Left Status Tag */}
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant="primary" size="sm" dot className="shadow-2xs font-mono text-[10px] px-2">
-            CANLI TELEMETRİ
+            GÜNCEL
           </Badge>
         </div>
 
@@ -169,6 +169,8 @@ export function V2LiveTicker() {
                 <span className="text-[10px] text-muted-foreground font-mono">
                   ({earthquake.timeAgo})
                 </span>
+                {/* The value is AFAD's; the full notice and disclaimer are on /deprem. */}
+                <span className="text-[10px] text-muted-foreground">· AFAD</span>
               </Link>
               <span className="text-border">|</span>
             </>
@@ -211,8 +213,8 @@ export function V2LiveTicker() {
             className="flex items-center gap-1.5 hover:text-foreground shrink-0 transition-colors"
           >
             <MapPin className="size-3.5 text-secondary" />
-            <span className="font-semibold text-foreground">81 İl Atlası:</span>
-            <span>Resmî TÜİK &amp; Harita Verisi</span>
+            <span className="font-semibold text-foreground">81 il:</span>
+            <span>TÜİK nüfusu, yüzölçümü, iklim</span>
           </Link>
 
           <span className="text-border">|</span>
@@ -222,8 +224,8 @@ export function V2LiveTicker() {
             className="flex items-center gap-1.5 hover:text-foreground shrink-0 transition-colors"
           >
             <Layers className="size-3.5 text-primary" />
-            <span className="font-semibold text-foreground">CBS Araçları:</span>
-            <span>WGS84 Jeodezik Hesaplama</span>
+            <span className="font-semibold text-foreground">Araçlar:</span>
+            <span>haritada mesafe ve alan ölç</span>
           </Link>
         </div>
       </div>

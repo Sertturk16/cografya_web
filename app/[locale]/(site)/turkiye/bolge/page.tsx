@@ -3,7 +3,6 @@ import { setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyRegions } from "@/components/v2/v2-turkey-regions";
 import { PageContainer } from "@/components/patterns/page-container";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
@@ -203,42 +202,42 @@ function buildBolgelerFaqs(regions: RegionsListEntry[]): { question: string; ans
   const largestAreaFaq =
     largestByArea && mostPopulous
       ? {
-          question: "Yüzölçümü ve nüfus bakımından en büyük bölgeler hangileridir?",
+          question: "Yüzölçümü ve nüfus bakımından en büyük bölgeler hangileri?",
           answer:
-            `Yüzölçümü bakımından Türkiye'nin en büyük coğrafi bölgesi ${tr(largestByArea.areaKm2)} km² ` +
-            `(%${tr(largestByArea.areaSharePercent, 2)} pay) ile ${largestByArea.nameTr}'dir. ` +
-            `Nüfus büyüklüğü ve nüfus yoğunluğu bakımından ise ${tr(mostPopulous.population)} kişilik ` +
-            `nüfusu (%${tr(mostPopulous.populationSharePercent, 2)} pay) ve km² başına ` +
-            `${tr(mostPopulous.populationDensity)} kişilik yoğunluğuyla ${mostPopulous.nameTr} birinci sıradadır.`,
+            `Yüzölçümü en büyük bölge ${largestByArea.nameTr}'dir: ${tr(largestByArea.areaKm2)} km², ` +
+            `Türkiye'deki payı %${tr(largestByArea.areaSharePercent, 2)}. ` +
+            `Nüfusta ve nüfus yoğunluğunda ise ${mostPopulous.nameTr} birinci sırada: ` +
+            `${tr(mostPopulous.population)} kişi (payı %${tr(mostPopulous.populationSharePercent, 2)}) ` +
+            `ve km² başına ${tr(mostPopulous.populationDensity)} kişi.`,
         }
       : null;
 
   return [
     {
-      question: "Türkiye kaç coğrafi bölgeye ayrılmıştır ve bu ayrım ne zaman yapılmıştır?",
+      question: "Türkiye kaç coğrafi bölgeye ayrılır ve bu ayrım ne zaman yapıldı?",
       answer:
-        "Türkiye, 6-21 Haziran 1941 tarihleri arasında Ankara Üniversitesi Dil ve Tarih-Coğrafya Fakültesi'nde toplanan Birinci Türk Coğrafya Kongresi kararıyla 7 ana coğrafi bölgeye ve 21 coğrafi bölüme ayrılmıştır.",
+        "Türkiye 7 coğrafi bölgeye ve 21 bölüme ayrılır. Bu ayrımı, 6-21 Haziran 1941'de Ankara Üniversitesi Dil ve Tarih-Coğrafya Fakültesi'nde toplanan Birinci Türk Coğrafya Kongresi yaptı.",
     },
     {
-      question: "Bölgeler belirlenirken hangi bilimsel kriterler esas alınmıştır?",
+      question: "Bölgeler belirlenirken nelere bakıldı?",
       answer:
-        "Bölge sınırlarının tespitinde üç ana unsur gözetilmiştir: 1) Doğal etkenler (yer şekilleri, jeomorfolojik uzanış, dağ sıraları, yükselti ve kıyı tipleri), 2) Klimatolojik etkenler (sıcaklık, yağış rejimi ve vejetasyon örtüsü), 3) Beşeri ve ekonomik etkenler (nüfus dağılımı, tarım desenleri, sanayi ve ulaşım ağları).",
+        "Sınırlar üç grup ölçüte göre çizildi. Birincisi doğal etkenler: yer şekilleri ve uzanışları, dağ sıraları, yükselti ve kıyı tipleri. İkincisi iklim: sıcaklık, yağış rejimi ve bitki örtüsü. Üçüncüsü beşeri ve ekonomik etkenler: nüfusun dağılışı, hangi ürünün nerede yetiştiği, sanayi ve ulaşım ağları.",
     },
     {
-      question: "TÜİK İBBS bölgeleri ile klasik 7 coğrafi bölge arasındaki fark nedir?",
+      question: "TÜİK'in İBBS bölgeleri ile 7 coğrafi bölge arasındaki fark nedir?",
       answer:
-        "7 Coğrafi Bölge, Türkiye'nin doğal ve fiziki yapısını yansıtan temel morfolojik sınıflamadır. TÜİK'in kullandığı İBBS (İstatistiki Bölge Birimleri Sınıflandırması) Düzey-1 ise Avrupa Birliği istatistik normlarına uyum sağlamak için idari sınırlarla belirlenmiş 12 sosyo-ekonomik bölgeden oluşur. Klasik coğrafi bölgeler idari sınırlara değil doğal sınırlara dayanır.",
+        "7 coğrafi bölge Türkiye'yi doğal yapısına göre ayırır ve sınırları il sınırlarını değil doğal hatları izler. TÜİK'in kullandığı İstatistiki Bölge Birimleri Sınıflandırması (İBBS) Düzey 1 ise 12 bölgeden oluşur. Bu bölgeler Avrupa Birliği'nin istatistik kurallarına uymak için il sınırlarına göre çizildi ve nüfus, ekonomi gibi istatistikleri toplamaya yarar.",
     },
     ...(largestAreaFaq ? [largestAreaFaq] : []),
     {
       question: "Bir ilin toprakları birden fazla coğrafi bölgede bulunabilir mi?",
       answer:
-        "Evet. Coğrafi bölgeler idari il sınırlarıyla değil doğal hatlarla çizildiği için birçok ilimiz birden çok bölgeye yayılır. Örneğin Bilecik (Marmara, Ege, Karadeniz ve İç Anadolu), Balıkesir ve Çanakkale (Marmara ve Ege), Bursa (Marmara ve Karadeniz), Kahramanmaraş (Akdeniz, Doğu Anadolu ve Güneydoğu) bu durumun en bilinen örnekleridir.",
+        "Evet. Bölge sınırları il sınırlarını değil doğal hatları izlediği için birçok ilin toprağı birden çok bölgeye yayılır. En bilinen örnekler: Bilecik (Marmara, Ege, Karadeniz ve İç Anadolu), Balıkesir ve Çanakkale (Marmara ve Ege), Bursa (Marmara ve Karadeniz), Kahramanmaraş (Akdeniz, Doğu Anadolu ve Güneydoğu).",
     },
     {
-      question: "Türkiye'nin denize kıyısı olan ve olmayan bölgeleri hangileridir?",
+      question: "Hangi bölgelerin denize kıyısı var, hangilerinin yok?",
       answer:
-        "Türkiye'nin 7 coğrafi bölgesinden 4'ü kıyı bölgesidir (Karadeniz, Marmara, Ege ve Akdeniz). Kalan 3 bölge ise iç kara bölgesidir (İç Anadolu, Doğu Anadolu ve Güneydoğu Anadolu).",
+        "7 bölgenin 4'ünün denize kıyısı var: Karadeniz, Marmara, Ege ve Akdeniz. Kalan 3 bölgenin kıyısı yok: İç Anadolu, Doğu Anadolu ve Güneydoğu Anadolu.",
     },
   ];
 }
@@ -313,12 +312,12 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 icon: <Home className="size-3.5" />,
               },
               {
-                label: locale === "tr" ? "Türkiye Atlası" : "Türkiye Atlas",
+                label: locale === "tr" ? "Türkiye İlleri" : "Türkiye Atlas",
                 href: "/turkiye",
                 path: "/turkiye",
               },
               {
-                label: locale === "tr" ? "7 Coğrafi Bölge" : "7 Geographic Regions",
+                label: locale === "tr" ? "Coğrafi Bölgeler" : "7 Geographic Regions",
                 path: "/turkiye/bolge",
               },
             ]}
@@ -329,28 +328,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
           {/* Hero Content Card */}
           <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-10 shadow-lg space-y-6">
             <div className="space-y-4 max-w-4xl">
-              <div className="flex flex-wrap items-center gap-2">
-                {/* The 1941-Congress and TÜİK-vintage badges are source/provenance-flavoured
-                    claims, not structural counts — gated rather than translated so no new
-                    English prose is authored for them in this round (§9). */}
-                {locale === "tr" && (
-                  <Badge variant="primary" size="sm" icon={<Landmark className="size-3.5" />}>
-                    1941 Coğrafya Kongresi Tasnifi
-                  </Badge>
-                )}
-                <Badge variant="secondary" size="sm" icon={<Boxes className="size-3.5" />}>
-                  {locale === "tr" ? "7 Coğrafi Bölge & 21 Bölüm" : "7 Regions & 21 Subregions"}
-                </Badge>
-                {locale === "tr" && figuresAreLive && (
-                  <Badge variant="outline" size="sm" className="font-mono text-xs">
-                    TÜİK ADNKS 2025 Tabanlı
-                  </Badge>
-                )}
-              </div>
-
               <h1 className="font-heading text-3xl sm:text-5xl font-extrabold tracking-tight text-primary leading-tight">
                 {locale === "tr"
-                  ? "Türkiye'nin 7 Coğrafi Bölgesi Rehberi"
+                  ? "Türkiye'nin 7 Coğrafi Bölgesi"
                   : "Türkiye's 7 Geographic Regions Guide"}
               </h1>
 
@@ -358,9 +338,10 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                   gated rather than translated for the same reason (tur2-plan.md §7, FEN135-NEW-M5). */}
               {locale === "tr" && (
                 <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-3xl">
-                  6–21 Haziran 1941 Birinci Türk Coğrafya Kongresi kararlarıyla çizilen doğal
-                  sınırlar, morfotektonik kuşaklar ve iklim havzaları ışığında Türkiye&apos;nin 7
-                  coğrafi bölgesi, 21 alt bölümü ve analitik karşılaştırma atlası.
+                  Türkiye&apos;yi 7 bölgeye ve 21 bölüme ayıran sınırlar, 6–21 Haziran 1941&apos;de
+                  Ankara&apos;da toplanan Birinci Türk Coğrafya Kongresi&apos;nde çizildi. Her
+                  bölgenin kısa tanıtımı, kongrenin baktığı ölçütler ve yedi bölgenin karşılaştırma
+                  tablosu aşağıda.
                 </p>
               )}
             </div>
@@ -377,7 +358,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 </span>
                 {locale === "tr" ? (
                   <span className="text-[11px] text-muted-foreground/80 block">
-                    4 Kıyı, 3 İç Kara Havzası
+                    4&apos;ü kıyıda, 3&apos;ü iç kesimde
                   </span>
                 ) : (
                   <span className="text-[11px] text-muted-foreground/80 block">
@@ -396,7 +377,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 </span>
                 {locale === "tr" ? (
                   <span className="text-[11px] text-muted-foreground/80 block">
-                    Morfolojik Alt Yöreler
+                    Bölgelerin alt birimleri
                   </span>
                 ) : (
                   <span className="text-[11px] text-muted-foreground/80 block">
@@ -430,7 +411,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 </span>
                 <span className="text-[11px] text-muted-foreground/80 block">
                   {locale === "tr"
-                    ? "81 İl HGM Tescili"
+                    ? "81 ilin toplamı, HGM"
                     : "81 Provinces, General Directorate of Mapping (HGM)"}
                 </span>
               </div>
@@ -441,7 +422,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
       {/* QUICKNAV BAR */}
       <nav
-        aria-label="Sayfa içi hızlı gezinme"
+        aria-label="Bu sayfadaki bölümler"
         className="sticky top-16 z-30 w-full border-b border-border bg-background/90 backdrop-blur-md transition-all shadow-2xs"
       >
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center gap-2 overflow-x-auto py-2.5 text-xs font-semibold scrollbar-none">
@@ -449,19 +430,19 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
             href="#bolgeler"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            7 Bölge Vitrini
+            Bölgeler
           </a>
           <a
             href="#tarihce"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            1941 Kongresi &amp; Tarihçe
+            1941 Kongresi
           </a>
           <a
             href="#kiyaslama"
             className="px-3.5 py-1.5 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
           >
-            Analitik Kıyaslama
+            Karşılaştırma Tablosu
           </a>
           {/* Gated WITH the section it points at, which is the whole reason this gate exists: the
               FAQ block below is TR-only, so on the EN twin this link would scroll to nothing.
@@ -499,20 +480,14 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         <section id="tarihce" className="scroll-mt-28" tabIndex={-1}>
           <Card variant="panel" space="6">
             <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  Tarihî &amp; Bilimsel Miras
-                </Badge>
-                <span className="text-xs text-muted-foreground">6–21 Haziran 1941, Ankara</span>
-              </div>
+              <span className="text-xs text-muted-foreground">6–21 Haziran 1941, Ankara</span>
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 <Landmark className="size-6 text-primary shrink-0" />
-                <span>Birinci Türk Coğrafya Kongresi ve Yasal Çerçeve</span>
+                <span>Birinci Türk Coğrafya Kongresi</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Cumhuriyet döneminin coğrafi tasnif manifestosu: Türkiye topraklarının fiziki,
-                iklimsel ve beşeri özelliklerine göre ilk kez bilimsel bir konsensüsle bölümlere
-                ayrılışı.
+                Kongre, Türkiye&apos;yi yer şekillerine, iklimine ve insanların nasıl yaşadığına
+                bakarak bölgelere ayırdı. Sınırları aşağıdaki üç ölçüt belirledi.
               </p>
             </div>
 
@@ -522,14 +497,12 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                   <div className="size-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
                     01
                   </div>
-                  <h3 className="font-heading font-bold text-foreground">
-                    Fiziki &amp; Jeomorfolojik Kriterler
-                  </h3>
+                  <h3 className="font-heading font-bold text-foreground">Yer Şekilleri</h3>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Dağların kıyıya paralel uzandığı Karadeniz ve Akdeniz kıyı kuşakları, dağların
-                  kıyıya dik uzanıp graben vadileri açtığı Ege kıyıları ve yüksek engebeli Doğu
-                  Anadolu platosu temel sınır hatlarını oluşturmuştur.
+                  Karadeniz&apos;de ve Akdeniz&apos;de dağlar kıyıya paralel uzanır. Ege&apos;de
+                  kıyıya dik uzanır, aralarında graben vadileri açılır. Doğu Anadolu ise yüksek ve
+                  engebeli bir platodur. Ana sınır hatları bu farklardan çıktı.
                 </p>
               </div>
 
@@ -538,14 +511,12 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                   <div className="size-7 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center font-bold text-xs">
                     02
                   </div>
-                  <h3 className="font-heading font-bold text-foreground">
-                    Klimatolojik &amp; Su Havzaları
-                  </h3>
+                  <h3 className="font-heading font-bold text-foreground">İklim ve Bitki Örtüsü</h3>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Dört bir yandaki denizlerin ılımanlaştırıcı etkisi, iç kesimlerin deniz etkisinden
-                  yalıtılmış step iklimi ve Doğu Anadolu&apos;nun sert karasal yapısı vejetasyon
-                  örtüsüyle birlikte sınıflandırılmıştır.
+                  Kıyıları çevredeki denizler ılıtır. Deniz etkisinin ulaşmadığı iç kesimlerde step
+                  iklimi görülür, Doğu Anadolu&apos;da ise karasal iklim en sert hâlini alır. Kongre
+                  bu farklara bitki örtüsüyle birlikte baktı.
                 </p>
               </div>
 
@@ -554,14 +525,12 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                   <div className="size-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center font-bold text-xs">
                     03
                   </div>
-                  <h3 className="font-heading font-bold text-foreground">
-                    Beşeri, Zirai &amp; İktisadi Çevre
-                  </h3>
+                  <h3 className="font-heading font-bold text-foreground">Nüfus ve Ekonomi</h3>
                 </div>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Nüfus yoğunluğu, tarımsal ürün desenleri (zeytin, fındık, tahıl, çay), sanayi
-                  odakları ve tarihî ticaret aksları 7 ana bölgenin kendi içindeki 21 alt bölüme
-                  ayrılmasında belirleyici olmuştur.
+                  Nüfusun nerede yoğunlaştığı, hangi ürünün nerede yetiştiği (zeytin, fındık, tahıl,
+                  çay), sanayi merkezleri ve eski ticaret yolları, 7 bölgenin 21 bölüme ayrılmasında
+                  belirleyici oldu.
                 </p>
               </div>
             </div>
@@ -571,14 +540,13 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               <Scale className="size-5 text-primary shrink-0 mt-0.5" />
               <div className="space-y-1">
                 <span className="font-bold text-foreground block">
-                  Metodolojik Ayrım: TÜİK İBBS Düzey-1 ve Klasik Coğrafi Bölgeler
+                  TÜİK&apos;in 12 Bölgesi Başka Bir Sistem
                 </span>
                 <p className="text-muted-foreground">
-                  TÜİK, Avrupa Birliği İstatistiki Bölge Birimleri (NUTS) standartları gereğince
-                  verilerini 12 Düzey-1 bölgesine göre yayınlar. O sınıflandırma idari sınırları
-                  esas alırken; MEB müfredatı, fiziki coğrafya ve morfolojik havza araştırmalarında
-                  1941 Kongresi&apos;nin 7 Coğrafi Bölge tasnifi geçerliliğini ve bilimsel temelini
-                  korumaktadır.
+                  TÜİK, verilerini Avrupa Birliği&apos;nin istatistik bölgeleri sistemine uyan İBBS
+                  Düzey 1&apos;e göre, yani 12 bölge üzerinden yayımlar. Bu bölgeler il sınırlarıyla
+                  çizilir. Okulda ve fiziki coğrafyada kullanılan ise 1941 Kongresi&apos;nin doğal
+                  hatlara dayanan 7 bölgesidir.
                 </p>
               </div>
             </div>
@@ -589,21 +557,16 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
           <Card variant="panel" space="6">
             <div className="space-y-2 border-b border-border/70 pb-5">
-              <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm">
-                  Karşılaştırmalı Veri Matrisi
-                </Badge>
-                {figuresAreLive && (
-                  <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 &amp; HGM</span>
-                )}
-              </div>
+              {figuresAreLive && (
+                <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 ve HGM</span>
+              )}
               <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
                 <Table className="size-6 text-primary shrink-0" />
                 <span>Türkiye&apos;nin Yedi Coğrafi Bölgesi Karşılaştırması</span>
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Nüfus büyüklüğü, alan payı, nüfus yoğunluğu, zirve yükseklikleri ve idari mülki
-                bölünüş açısından yedi bölgenin analitik kıyaslama tablosu.
+                Yedi bölgeyi nüfusa, yüzölçümüne, yoğunluğa ve en yüksek zirveye göre yan yana gör.
+                Bölgenin adına tıklarsan kendi sayfası açılır.
               </p>
             </div>
 
@@ -611,7 +574,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               <table className="w-full text-left text-xs sm:text-sm">
                 <thead className="bg-muted/60 text-muted-foreground border-b border-border font-heading font-semibold text-xs">
                   <tr>
-                    <th className="p-3.5 sm:p-4">Bölge Adı</th>
+                    <th className="p-3.5 sm:p-4">Bölge</th>
                     <th className="p-3.5 sm:p-4 text-center">İl / Bölüm</th>
                     <th className="p-3.5 sm:p-4 text-right">Yüzölçümü (km²)</th>
                     <th className="p-3.5 sm:p-4 text-right">Alan Payı</th>
@@ -701,10 +664,10 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
               A share is computed FROM these totals, so the sentence has to read them too. */}
             <p className="text-[11px] text-muted-foreground/80 italic">
               {figuresAreLive
-                ? "* Nüfus verileri TÜİK ADNKS 31 Aralık 2025; yüzölçümü değerleri Harita Genel Müdürlüğü (HGM) resmi tescilleridir. "
-                : "* Bölge künyeleri yayın arşivinden gelmektedir; güncel TÜİK/HGM kayıtlarıyla doğrulanmamıştır. "}
-              Paylar Türkiye toplamı ({totalPop.toLocaleString("tr-TR")} nüfus ve{" "}
-              {totalArea.toLocaleString("tr-TR")} km² 81 il yüzölçümü) üzerinden hesaplanmıştır.
+                ? "* Nüfus: TÜİK ADNKS, 31 Aralık 2025. Yüzölçümü: Harita Genel Müdürlüğü (HGM) kayıtları. "
+                : "* Bu rakamlar sitenin kendi arşivinden geliyor; güncel TÜİK ve HGM kayıtlarıyla karşılaştırılmadı. "}
+              Paylarda Türkiye toplamı olarak {totalPop.toLocaleString("tr-TR")} kişi ve 81 ilin
+              yüzölçümü toplamı olan {totalArea.toLocaleString("tr-TR")} km² alındı.
             </p>
           </Card>
         </section>
@@ -728,7 +691,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         {locale === "tr" && (
           <FaqSection
             heading="Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular"
-            lede="Coğrafya müfredatı, sınav hazırlığı ve genel kültür açısından en çok merak edilen bölgesel kavramlar."
+            lede="Bölgelerin nasıl çizildiği, en büyüğü ve denize kıyısı olanlar."
             locale={locale}
             items={bolgelerFaqs}
             structuredData="trOnly"
@@ -739,7 +702,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
         <div className="flex items-center justify-between pt-2">
           <Link href="/turkiye">
             <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-              ← Türkiye İlleri Atlası&apos;na Dön (81 İl)
+              Türkiye Haritasına Dön
             </Button>
           </Link>
           <Link href="/">

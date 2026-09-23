@@ -3,7 +3,6 @@
 import * as React from "react";
 import Image from "next/image";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -154,7 +153,7 @@ export function V2Header() {
                 Coğrafya Gurmesi
               </span>
               <span className="text-[10px] text-muted-foreground font-medium truncate">
-                Atlas &amp; Eğitim Portalı
+                Türkiye ve dünya atlası
               </span>
             </div>
           </Link>
@@ -177,7 +176,7 @@ export function V2Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span>Atlas & Harita</span>
+              <span>Atlas ve Harita</span>
               <ChevronDown
                 className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "atlas" ? "rotate-180" : ""}`}
               />
@@ -200,9 +199,7 @@ export function V2Header() {
                     <span className="font-bold text-xs block text-foreground group-hover:text-primary transition-colors">
                       Türkiye İlleri
                     </span>
-                    <span className="text-[10px] text-muted-foreground block">
-                      81 İl &amp; Mülki İdare
-                    </span>
+                    <span className="text-[10px] text-muted-foreground block">81 ilin sayfası</span>
                   </div>
                 </Link>
                 <Link
@@ -218,7 +215,7 @@ export function V2Header() {
                       Coğrafi Bölgeler
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      7 Bölge &amp; 21 Alt Bölüm
+                      7 bölge, 21 bölüm
                     </span>
                   </div>
                 </Link>
@@ -235,7 +232,7 @@ export function V2Header() {
                       Dünya Atlası
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      199 Ülke, Kıtalar &amp; Bayraklar
+                      199 ülke, kıtalar ve bayraklar
                     </span>
                   </div>
                 </Link>
@@ -252,7 +249,7 @@ export function V2Header() {
                       Kıtalar Atlası
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      7 Kıta &amp; Karakteristikleri
+                      7 kıtanın özellikleri
                     </span>
                   </div>
                 </Link>
@@ -275,7 +272,7 @@ export function V2Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span>Canlı Telemetri</span>
+              <span>Deprem ve Deniz</span>
               <ChevronDown
                 className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "telemetry" ? "rotate-180" : ""}`}
               />
@@ -284,7 +281,7 @@ export function V2Header() {
             {activeDropdown === "telemetry" && (
               <div className="absolute top-full left-0 mt-2 w-64 p-2 rounded-2xl shadow-xl border border-border bg-card z-50 animate-in fade-in-50 zoom-in-95 duration-100 space-y-1">
                 <div className="text-[11px] font-bold text-muted-foreground px-2 py-1">
-                  Gerçek Zamanlı Gözlemler
+                  Güncel veriler
                 </div>
                 <Link
                   href="/deniz"
@@ -296,10 +293,10 @@ export function V2Header() {
                   </div>
                   <div>
                     <span className="font-bold text-xs block text-foreground group-hover:text-accent transition-colors">
-                      Deniz Telemetrisi
+                      Denizler ve Kıyılar
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      Copernicus Su Sıcaklığı & Dalga
+                      Dört deniz ve kıyı tipleri
                     </span>
                   </div>
                 </Link>
@@ -313,10 +310,10 @@ export function V2Header() {
                   </div>
                   <div>
                     <span className="font-bold text-xs block text-foreground group-hover:text-destructive transition-colors">
-                      Canlı Deprem Radarı
+                      Son Depremler
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      AFAD TDVMS Sismik Ağı
+                      AFAD&apos;ın kaydettiği depremler
                     </span>
                   </div>
                 </Link>
@@ -339,7 +336,7 @@ export function V2Header() {
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
               }`}
             >
-              <span>Etkileşim & Araçlar</span>
+              <span>Oyun ve Araçlar</span>
               <ChevronDown
                 className={`size-3 opacity-60 ml-0.5 transition-transform duration-200 ${activeDropdown === "interactive" ? "rotate-180" : ""}`}
               />
@@ -348,7 +345,7 @@ export function V2Header() {
             {activeDropdown === "interactive" && (
               <div className="absolute top-full left-0 mt-2 w-64 p-2 rounded-2xl shadow-xl border border-border bg-card z-50 animate-in fade-in-50 zoom-in-95 duration-100 space-y-1">
                 <div className="text-[11px] font-bold text-muted-foreground px-2 py-1">
-                  Oyunlar & CBS Laboratuvarı
+                  Oyna ya da ölç
                 </div>
                 <Link
                   href="/oyun"
@@ -360,10 +357,10 @@ export function V2Header() {
                   </div>
                   <div>
                     <span className="font-bold text-xs block text-foreground group-hover:text-secondary transition-colors">
-                      Harita Oyunu
+                      Harita Oyunları
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      81 İl Bulma & Hız Sınavı
+                      İlleri ve bölgeleri haritada bul
                     </span>
                   </div>
                 </Link>
@@ -377,10 +374,10 @@ export function V2Header() {
                   </div>
                   <div>
                     <span className="font-bold text-xs block text-foreground group-hover:text-primary transition-colors">
-                      CBS Harita Araçları
+                      Harita Araçları
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
-                      Mesafe Ölçme & Alan Hesaplama
+                      Mesafe, koordinat ve alan
                     </span>
                   </div>
                 </Link>
@@ -388,7 +385,7 @@ export function V2Header() {
             )}
           </div>
 
-          {/* Kitaplar (Kütüphane) Direct Link with Dedicated Badge */}
+          {/* Kitaplar (Kütüphane) Direct Link */}
           <Link
             href="/kitaplar"
             className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
@@ -398,9 +395,6 @@ export function V2Header() {
             }`}
           >
             <span>Kitaplar</span>
-            <Badge variant="warning" className="text-[9px] py-0 px-1 font-bold">
-              Video Çözümlü
-            </Badge>
           </Link>
         </div>
 
@@ -564,7 +558,7 @@ export function V2Header() {
                   {/* Category 1: Atlas */}
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">
-                      Atlas & Harita
+                      Atlas ve Harita
                     </span>
                     <div className="space-y-1">
                       <Link
@@ -627,7 +621,7 @@ export function V2Header() {
                   {/* Category 2: Telemetri */}
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">
-                      Canlı Telemetri
+                      Deprem ve Deniz
                     </span>
                     <div className="space-y-1">
                       <Link
@@ -638,12 +632,10 @@ export function V2Header() {
                         <div className="flex min-w-0 items-center gap-2.5">
                           <Waves className="size-4 text-accent" />
                           <span className="truncate text-sm font-semibold text-foreground">
-                            Deniz Telemetrisi
+                            Denizler ve Kıyılar
                           </span>
                         </div>
-                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
-                          Canlı Dalga/Isı
-                        </span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">4 Deniz</span>
                       </Link>
                       <Link
                         href="/deprem"
@@ -653,12 +645,10 @@ export function V2Header() {
                         <div className="flex min-w-0 items-center gap-2.5">
                           <Flame className="size-4 text-destructive" />
                           <span className="truncate text-sm font-semibold text-foreground">
-                            Canlı Deprem
+                            Son Depremler
                           </span>
                         </div>
-                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
-                          AFAD TDVMS
-                        </span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">AFAD</span>
                       </Link>
                     </div>
                   </div>
@@ -666,7 +656,7 @@ export function V2Header() {
                   {/* Category 3: Etkileşim & Kitaplar */}
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">
-                      Eğitim & Araçlar
+                      Oyun, Araçlar ve Kitaplar
                     </span>
                     <div className="space-y-1">
                       <Link
@@ -677,12 +667,10 @@ export function V2Header() {
                         <div className="flex min-w-0 items-center gap-2.5">
                           <Gamepad2 className="size-4 text-secondary" />
                           <span className="truncate text-sm font-semibold text-foreground">
-                            Harita Oyunu
+                            Harita Oyunları
                           </span>
                         </div>
-                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">
-                          İl Bulma
-                        </span>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">3 Oyun</span>
                       </Link>
                       <Link
                         href="/araclar"
@@ -692,11 +680,11 @@ export function V2Header() {
                         <div className="flex min-w-0 items-center gap-2.5">
                           <Layers className="size-4 text-primary" />
                           <span className="truncate text-sm font-semibold text-foreground">
-                            CBS Araçları
+                            Harita Araçları
                           </span>
                         </div>
                         <span className="ml-2 shrink-0 text-xs text-muted-foreground">
-                          Mesafe/Alan
+                          Mesafe, alan
                         </span>
                       </Link>
                       <Link
@@ -707,12 +695,9 @@ export function V2Header() {
                         <div className="flex min-w-0 items-center gap-2.5">
                           <BookOpen className="size-4 text-primary" />
                           <span className="truncate text-sm font-semibold text-foreground">
-                            Video Çözümlü Kitaplar
+                            Kitaplar
                           </span>
                         </div>
-                        <Badge variant="primary" size="sm" className="ml-2 shrink-0">
-                          20 Deneme
-                        </Badge>
                       </Link>
                     </div>
                   </div>
@@ -763,13 +748,6 @@ export function V2Header() {
                           <User className="size-4 text-primary" />
                           <span className="text-xs font-bold text-foreground">Hesabım</span>
                         </div>
-                        <Badge
-                          variant="outline"
-                          size="sm"
-                          className="bg-success/10 text-success-strong border-success/30"
-                        >
-                          Aktif
-                        </Badge>
                       </Link>
                       <Link
                         href="/hesabim/ayarlar"

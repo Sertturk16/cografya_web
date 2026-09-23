@@ -134,7 +134,7 @@ export default async function V2EgePage({ params }: PageProps) {
   // `server-only`) — the emission moved up here instead of splitting the array in two.
   const breadcrumbItems: BreadcrumbTrailItem[] = [
     { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-    { label: "Denizler & Kıyılar Atlası", href: "/deniz", path: "/deniz" },
+    { label: "Denizler ve Kıyılar", href: "/deniz", path: "/deniz" },
     { label: basinData.fullNameTr, path: "/deniz/ege" },
   ];
 

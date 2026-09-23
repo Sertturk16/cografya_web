@@ -60,20 +60,12 @@ export function V2ContinentLocatorMap({
         <div className="flex items-center gap-2">
           <Compass className="size-4 text-primary" />
           <h3 className="font-heading font-bold text-sm sm:text-base text-foreground">
-            {continentName} Dünya Haritasındaki Konumu ve Ülkeleri
+            {continentName} Haritada
           </h3>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Badge
-            variant="outline"
-            className="font-mono text-xs bg-primary/10 text-primary-strong border-primary/30"
-          >
-            {countries.length} Ülke
-          </Badge>
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            Ülkelere tıklayarak detaylı coğrafya rehberine ulaşabilirsiniz
-          </span>
-        </div>
+        <span className="text-xs text-muted-foreground hidden sm:inline">
+          Bir ülkenin üstüne gel: nüfusu, yüzölçümü ve sayfasının bağlantısı açılır.
+        </span>
       </div>
 
       {/* SVG Map Container and its caption. A FIGURE, like every other map surface here: the
@@ -179,7 +171,7 @@ export function V2ContinentLocatorMap({
                 }}
                 className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-xl bg-primary text-primary-foreground text-xs font-semibold hover:opacity-90 transition-opacity"
               >
-                <span>Ülke Sayfasına Git</span>
+                <span>Ülkenin sayfası</span>
                 <ArrowUpRight className="size-3.5" />
               </Link>
             </div>
@@ -194,7 +186,7 @@ export function V2ContinentLocatorMap({
       <div className="flex items-center justify-between text-xs text-muted-foreground flex-wrap gap-2">
         <span className="flex items-center gap-1">
           <Globe2 className="size-3.5 text-primary" />
-          <span>Vurgulanan alanlar {continentName} kıtasına ait ülkeleri temsil eder.</span>
+          <span>Renkli alanlar {continentName} kıtasındaki ülkeler.</span>
         </span>
         {/* "Projeksiyon: Natural Earth 1" names the PROJECTION. It reads like a source line
             and is not one, which is how this surface drew 199 Natural Earth polygons with

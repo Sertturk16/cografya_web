@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { PageContainer } from "@/components/patterns/page-container";
-import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getAllContinents, CONTINENT_HUB_FAQS } from "@/lib/geo/continents";
@@ -10,19 +9,7 @@ import { CONTINENT_META } from "@/lib/map/continent-theme";
 import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
-import {
-  Globe2,
-  Mountain,
-  Users,
-  Maximize2,
-  Waves,
-  Home,
-  ChevronRight,
-  Boxes,
-  Table,
-  ArrowRight,
-  BookOpen,
-} from "lucide-react";
+import { Mountain, Users, Maximize2, Waves, Home, ChevronRight, ArrowRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 export const revalidate = 3600;
@@ -84,29 +71,14 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
 
           {/* Title & Badges */}
           <div className="space-y-3 max-w-3xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Badge
-                variant="outline"
-                className="bg-primary/10 text-primary border-primary/30 text-xs font-semibold py-0.5 px-2.5"
-              >
-                <Globe2 className="size-3.5 mr-1" />7 Kıta & Coğrafi Karakteristikleri
-              </Badge>
-              <Badge variant="outline" className="text-xs font-mono py-0.5 px-2">
-                199 Ülke
-              </Badge>
-              <Badge variant="outline" className="text-xs font-mono py-0.5 px-2">
-                BM M49 Sınıflandırması
-              </Badge>
-            </div>
-
             <h1 className="font-heading text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-foreground leading-[1.15]">
-              Dünyanın 7 Kıtası: Fiziki Yapısı, İklimi ve Ülkeleri
+              Kıtalar Atlası
             </h1>
 
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-              Yeryüzünün 149 milyon kilometrekarelik kara parçasını şekillendiren 7 ana kıtanın
-              tektonik oluşumu, makroklima kuşakları, büyük nehir havzaları ve demografik yapıları.
-              İstatistiklerin ardındaki coğrafi mekanizmaları keşfedin.
+              Karaların toplamı yaklaşık 149 milyon km². Burada o karayı paylaşan yedi kıtayı yan
+              yana görürsün: ne kadar geniş oldukları, kaç kişi barındırdıkları, en yüksek dağları
+              ve en uzun nehirleri. Bir kıtanın sayfasında haritası ve ülkeleri de var.
             </p>
           </div>
 
@@ -181,16 +153,12 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
         <section id="kitalar-listesi" className="space-y-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="space-y-1">
-              <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-                <Boxes className="size-4" />
-                <span>Kıtalar Envanteri</span>
-              </div>
               <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-                7 Kıtanın Coğrafi Karakteristikleri
+                Kıtalar Tek Tek
               </h2>
             </div>
             <span className="text-xs text-muted-foreground">
-              Detaylı harita ve derinlemesine rehber için kıta kartlarına tıklayın
+              Kartın altındaki düğme kıtanın kendi sayfasını açar.
             </span>
           </div>
 
@@ -208,17 +176,6 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
 
                   <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between gap-2">
-                        {/* BACKDROP: one `--continent-*-tint` over an opaque `bg-card` — the
-                            `CARD` column of the table in `app/globals.css`. */}
-                        <Badge variant="outline" className={theme.identity.badge}>
-                          {continent.nameTr}
-                        </Badge>
-                        <span className="text-xs font-mono text-muted-foreground">
-                          {continent.code}
-                        </span>
-                      </div>
-
                       <div>
                         <h3 className="font-heading font-black text-2xl text-foreground group-hover:text-primary transition-colors">
                           {continent.nameTr} Kıtası
@@ -295,7 +252,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                         }}
                         className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs bg-muted hover:bg-primary hover:text-primary-foreground transition-all group-hover:bg-primary group-hover:text-primary-foreground shadow-2xs"
                       >
-                        <span>{continent.nameTr} Coğrafyasını İncele</span>
+                        <span>{continent.nameTr} haritası ve ülkeleri</span>
                         <ArrowRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
                       </Link>
                     </div>
@@ -309,15 +266,12 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
         {/* SECTION 2: COMPREHENSIVE ANALYTICAL COMPARISON TABLE */}
         <section id="karsilastirma" className="space-y-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <Table className="size-4" />
-              <span>Analitik Karşılaştırma</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              7 Kıtanın Karşılaştırmalı Göstergeleri
+              Yedi Kıta Aynı Tabloda
             </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Yüzölçümü, dünya payı, nüfus yoğunluğu, en yüksek ve en alçak noktalar.
+              Kıtaların nüfusu ve yüzölçümü yan yana. Yoğunluk sütunu km² başına düşen kişi sayısını
+              gösterir.
             </p>
           </div>
 
@@ -328,7 +282,7 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
                   <tr className="border-b border-border bg-muted/50 text-foreground font-semibold">
                     <th className="py-3 px-4">Kıta</th>
                     <th className="py-3 px-3">Yüzölçümü (km²)</th>
-                    <th className="py-3 px-3">Dünya Payı (%)</th>
+                    <th className="py-3 px-3">Kara Payı (%)</th>
                     <th className="py-3 px-3">Nüfus</th>
                     <th className="py-3 px-3">Nüfus Payı (%)</th>
                     <th className="py-3 px-3">Yoğunluk (kişi/km²)</th>
@@ -419,41 +373,35 @@ export default async function V2ContinentsHubPage({ params }: PageProps) {
 
         {/* SECTION 3: EDUCATIONAL CONTEXT — KITA NEDIR? */}
         <Card as="section" variant="panel" space="6" elevation="xs" id="kavramsal-rehber">
-          <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-            <BookOpen className="size-4" />
-            <span>Coğrafi Bilgi Rehberi</span>
-          </div>
-
           <div className="space-y-4 max-w-4xl">
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              Kıta Nedir? 7 Kıta Modeli ve Sınırların Tarihsel Evrimi
+              Kıta Nedir, Neden Yedi Tane Sayıyoruz?
             </h2>
 
             <div className="text-sm text-muted-foreground space-y-3 leading-relaxed">
               <p>
-                Coğrafyada <strong>kıta</strong>; etrafı genellikle okyanus ve denizlerle çevrili,
-                kendine ait kıtasal kabuğu ve jeolojik kalkanı (kraton) bulunan devasa kara
-                parçalarına verilen addır. Ancak kıtaların tanımı ve sayısı salt jeolojik bir olgu
-                değil, aynı zamanda tarihsel, kültürel ve pedagojik bir uzlaşımdır (konvansiyon).
+                <strong>Kıta</strong>, çevresi çoğunlukla okyanus ve denizlerle çevrili, altında
+                kalın ve eski bir kıtasal kabuk bulunan büyük kara parçasıdır. Yine de kaç kıta
+                olduğu yalnız jeolojiyle belirlenmez. Sayı biraz da tarihin, kültürün ve okulda
+                nasıl öğretildiğinin sonucudur.
               </p>
 
               <p>
-                <strong>Neden 7 Kıta?</strong> Türkiye&apos;de Millî Eğitim Bakanlığı (MEB)
-                müfredatı ve geleneksel coğrafya eğitimi <strong>7 kıta modelini</strong> (Asya,
-                Avrupa, Afrika, Kuzey Amerika, Güney Amerika, Antarktika, Okyanusya) temel alır.
-                Buna karşılık Birleşmiş Milletler M49 istatistik şeması Kuzey ve Güney
-                Amerika&apos;yı tek bir &quot;Americas&quot; olarak sınıflandırarak 6 kıtalı
-                yaklaşımı kullanır. Olimpiyat halkaları ise insanın kalıcı olarak yaşadığı 5 kıtayı
-                (Antarktika hariç, Amerika tek) simgeler.
+                <strong>Neden 7 kıta?</strong> Türkiye&apos;de okullarda, Millî Eğitim
+                Bakanlığı&apos;nın programında da, 7 kıta öğretilir: Asya, Avrupa, Afrika, Kuzey
+                Amerika, Güney Amerika, Antarktika ve Okyanusya. Birleşmiş Milletler&apos;in
+                istatistik sınıflandırması ise iki Amerika&apos;yı tek bir grupta topladığı için 6
+                kıtayla çalışır. Olimpiyat halkaları da 5 kıtayı simgeler: Antarktika sayılmaz,
+                Amerika tektir.
               </p>
 
               <p>
-                <strong>Sınırlar Birer Doğal Eşik midir, Yoksa Sözleşme mi?</strong> Afrika ile Asya
-                arasında Süveyş Kıstağı, Kuzey ve Güney Amerika arasında Panama Kıstağı fiziki boğaz
-                ve kıstak sınırları oluşturur. Ancak <strong>Avrupa ile Asya</strong> arasındaki
-                sınır bütünüyle tarihsel bir konvansiyondur: İki kıta tektonik olarak tek parça olan
-                Avrasya levhasında oturur. 18. yüzyıldan itibaren Rus ve Avrupalı coğrafyacıların
-                uzlaşısıyla Ural Dağları, Ural Nehri ve Kafkaslar sınır kabul edilmiştir.
+                <strong>Kıta sınırları doğada mı çizili?</strong> Bazıları öyle. Afrika ile Asya
+                Süveyş Kıstağı&apos;nda, Kuzey ve Güney Amerika Panama Kıstağı&apos;nda birleşir;
+                sınır o dar kara parçasından geçer. <strong>Avrupa ile Asya</strong> arasındaki
+                sınır ise insanların üzerinde anlaştığı bir çizgidir. İki kıta aynı levhanın,
+                Avrasya Levhası&apos;nın üstündedir. 18. yüzyıldan beri Rus ve Avrupalı
+                coğrafyacılar Ural Dağları&apos;nı, Ural Nehri&apos;ni ve Kafkasları sınır sayar.
               </p>
             </div>
           </div>

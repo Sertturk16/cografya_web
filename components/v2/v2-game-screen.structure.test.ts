@@ -15,8 +15,8 @@ describe("V2GameScreen structural contract and auth gate", () => {
     expect(source).toContain('authState !== "authenticated"');
   });
 
-  it("wires handleStartGameClick to both 'Sınavı Başlat' and 'Tekrar Oyna' buttons", () => {
-    expect(source).toMatch(/onClick=\{handleStartGameClick\}[\s\S]*?Sınavı Başlat/);
+  it("wires handleStartGameClick to both 'Turu Başlat' and 'Tekrar Oyna' buttons", () => {
+    expect(source).toMatch(/onClick=\{handleStartGameClick\}[\s\S]*?Turu Başlat/);
     expect(source).toMatch(/onClick=\{handleStartGameClick\}[\s\S]*?Tekrar Oyna/);
   });
 
@@ -38,9 +38,9 @@ describe("V2GameScreen structural contract and auth gate", () => {
   });
 
   it("renders auto-save status feedback (pending, saved, failed) in game over screen", () => {
-    expect(source).toContain("Skorunuz profilinize kaydediliyor...");
-    expect(source).toContain("Skor profilinize kaydedildi");
-    expect(source).toContain("Skor kaydedilemedi");
+    expect(source).toContain("Puanın kaydediliyor…");
+    expect(source).toContain("Puanın hesabına kaydedildi");
+    expect(source).toContain("Puan kaydedilemedi");
   });
 
   describe("touch pinch-zoom + pan (T-015)", () => {

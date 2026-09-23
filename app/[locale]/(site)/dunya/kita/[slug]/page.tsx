@@ -5,7 +5,6 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2ContinentLocatorMap } from "@/components/v2/v2-continent-locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
-import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
@@ -15,22 +14,18 @@ import { getCountryMapSummaryResilient } from "@/lib/api/countries";
 import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
-  Globe2,
   Mountain,
   Compass,
   MapPin,
   Users,
   Maximize2,
   Waves,
-  CloudSun,
   Home,
   ChevronRight,
   Boxes,
   Building2,
   ArrowUpRight,
   ShieldAlert,
-  Coins,
-  BookOpen,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
@@ -137,30 +132,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
 
           {/* Title & Badges */}
           <div className="space-y-3 max-w-3xl">
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* BACKDROP: the badge's own 15% tint over the hero gradient's TINT END over
-                  `--background` — the `HERO` column of the table in `app/globals.css`. */}
-              <Badge
-                variant="outline"
-                className={`${theme.identity.badge} font-bold text-xs py-0.5 px-2.5`}
-              >
-                <Globe2 className="size-3.5 mr-1" />
-                {continent.nameTr} Kıtası
-              </Badge>
-              <Badge variant="outline" className="text-xs font-mono py-0.5 px-2">
-                {continent.code}
-              </Badge>
-              {continent.countryCount > 0 ? (
-                <Badge variant="outline" className="text-xs font-mono py-0.5 px-2">
-                  {continent.countryCount} Ülke
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-xs py-0.5 px-2 bg-muted">
-                  Uluslararası Barış & Bilim Bölgesi
-                </Badge>
-              )}
-            </div>
-
             <h1 className="font-heading text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-foreground leading-[1.15]">
               {continent.nameTr} Coğrafyası
             </h1>
@@ -181,7 +152,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 {continent.areaFormattedTr}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
-                Dünya karalarının %{continent.areaSharePercent}&apos;i
+                Karalardaki payı %{continent.areaSharePercent}
               </div>
             </div>
 
@@ -195,7 +166,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
                 {continent.populationSharePercent > 0
-                  ? `Dünya nüfusunun %${continent.populationSharePercent}'i`
+                  ? `Dünya nüfusundaki payı %${continent.populationSharePercent}`
                   : "Kalıcı yerleşim yok"}
               </div>
             </div>
@@ -206,7 +177,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 <span>Ülke Sayısı</span>
               </div>
               <div className="font-heading font-bold text-sm sm:text-base text-foreground font-mono">
-                {continent.countryCount > 0 ? `${continent.countryCount} Ülke` : "0 (Antlaşma)"}
+                {continent.countryCount > 0 ? `${continent.countryCount} ülke` : "Ülke yok"}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
                 {continent.countryCountNoteTr ?? "Bağımsız devletler"}
@@ -281,10 +252,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         <section id="giris-ve-harita" className="space-y-8">
           {/* Intro Lead */}
           <Card variant="panel" elevation="xs">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider mb-2">
-              <Compass className="size-4" />
-              <span>Kıtanın Genel Karakteri</span>
-            </div>
             <p className="text-base sm:text-lg text-foreground leading-relaxed font-normal">
               {continent.prose.introTr}
             </p>
@@ -301,10 +268,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 2: COĞRAFİ KONUM VE SINIRLAR */}
         <section id="konum-ve-sinirlar" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <Compass className="size-4" />
-              <span>Coğrafi Koordinatlar &amp; Eşikler</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
               Coğrafi Konumu ve Sınırları
             </h2>
@@ -318,10 +281,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 3: YERYÜZÜ ŞEKİLLERİ VE JEOLOJİK YAPI */}
         <section id="yeryuzu-sekilleri" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <Mountain className="size-4" />
-              <span>Tektonik &amp; Morfoloji</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
               Yeryüzü Şekilleri ve Jeolojik Yapısı
             </h2>
@@ -335,10 +294,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 4: İKLİM VE DOĞAL BİTKİ ÖRTÜSÜ */}
         <section id="iklim-ve-bitki-ortusu" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <CloudSun className="size-4" />
-              <span>Atmosferik Mekanizmalar &amp; Biyomlar</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
               İklim ve Doğal Bitki Örtüsü
             </h2>
@@ -352,12 +307,8 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 5: HİDROGRAFYA (AKARSULAR, GÖLLER VE DENİZLER) */}
         <section id="hidrografya" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <Waves className="size-4" />
-              <span>Drenaj Havzaları &amp; Su Kaynakları</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              Akarsular, Göller ve Hidrografik Sistem
+              Akarsular ve Göller
             </h2>
           </div>
 
@@ -369,12 +320,8 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 6: NÜFUS DAĞILIMI VE YERLEŞME */}
         <section id="nufus-ve-yerlesme" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <Users className="size-4" />
-              <span>Demografi &amp; Kentleşme</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
-              Nüfus Dağılımı ve Yerleşme Deseni
+              Nüfus ve Yerleşme
             </h2>
           </div>
 
@@ -386,13 +333,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 7: EKONOMİ VE DOĞAL KAYNAKLAR */}
         <section id="ekonomi-ve-kaynaklar" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <Coins className="size-4" />
-              <span>İktisadi Coğrafya</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
               {continent.id === "ANTARKTIKA"
-                ? "Uluslararası Yönetişim ve Bilimsel Araştırmalar"
+                ? "Madencilik Yasağı, Turizm ve Balıkçılık"
                 : "Ekonomi ve Doğal Kaynaklar"}
             </h2>
           </div>
@@ -405,10 +348,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 8: ALT BÖLGELER VE ÜLKELER DİZİNİ */}
         <section id="ulkeler-ve-bolgeler" className="space-y-6">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <Boxes className="size-4" />
-              <span>Siyasi ve Bölgesel Ayrım</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
               Kıtanın Alt Bölgeleri ve Ülkeleri
             </h2>
@@ -429,16 +368,13 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                     <h3 className="font-heading font-bold text-base text-foreground">
                       {sub.nameTr}
                     </h3>
-                    <Badge variant="outline" className="text-[10px] font-mono">
-                      {sub.nameEn}
-                    </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {sub.descriptionTr}
                   </p>
                   <div className="pt-2 border-t border-border/60">
                     <span className="text-[10px] uppercase font-bold text-muted-foreground block mb-1">
-                      Öne Çıkan Ülkeler / Merkezler
+                      {continent.id === "ANTARKTIKA" ? "Araştırma üsleri" : "Örnek ülkeler"}
                     </span>
                     <div className="flex flex-wrap gap-1">
                       {sub.sampleCountriesTr.map((sc, i) => (
@@ -463,10 +399,10 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 <h3 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
                   <Building2 className="size-4 text-primary" />
                   <span>
-                    {continent.nameTr} Kıtasına Bağlı Ülkeler ({sortedCountries.length})
+                    {continent.nameTr} Ülkeleri ({sortedCountries.length})
                   </span>
                 </h3>
-                <span className="text-xs text-muted-foreground">Nüfusa göre sıralıdır</span>
+                <span className="text-xs text-muted-foreground">En kalabalıktan başlayarak</span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -521,10 +457,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 9: DOĞAL AFETLER, SİSMİK KUŞAKLAR VE ÇEVRE RİSKLERİ */}
         <section id="dogal-afetler" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-destructive font-bold text-xs uppercase tracking-wider">
-              <ShieldAlert className="size-4" />
-              <span>Tektonik &amp; İklimsel Kırılganlık</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
               Doğal Afetler ve Çevre Sorunları
             </h2>
@@ -537,7 +469,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
               <div className="space-y-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <ShieldAlert className="size-3.5 text-destructive" />
-                  <span>Öne Çıkan Afet Tehlikeleri</span>
+                  <span>Başlıca tehlikeler</span>
                 </span>
                 <ul className="space-y-1.5 text-xs text-muted-foreground">
                   {continent.disasterProfile.primaryRisks.map((risk, idx) => (
@@ -552,7 +484,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
               <div className="space-y-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                   <Compass className="size-3.5 text-primary" />
-                  <span>Ana Fay Kuşakları ve Kırık Hatları</span>
+                  <span>Faylar ve levha sınırları</span>
                 </span>
                 <ul className="space-y-1.5 text-xs text-muted-foreground">
                   {continent.disasterProfile.faultLinesOrZones.map((f, idx) => (
@@ -570,10 +502,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 10: TARİHİ VE KÜLTÜREL COĞRAFYA */}
         <section id="tarihi-cografya" className="space-y-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
-              <BookOpen className="size-4" />
-              <span>Mekân &amp; Medeniyet</span>
-            </div>
             <h2 className="font-heading text-xl sm:text-2xl font-black text-foreground tracking-tight">
               Tarihi ve Kültürel Coğrafya
             </h2>
@@ -605,14 +533,12 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         {/* SECTION 12: DİĞER KITALAR GEZİNTİSİ */}
         <section id="diger-kitalar" className="space-y-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
-            <span className="font-heading font-bold text-sm text-foreground">
-              Diğer Kıtaları İnceleyin
-            </span>
+            <span className="font-heading font-bold text-sm text-foreground">Diğer Kıtalar</span>
             <Link
               href="/dunya/kita"
               className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
             >
-              <span>Tüm Kıtalar Atlası</span>
+              <span>Tüm Kıtalar</span>
               <ChevronRight className="size-3" />
             </Link>
           </div>

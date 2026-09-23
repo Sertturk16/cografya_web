@@ -35,67 +35,67 @@ interface SearchEntry {
 // Built-in module shortcuts in addition to API search index
 const STATIC_SHORTCUTS: SearchEntry[] = [
   {
-    name: "Türkiye İller Haritası",
+    name: "Türkiye İlleri",
     path: "/turkiye",
     kind: "module",
-    subtitle: "81 İl ve 7 Coğrafi Bölge",
+    subtitle: "81 il ve 7 coğrafi bölge",
     folded: "turkiye iller haritasi",
   },
   {
-    name: "Dünya Ülkeleri Atlası",
+    name: "Dünya Atlası",
     path: "/dunya",
     kind: "module",
-    subtitle: "199 Ülke ve Kıtalar",
+    subtitle: "199 ülke ve kıtalar",
     folded: "dunya ulkeleri atlasi",
   },
   {
-    name: "Canlı Deniz Telemetrisi",
+    name: "Denizler ve Kıyılar",
     path: "/deniz",
     kind: "module",
-    subtitle: "Copernicus & ECMWF 4 Deniz",
-    folded: "canli deniz telemetrisi",
+    subtitle: "Dört deniz ve kıyı tipleri",
+    folded: "denizler ve kiyilar deniz durumu su sicakligi dalga",
   },
   {
-    name: "Harita Oyunu (81 İl & Dünya)",
+    name: "Harita Oyunları",
     path: "/oyun",
     kind: "module",
-    subtitle: "3 İnteraktif Oyun Modu",
-    folded: "harita oyunu 81 il dunya",
+    subtitle: "İlleri ve bölgeleri dilsiz haritada bul",
+    folded: "harita oyunlari oyunu 81 il bolge dilsiz",
   },
   {
-    name: "Canlı Deprem Takip Portalı",
+    name: "Son Depremler",
     path: "/deprem",
     kind: "module",
-    subtitle: "AFAD TDVMS Son Sarsıntılar",
-    folded: "canli deprem takip portali",
+    subtitle: "AFAD'ın kaydettiği depremler",
+    folded: "son depremler deprem afad",
   },
   {
     name: "Kuş Uçuşu Mesafe Ölçme",
     path: "/araclar/mesafe-olcme",
     kind: "tool",
-    subtitle: "CBS Jeodezik Mesafe Aracı",
+    subtitle: "İki nokta arasını haritada ölç",
     folded: "kus ucusu mesafe olcme",
   },
   {
-    name: "Koordinat Bulma & Dönüştürme",
+    name: "Koordinat Bulma",
     path: "/araclar/koordinat-bulma",
     kind: "tool",
-    subtitle: "WGS84 Enlem / Boylam Aracı",
+    subtitle: "Bir noktanın enlemi ve boylamı",
     folded: "koordinat bulma donusturme",
   },
   {
-    name: "Alan & Yüzölçümü Hesaplama",
+    name: "Alan Hesaplama",
     path: "/araclar/alan-hesaplama",
     kind: "tool",
-    subtitle: "Poligon Jeodezik Alan Aracı",
+    subtitle: "Çizdiğin alan kaç km²",
     folded: "alan yuzolcumu hesaplama",
   },
   {
-    name: "Coğrafya Kitapları & Denemeler",
+    name: "Kitaplar",
     path: "/kitaplar",
     kind: "module",
-    subtitle: "Soru Bankası & Video Çözümler",
-    folded: "cografya kitaplari denemeler",
+    subtitle: "Denemeler ve çözüm videoları",
+    folded: "kitaplar cografya kitaplari denemeler",
   },
 ];
 
@@ -131,7 +131,7 @@ export function V2Hero({
           const apiEntries: SearchEntry[] = data.entries.map(
             (item: [string, string, "p" | "c"]) => ({
               name: item[0],
-              path: `/v2${item[1]}`,
+              path: item[1],
               kind: item[2],
               subtitle: item[2] === "p" ? "Türkiye İli" : "Dünya Ülkesi",
               folded: foldForSearch(item[0]),
@@ -177,7 +177,7 @@ export function V2Hero({
   const handleNavigate = (path: string, name: string) => {
     setIsOpen(false);
     setQuery("");
-    toast.success(`${name} sayfasına yönlendiriliyorsunuz...`);
+    toast.success(`${name} açılıyor…`);
     // `@/i18n/navigation`'s router, not `next/navigation`'s: these are UNPREFIXED route keys
     // (`/turkiye`, `/dunya`), the same ones the tag links below hand to `Link`. A raw push sent
     // an `/en` reader to `/turkiye`, a path that does not exist under that locale. The cast is
@@ -205,7 +205,7 @@ export function V2Hero({
           handleNavigate(target.path, target.name);
         }
       } else if (query.trim()) {
-        toast.info(`"${query}" için sonuç bulunamadı. Lütfen bir il, ülke veya araç adı dene.`);
+        toast.info(`"${query}" için sonuç yok. Bir il, ülke ya da araç adı yaz.`);
       }
     } else if (e.key === "Escape") {
       setIsOpen(false);
@@ -222,7 +222,7 @@ export function V2Hero({
     } else if (query.trim()) {
       toast.info(`"${query}" için sonuç bulunamadı. Listeden bir il veya ülke seçebilirsin.`);
     } else {
-      toast.info("Lütfen aramak istediğin ili veya ülkeyi yaz.");
+      toast.info("Aramak istediğin ili ya da ülkeyi yaz.");
     }
   };
 
@@ -243,13 +243,13 @@ export function V2Hero({
       case "tool":
         return (
           <Badge variant="outline" size="sm">
-            CBS
+            Araç
           </Badge>
         );
       case "module":
         return (
           <Badge variant="info" size="sm">
-            Modül
+            Sayfa
           </Badge>
         );
     }
@@ -285,14 +285,6 @@ export function V2Hero({
       <div className="absolute bottom-0 left-10 -mb-28 size-72 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto space-y-6">
-        {/* Eyebrow Badge */}
-        <div className="flex justify-center">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/25 bg-primary/5 text-primary text-xs font-semibold shadow-2xs backdrop-blur-xs">
-            <Sparkles className="size-3.5 text-primary animate-pulse" />
-            <span>Coğrafya Gurmesi · Açık Atlas &amp; Eğitim Portalı</span>
-          </div>
-        </div>
-
         {/* Heading & Value Proposition */}
         <div className="space-y-3">
           {/* THE PROMISE IS THE WHOLE PLATFORM NOW, NOT THE MAP (T-068). "Coğrafyayı
@@ -346,7 +338,7 @@ export function V2Hero({
               </div>
               <input
                 type="text"
-                placeholder="İl, ülke, deniz veya araç ara... (örn: 'Balıkesir', 'Japonya', 'Mesafe')"
+                placeholder="İl, ülke, deniz ya da araç ara (ör. Balıkesir, Japonya, mesafe)"
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
@@ -379,7 +371,7 @@ export function V2Hero({
                   size="sm"
                   className="h-10 px-5 rounded-xl shadow-xs text-xs sm:text-sm font-semibold cursor-pointer"
                 >
-                  Keşfet
+                  Ara
                 </Button>
               </div>
             </div>
@@ -389,7 +381,7 @@ export function V2Hero({
           {isOpen && query.trim().length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 p-2 rounded-2xl shadow-2xl border border-border bg-card/95 backdrop-blur-md z-50 animate-in fade-in-50 zoom-in-95 duration-100 space-y-1 max-h-80 overflow-y-auto">
               <div className="flex items-center justify-between px-3 py-1.5 text-[11px] text-muted-foreground border-b border-border/60">
-                <span>Arama Sonuçları ({filteredResults.length})</span>
+                <span>{filteredResults.length} sonuç</span>
                 <span className="font-mono text-[10px]">Enter ↵ ile aç</span>
               </div>
 
@@ -435,7 +427,7 @@ export function V2Hero({
 
           {/* Quick Access Pills */}
           <div className="flex items-center justify-center gap-2 flex-wrap pt-3 text-xs">
-            <span className="text-muted-foreground text-[11px] font-medium">Hızlı Erişim:</span>
+            <span className="text-muted-foreground text-[11px] font-medium">Kısayollar:</span>
             {QUICK_TAGS.map((tag) => (
               <Link
                 key={tag.path}
@@ -470,7 +462,7 @@ export function V2Hero({
               className="h-12 px-6 rounded-2xl shadow-md text-sm font-semibold cursor-pointer"
               rightIcon={<ArrowRight className="size-4" />}
             >
-              Türkiye Haritası (81 İl)
+              Türkiye Haritası
             </Button>
           </Link>
           <Link href="/dunya">
@@ -480,7 +472,7 @@ export function V2Hero({
               className="h-12 px-6 rounded-2xl text-sm font-semibold bg-card/80 hover:bg-card border-border hover:border-primary/40 cursor-pointer"
               leftIcon={<Globe className="size-4 text-secondary" />}
             >
-              Dünya Atlası (199 Ülke)
+              Dünya Atlası
             </Button>
           </Link>
           <Link href="/oyun">
@@ -490,7 +482,7 @@ export function V2Hero({
               className="h-12 px-6 rounded-2xl text-sm font-semibold shadow-xs cursor-pointer"
               leftIcon={<Gamepad2 className="size-4" />}
             >
-              Harita Oyunu Oyna
+              Harita Oyunları
             </Button>
           </Link>
         </div>

@@ -37,7 +37,7 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
   it("cleanses fault lines claims from toolbar label, page title, H1, and JSON-LD (FEN125-I1, FEN125-I2)", () => {
     const explorerUrl = new URL("./v2-earthquake-explorer.tsx", import.meta.url);
     const explorerContent = readFileSync(explorerUrl, "utf8");
-    expect(explorerContent).toContain("Eşzamanlı Merkez Üsleri &amp; Odak Derinlikleri");
+    expect(explorerContent).toContain("Her daire bir depremin merkez üssü.");
     expect(explorerContent).not.toContain("Eşzamanlı Merkez Üsleri &amp; Aktif Fay Hatları");
 
     const pageUrl = new URL("../../app/[locale]/(site)/deprem/page.tsx", import.meta.url);
@@ -80,7 +80,7 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
     const deprem = stripComments(
       readFileSync(new URL("../../app/[locale]/(site)/deprem/page.tsx", import.meta.url), "utf8"),
     );
-    expect(deprem).toContain("Sismotektonik Yapı");
+    expect(deprem).toContain("Türkiye&apos;nin Üç Büyük Fay Hattı");
     expect(deprem).not.toMatch(/MTA/);
 
     // …nor the fault-line page, which is the one rendering `FAULT_LINES_DATA`.

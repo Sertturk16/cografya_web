@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Trophy, Award, Flame, Zap, ShieldCheck, Lock, Calendar } from "lucide-react";
+import { Award, Flame, Zap, ShieldCheck, Lock, Calendar } from "lucide-react";
 import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
 import { formatDay } from "@/lib/text/format-date";
 
@@ -62,7 +62,7 @@ export function V2GameHistoryStats() {
     {
       id: "first-round",
       title: "İlk Adım",
-      desc: "Platformda ilk harita sınavını başarıyla tamamla.",
+      desc: "Puan alarak bir tur bitir.",
       icon: <Award className="size-5" />,
       // IRIS A10: requires at least one round with score > 0 (abandoned zero-score rounds do not unlock)
       unlocked: Boolean(records && records.some((r) => r.score > 0)),
@@ -70,21 +70,21 @@ export function V2GameHistoryStats() {
     {
       id: "pro-explorer",
       title: "Usta Kâşif",
-      desc: "Herhangi bir sınav turunda %85 ve üzeri başarı skoru elde et.",
+      desc: "Bir turda en az %85 başarı yakala.",
       icon: <Zap className="size-5" />,
       unlocked: bestScore >= 85,
     },
     {
       id: "map-veteran",
       title: "Harita Gazisi",
-      desc: "Toplam 5 veya daha fazla sınav turu bitirerek profilini güçlendir.",
+      desc: "Beş tur bitir; hangi oyun olduğu fark etmez.",
       icon: <ShieldCheck className="size-5" />,
       unlocked: totalRounds >= 5,
     },
     {
       id: "perfect-streak",
       title: "Kusursuz Seri",
-      desc: "Tek bir sınavda %100 tam puan alarak coğrafya şampiyonu ol.",
+      desc: "Tek bir turda %100 al.",
       icon: <Flame className="size-5" />,
       unlocked: bestScore === 100,
     },
@@ -96,15 +96,7 @@ export function V2GameHistoryStats() {
     <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/20 p-6 sm:p-8 shadow-lg space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" size="sm" icon={<Trophy className="size-3.5" />}>
-              Başarılar &amp; Skor Geçmişi
-            </Badge>
-            <span className="text-xs text-muted-foreground">Kişisel Gelişim ve Rozet Vitrini</span>
-          </div>
-          <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground mt-1">
-            Kazanılan Rozetler ve Unvanlar
-          </h3>
+          <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">Rozetlerin</h3>
         </div>
 
         {authState === "authenticated" ? (
@@ -115,11 +107,7 @@ export function V2GameHistoryStats() {
           >
             {unlockedCount} / {achievements.length} Rozet Açık
           </Badge>
-        ) : (
-          <Badge variant="outline" size="sm" className="bg-muted text-muted-foreground">
-            Giriş Yapılmadı
-          </Badge>
-        )}
+        ) : null}
       </div>
 
       {/* Guest Lock Banner */}
@@ -131,16 +119,15 @@ export function V2GameHistoryStats() {
             </div>
             <div>
               <h4 className="font-heading font-bold text-sm text-foreground">
-                Skorlarını ve Rozetlerini Profiline Kaydet
+                Oynamak için giriş yap
               </h4>
               <p className="text-xs text-muted-foreground">
-                Oturum açarak bitirdiğin tüm sınav turlarını geçmişine kaydedebilir ve başarı
-                rozetlerini açabilirsin.
+                Bitirdiğin her tur burada listelenir, aşağıdaki rozetler de turlarına göre açılır.
               </p>
             </div>
           </div>
           <Button variant="primary" size="sm" onClick={() => requestAuth("gameRound")}>
-            Giriş Yap veya Üye Ol
+            Giriş Yap veya Kayıt Ol
           </Button>
         </div>
       )}
@@ -179,7 +166,7 @@ export function V2GameHistoryStats() {
         <div className="pt-2 space-y-3">
           <h4 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
             <Calendar className="size-4 text-primary" />
-            <span>Son Oynanan Sınav Turları</span>
+            <span>Son Turların</span>
           </h4>
 
           {loading ? (
@@ -188,7 +175,7 @@ export function V2GameHistoryStats() {
               className="p-6 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
             >
               <Spinner decorative className="text-primary" />
-              <span>Skor geçmişiniz yükleniyor...</span>
+              <span>Turların yükleniyor…</span>
             </div>
           ) : records && records.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -219,7 +206,8 @@ export function V2GameHistoryStats() {
             </div>
           ) : (
             <div className="p-6 text-center text-xs text-muted-foreground bg-muted/20 rounded-2xl border border-dashed border-border">
-              Henüz kayıtlı sınav turun bulunmuyor. Bir sınav başlatıp bitirerek ilk skorunu kaydet!
+              Bitmiş bir turun yok. Bir oyunu sonuna kadar oyna, puanın ve süren bu tabloya
+              yazılsın.
             </div>
           )}
         </div>

@@ -80,7 +80,7 @@ export function V2AuthDialog() {
               </button>
               <DialogTitle className="sr-only">Coğrafya Gurmesi Hesabı</DialogTitle>
               <DialogDescription className="sr-only">
-                Giriş yapın veya yeni hesap oluşturun.
+                Giriş yap ya da yeni hesap oluştur.
               </DialogDescription>
             </div>
 

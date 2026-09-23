@@ -10,6 +10,8 @@ export interface SeaBasinDetailData {
   nameTr: string;
   fullNameTr: string;
   badge: string;
+  /** The hero's lede: two or three sentences written for this sea alone. */
+  lede: string;
   /**
    * The basin's colour, read from `lib/theme/basin-identity.ts` by `slug`.
    *
@@ -26,7 +28,10 @@ export interface SeaBasinDetailData {
     maxDepth: string;
     avgDepth: string;
     salinity: string;
+    /** Mainland coastline (HGM, islands excluded). */
     coastalLengthTr: string;
+    /** The same coast with its islands; the four add up to HGM's 8.333 km. */
+    coastalLengthWithIslandsTr: string;
     provincesCount: number;
     stationsCount: number;
   };
@@ -88,14 +93,16 @@ export const SEA_BASINS_DETAIL: Record<
     slug: "karadeniz",
     nameTr: "Karadeniz",
     fullNameTr: "Karadeniz Havzası",
-    badge: "Okyanusal Karakterli Kapalı Deniz",
+    badge: "Derin ama kapalı bir deniz",
+    lede: "Türkiye'nin en az tuzlu denizi. Büyük nehirler üstünü tatlı suyla besler; 200 metrenin altında ise oksijen yoktur. Bu sayfa denizin nasıl oluştuğunu, kıyısına neden bu kadar yağmur düştüğünü ve 15 kıyı ilini anlatıyor.",
     identity: BASIN_IDENTITY.karadeniz,
     metrics: {
       area: "436.400 km²",
       maxDepth: "2.212 m",
       avgDepth: "1.253 m",
-      salinity: "%o17 – %o18 (En Düşük)",
+      salinity: "‰17 – ‰18 (en düşük)",
       coastalLengthTr: "1.695 km",
+      coastalLengthWithIslandsTr: "1.701 km",
       provincesCount: 15,
       stationsCount: 15,
     },
@@ -134,53 +141,53 @@ export const SEA_BASINS_DETAIL: Record<
       { plate: "08", name: "Artvin (Hopa)", slug: "artvin" },
     ],
     physicalGeography: {
-      title: "Fiziki Coğrafya & Havza Morfolojisi",
+      title: "Kimi Zaman Göl, Kimi Zaman Deniz",
       content:
-        "Karadeniz, jeolojik olarak Tetis Okyanusu'nun kuzey kalıntısı olan Paratetis Denizi'nin zamanla kıtalar arasında sıkışarak izole olmasıyla meydana gelmiş büyük bir çöküntü çanağıdır. Üçüncü ve Dördüncü Zaman boyunca tatlı su gölü ile tuzlu deniz evreleri arasında gidip gelmiş, yaklaşık 7.500 yıl önce Boğazlar'ın açılmasıyla bugünkü Akdeniz bağlantısına kavuşmuştur. Taban topoğrafyası son derece dik bir şelf yamacıyla hızla 2.000 metrenin üzerindeki abisal düzlüğe iner. En derin noktası orta kesimde 2.212 metredir.",
+        "Karadeniz, Tetis Okyanusu'nun kuzey kalıntısı olan Paratetis Denizi'nden doğdu: kıtaların arasında sıkışıp kalan büyük bir çöküntü çanağı. Üçüncü ve Dördüncü Zaman boyunca kimi zaman tatlı su gölü, kimi zaman tuzlu deniz oldu. Yaklaşık 7.500 yıl önce boğazlar açılınca bugünkü gibi Akdeniz'e bağlandı. Kıyıdan sonra taban dik bir yamaçla 2.000 metrenin altındaki düzlüğe iner; en derin yeri orta kesimde, 2.212 metre.",
       points: [
-        "Kıta sahanlığı (şelf alanı) Orta Karadeniz (Samsun deltaları) hariç son derece dardır.",
-        "Kıyının hemen ardından yükselen Kuzey Anadolu Dağları nedeniyle deniz aniden derinleşir.",
-        "200 metrenin altındaki su katmanı oksijensizdir (anoksik) ve hidrojen sülfür (H2S) gazıyla doygundur.",
+        "Kıta sahanlığı, Samsun deltalarının çevresi dışında çok dar.",
+        "Kuzey Anadolu Dağları kıyıdan hemen yükseldiği için deniz birden derinleşir.",
+        "200 metrenin altındaki suda oksijen yok; su hidrojen sülfürle doymuş.",
       ],
     },
     climateImpact: {
-      title: "İklime Etkisi & Yağış Dinamiği",
+      title: "Dağa Çarpan Nemli Hava",
       content:
-        "Karadeniz, kuzeyinden gelen soğuk Sibirya ve kutupsal hava kütlelerini bünyesindeki su buharıyla ılımanlaştırır. Deniz üzerinden nem yüklenen hava kütleleri kıyıya paralel uzanan Kuzey Anadolu Dağları'nın kuzey yamaçlarına çarparak yükselir ve soğur; bunun sonucunda Türkiye'nin en yüksek orografik (yamaç) yağışları oluşur (Rize'de yıllık 2.300 mm'yi aşar). Bu mekanizma Karadeniz kıyı kuşağında her mevsimi yağışlı, yıllık sıcaklık farkı en az olan Karadeniz (Ilıman Okyanusal) İklimi'ni doğurur.",
+        "Kuzeyden gelen soğuk Sibirya ve kutup havası deniz üstünden geçerken nem alır ve yumuşar. Nemli hava kıyıya paralel uzanan Kuzey Anadolu Dağları'na çarpar, yükselir ve soğur; Türkiye'nin en bol yamaç yağışı böyle oluşur. Rize'de yıllık yağış 2.300 mm'yi aşar. Sonuç, her mevsimi yağışlı ve yaz ile kış arasındaki sıcaklık farkı en az olan Karadeniz iklimidir.",
       points: [
-        "Kış mevsiminde karaların aşırı soğumasını engelleyerek kıyı kuşağında don olaylarını sınırlandırır.",
-        "Yaz mevsiminde aşırı kuraklığı önleyerek Türkiye'nin tek kurak mevsimi olmayan iklim kuşağını besler.",
-        "Dağların yüksekliği denizel etkinin İç Anadolu'ya geçmesini engelleyerek iç kısımları karasallaştırır.",
+        "Kışın karanın fazla soğumasını engeller, kıyıda don olayları azalır.",
+        "Yazın kuraklığı önler; kurak mevsimi olmayan tek iklim kuşağımız budur.",
+        "Yüksek dağlar deniz etkisini İç Anadolu'ya geçirmez, iç kesimler karasallaşır.",
       ],
     },
     coastalGeomorphology: {
-      title: "Kıyı Tipi & Kıyı Şekilleri",
+      title: "Dağların Denize Dik İndiği Kıyı",
       content:
-        "Karadeniz'in Türkiye kıyılarında baskın kıyı tipi Boyuna Kıyı Tipi'dir. Dağlar kıyıya paralel uzandığı için kıyı çizgisi düz ve falezlidir. İstisna olarak Samsun kıyılarında Kızılırmak ve Yeşilırmak nehirlerinin getirdiği alüvyonlarla Bafra ve Çarşamba deltaları oluşmuştur. Sinop'ta ise bir tombolo (saplı ada) oluşumuyla Türkiye'nin tek doğal korunaklı limanı meydana gelmiştir.",
+        "Karadeniz kıyısı çoğunlukla boyuna kıyı tipindedir: dağlar kıyıya paralel uzanır, kıyı çizgisi düz ve falezlidir. İstisnalar Samsun'dadır; Kızılırmak ve Yeşilırmak'ın getirdiği alüvyon Bafra ve Çarşamba deltalarını kurmuştur. Sinop'ta ise bir tombolo, yani saplı ada, Türkiye'nin tek doğal korunaklı limanını oluşturur.",
       coastalTypes: [
         "Boyuna Kıyı Tipi",
-        "Delta Kıyıları (Bafra & Çarşamba)",
+        "Delta Kıyıları (Bafra ve Çarşamba)",
         "Tombolo (Sinop İnceburun)",
       ],
       coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
-      title: "Akıntı Sistemi & Su Hareketi",
+      title: "Kıyıyı Dolaşan Halka",
       content:
-        "Karadeniz'de ana akıntı sistemi saat yönünün tersine (siklonik) dönen dev bir halka akıntısıdır (Rim Current / Kenar Akıntısı). Bu siklonik döngü Gürcistan kıyılarından Türkiye'nin Doğu Karadeniz sahiline girer ve Sinop Burnu üzerinden batıya Boğazlar'a doğru ilerler. İkincil olarak, bol nehir girdisi ve düşük buharlaşma nedeniyle Karadeniz'in su seviyesi Marmara'dan yaklaşık 30-40 cm daha yüksektir; bu seviye farkı İstanbul Boğazı üzerinden Marmara'ya akan güçlü yüzey akıntısını doğurur.",
+        "Karadeniz'in ana akıntısı, denizin kenarını saat yönünün tersine dolaşan büyük bir halkadır; adı Kenar Akıntısı. Gürcistan kıyısından Doğu Karadeniz'e girer, Sinop Burnu'nu dolanıp batıya, İstanbul Boğazı'na doğru ilerler. Nehirler bol su getirdiği ve buharlaşma az olduğu için Karadeniz'in yüzeyi Marmara'dan yaklaşık 30-40 cm yüksektir. Bu fark, İstanbul Boğazı'ndan Marmara'ya akan güçlü yüzey akıntısını doğurur.",
       keyPoints: [
-        "Rim Current (Kenar Akıntısı): Türkiye kıyılarında doğudan batıya doğru saat yönünün tersine akar.",
-        "İstanbul Boğazı Üst Akıntısı: Karadeniz'in seviye fazlasını Marmara ve Ege'ye boşaltır.",
-        "Dikey karışımın olmaması: İlk 150-200 metredeki az tuzlu hafif su katmanı, alttaki ağır ve H2S'li tabakanın yukarı çıkmasını engeller.",
+        "Kenar Akıntısı: Türkiye kıyısı boyunca doğudan batıya, saat yönünün tersine akar.",
+        "İstanbul Boğazı üst akıntısı: Karadeniz'in fazla suyunu Marmara'ya, oradan Ege'ye taşır.",
+        "Katlar karışmaz: üstteki 150-200 metrelik hafif, az tuzlu su, alttaki ağır ve hidrojen sülfürlü suyun yükselmesini engeller.",
       ],
     },
     hydrographicBalance: {
-      title: "Beslenme Kaynakları & Hidrografik Bilanço",
+      title: "Nehirlerin Tatlılaştırdığı Deniz",
       content:
-        "Karadeniz, yüzölçümüne oranla dünyanın en geniş nehir beslenme havzalarından birine sahiptir. Avrupa'nın ikinci büyük nehri olan Tuna Nehri başta olmak üzere Dinyester, Dinyeper, Don nehri ve Türkiye'den dökülen Kızılırmak, Yeşilırmak, Sakarya ve Çoruh nehirleri her yıl Karadeniz'e yaklaşık 350 milyar metreküp tatlı su pompalar. Buharlaşmanın yağış ve nehir girdisinden az olması, deniz suyunu seyreltir ve tuzluluğu binde 17-18 seviyesinde tutar.",
+        "Karadeniz, büyüklüğüne göre dünyanın en geniş nehir havzalarından birinden su alır. Avrupa'nın ikinci büyük nehri Tuna başta olmak üzere Dinyester, Dinyeper, Don ve Türkiye'den gelen Kızılırmak, Yeşilırmak, Sakarya ve Çoruh her yıl yaklaşık 350 milyar metreküp tatlı su getirir. Buharlaşma, yağışla ve nehirlerle gelen sudan az olduğu için tuzluluk binde 17-18'de kalır.",
       majorRivers: [
         "Tuna Nehri (Avrupa)",
-        "Dinyeper & Dinyester",
+        "Dinyeper ve Dinyester",
         "Kızılırmak (1.355 km)",
         "Yeşilırmak",
         "Sakarya Nehri",
@@ -188,59 +195,59 @@ export const SEA_BASINS_DETAIL: Record<
       ],
     },
     economicGeography: {
-      title: "Ekonomik Coğrafya: Balıkçılık & Ulaşım",
+      title: "Türkiye'nin Balığını Veren Deniz",
       content:
-        "Karadeniz, Türkiye deniz balıkçılığı üretiminin yaklaşık yüzde yetmişini (%70) tek başına karşılar. Nehirlerin taşıdığı bol mineral ve besin tuzu sayesinde üst 100 metrelik yüzey katmanı plankton açısından olağanüstü zengindir; bu da başta hamsi, çaça, palamut ve istavrit olmak üzere muazzam pelajik balık sürülerini besler. Kıyı illerinde limancılık (Filyos Limanı, Samsun, Trabzon) Kafkasya ve Orta Asya transit ticaretinde kilit roldedir.",
+        "Nehirlerin taşıdığı mineral ve besin tuzları, üstteki 100 metrelik suyu plankton bakımından çok zenginleştirir. Bu plankton hamsi, çaça, palamut ve istavrit gibi sürü hâlinde yüzen balıkları besler; Türkiye'nin denizlerden avladığı balığın yaklaşık üçte ikisi Karadeniz'den çıkar. Kıyıda Filyos, Samsun ve Trabzon limanları Kafkasya ve Orta Asya'ya giden transit ticarette önemli yer tutar.",
       sectors: [
         {
           name: "Balıkçılık",
-          desc: "Türkiye hamsi ve küçük pelajik balık avcılığının tartışmasız merkezi.",
+          desc: "Türkiye'de hamsi ve küçük sürü balıkları avcılığının merkezi.",
         },
         {
-          name: "Liman & Lojistik",
-          desc: "Samsun, Trabzon, Filyos ve Hopa limanları üzerinden Karadeniz Havzası ticareti.",
+          name: "Liman ve Lojistik",
+          desc: "Samsun, Trabzon, Filyos ve Hopa limanlarından Karadeniz ülkeleriyle ticaret.",
         },
         {
-          name: "Enerji & Maden",
-          desc: "Sakarya Gaz Sahası açık deniz doğal gaz üretim platformları.",
+          name: "Enerji ve Maden",
+          desc: "Sakarya Gaz Sahası'nda açık denizden doğal gaz çıkarılıyor.",
         },
       ],
     },
     humanGeography: {
-      title: "Nüfus & Kıyı Yerleşme Dokusu",
+      title: "Dağla Deniz Arasına Sıkışan Şehirler",
       content:
-        "Kuzey Anadolu Dağları'nın hemen deniz kıyısından dik yükselmesi, tarım arazilerini ve yerleşilebilir düzlükleri kıyıda daracık bir şeride sıkıştırmıştır. Bu jeomorfolojik kısıt nedeniyle Karadeniz Bölgesi'nde şehir merkezleri ve nüfusun yüzde sekseni kıyı çizgisi boyunca dizilmiştir (Trabzon, Rize, Giresun, Ordu). Kırsal kesimde ise arazi eğimi ve su kaynaklarının bolluğu Türkiye'nin en karakteristik 'dağınık kır yerleşmesi' dokusunu ortaya çıkarmıştır.",
+        "Kuzey Anadolu Dağları kıyının hemen arkasından dik yükseldiği için tarım alanları ve yerleşmeye uygun düzlükler dar bir şeride sıkışmıştır. Bu yüzden Trabzon, Rize, Giresun ve Ordu gibi şehir merkezleri kıyı boyunca dizilir. Kırsalda ise eğimli arazi ve bol su, Türkiye'nin en tipik dağınık köy yerleşmesini ortaya çıkarmıştır.",
       points: [
-        "Şehir merkezleri ve sanayi tesisleri kıyı dolgu alanları ve vadi tabanlarına yığılmıştır.",
-        "Karadeniz Sahil Yolu kıyı boyunca ulaşımı sağlarken doğal kıyı çizgisinde antropojenik değişim yaratmıştır.",
-        "Kıyı gerisindeki dik yamaçlarda çay ve fındık monokültür tarımı yerleşme düzenini şekillendirir.",
+        "Şehir merkezleri ve sanayi, denizden doldurulan alanlara ve vadi tabanlarına yığılmış.",
+        "Karadeniz Sahil Yolu kıyı boyunca ulaşımı sağlar ama doğal kıyı çizgisini de değiştirmiştir.",
+        "Kıyının arkasındaki dik yamaçlarda çay ve fındık tarımı yerleşmenin düzenini belirler.",
       ],
     },
     environmentalIssues: {
-      title: "Çevre Sorunları & Ekolojik Tehditler",
+      title: "Suyunun Çoğu Oksijensiz Bir Deniz",
       content:
-        "Karadeniz'in en büyük ekolojik açmazı, 200 metrenin altındaki su hacminin yüzde doksanının (%90) hidrojen sülfür gazı nedeniyle biyolojik olarak ölü olmasıdır. Canlı yaşam yalnızca üstteki incecik yüzey kabuğuna sıkışmıştır. Bu kırılgan yapı; Tuna gibi devasa uluslararası nehirlerin taşıdığı tarımsal nitrat ve endüstriyel atıklarla (ötrofikasyon), aşırı ve kontrolsüz avcılıkla ve balast sularıyla gelen istilacı türlerle (taraklı denizanası Mnemiopsis leidyi) ciddi tehdit altındadır.",
+        "Karadeniz'in suyunun yaklaşık %90'ında oksijen yoktur: yaklaşık 200 metrenin altındaki su hidrojen sülfürle doludur ve orada balık yaşayamaz. Canlıların çoğu üstteki ince katmanda yaşar. Bu ince katman üç yönden baskı altında: Tuna gibi büyük nehirlerin taşıdığı tarım gübresi ve sanayi atığı (ötrofikasyon), aşırı avlanma ve gemilerin balast suyuyla gelen istilacı türler. Bunların en bilineni taraklı denizanası Mnemiopsis leidyi.",
       risks: [
-        "H2S Sınırı: Oksijensiz tabakanın aşırı kirlilikle yukarı doğru yükselme riski.",
-        "Tarımsal Ötrofikasyon: Nehirlerden gelen aşırı fosfat ve nitrat nedeniyle alg patlamaları ve oksijen tükenmesi.",
-        "Kıyı Erozyonu ve Aşırı Avlanma: Hamsi stoklarının biyolojik taşıma kapasitesinin zorlanması.",
+        "Oksijensiz tabakanın sınırı: kirlilik artarsa bu tabaka yukarı doğru yükselebilir.",
+        "Ötrofikasyon: nehirlerden gelen fazla fosfat ve nitrat alg patlamasına ve oksijen tükenmesine yol açar.",
+        "Kıyı aşınması ve aşırı avlanma: hamsi stokları kaldırabileceğinden fazla avlanıyor.",
       ],
     },
     faq: [
       {
         question: "Karadeniz'in 200 metre altında neden canlı yaşamaz?",
         answer:
-          "Karadeniz'e dökülen bol tatlı su yüzeyde hafif bir katman oluştururken, dipte Boğazlar'dan gelen yoğun tuzlu Akdeniz suyu bulunur. Bu iki su kütlesi yoğunluk farkı yüzünden birbirine karışamaz (kalıcı piknoklin). Yüzeydeki oksijen dibe inemez; dipteki organik artıklar oksijensiz bakterilerce parçalanırken zehirli hidrojen sülfür (H2S) gazı açığa çıkar.",
+          "Karadeniz'e dökülen bol tatlı su yüzeyde hafif bir katman oluşturur; dipte ise boğazlardan gelen ağır, tuzlu Akdeniz suyu durur. Yoğunlukları farklı olduğu için bu iki su karışmaz; aradaki kalıcı sınıra piknoklin denir. Yüzeydeki oksijen dibe inemez. Dipteki organik artıkları oksijensiz yaşayan bakteriler ayrıştırır ve bu sırada zehirli hidrojen sülfür açığa çıkar.",
       },
       {
-        question: "Karadeniz neden Türkiye'nin en az tuzlu denizidir?",
+        question: "Karadeniz neden Türkiye'nin en az tuzlu denizi?",
         answer:
-          "Tuna, Dinyeper, Dinyester ve Kızılırmak gibi dev nehirlerin havuza sürekli tatlı su taşıması ve bölgenin bulutlu, nemli ve serin havası nedeniyle buharlaşmanın düşük olması deniz suyunun tuzluluğunu binde 17-18 seviyesinde tutar.",
+          "Tuna, Dinyeper, Dinyester ve Kızılırmak gibi büyük nehirler denize sürekli tatlı su taşır. Hava bulutlu, nemli ve serin olduğu için de buharlaşma azdır. İkisi birlikte tuzluluğu binde 17-18'de tutar.",
       },
       {
-        question: "Karadeniz'de neden falez oluşumu çok yaygındır?",
+        question: "Karadeniz'de falez neden bu kadar yaygın?",
         answer:
-          "Kuzey Anadolu sıradağları kıyıya paralel ve dik bir yamaçla indiği için deniz aniden derinleşir. Açık denizden gelen yüksek enerjili fırtına dalgaları sığlaşmadan dağ eteklerine çarparak yamacın altını oyar; üstteki kütlelerin göçmesiyle dik kıyı uçurumları (falez/yalıyar) oluşur.",
+          "Kuzey Anadolu Dağları kıyıya paralel uzanır ve dik bir yamaçla denize iner; deniz de birden derinleşir. Açık denizden gelen fırtına dalgaları sığ bir alanda yavaşlamadan dağ eteğine çarpar ve yamacın altını oyar. Üstteki kaya çöküp düşer, geride dik bir kıyı uçurumu kalır: falez ya da yalıyar.",
       },
     ],
   },
@@ -248,14 +255,16 @@ export const SEA_BASINS_DETAIL: Record<
     slug: "marmara",
     nameTr: "Marmara Denizi",
     fullNameTr: "Marmara Denizi Havzası",
-    badge: "Türkiye'nin Jeolojik İç Denizi",
+    badge: "Tamamen Türkiye'de bir iç deniz",
+    lede: "Karadeniz ile Ege arasında küçük bir deniz. Üstünden az tuzlu Karadeniz suyu, dibinden tuzlu Akdeniz suyu geçer; tabanında Kuzey Anadolu Fayı uzanır. Kıyılarında Türkiye'nin en kalabalık şehirleri var.",
     identity: BASIN_IDENTITY.marmara,
     metrics: {
       area: "11.350 km²",
       maxDepth: "1.370 m (Çınarcık Çukuru)",
       avgDepth: "289 m",
-      salinity: "%o22 (Yüzey) / %o38 (Dip)",
+      salinity: "‰22 yüzeyde, ‰38 dipte",
       coastalLengthTr: "927 km",
+      coastalLengthWithIslandsTr: "1.441 km",
       provincesCount: 7,
       stationsCount: 6,
     },
@@ -277,110 +286,110 @@ export const SEA_BASINS_DETAIL: Record<
       { plate: "59", name: "Tekirdağ", slug: "tekirdag" },
     ],
     physicalGeography: {
-      title: "Fiziki Coğrafya & Taban Tektoniği",
+      title: "Fayın Açtığı Çukurlar",
       content:
-        "Marmara Denizi, tamamı Türkiye'nin egemenlik sınırları içinde yer alan jeolojik bir 'iç deniz'dir. Kuzey Anadolu Fay Hattı'nın (KAF) batı uzantısının çek-ayır (pull-apart) tektoniğiyle kabuğu yırtıp çökertmesi sonucunda oluşmuştur. Bu tektonik köken nedeniyle sığ kıyı şelflerinin ortasında doğu-batı doğrultusunda sıralanan 3 derin tektonik çukur bulunur: Tekirdağ Çukuru (1.112 m), Orta Marmara Çukuru (1.220 m) ve Çınarcık Çukuru (1.370 m).",
+        "Marmara Denizi'nin tüm kıyıları Türkiye'dedir; bir iç denizdir. Kuzey Anadolu Fayı'nın batı ucu burada yer kabuğunu hem yana kaydırmış hem de çekip açmış, arada kalan kesim çökmüştür. Buna çek-ayır tektoniği denir. Bu yüzden sığ kıyıların ortasında, doğu-batı doğrultusunda sıralanan üç derin çukur vardır: Tekirdağ Çukuru (1.112 m), Orta Marmara Çukuru (1.220 m) ve Çınarcık Çukuru (1.370 m).",
       points: [
-        "Kuzey Anadolu Fayı'nın ana kolu deniz tabanındaki bu 3 derin çukurluğu boydan boya kat eder.",
-        "İstanbul ve Çanakkale Boğazları ria tipi su yolları ile Karadeniz ve Ege'yi birbirine bağlar.",
-        "Güneyde Kapıdağ Yarımadası ve Marmara Adaları karmaşık bir jeomorfolojik topoğrafya sunar.",
+        "Kuzey Anadolu Fayı'nın ana kolu bu üç çukuru boydan boya geçer.",
+        "Ria tipindeki İstanbul ve Çanakkale boğazları Marmara'yı Karadeniz'e ve Ege'ye bağlar.",
+        "Güneyde Kapıdağ Yarımadası ve Marmara Adaları engebeli, parçalı bir kıyı oluşturur.",
       ],
     },
     climateImpact: {
-      title: "İklime Etkisi & Geçiş Karakteri",
+      title: "Üç İklimin Buluştuğu Yer",
       content:
-        "Marmara Denizi, çevresinde Karadeniz, Akdeniz ve Karasal iklim tiplerinin birbiriyle kaynaştığı 'Marmara Geçiş İklimi'ni dengeler. Küçük bir su kütlesi olmasına rağmen kışın kuzeyden inen soğuk hava kütlelerini yumuşatır; yaz aylarında ise güneyden gelen tropikal sıcaklıkları deniz meltemleriyle törpüler. Etrafındaki Trakya platosu ve Güney Marmara ovalarında zeytin gibi Akdeniz bitkilerinin yetişebilmesini sağlayan mikroklimayı besler.",
+        "Marmara'nın çevresinde Karadeniz, Akdeniz ve karasal iklim birbirine karışır; buna Marmara geçiş iklimi denir. Deniz küçük olsa da kışın kuzeyden inen soğuk havayı yumuşatır, yazın güneyden gelen sıcağı meltemlerle serinletir. Trakya'da ve Güney Marmara ovalarında zeytin gibi Akdeniz bitkilerinin yetişmesi de bu sayededir.",
       points: [
-        "Kışın Balkanlar üzerinden gelen soğuk hava kütlelerinin kıyı boyunca don şiddetini azaltır.",
-        "Buharlaşma oranı Karadeniz'den yüksek, Ege ve Akdeniz'den düşüktür.",
-        "Yıl genelinde kuzeydoğudan esen poyraz ve güneybatıdan esen lodos fırtınalarının denizel termal etkisi belirgindir.",
+        "Kışın Balkanlar'dan gelen soğuk havanın kıyıdaki don etkisini azaltır.",
+        "Buharlaşma Karadeniz'den fazla, Ege ve Akdeniz'den azdır.",
+        "Yıl boyunca kuzeydoğudan esen poyrazın ve güneybatıdan esen lodosun getirdiği deniz etkisi belirgindir.",
       ],
     },
     coastalGeomorphology: {
-      title: "Kıyı Tipi & Yer Şekilleri",
+      title: "Küçük Bir Denizde Birçok Kıyı Tipi",
       content:
-        "Marmara kıyılarında karmaşık kıyı şekilleri bir arada bulunur. İstanbul ve Çanakkale boğazlarında boğulmuş akarsu vadileri olan Ria Kıyı Tipi; kuzeyde Büyükçekmece, Küçükçekmece ve Terkos çevresinde Limanlı / Lagün Kıyı Tipi; güneyde Balıkesir kıyısında eski bir adanın dalga biriktirmesiyle karaya bağlanmasıyla oluşan Kapıdağ Tombolosu (saplı ada) Türkiye'nin en tipik örnekleridir.",
+        "Marmara kıyısında birkaç kıyı tipi yan yana görülür. İstanbul ve Çanakkale boğazları, sular altında kalmış eski akarsu vadileridir: ria tipi. Kuzeyde Büyükçekmece, Küçükçekmece ve Terkos çevresinde lagün kıyıları uzanır. Güneyde, Balıkesir kıyısındaki Kapıdağ ise dalgaların biriktirdiği kumla karaya bağlanmış eski bir adadır, yani bir tombolo. Üçü de bu tiplerin Türkiye'deki en tipik örnekleridir.",
       coastalTypes: [
         "Ria Kıyı Tipi (Boğazlar)",
-        "Lagün & Limanlı Kıyı Tipi (Çekmece Gölleri)",
+        "Lagün ve Limanlı Kıyı Tipi (Çekmece Gölleri)",
         "Tombolo (Kapıdağ Yarımadası)",
       ],
       coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
-      title: "Akıntı Sistemi: İki Tabakalı Zıt Sirkülasyon",
+      title: "Üst Üste, Ters Yönde İki Akıntı",
       content:
-        "Marmara Denizi, oşinografide iki zıt akıntı tabakasının üst üste aktığı dünyadaki en özgün hidrolojik laboratuvardır. Yüzeyde Karadeniz'in seviye fazlalığından kaynaklanan az tuzlu (%o22) ve hafif sular güneybatıya Ege'ye doğru akar. Dipte ise (yaklaşık 25 metrenin altında) Akdeniz ve Ege'nin yüksek tuzlu (%o38) ve ağır suları Çanakkale Boğazı'ndan girerek kuzeydoğuya Karadeniz'e doğru ilerler.",
+        "Marmara'da iki akıntı üst üste ve ters yönde akar. Yüzeyde Karadeniz'in fazla suyu, az tuzlu (binde 22) ve hafif su olarak güneybatıya, Ege'ye doğru gider. Yaklaşık 25 metrenin altında ise Ege ve Akdeniz'in tuzlu (binde 38) ve ağır suyu Çanakkale Boğazı'ndan girip kuzeydoğuya, Karadeniz'e doğru ilerler.",
       keyPoints: [
-        "Üst Akıntı: Karadeniz'den Ege'ye yüzey akıntısı (seviye/kot farkı ~30-40 cm).",
-        "Alt Akıntı: Ege'den Karadeniz'e dip akıntısı (yoğunluk ve tuzluluk farkı).",
-        "Termoklin & Haloklin: 20-25 metre derinlikte iki farklı su kütlesini ayıran keskin geçiş tabakası.",
+        "Üst akıntı: Karadeniz'den Ege'ye; nedeni yaklaşık 30-40 cm'lik seviye farkı.",
+        "Alt akıntı: Ege'den Karadeniz'e; nedeni yoğunluk ve tuzluluk farkı.",
+        "Termoklin ve haloklin: 20-25 metre derinlikte sıcaklığın ve tuzluluğun birden değiştiği, iki suyu ayıran ince katman.",
       ],
     },
     hydrographicBalance: {
-      title: "Beslenme Kaynakları & Akarsu Dengesi",
+      title: "Asıl Suyu Karadeniz Veriyor",
       content:
-        "Marmara'ya dökülen karasal akarsu debisi küçüktür; en büyük akarsuyu Güney Marmara'dan dökülen Susurluk (Simav) Çayı ve Gönen Çayı'dır. Havzanın asıl hidrolojik girdisi karasal nehirlerden değil, İstanbul Boğazı üzerinden Karadeniz'den boşalan devasa yüzey suyudur. Bu durum Marmara'nın su bütçesini doğrudan Karadeniz havzasının iklimsel koşullarına bağımlı kılar.",
+        "Marmara'ya dökülen akarsuların suyu azdır; en büyükleri Güney Marmara'dan gelen Susurluk (Simav) Çayı ve Gönen Çayı'dır. Denizin asıl su kaynağı bu akarsular değil, İstanbul Boğazı'ndan Karadeniz'den akan büyük yüzey suyudur. Bu yüzden Marmara'nın su bütçesi Karadeniz havzasının iklimine bağlıdır.",
       majorRivers: ["Susurluk (Simav) Çayı", "Gönen Çayı", "Biga Çayı", "Nilüfer Çayı"],
     },
     economicGeography: {
-      title: "Ekonomik Coğrafya: Sanayi, Limanlar & Boğaz Geçişi",
+      title: "Sanayinin ve Gemi Trafiğinin Denizi",
       content:
-        "Marmara Denizi, Türkiye ekonomisinin ve sanayi üretiminin omurgasıdır. Kocaeli, İstanbul ve Bursa sanayi havzalarını dünya pazarlarına bağlayan Ambarlı Limanı, İzmit Körfez Limanları (Kocaeli Port), Gemlik ve Bandırma limanları Türkiye'nin konteyner ve otomotiv ihracatının merkezidir. Aynı zamanda Türk Boğazları Deniz Trafik Düzeni ile Karadeniz ülkelerinin dünya okyanuslarına açılan tek ve alternatifsiz uluslararası deniz ticaret yoludur.",
+        "Marmara, Türkiye ekonomisinin ve sanayisinin omurgasıdır. Ambarlı, İzmit Körfezi, Gemlik ve Bandırma limanları Kocaeli, İstanbul ve Bursa'daki sanayiyi dünya pazarlarına bağlar; Türkiye'nin konteyner ve otomotiv ihracatı buradan yapılır. Türk Boğazları aynı zamanda Karadeniz ülkelerinin açık denizlere çıktığı tek deniz yoludur.",
       sectors: [
         {
-          name: "Deniz Ticareti & Lojistik",
-          desc: "Ambarlı, İzmit Körfezi ve Gemlik konteyner ve dökme yük limanları.",
+          name: "Deniz Ticareti ve Lojistik",
+          desc: "Ambarlı, İzmit Körfezi ve Gemlik'te konteyner ve dökme yük limanları.",
         },
         {
-          name: "Uluslararası Boğaz Transit Geçişi",
-          desc: "Montrö Boğazlar Sözleşmesi çerçevesinde yılda 40 binden fazla gemi geçişi.",
+          name: "Boğazlardan Geçiş",
+          desc: "İstanbul Boğazı'ndan yılda 40 binden fazla gemi geçer; geçişler Montrö Boğazlar Sözleşmesi'ne göre işler.",
         },
         {
           name: "Balıkçılık",
-          desc: "Göçmen balıkların (lüfer, palamut) boğaz koridorundaki mevsimsel avcılığı.",
+          desc: "Lüfer ve palamut gibi göçmen balıkların boğazdan geçerken mevsimlik avı.",
         },
       ],
     },
     humanGeography: {
-      title: "Nüfus & Metropoliten Yığılma",
+      title: "Türkiye'nin En Kalabalık Kıyısı",
       content:
-        "Marmara kıyıları Türkiye nüfusunun dörtte birinden fazlasını (yaklaşık 25 milyon insanı) barındırır. İstanbul megapolü başta olmak üzere Kocaeli, Tekirdağ, Bursa ve Yalova kıyı şeridi sanayileşme, finans ve lojistiğin odak noktasıdır. Bu yoğun yerleşim kıyı topoğrafyasının neredeyse tamamını insan eliyle değiştirmiş, limanlar, dolgu alanları ve tersanelerle kaplamıştır.",
+        "Türkiye nüfusunun yaklaşık %30'u Marmara Bölgesi'nde yaşar. İstanbul başta olmak üzere Kocaeli, Tekirdağ, Bursa ve Yalova kıyıları sanayinin, finansın ve lojistiğin toplandığı yerlerdir. Bu yoğun yerleşme kıyının neredeyse tamamını değiştirmiştir; doğal kıyının yerini limanlar, dolgu alanları ve tersaneler almıştır.",
       points: [
-        "Türkiye'nin en yoğun nüfuslu ve en yüksek kentleşme oranına sahip kıyı havzasıdır.",
-        "Kıyı boyunca yerleşen ağır sanayi tesisleri ve tersaneler deniz ekosistemi üzerinde baskı oluşturur.",
-        "Adalar ve güney kıyıları (Erdek, Çınarcık) metropolün dinlenme ve rekreasyon alanlarıdır.",
+        "Türkiye'nin en kalabalık ve en çok kentleşmiş kıyısı.",
+        "Kıyıdaki ağır sanayi ve tersaneler denizdeki canlılara baskı yapar.",
+        "Adalar ve güney kıyısı (Erdek, Çınarcık) büyük şehrin dinlenme yerleridir.",
       ],
     },
     environmentalIssues: {
-      title: "Çevre Sorunları: Müsilaj & Kentsel Atık Baskısı",
+      title: "Atıkla Yüklenen Kapalı Deniz",
       content:
-        "Marmara Denizi'nin iki tabakalı kapalı su yapısı, dip ve yüzey arasındaki oksijen transferini doğal olarak sınırlandırır. Bu hassas dengeye çevresindeki 25 milyonluk kentsel nüfusun ve yoğun sanayi tesislerinin evsel ve endüstriyel atıklarının arıtılmadan veya yetersiz arıtılarak deşarj edilmesi eklenince deniz aşırı besin tuzu (azot ve fosfor) yüklenmesine uğramıştır. Bunun en çarpıcı sonucu 2021 yılında tüm denizi kaplayan ve deniz tabanındaki biyoçeşitliliği boğan kitlesel 'müsilaj' (deniz salyası) felaketi olmuştur.",
+        "Marmara'nın iki katlı yapısı, yüzeyle dip arasında oksijen alışverişini zaten sınırlar. Buna çevresindeki büyük şehirlerin ve sanayinin arıtılmadan ya da yetersiz arıtılarak denize bırakılan atıkları eklenince deniz azot ve fosforla aşırı yüklendi. En çarpıcı sonuç 2021'de görüldü: müsilaj, yani deniz salyası, denizin büyük bölümünü kapladı ve tabandaki canlı çeşitliliğini boğdu.",
       risks: [
-        "Müsilaj (Deniz Salyası): Aşırı kirlilik ve deniz suyu sıcaklık artışıyla fitoplankton patlaması.",
-        "Dip Suyu Oksijensizliği: Derin çukurluklarda oksijen oranının hipoksik sınırlara inmesi.",
-        "Gemi Trafiği ve Balast Kirliliği: Sintine, balast ve petrol türevi kirlilik riskleri.",
+        "Müsilaj: kirlilik ve ısınan suyla birlikte bitkisel plankton aşırı çoğalır.",
+        "Dipte oksijensizlik: derin çukurlarda oksijen, canlıların zorlandığı düzeye iner.",
+        "Gemi trafiği: sintine ve balast suyu ile petrol kaynaklı kirlilik riski.",
       ],
     },
     faultLineNotice: {
-      text: "Marmara Denizi tabanından geçen Kuzey Anadolu Fay Hattı (KAF) ve sismik boşluklar hakkında detaylı jeolojik analiz için:",
+      text: "Kuzey Anadolu Fayı Marmara'nın tabanından geçer. Fayın kolları ve bölgedeki sismik boşluklar fay hatları sayfasında.",
       href: "/deprem/fay-hatlari",
     },
     faq: [
       {
-        question: "Marmara Denizi'ndeki iki zıt akıntının sebebi nedir?",
+        question: "Marmara'da neden ters yönde iki akıntı var?",
         answer:
-          "İki temel neden vardır: (1) Seviye farkı: Karadeniz bol nehirle beslendiği için Marmara'dan 30-40 cm daha yüksektir ve yüzeyden güneye doğru akar. (2) Yoğunluk farkı: Akdeniz daha sıcak ve tuzlu olduğu için suları ağırdır; dip kısımdan Karadeniz'e doğru ilerler.",
+          "İki nedeni var. Birincisi seviye farkı: Karadeniz bol nehir suyu aldığı için Marmara'dan 30-40 cm yüksektir ve suyu yüzeyden güneye doğru akar. İkincisi yoğunluk farkı: Akdeniz suyu daha tuzlu olduğu için ağırdır ve dipten Karadeniz'e doğru ilerler.",
       },
       {
-        question: "Müsilaj (deniz salyası) neden sadece Marmara'da felakete dönüştü?",
+        question: "Müsilaj neden sadece Marmara'da felakete dönüştü?",
         answer:
-          "Marmara'nın iki tabakalı durağan hidrolojik yapısı dikey su sirkülasyonunu engeller. Karadeniz'den gelen organik yük ile çevredeki 25 milyonluk nüfus ve sanayi atıklarının azot-fosfor girdisi birleştiğinde, fitoplankton türleri aşırı çoğalarak stres ortamında mukus (müsilaj) salgılamıştır.",
+          "Marmara'nın iki katlı, durgun yapısı suyun yukarıdan aşağıya karışmasını engeller. Karadeniz'den gelen organik yüke çevredeki şehirlerin ve sanayinin azot ve fosfor yükü eklenince bitkisel plankton aşırı çoğaldı ve stres altında müsilaj denen yapışkan maddeyi salgıladı.",
       },
       {
-        question: "Marmara Denizi tabanında neden 1.000 metreyi aşan çukurlar vardır?",
+        question: "Marmara'nın tabanında neden 1.000 metreyi aşan çukurlar var?",
         answer:
-          "Kuzey Anadolu Fayı'nın doğrultu atımlı kolları Marmara Denizi altından geçerken gerilme faylarıyla kabuğu birbirinden ayırmış (çek-ayır tektoniği); bu faylanma sonucunda Tekirdağ, Orta Marmara ve Çınarcık çukurlukları çökmüştür.",
+          "Kuzey Anadolu Fayı'nın doğrultu atımlı kolları Marmara'nın altından geçerken yer kabuğunu çekip ayırmıştır; buna çek-ayır tektoniği denir. Ayrılan yerlerde Tekirdağ, Orta Marmara ve Çınarcık çukurları çökmüştür.",
       },
     ],
   },
@@ -388,14 +397,16 @@ export const SEA_BASINS_DETAIL: Record<
     slug: "ege",
     nameTr: "Ege Denizi",
     fullNameTr: "Ege Denizi (Adalar Denizi) Havzası",
-    badge: "Enine Kıyı & Geniş Şelf Denizi",
+    badge: "Adaların ve körfezlerin denizi",
+    lede: "Yüzlerce adası, derin körfezleri ve denize dik inen dağlarıyla Ege, Türkiye'nin en girintili çıkıntılı kıyısına sahip. Kuzeyinde Karadeniz'den gelen serin su, güneyinde Akdeniz'in tuzlu suyu hâkim.",
     identity: BASIN_IDENTITY.ege,
     metrics: {
       area: "214.000 km²",
       maxDepth: "2.561 m",
       avgDepth: "350 m",
-      salinity: "%o33 – %o37",
-      coastalLengthTr: "2.805 km (Adalar hariç)",
+      salinity: "‰33 – ‰37",
+      coastalLengthTr: "2.805 km",
+      coastalLengthWithIslandsTr: "3.484 km",
       provincesCount: 5,
       stationsCount: 5,
     },
@@ -408,50 +419,50 @@ export const SEA_BASINS_DETAIL: Record<
       { plate: "48", name: "Muğla (Bodrum/Datça)", slug: "mugla" },
     ],
     physicalGeography: {
-      title: "Fiziki Coğrafya & Horst-Graben Morfolojisi",
+      title: "Çöken Bir Karanın Üstündeki Deniz",
       content:
-        "Ege Denizi, jeolojik geçmişte 'Egeid Karası' adı verilen kara kütlesinin Üçüncü Zaman sonlarında ve Dördüncü Zaman başında tektonik kırılmalarla çökmesi ve Akdeniz sularının bu çöküntüyü basmasıyla oluşmuş yarı kapalı bir denizdir. Su üstünde kalan yüksek dağ zirveleri yüzlerce Ege adasını meydana getirmiştir. Batı Anadolu'daki dağ sıraları denize dik uzandığı için deniz tabanı graben vadileri boyunca içeri sokulur; kıta sahanlığı (şelf) Türkiye'nin en geniş bölgesidir. Kuzeyde Saros Çukuru ve güneyde Girit yayı açıkları derin çukurluklara sahiptir.",
+        "Ege'nin yerinde bir zamanlar Egeid denen bir kara vardı. Üçüncü Zaman'ın sonunda ve Dördüncü Zaman'ın başında bu kara kırılıp çöktü, çöken yeri Akdeniz'in suyu bastı. Su üstünde kalan yüksek zirveler bugünkü Ege adalarıdır. Batı Anadolu'da dağlar denize dik uzandığı için deniz graben vadileri boyunca içeri sokulur ve kıta sahanlığı Türkiye'deki en geniş hâlini alır. Kuzeyde Saros Çukuru, güneyde Girit yayının açıkları derindir.",
       points: [
-        "Enine kıyı tipi hâkimdir; dağlar kıyıya dik uzanır.",
-        "Kıta sahanlığı geniş olup kıyıdan onlarca deniz mili açığa kadar sığ deniz tabanı devam eder.",
-        "Yüzlerce koy, körfez, yarımada ve doğal liman ile Türkiye'nin en girintili çıkıntılı kıyısıdır.",
+        "Kıyı enine tiptedir; dağlar kıyıya dik uzanır.",
+        "Kıta sahanlığı geniş; sığ taban kıyıdan onlarca deniz mili açığa kadar sürer.",
+        "Yüzlerce koy, körfez, yarımada ve doğal limanıyla Türkiye'nin en girintili çıkıntılı kıyısı.",
       ],
     },
     climateImpact: {
-      title: "İklime Etkisi & İç Kesimlere Sokulma",
+      title: "Denizin İçeri Uzanan Kolları",
       content:
-        "Ege Denizi'nin iklim üzerindeki en belirleyici rolü, dağların denize dik uzanması sayesinde denizel nemli ılıman Akdeniz ikliminin iç kesimlere rahatça girmesine olanak tanımasıdır. Bakırçay, Gediz, Küçük Menderes ve Büyük Menderes graben vadileri adeta birer iklim kanalı görevi görerek deniz etkisini kıyıdan 150-200 kilometre içeriye (Manisa, Denizli, Uşak sınırlarına) kadar taşır. Yaz aylarında kuzeyden esen kuru ve serinletici 'etezyen' rüzgârları Ege kıyılarının sıcaklık dengesini sağlar.",
+        "Ege'nin iklime en büyük etkisi şudur: dağlar denize dik uzandığı için ılıman Akdeniz iklimi iç kesimlere kolayca girer. Bakırçay, Gediz, Küçük Menderes ve Büyük Menderes grabenleri birer koridor gibi çalışır ve deniz etkisini kıyıdan 150-200 km içeriye, Manisa, Denizli ve Uşak sınırına kadar taşır. Yazın kuzeyden esen kuru ve serin etezyen rüzgârları kıyıların sıcağını dengeler.",
       points: [
-        "Kıyı ile iç kesimler arasında iklim ve bitki örtüsü keskin bir sınırla ayrılmaz; yumuşak geçiş vardır.",
-        "Etezyen rüzgârları yazın açık denizde dalga boyunu artırırken kıyılarda bunaltıcı nemi dağıtır.",
-        "Kışlar ılık ve yağışlı, yazlar sıcak ve kurak Akdeniz iklim rejimi hâkimdir.",
+        "Kıyı ile iç kesimler arasında iklim ve bitki örtüsü birden değil, yavaş yavaş değişir.",
+        "Etezyenler yazın açık denizde dalgaları büyütür, kıyıda ise bunaltıcı nemi dağıtır.",
+        "Kışlar ılık ve yağışlı, yazlar sıcak ve kurak geçer.",
       ],
     },
     coastalGeomorphology: {
-      title: "Kıyı Tipi & Yer Şekilleri",
+      title: "Denize Açılan Grabenler",
       content:
-        "Ege Denizi kıyıları Türkiye'de Enine Kıyı Tipi'nin dünyadaki en belirgin temsilcisidir. Gerçek kıyı uzunluğu (girinti ve çıkıntılar dahil) ile kuş uçuşu mesafe arasındaki fark en fazladır. Graben çöküntülerinin ağzında Edremit, Çandarlı, İzmir, Kuşadası, Güllük ve Gökova körfezleri açılırken; horst dağ kütleleri denize doğru Karaburun, Çeşme, Dilek ve Datça yarımadaları şeklinde sokulur. Gediz ve Büyük Menderes nehirleri ağızlarında devasa delta ovaları oluşturmuştur.",
+        "Ege kıyısı enine kıyı tipindedir. Kıyı boyunca ölçülen uzunlukla kuş uçuşu uzaklık arasındaki fark Türkiye'de en çok buradadır. Grabenlerin denize açılan ağızlarında Edremit, Çandarlı, İzmir, Kuşadası, Güllük ve Gökova körfezleri yer alır; aradaki horst dağları ise Karaburun, Çeşme, Dilek ve Datça yarımadaları olarak denize uzanır. Gediz ve Büyük Menderes ağızlarında geniş delta ovaları oluşmuştur.",
       coastalTypes: [
         "Enine Kıyı Tipi",
-        "Geniş Körfezler & Yarımadalar",
+        "Geniş Körfezler ve Yarımadalar",
         "Delta Kıyıları (Gediz, Balat Deltaları)",
       ],
       coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
-      title: "Akıntı Sistemi: Boğaz Suyu & Akdeniz Döngüsü",
+      title: "Batıda Güneye, Doğuda Kuzeye",
       content:
-        "Ege Denizi'nin hidrodinamik yapısını iki ana su kütlesi belirler. Çanakkale Boğazı'ndan çıkan Karadeniz kökenli az tuzlu ve serin su kütlesi Ege'nin batı kıyısı boyunca (Yunanistan tarafı) güneye doğru akar. Buna karşılık Doğu Akdeniz'den gelen sıcak ve yüksek tuzlu su kütlesi Anadolu'nun batı kıyısı (Türkiye tarafı) boyunca kuzeye doğru tırmanır. Bu iki zıt hareket Ege genelinde saat yönünün tersine dönen geniş bir termohalin döngü meydana getirir.",
+        "Ege'deki su hareketini iki ayrı su belirler. Çanakkale Boğazı'ndan çıkan az tuzlu, serin Karadeniz suyu Yunanistan tarafında, batı kıyısı boyunca güneye akar. Doğu Akdeniz'den gelen sıcak ve tuzlu su ise Anadolu kıyısı boyunca kuzeye çıkar. Sıcaklık ve tuzluluk farkının sürdürdüğü bu iki hareket, Ege'de saat yönünün tersine dönen geniş bir döngü oluşturur.",
       keyPoints: [
-        "Kuzey Ege ve Boğaz çıkışı: Karadeniz suyunun etkisiyle tuzluluk görece düşüktür (%o33).",
-        "Güney Ege: Akdeniz suyunun hâkimiyetiyle tuzluluk %o38'e yaklaşır.",
-        "Karmaşık ada ve boğaz topoğrafyası yerel güçlü anaforlar ve girdaplar üretir.",
+        "Kuzey Ege ve boğaz çıkışı: Karadeniz suyu yüzünden tuzluluk görece düşük, binde 33.",
+        "Güney Ege: Akdeniz suyu baskın, tuzluluk binde 38'e yaklaşır.",
+        "Adalar ve dar geçitler yer yer güçlü anaforlar ve girdaplar yaratır.",
       ],
     },
     hydrographicBalance: {
-      title: "Beslenme Kaynakları & Akarsular",
+      title: "Alüvyon Taşıyan Graben Nehirleri",
       content:
-        "Ege Denizi Türkiye kıyılarından dökülen büyük graben nehirleriyle beslenir: Bakırçay, Gediz Nehri, Küçük Menderes ve Büyük Menderes nehirleri yüksek miktarda alüvyon taşır. Bu nehirlerin taşıdığı alüvyonlar tarihi çağlarda liman kentlerini (Efes ve Milet) denizden kilometrelerce içeride bırakacak kadar güçlü biriktirme yapmıştır. Ancak yaz aylarındaki şiddetli buharlaşma nedeniyle deniz suyu tuzluluğu Karadeniz ve Marmara'dan çok daha yüksektir.",
+        "Ege'ye Türkiye'den dökülen büyük nehirler graben ovalarından gelir: Bakırçay, Gediz, Küçük Menderes ve Büyük Menderes. Taşıdıkları alüvyon o kadar çoktur ki Efes ve Milet gibi antik liman kentleri bugün denizden kilometrelerce içeride kalmıştır. Yine de yazın buharlaşma güçlü olduğu için Ege'nin tuzluluğu Karadeniz'den ve Marmara'dan çok daha yüksektir.",
       majorRivers: [
         "Büyük Menderes (548 km)",
         "Gediz Nehri (401 km)",
@@ -460,63 +471,63 @@ export const SEA_BASINS_DETAIL: Record<
       ],
     },
     economicGeography: {
-      title: "Ekonomik Coğrafya: Turizm, Yatçılık & Limanlar",
+      title: "Korunaklı Koyların Ekonomisi",
       content:
-        "Ege kıyıları Türkiye'nin deniz turizmi, mavi yolculuk ve yatçılık başkentidir. Bodrum, Çeşme, Kuşadası, Datça ve Ayvalık koyları doğal korunaklı marinalarıyla uluslararası yat turizminin odak noktasıdır. İzmir Alsancak ve Aliağa limanları Ege Bölgesi'nin sanayi ve tarım ihracat kapısıdır. Ayrıca korunaklı koylar Türkiye kültür balıkçılığının (çipura ve levrek yetiştiriciliği) yüzde yetmişini barındırır.",
+        "Ege kıyıları deniz turizminin, mavi yolculuğun ve yatçılığın merkezidir. Bodrum, Çeşme, Kuşadası, Datça ve Ayvalık'ın korunaklı koyları ve marinaları yabancı yatların uğrak yeridir. Aynı korunaklı koylar balık çiftliklerinin de yeridir: Türkiye'de denizde kafeste yetiştirilen çipura ve levreğin neredeyse tamamı Ege kıyılarından, en çok Muğla ve İzmir'den çıkar. İzmir Alsancak ve Aliağa limanlarından Ege Bölgesi'nin sanayi ve tarım ürünleri ihraç edilir.",
       sectors: [
         {
-          name: "Yat & Deniz Turizmi",
-          desc: "Mavi yolculuk rotaları, marinalar ve zengin koy turizmi.",
+          name: "Yat ve Deniz Turizmi",
+          desc: "Mavi yolculuk rotaları, marinalar ve koylar.",
         },
         {
           name: "Kültür Balıkçılığı",
-          desc: "Muğla ve İzmir kıyılarında çipura ve levrek kafes çiftlikleri.",
+          desc: "Muğla ve İzmir kıyılarında kafeslerde çipura ve levrek yetiştiriciliği.",
         },
         {
-          name: "Liman & Sanayi",
-          desc: "Aliağa petrokimya limanı ve İzmir Alsancak ihracat kapısı.",
+          name: "Liman ve Sanayi",
+          desc: "Aliağa'da petrokimya limanı, İzmir Alsancak'ta ihracat limanı.",
         },
       ],
     },
     humanGeography: {
-      title: "Nüfus & Yerleşme İlişkisi",
+      title: "Ovalar Boyunca Yayılan Yerleşme",
       content:
-        "Ege kıyılarında topoğrafya yerleşmeyi Karadeniz gibi dar bir şeride hapsetmez. Graben ovaları boyunca verimli tarım alanları, turizm merkezleri ve sanayi tesisleri iç kesimlere doğru dengeli bir şekilde yayılmıştır. Türkiye'nin üçüncü büyük kenti olan İzmir metropolü körfez etrafında büyümüştür. Yaz aylarında turizme bağlı olarak Muğla ve Aydın kıyılarındaki yerel nüfus kış nüfusunun beş ila on katına çıkar.",
+        "Ege'de dağlar yerleşmeyi Karadeniz'deki gibi dar bir şeride sıkıştırmaz. Tarım alanları, turizm merkezleri ve sanayi graben ovaları boyunca iç kesimlere doğru yayılmıştır. Türkiye'nin üçüncü büyük şehri İzmir, körfezin çevresinde büyümüştür.",
       points: [
-        "Graben vadileri boyunca kıyı ile iç kesimler arasında güçlü ulaşım ve ticaret ağları kurulmuştur.",
-        "Muğla ve Aydın kıyıları mevsimlik turizm göçünün en yoğun yaşandığı alandır.",
-        "Tarih boyunca kurulan antik liman kentleri zengin kıyı coğrafyasının mirasıdır.",
+        "Graben vadileri kıyıyı iç kesimlere bağlayan yol ve ticaret hatları olmuş.",
+        "Mevsimlik turizm göçü en çok Muğla ve Aydın kıyılarında yaşanır.",
+        "Antik liman kentleri bu kıyının uzun yerleşme tarihini gösterir.",
       ],
     },
     environmentalIssues: {
-      title: "Çevre Sorunları: Kıyı Baskısı & Kapalı Körfezler",
+      title: "Suyu Yenilenmeyen Körfezler",
       content:
-        "Ege Denizi'nin en büyük çevre sorunu, dar ve sığ iç körfezlerdeki (özellikle İzmir Körfezi ve Çandarlı Körfezi) sanayi ve evsel atık birikimidir. Kapalı körfezlerde su sirkülasyonunun zayıf olması dönemsel alg patlamalarına ve deniz kokusuna yol açabilir. Ayrıca kıyı şeridindeki aşırı ikinci konut ve betonlaşma baskısı, lagün ekosistemlerini ve caretta caretta üreme alanlarını tehdit etmektedir.",
+        "Ege'nin en büyük çevre sorunu, dar ve sığ iç körfezlerde, özellikle İzmir ve Çandarlı körfezlerinde biriken sanayi ve ev atıklarıdır. Kapalı körfezlerde su az yenilendiği için zaman zaman alg patlamaları ve kötü koku görülür. Kıyıdaki yazlık konutlar ve betonlaşma da lagünleri ve caretta caretta kaplumbağalarının yumurtlama alanlarını tehdit ediyor.",
       risks: [
-        "İç Körfez Kirliliği: İzmir Körfezi'nde sığlaşma, koku ve su kalitesi sorunları.",
-        "Aşırı Kıyı Yapılaşması: Doğal koyların ve sulak alanların turizm baskısıyla tahribi.",
-        "Kültür Balıkçılığı Atıkları: Yetersiz akıntılı koylardaki balık çiftliklerinin organik yükü.",
+        "İç körfez kirliliği: İzmir Körfezi'nde sığlaşma, koku ve su kalitesi sorunu.",
+        "Aşırı yapılaşma: turizm baskısıyla doğal koyların ve sulak alanların bozulması.",
+        "Balık çiftliği atıkları: akıntısı zayıf koylarda çiftliklerin bıraktığı organik yük.",
       ],
     },
     faultLineNotice: {
-      text: "Batı Anadolu Fay Sistemi (BAFS) ve Ege graben tektoniği hakkında detaylı sismik analiz için:",
+      text: "Ege'nin grabenlerini açan Batı Anadolu Fay Sistemi'ni fay hatları sayfasında inceleyebilirsin.",
       href: "/deprem/fay-hatlari",
     },
     faq: [
       {
-        question: "Ege Denizi kıyıları neden Türkiye'nin en uzun kıyı şerididir?",
+        question: "Ege kıyısı neden Türkiye'nin en uzun kıyısı?",
         answer:
-          "Dağların denize dik uzanması (enine kıyı tipi) sonucunda yüzlerce koy, körfez, burun ve yarımada meydana gelmiştir. Bu olağanüstü girinti-çıkıntı kıyı çizgisini uzatarak gerçek kıyı uzunluğunu 2.800 kilometrenin üzerine çıkarır.",
+          "Dağlar denize dik uzandığı, yani kıyı enine tipte olduğu için yüzlerce koy, körfez, burun ve yarımada oluşmuştur. Bu girinti çıkıntılar kıyı çizgisini uzatır ve gerçek kıyı uzunluğu 2.800 kilometreyi aşar.",
       },
       {
-        question: "Ege kıyılarında deniz etkisi neden iç kesimlere kadar ulaşır?",
+        question: "Ege'de deniz etkisi neden iç kesimlere kadar ulaşır?",
         answer:
-          "Karadeniz ve Akdeniz'deki gibi kıyıya paralel sıradağlar yoktur. Dağlar kıyıya diktir ve aralarındaki Bakırçay, Gediz, Menderes graben vadileri denizel ılıman havanın 150-200 km içeriye kolayca sokulmasını sağlar.",
+          "Karadeniz'de ve Akdeniz'de olduğu gibi kıyıya paralel sıradağlar yoktur. Dağlar kıyıya diktir; aralarındaki Bakırçay, Gediz ve Menderes grabenleri ılıman deniz havasının 150-200 km içeri girmesine izin verir.",
       },
       {
-        question: "Ege Denizi'nin su sıcaklığı ve tuzluluğu nasıl dağılır?",
+        question: "Ege'de su sıcaklığı ve tuzluluk nasıl değişir?",
         answer:
-          "Kuzey Ege'de Çanakkale Boğazı'ndan çıkan az tuzlu ve serin Karadeniz suları etkilidir. Güneye Muğla ve Rodos açıklarına inildikçe Akdeniz suyu baskın hale gelir; sıcaklık ve tuzluluk belirgin şekilde yükselir.",
+          "Kuzey Ege'de Çanakkale Boğazı'ndan çıkan az tuzlu, serin Karadeniz suyu etkilidir. Güneye, Muğla ve Rodos açıklarına indikçe Akdeniz suyu baskın olur; sıcaklık da tuzluluk da belirgin biçimde artar.",
       },
     ],
   },
@@ -524,14 +535,16 @@ export const SEA_BASINS_DETAIL: Record<
     slug: "akdeniz",
     nameTr: "Akdeniz",
     fullNameTr: "Doğu Akdeniz Havzası",
-    badge: "En Sıcak & En Tuzlu Denizimiz",
+    badge: "En sıcak ve en tuzlu denizimiz",
+    lede: "Toroslar'ın kıyıya paralel bir duvar gibi uzandığı, güneşin en uzun parladığı deniz. Suyu kışın bile 16-18 °C'nin altına inmez; buharlaşma o kadar güçlüdür ki tuzluluk binde 38-39'a çıkar.",
     identity: BASIN_IDENTITY.akdeniz,
     metrics: {
-      area: "2.500.000 km² (Tüm Havza)",
+      area: "2.500.000 km² (tüm Akdeniz)",
       maxDepth: "5.267 m (Calypso Çukuru)",
       avgDepth: "1.500 m",
-      salinity: "%o38 – %o39 (En Tuzlu)",
-      coastalLengthTr: "1.577 km (Türkiye Kıyısı)",
+      salinity: "‰38 – ‰39 (en yüksek)",
+      coastalLengthTr: "1.577 km",
+      coastalLengthWithIslandsTr: "1.707 km",
       provincesCount: 4,
       stationsCount: 4,
     },
@@ -543,29 +556,29 @@ export const SEA_BASINS_DETAIL: Record<
       { plate: "31", name: "Hatay (Samandağ/İskenderun)", slug: "hatay" },
     ],
     physicalGeography: {
-      title: "Fiziki Coğrafya & Levha Sınırı Tektoniği",
+      title: "Levhaların Buluştuğu Eski Okyanus",
       content:
-        "Akdeniz, jeolojik olarak eski Tetis Okyanusu'nun ana gövdesidir. Afrika Levhası'nın kuzeye doğru Anadolu ve Avrasya levhalarının altına daldığı aktif bir dalma-batma zonu (Helen-Kıbrıs Yayı) üzerinde yer alır. Türkiye kıyıları boyunca yükselen Toros Sıradağları denize paralel bir duvar gibi uzanır. Bu nedenle kıyı çizgisi sadedir ve şelf alanı Antalya Körfezi açıklarında çok dardır. Buna karşılık Çukurova deltasının denize doğru ilerlediği Mersin ve İskenderun körfezlerinde taban görece sığlaşır. Akdeniz'in en derin noktası Mora Yarımadası açığındaki 5.267 metrelik Calypso Çukuru'dur.",
+        "Akdeniz, eski Tetis Okyanusu'nun ana gövdesinden kalmıştır. Afrika Levhası'nın kuzeye, Anadolu ve Avrasya levhalarının altına daldığı etkin bir dalma-batma kuşağının, Helen-Kıbrıs Yayı'nın üstünde yer alır. Türkiye kıyısında Toroslar denize paralel bir duvar gibi yükselir; bu yüzden kıyı çizgisi düzdür ve Antalya Körfezi açıklarında şelf çok dardır. Çukurova deltasının denize ilerlediği Mersin ve İskenderun körfezlerinde ise taban görece sığdır. Akdeniz'in en derin yeri, Mora Yarımadası açığındaki 5.267 metrelik Calypso Çukuru'dur.",
       points: [
-        "Toros Dağları kıyıya paralel uzandığı için Boyuna Kıyı Tipi hâkimdir.",
-        "Kıta sahanlığı batıda (Antalya açıkları) son derece dar, doğuda (Çukurova açıkları) geniştir.",
-        "Yüksek buharlaşma ve güneşlenme süresi nedeniyle deniz suyu sıcaklığı ve tuzluluğu Türkiye'nin zirvesindedir.",
+        "Toroslar kıyıya paralel uzandığı için kıyı boyuna tiptedir.",
+        "Kıta sahanlığı batıda, Antalya açıklarında çok dar; doğuda, Çukurova açıklarında geniş.",
+        "Buharlaşma ve güneşlenme süresi yüksek olduğu için su sıcaklığı ve tuzluluk Türkiye'nin en yükseği.",
       ],
     },
     climateImpact: {
-      title: "İklime Etkisi & Akdeniz Makroiklimi",
+      title: "Kışı Ilık, Yazı Uzun Bir Kıyı",
       content:
-        "Akdeniz, kıyılarında tipik Akdeniz Makroiklimi'nin (yazları sıcak ve kurak, kışları ılık ve bol yağışlı) oluşmasını sağlar. Deniz suyunun kışın dahi 16-18 °C'nin altına düşmemesi, kıyı kuşağında kış ılıklığı yaratarak kar yağışı ve don olaylarını neredeyse sıfıra indirir; bu durum seracılık ve turunçgil tarımının temel dayanağıdır. Ancak Toros Dağları'nın heybetli kütlesi denizel ılıman nemli havanın İç Anadolu'ya geçmesini tamamen engelleyerek arkasındaki Konya kapalı havzasını step iklimine mahkûm eder.",
+        "Akdeniz, kıyılarına yazları sıcak ve kurak, kışları ılık ve yağışlı Akdeniz iklimini verir. Deniz suyu kışın bile 16-18 °C'nin altına inmediği için kıyıda kar ve don neredeyse hiç görülmez; seracılık ve turunçgil tarımı buna dayanır. Ama Toroslar nemli deniz havasının İç Anadolu'ya geçmesine izin vermez; dağların arkasındaki Konya kapalı havzası bu yüzden step iklimindedir.",
       points: [
-        "Türkiye'de deniz turizmi sezonunun en uzun olduğu (Mayıs – Kasım arası) denizdir.",
-        "Kış aylarında Akdeniz üzerinden gelen cephesel alçak basınçlar Toroslar'a çarparak bol yağış bırakır.",
-        "Yaz aylarında tropikal hava baskısıyla aşırı nem ve yüksek hissedilen sıcaklıklar üretir.",
+        "Deniz turizmi sezonu Türkiye'de en uzun burada, Mayıs'tan Kasım'a kadar sürer.",
+        "Kışın Akdeniz üzerinden gelen alçak basınç sistemleri Toroslar'a çarpıp bol yağış bırakır.",
+        "Yazın tropikal hava yüzünden nem yüksek, hissedilen sıcaklık da çok yüksektir.",
       ],
     },
     coastalGeomorphology: {
-      title: "Kıyı Tipi & Yer Şekilleri",
+      title: "Tek Kıyıda Dört Kıyı Tipi",
       content:
-        "Akdeniz kıyılarında morfolojik çeşitlilik çok zengindir. Genel yapı Boyuna Kıyı Tipi olmakla birlikte, karstik arazinin etkisiyle Antalya kent merkezinde falezler (yalıyarlar); Kaş ve Kekova açıklarında Dalmaçya Kıyı Tipi; Mersin Silifke kıyılarında kanyon vadilerin boğulmasıyla Kalanklı Kıyı Tipi görülür. Seyhan ve Ceyhan nehirlerinin biriktirmesiyle Türkiye'nin en büyük delta ovası olan Çukurova ve lagünleri (Akyatan, Ağyatan) meydana gelmiştir.",
+        "Genel yapı boyuna kıyı tipi olsa da Akdeniz kıyısında birçok farklı şekil yan yana görülür. Antalya şehir merkezinde karstik arazide falezler (yalıyarlar) vardır. Kaş ve Kekova açıklarında Dalmaçya tipi kıyı, Mersin Silifke'de ise kanyonlara deniz dolmasıyla oluşan kalanklı kıyı görülür. Seyhan ve Ceyhan'ın biriktirdiği alüvyon, Türkiye'nin en büyük delta ovası Çukurova'yı ve Akyatan ile Ağyatan lagünlerini oluşturmuştur.",
       coastalTypes: [
         "Boyuna Kıyı Tipi (Toroslar)",
         "Dalmaçya Kıyı Tipi (Kaş – Kekova)",
@@ -575,19 +588,19 @@ export const SEA_BASINS_DETAIL: Record<
       coastalTypesHref: "/deniz/kiyi-tipleri",
     },
     currentsAndWaterMovement: {
-      title: "Akıntı Sistemi: Sıcak Doğu Akdeniz Çevrimi",
+      title: "Güney Kıyısını Isıtan Akıntı",
       content:
-        "Doğu Akdeniz baseninde genel akıntı sistemi saat yönünün tersine hareket eder. Afrika kıyılarından (Mısır açıkları) doğuya doğru ilerleyen sıcak akıntı, Levant Denizi üzerinden kuzeye yönelerek İskenderun Körfezi'nden Türkiye karasularına girer. Buradan batıya doğru Mersin ve Antalya kıyılarını izleyerek Rodos Adası'na yönelir. Bu sıcak kıyı akıntısı Türkiye'nin güney kıyılarında deniz suyu sıcaklığının yaz aylarında 30 °C'yi aşmasına zemin hazırlar.",
+        "Doğu Akdeniz'de genel akıntı saat yönünün tersine döner. Mısır açıklarından doğuya giden sıcak akıntı Levant Denizi'nde kuzeye döner ve İskenderun Körfezi'nden Türkiye sularına girer. Oradan batıya, Mersin ve Antalya kıyılarını izleyerek Rodos'a doğru ilerler. Bu sıcak kıyı akıntısı, güney kıyılarında deniz suyunun yazın 30 °C'yi aşmasına zemin hazırlar.",
       keyPoints: [
-        "Doğu Akdeniz siklonik akıntısı: İskenderun'dan Antalya'ya batı yönlü sıcak kıyı akıntısı.",
-        "Yüksek Tuzluluk (%o38-39): Şiddetli buharlaşma ve azalan nehir debileriyle suyun tuz yoğunluğu en üst düzeydedir.",
-        "Rodos Siklonik Girdabı: Açık denizde besin tuzlarını yukarı taşıyan (upwelling) soğuk çekirdekli girdap.",
+        "Doğu Akdeniz kıyı akıntısı: İskenderun'dan Antalya'ya, batıya doğru akan sıcak su.",
+        "Yüksek tuzluluk (binde 38-39): güçlü buharlaşma ve azalan nehir suyu tuzu en üst düzeye çıkarır.",
+        "Rodos girdabı: açık denizde dönen, soğuk çekirdekli bu girdap besin tuzlarını derinden yüzeye taşır.",
       ],
     },
     hydrographicBalance: {
-      title: "Beslenme Kaynakları & Buharlaşma Açığı",
+      title: "Aldığından Çok Buharlaşan Deniz",
       content:
-        "Akdeniz negatif su bilançosuna sahip bir denizdir; yani deniz yüzeyinden buharlaşan su miktarı, yağışlarla ve akarsularla gelen tatlı su miktarından çok daha fazladır. Bu su açığı Cebelitarık Boğazı'ndan giren Atlantik suları ve Boğazlar'dan gelen Karadeniz suları ile kapatılır. Türkiye kıyılarından Akdeniz'e dökülen en önemli nehirler karstik gür kaynaklarla beslenen Manavgat, Düden, Aksu, Göksu ile Toroslar'dan doğan Seyhan, Ceyhan ve Asi nehirleridir.",
+        "Akdeniz'in su bütçesi eksidedir: yüzeyinden buharlaşan su, yağmurla ve akarsularla gelenden çok daha fazladır. Bu açığı Cebelitarık Boğazı'ndan giren Atlas Okyanusu suyu ve boğazlardan gelen Karadeniz suyu kapatır. Türkiye'den Akdeniz'e dökülen başlıca akarsular, gür karstik kaynaklarla beslenen Manavgat, Düden, Aksu ve Göksu ile Toroslar'dan doğan Seyhan, Ceyhan ve Asi'dir.",
       majorRivers: [
         "Seyhan Nehri (560 km)",
         "Ceyhan Nehri (509 km)",
@@ -597,59 +610,59 @@ export const SEA_BASINS_DETAIL: Record<
       ],
     },
     economicGeography: {
-      title: "Ekonomik Coğrafya: Turizm, Mersin Limanı & Enerji",
+      title: "Kıyıyı Turizm ve Ticaret Besliyor",
       content:
-        "Akdeniz kıyıları Türkiye'nin uluslararası kitle turizminin merkez üssüdür; Antalya tek başına yılda 15 milyonu aşkın yabancı turisti ağırlar. Ekonominin diğer devi ise Mersin Uluslararası Limanı'dır (MIP); İç Anadolu, Doğu ve Güneydoğu Anadolu'nun sanayi ve tarım ihracatının ana çıkış kapısıdır. İskenderun Körfezi ise demir-çelik tesisleri, petrol boru hatları (Bakü-Tiflis-Ceyhan ve Kerkük-Yumurtalık) ile stratejik bir enerji terminalidir.",
+        "Akdeniz kıyıları Türkiye'de kitle turizminin merkezidir; yalnızca Antalya 2025'te yaklaşık 17 milyon turist ağırladı. Mersin Uluslararası Limanı; İç Anadolu, Doğu ve Güneydoğu Anadolu'nun sanayi ve tarım ihracatının ana çıkış kapısıdır. İskenderun Körfezi'nde ise demir-çelik tesisleri ile Bakü-Tiflis-Ceyhan ve Kerkük-Yumurtalık petrol boru hatlarının ucu bulunur; körfez önemli bir enerji terminalidir.",
       sectors: [
         {
           name: "Kitle Turizmi",
-          desc: "Antalya, Alanya ve Kemer kıyılarında devasa konaklama ve plaj ekonomisi.",
+          desc: "Antalya, Alanya ve Kemer kıyılarında büyük oteller ve plajlar.",
         },
         {
           name: "Mersin Uluslararası Limanı",
-          desc: "Türkiye'nin en büyük konteyner ve hinterlant aktarma limanı.",
+          desc: "Türkiye'nin en büyük konteyner limanı; iç bölgelerin yükü buradan gemiye aktarılır.",
         },
         {
           name: "Ceyhan Enerji Terminali",
-          desc: "Uluslararası petrol boru hatlarının Akdeniz'e döküldüğü enerji üssü.",
+          desc: "Uluslararası petrol boru hatlarının Akdeniz'e ulaştığı nokta.",
         },
       ],
     },
     humanGeography: {
-      title: "Nüfus & Yerleşme Dokusu",
+      title: "Seyrek Platolar, Kalabalık Ovalar",
       content:
-        "Akdeniz kıyılarında yerleşme iki zıt topoğrafik karakter sergiler. Batıda Teke ve Taşeli platolarında karstik ve engebeli yapı nedeniyle yerleşim seyrektir. Buna karşılık Antalya Ovası ile doğudaki bereketli Çukurova deltası (Adana, Mersin, Tarsus) ve Hatay grabeni Türkiye'nin en yoğun nüfuslu, tarımsal ve endüstriyel üretim merkezleridir. Turizm sektörünün yarattığı istihdam kıyı kentlerine Türkiye'nin dört bir yanından yoğun iç göç çekmektedir.",
+        "Akdeniz kıyısında yerleşme iki farklı yüz gösterir. Batıda Teke ve Taşeli platoları karstik ve engebeli olduğu için seyrek nüfusludur. Antalya Ovası, doğudaki Çukurova deltası (Adana, Mersin, Tarsus) ve Hatay grabeni ise Türkiye'nin en kalabalık tarım ve sanayi alanları arasındadır. Turizmin açtığı işler kıyı şehirlerine ülkenin her yerinden göç çeker.",
       points: [
-        "Antalya ve Çukurova havzası hızlı nüfus artışı ve göç alan metropoliten alanlardır.",
-        "Teke ve Taşeli platoları karstik erimeler ve dağlık yapı nedeniyle seyrek nüfusludur.",
-        "Kıyı boyunca sera tarımı ve turizm tesisleri arazi kullanımında birbiriyle yarışır.",
+        "Antalya ve Çukurova hızla büyüyen, göç alan şehir bölgeleri.",
+        "Teke ve Taşeli platoları karst ve dağlık yapı yüzünden seyrek nüfuslu.",
+        "Kıyı boyunca sera tarımı ile turizm tesisleri aynı arazi için yarışır.",
       ],
     },
     environmentalIssues: {
-      title: "Çevre Sorunları: Lessepsiyen Türler & Plastik Atık",
+      title: "Süveyş'ten Gelen İstilacı Türler",
       content:
-        "Akdeniz ekosistemini tehdit eden en güncel biyolojik sorun, 1869'da açılan Süveyş Kanalı üzerinden Kızıldeniz ve Hint Okyanusu'ndan gelen tropikal göçmen canlılardır ('Lessepsiyen göç'). Küresel ısınmayla Akdeniz suyunun ısınması, zehirli balon balığı (Lagocephalus sceleratus) ve aslan balığı gibi istilacı türlerin hızla çoğalarak yerli balık faunası ve balıkçılık ağları üzerinde ağır tahribat yaratmasına neden olmuştur. Ayrıca kapalı sirkülasyon nedeniyle Doğu Akdeniz sahilleri plastik mikropartikül kirliliğinin en yoğun olduğu alanlardandır.",
+        "Akdeniz'in en güncel biyolojik sorunu, 1869'da açılan Süveyş Kanalı'ndan geçip Kızıldeniz ve Hint Okyanusu'ndan gelen tropikal türlerdir; bu göçe Lessepsiyen göç denir. Deniz ısındıkça zehirli balon balığı (Lagocephalus sceleratus) ve aslan balığı gibi istilacı türler hızla çoğaldı; yerli balıklara ve balıkçı ağlarına ağır zarar veriyorlar. Su az yenilendiği için Doğu Akdeniz kıyıları küçük plastik parçacıkların en çok biriktiği yerler arasında.",
       risks: [
-        "Lessepsiyen İstilacı Türler: Zehirli balon balığı ve aslan balığı istilası.",
-        "Deniz Isınması & Tuzlanma: Tropikalleşen Doğu Akdeniz suyunun yerli türleri baskılaması.",
-        "Plastik Kirliliği: Nehirler ve deniz ticareti kaynaklı makro ve mikroplastik yığılması.",
+        "Lessepsiyen istilacı türler: zehirli balon balığı ve aslan balığı.",
+        "Isınma ve tuzlanma: tropikalleşen Doğu Akdeniz suyu yerli türleri geriletiyor.",
+        "Plastik kirliliği: nehirlerden ve gemilerden gelen büyük ve küçük plastik parçalar birikiyor.",
       ],
     },
     faq: [
       {
-        question: "Akdeniz neden Türkiye'nin en sıcak ve tuzlu denizidir?",
+        question: "Akdeniz neden Türkiye'nin en sıcak ve en tuzlu denizi?",
         answer:
-          "Ekvator'a en yakın (en güneydeki) denizimiz olduğu için güneş ışınlarını daha dik açıyla alır. Yıllık güneşlenme süresinin ve hava sıcaklığının yüksek olması şiddetli buharlaşmaya yol açar; buharlaşan su tuzu geride bıraktığı için tuzluluk binde 38-39'a ulaşır.",
+          "Ekvator'a en yakın, yani en güneydeki denizimiz olduğu için güneş ışınlarını daha dik açıyla alır. Güneşlenme süresi uzun, hava sıcak olduğundan buharlaşma güçlüdür. Buharlaşan su tuzu geride bırakır ve tuzluluk binde 38-39'a çıkar.",
       },
       {
-        question: "Lessepsiyen tür ne demektir ve Akdeniz'i nasıl etkiler?",
+        question: "Lessepsiyen tür ne demek, Akdeniz'i nasıl etkiliyor?",
         answer:
-          "Süveyş Kanalı'nın açılmasıyla Kızıldeniz'den Akdeniz'e göç eden Hint-Pasifik kökenli canlılara denir. Balon balığı ve aslan balığı gibi yırtıcı ve zehirli türler, Akdeniz'in yerli ekosistemini ve balıkçılığı tehdit etmektedir.",
+          "Süveyş Kanalı açıldıktan sonra Kızıldeniz'den Akdeniz'e geçen Hint-Pasifik kökenli canlılara denir. Balon balığı ve aslan balığı gibi yırtıcı ve zehirli türler Akdeniz'in yerli canlılarını ve balıkçılığı tehdit ediyor.",
       },
       {
-        question: "Antalya falezleri nasıl oluşmuştur?",
+        question: "Antalya falezleri nasıl oluştu?",
         answer:
-          "Antalya kent merkezi, akarsuların ve karstik kaynakların çökelttiği traverten platosu üzerine kuruludur. Deniz dalgaları bu yumuşak traverten tabakasının altını oymuş; kütlelerin dik kırılmasıyla 30-40 metre yüksekliğinde deniz uçurumları (falezler) oluşmuştur.",
+          "Antalya şehir merkezi, akarsuların ve karstik kaynakların çökelttiği traverten düzlüğünün üstüne kurulmuştur. Dalgalar bu yumuşak traverten katmanının altını oymuş, üstteki kütleler dik biçimde kırılıp düşmüş ve 30-40 metre yüksekliğinde deniz uçurumları oluşmuştur.",
       },
     ],
   },

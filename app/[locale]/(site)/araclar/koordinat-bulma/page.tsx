@@ -77,8 +77,8 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "CBS Araçları", href: "/araclar", path: "/araclar" },
-              { label: "Koordinat Bulucu", path: "/araclar/koordinat-bulma" },
+              { label: "Harita Araçları", href: "/araclar", path: "/araclar" },
+              { label: "Koordinat Bulma", path: "/araclar/koordinat-bulma" },
             ]}
             locale={locale}
             surface={TOOLS_SURFACE}
@@ -87,33 +87,32 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Haritada Koordinat Bulma & Dönüştürme"
+              heading="Haritada Koordinat Bulma"
               badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<MapPin className="size-3.5" />}>
-                    Coğrafi Koordinat Tespit &amp; GPS
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    WGS84 (EPSG:4326)
-                  </Badge>
-                </>
+                <Badge variant="primary" size="sm" icon={<MapPin className="size-3.5" />}>
+                  Enlem ve boylamı elle girebilirsin
+                </Badge>
               }
               notice={<V2EnWorkInProgressNotice locale={locale} />}
               lede={
                 <>
-                  Harita üzerinde tıkladığınız herhangi bir noktanın veya seçtiğiniz il merkezinin
-                  Ondalık Derece (DD), Derece Dakika Saniye (DMS) ve UTM izdüşüm koordinatlarını
-                  anında görüntüleyin.
+                  Bir yerin adresi iki sayıdır: enlemi ve boylamı. Haritada bir noktaya tıkla ya da
+                  bir il seç; o noktanın koordinatını iki ayrı yazımla, düştüğü ili ve UTM dilimini
+                  gösterir.
                 </>
               }
             />
 
             {/* Metric Strip */}
             <StatGrid gutter="hero">
-              <StatTile label="EPSG:4326 Jeodezik Standart" fact="WGS84" tone="primary" />
-              <StatTile label="Çift Format Koordinat Gösterimi" fact="DMS + DD" tone="secondary" />
-              <StatTile label="6° Dilimli Düzlemsel Izgara" fact="UTM Zonu" tone="accent" />
-              <StatTile label="Otomatik Sınır Eşleme (Polygon)" fact="İl Tespiti" tone="primary" />
+              <StatTile label="GPS'in de kullandığı sistem" fact="WGS84" tone="primary" />
+              <StatTile
+                label="Ondalık derece ve derece-dakika-saniye"
+                fact="2 yazım"
+                tone="secondary"
+              />
+              <StatTile label="UTM dilimlerinin genişliği" fact="6°" tone="accent" />
+              <StatTile label="Noktanın hangi ilde olduğu bulunur" fact="81 il" tone="primary" />
             </StatGrid>
           </Card>
         </div>

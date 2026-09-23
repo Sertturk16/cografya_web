@@ -382,7 +382,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Türkiye Atlası", href: "/turkiye", path: "/turkiye" },
+              { label: "Türkiye İlleri", href: "/turkiye", path: "/turkiye" },
               {
                 label: region,
                 // A concrete, already-interpolated path, not the `"/turkiye/bolge/[slug]"`
@@ -417,16 +417,13 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                       {region}
                     </Badge>
                   </Link>
-                  <Badge variant="primary" className="font-mono font-bold tracking-wider">
-                    TR-{province.plateCode}
-                  </Badge>
                   {isCoastal ? (
                     <Badge variant="info" className="flex items-center gap-1">
                       <Waves className="size-3" /> Kıyı İli
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="bg-muted text-muted-foreground">
-                      🌾 İç Kara
+                      Kıyısı Yok
                     </Badge>
                   )}
                   {climate.showClass && (
@@ -458,7 +455,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {/* 1. Nüfus */}
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Toplam Nüfus</span>
+                <span className="text-xs font-medium">Nüfus</span>
                 <Users className="size-4 text-primary" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
@@ -492,7 +489,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {/* 3. Rakım & Fiziki */}
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Ortalama Rakım</span>
+                <span className="text-xs font-medium">Rakım (il merkezi)</span>
                 <Mountain className="size-4 text-secondary" />
               </div>
               <div className="font-heading font-extrabold text-xl sm:text-2xl text-foreground">
@@ -513,7 +510,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {/* 4. Koordinatlar */}
             <Card variant="glass" space="1">
               <div className="flex items-center justify-between text-muted-foreground">
-                <span className="text-xs font-medium">Coğrafi Konum</span>
+                <span className="text-xs font-medium">Konum (il merkezi)</span>
                 <MapPin className="size-4 text-primary" />
               </div>
               <div className="font-mono font-bold text-sm sm:text-base text-foreground pt-1">
@@ -545,13 +542,8 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {/* Overview Card */}
             {showLandform && (
               <Card variant="panel" space="4">
-                <div className="flex items-center gap-2">
-                  <Badge variant="primary" size="sm">
-                    Coğrafi Konum &amp; Yapı
-                  </Badge>
-                </div>
                 <h2 className="font-heading text-2xl font-bold text-foreground">
-                  {sectionHeading("landform")} Fiziki Coğrafyası ve Arazi Özellikleri
+                  {sectionHeading("landform")} Yeryüzü Şekilleri
                 </h2>
                 {landformNote && (
                   <p className="text-sm text-muted-foreground leading-relaxed">{landformNote}</p>
@@ -564,7 +556,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                       <div className="space-y-1.5">
                         <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                           <Droplets className="size-3.5 text-info" />
-                          <span>{sectionHeading("hydrography")} Su Kaynakları ve Havzaları</span>
+                          <span>{sectionHeading("hydrography")} Su Kaynakları</span>
                         </span>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                           {province.hydrographyNoteTr}
@@ -575,7 +567,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                     {hydrographyFeatures && hydrographyFeatures.length > 0 && (
                       <div className="space-y-2 pt-1">
                         <span className="text-xs font-semibold text-muted-foreground block">
-                          Önemli Su Kaynakları:
+                          Başlıca akarsu, göl ve barajlar:
                         </span>
                         <div className="flex flex-wrap gap-2">
                           {hydrographyFeatures.map((feat, idx) => (
@@ -596,17 +588,8 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
             {/* Demographics & Socio-Economic Indicators Card */}
             {(showSettlement || showEconomy) && (
               <Card variant="panel" space="5">
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    size="sm"
-                    className="bg-primary/10 text-primary border-primary/30"
-                  >
-                    Sosyo-Ekonomik Göstergeler
-                  </Badge>
-                </div>
                 <h3 className="font-heading text-xl font-bold text-foreground">
-                  {sectionHeading("settlement")} Nüfus, Yerleşme ve Ekonomik Yapı
+                  {sectionHeading("settlement")} Nüfus ve Ekonomi
                 </h3>
 
                 {/* Settlement Prose Note */}
@@ -701,7 +684,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               {neighbors.length > 0 && (
                 <div className="pt-3 border-t border-border space-y-2.5">
                   <span className="text-xs font-semibold text-muted-foreground block">
-                    Komşu İller ({neighbors.length} İl):
+                    Komşu İller ({neighbors.length}):
                   </span>
                   <div className="flex flex-wrap gap-1.5">
                     {neighbors.map((nb) => (
@@ -727,7 +710,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                 <div className="pt-3 border-t border-border space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-muted-foreground block">
-                      Benzer İklimli İller ({province.climateKoppen || "Köppen"}):
+                      İklimi Benzeyen İller:
                     </span>
                     <Badge
                       variant="outline"
@@ -773,7 +756,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           <Card as="section" variant="panel" space="6">
             <div>
               <h2 className="font-heading text-2xl font-bold text-foreground">
-                {`${sectionHeading("climate")} İklim Özellikleri & Yağış Grafiği`}
+                {`${sectionHeading("climate")} İklim`}
               </h2>
             </div>
 
@@ -804,7 +787,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
               {province.climateNoteTr && (
                 <details className="text-xs text-muted-foreground group" open>
                   <summary className="font-semibold text-foreground cursor-pointer hover:text-primary transition-colors select-none py-1">
-                    ▼ MGM Sınıflandırma ve Metodoloji Notu
+                    MGM&apos;nin sınıflandırma notu
                   </summary>
                   <p className="mt-2 pl-3 border-l-2 border-primary/40 text-muted-foreground leading-relaxed">
                     {province.climateNoteTr}
@@ -900,7 +883,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
         <div className="flex items-center justify-between pt-2">
           <Link href="/turkiye">
             <Button variant="outline" size="sm" leftIcon={<Compass className="size-4" />}>
-              ← Türkiye Atlası&apos;na Dön (Tüm İller)
+              Türkiye Haritasına Dön
             </Button>
           </Link>
           <Link href="/">

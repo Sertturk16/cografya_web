@@ -13,8 +13,7 @@ import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
-import { Badge } from "@/components/ui/badge";
-import { BookOpen, Home } from "lucide-react";
+import { Home } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 /**
@@ -106,7 +105,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Video Çözümlü Kitaplar", path: "/kitaplar" },
+              { label: "Kitaplar", path: "/kitaplar" },
             ]}
             locale={locale}
             surface="trOnly"
@@ -115,21 +114,11 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Video Çözümlü Coğrafya Kitapları"
-              badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<BookOpen className="size-3.5" />}>
-                    Dijital Eğitim Platformu
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    AYT &bull; TYT &bull; YKS
-                  </Badge>
-                </>
-              }
+              heading="Kitaplar ve Çözüm Videoları"
               lede={
                 <>
-                  Yayımlanan Coğrafya branş denemelerinin soru bazlı ayrıntılı video çözümleri,
-                  zaman çizelgesi atlama noktaları ve sınav hazırlık stratejileri.
+                  Deneme kitaplarının çözüm videoları burada. Videonun altındaki soru numaralarından
+                  birine tıklarsan video o sorunun çözümüne atlar.
                 </>
               }
             />
@@ -162,13 +151,13 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                   type-required and currently unreachable (`books.length` is a number by
                   construction), so it is not shipped user-facing text. */}
               <StatTile
-                label="Yayın Kataloğu"
+                label="Çözümü yayında"
                 value={books.length}
-                unit="Kitap"
+                unit="kitap"
                 tone="primary"
-                absent={{ label: "Katalog okunamadı", hint: "Yayın listesi gelmedi" }}
+                absent={{ label: "Liste okunamadı", hint: "Kitap listesi gelmedi" }}
               />
-              <StatTile label="Müfredat Uyumu" fact="ÖSYM / MEB" tone="primary" />
+              <StatTile label="Videoları izlemek için" fact="Ücretsiz üyelik" tone="primary" />
             </StatGrid>
           </Card>
         </div>

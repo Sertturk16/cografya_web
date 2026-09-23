@@ -49,7 +49,7 @@ export function V2RegionLocatorMap({
         <div className="flex items-center gap-2">
           <Compass className="size-4 text-primary" />
           <h3 className="font-heading font-bold text-sm sm:text-base text-foreground">
-            {regionName} Türkiye Haritasındaki Konumu
+            Türkiye Haritasında {regionName}
           </h3>
         </div>
         <div className="flex items-center gap-1.5">
@@ -89,7 +89,7 @@ export function V2RegionLocatorMap({
             ) : (
               <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background/80 dark:bg-card/80 backdrop-blur-xs border border-border/80 text-[11px] text-muted-foreground">
                 <MapPin className="size-3 text-primary" />
-                <span>İllerin üzerine gelerek detayları görebilirsiniz</span>
+                <span>Bir ilin üstüne gel, adını ve nüfusunu gör</span>
               </div>
             )}
           </div>
@@ -192,8 +192,7 @@ export function V2RegionLocatorMap({
       {/* Quick Province Pill Shortcuts */}
       <div className="space-y-2 pt-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span className="font-semibold">Bölge İllerine Hızlı Geçiş:</span>
-          <span>{provinces.length} İl Listelendi</span>
+          <span className="font-semibold">Bir ilin sayfasına git:</span>
         </div>
         <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto scrollbar-none p-0.5">
           {provinces.map((prov) => {

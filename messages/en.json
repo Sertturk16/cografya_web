@@ -137,7 +137,6 @@
     "aboutHeading": "Who we are",
     "aboutBody1": "Coğrafya Gurmesi is a geography publishing brand founded by Murat Çakır and Murat Karagöz. Alongside our TYT/AYT Geography books, the Harita Gurmesi (Map Gourmet) series and question banks, we also produce video solution content on YouTube.",
     "aboutBody2": "Our goal is to help students truly grasp geography through questions grounded in real-world scenarios, analysis and interpretation, rather than classic rote-memorization patterns. We focus on the logic behind the map and region questions students find most challenging in exams, and by analyzing the question style of Türkiye's national university entrance exam authority (ÖSYM) we prepare targeted resources stripped of unnecessary detail.",
-    "aboutCurriculum": "All of our content is 100% compliant with the Türkiye Yüzyılı Maarif Modeli (Turkey's Century of Education Model) and the current MEB (Ministry of National Education) curriculum.",
     "contactHeading": "Contact",
     "contactBody": "For questions, feedback or collaboration inquiries, you can reach us by email:",
     "dataHeading": "Map and flag sources",
@@ -293,7 +292,6 @@
     "itemPointCount": "{count, plural, one {# point} other {# points}}"
   },
   "ToolWorkbench": {
-    "labBadge": "GIS measurement lab",
     "labSubtitle": "Geodesic great circle & spherical area",
     "labHeading": "Geographic Information Systems (GIS) measurement tools",
     "undo": "Undo",
@@ -951,27 +949,6 @@
       "alanName": "Area calculation",
       "alanBody": "Measure the area and perimeter of a polygon you close on the map.",
       "otherToolsHeading": "Other tools"
-    },
-    "mesafe": {
-      "metaTitle": "Distance Measurement Tool: Two Points or a Route",
-      "metaDescription": "Measure the great-circle distance between two points on the map of Türkiye, or the total length of a route with up to twenty stops.",
-      "heading": "Great-Circle Distance on the Map of Türkiye",
-      "teaches": "measuring great-circle distance between points on the map of Türkiye",
-      "toolHeading": "Measure on the map"
-    },
-    "koordinat": {
-      "metaTitle": "Latitude, Longitude and Coordinate Lookup",
-      "metaDescription": "Read the latitude and longitude of any point on the map of Türkiye, shown in decimal degrees and in degrees, minutes and seconds.",
-      "heading": "Latitude and Longitude on the Map of Türkiye",
-      "teaches": "reading a point's latitude and longitude off the map of Türkiye in decimal degrees and DMS",
-      "toolHeading": "Find a coordinate on the map"
-    },
-    "alan": {
-      "metaTitle": "Polygon Area and Perimeter Calculator",
-      "metaDescription": "Close a polygon of at least three points on the map of Türkiye and read its area in square kilometres and its perimeter in kilometres.",
-      "heading": "Area and Perimeter on the Map of Türkiye",
-      "teaches": "calculating the area and perimeter of a polygon drawn on the map of Türkiye",
-      "toolHeading": "Calculate an area on the map"
     },
     "map": {
       "zoomIn": "Zoom in",

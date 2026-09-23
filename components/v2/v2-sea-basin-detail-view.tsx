@@ -11,19 +11,7 @@ import { BreadcrumbsNav, type BreadcrumbTrailItem } from "@/components/patterns/
 // neither imports `server-only` — the boundary `components/patterns/rsc-boundary.test.ts` enforces.
 import { PageHero } from "@/components/patterns/page-hero";
 import { cn } from "@/lib/utils";
-import {
-  Waves,
-  Droplets,
-  Compass,
-  MapPin,
-  Layers,
-  ArrowRight,
-  AlertTriangle,
-  CheckCircle2,
-  Anchor,
-  CloudRain,
-  Mountain,
-} from "lucide-react";
+import { Layers, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 type LinkHref = React.ComponentProps<typeof Link>["href"];
 
@@ -91,15 +79,15 @@ export function V2SeaBasinDetailView({
   const sortedPoints = [...marinePoints].sort((a, b) => a.displayOrder - b.displayOrder);
 
   const otherBasins = [
-    { slug: "karadeniz", name: "Karadeniz", badge: "En Az Tuzlu", href: "/deniz/karadeniz" },
+    { slug: "karadeniz", name: "Karadeniz", badge: "En az tuzlu", href: "/deniz/karadeniz" },
     {
       slug: "marmara",
       name: "Marmara Denizi",
-      badge: "İç Deniz & Boğazlar",
+      badge: "İç deniz ve boğazlar",
       href: "/deniz/marmara",
     },
-    { slug: "ege", name: "Ege Denizi", badge: "Enine Kıyı & Şelf", href: "/deniz/ege" },
-    { slug: "akdeniz", name: "Akdeniz", badge: "En Sıcak & Tuzlu", href: "/deniz/akdeniz" },
+    { slug: "ege", name: "Ege Denizi", badge: "Enine kıyı, geniş şelf", href: "/deniz/ege" },
+    { slug: "akdeniz", name: "Akdeniz", badge: "En sıcak ve en tuzlu", href: "/deniz/akdeniz" },
   ].filter((b) => b.slug !== data.slug);
 
   return (
@@ -115,21 +103,11 @@ export function V2SeaBasinDetailView({
             tier="hub"
             heading={data.fullNameTr}
             badges={
-              <>
-                <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-                  Mavi Vatan Havza Atlası
-                </Badge>
-                <Badge variant="secondary" size="sm">
-                  {data.badge}
-                </Badge>
-              </>
+              <Badge variant="secondary" size="sm">
+                {data.badge}
+              </Badge>
             }
-            lede={
-              <>
-                Fiziki coğrafyası, derinlik profili, akıntı rejimleri, kıyı yer şekilleri, canlı
-                telemetri istasyonları ve çevre sorunlarıyla kapsamlı {data.nameTr} rehberi.
-              </>
-            }
+            lede={data.lede}
           />
 
           {/* Metric Strip */}
@@ -142,7 +120,7 @@ export function V2SeaBasinDetailView({
             </div>
             <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
               <span className="text-[10px] text-muted-foreground font-medium block">
-                Maksimum Derinlik
+                En Derin Yeri
               </span>
               <span className="font-heading text-lg sm:text-xl font-bold text-info-strong block mt-0.5">
                 {data.metrics.maxDepth}
@@ -157,25 +135,24 @@ export function V2SeaBasinDetailView({
               </span>
             </div>
             <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[10px] text-muted-foreground font-medium block">
-                Tuzluluk Oranı
-              </span>
+              <span className="text-[10px] text-muted-foreground font-medium block">Tuzluluk</span>
               <span className="font-heading text-lg sm:text-xl font-bold text-accent block mt-0.5">
                 {data.metrics.salinity}
               </span>
             </div>
             <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
               <span className="text-[10px] text-muted-foreground font-medium block">
-                Türkiye Kıyı Şeridi
+                Türkiye&apos;deki Kıyısı (anakara)
               </span>
               <span className="font-heading text-lg sm:text-xl font-bold text-primary block mt-0.5">
                 {data.metrics.coastalLengthTr}
               </span>
+              <span className="text-[11px] text-muted-foreground block mt-0.5">
+                Adalarla {data.metrics.coastalLengthWithIslandsTr}
+              </span>
             </div>
             <div className="p-3.5 rounded-2xl bg-card border border-border shadow-2xs">
-              <span className="text-[10px] text-muted-foreground font-medium block">
-                Kıyı İli Sayısı
-              </span>
+              <span className="text-[10px] text-muted-foreground font-medium block">Kıyı İli</span>
               <span className="font-heading text-lg sm:text-xl font-bold text-primary block mt-0.5">
                 {data.metrics.provincesCount} İl
               </span>
@@ -192,11 +169,11 @@ export function V2SeaBasinDetailView({
               id="basin-telemetry-heading"
               className="font-heading text-xl sm:text-2xl font-bold text-foreground"
             >
-              {data.nameTr} Canlı Telemetri İstasyonları ({sortedPoints.length} Nokta)
+              {data.nameTr} Açığındaki {sortedPoints.length} Nokta
             </h2>
           </div>
           <span className="text-xs text-muted-foreground font-mono">
-            CMEMS &amp; ECMWF Açık Deniz Modelleri
+            Değerler: Copernicus Marine ve ECMWF modelleri
           </span>
         </div>
 
@@ -205,12 +182,12 @@ export function V2SeaBasinDetailView({
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[10px] tracking-wider font-semibold">
                 <tr>
-                  <th className="p-3 sm:p-4">İstasyon &amp; Kıyı</th>
+                  <th className="p-3 sm:p-4">Nokta ve Kıyı</th>
                   <th className="p-3 sm:p-4">İl</th>
-                  <th className="p-3 sm:p-4">Su Sıcaklığı (SST)</th>
-                  <th className="p-3 sm:p-4">Belirgin Dalga (Hs)</th>
-                  <th className="p-3 sm:p-4">Rüzgâr (10m)</th>
-                  <th className="p-3 sm:p-4">Model Zamanı</th>
+                  <th className="p-3 sm:p-4">Su Sıcaklığı</th>
+                  <th className="p-3 sm:p-4">Dalga Yüksekliği</th>
+                  <th className="p-3 sm:p-4">10 m&apos;de Rüzgâr</th>
+                  <th className="p-3 sm:p-4">Geçerlilik Anı</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/60">
@@ -268,7 +245,7 @@ export function V2SeaBasinDetailView({
           </div>
         ) : (
           <div className="p-8 text-center rounded-3xl border border-dashed border-border bg-card/40 text-xs text-muted-foreground">
-            Bu havzaya ait istasyon verisi yükleniyor...
+            Bu denizin noktaları şu an alınamadı.
           </div>
         )}
       </section>
@@ -282,7 +259,7 @@ export function V2SeaBasinDetailView({
             </div>
             <div>
               <span className="font-heading text-base sm:text-lg font-bold text-foreground block">
-                Denizaltı Sismotektoniği &amp; Aktif Faylar
+                Tabandaki Faylar
               </span>
               <p className="text-xs text-muted-foreground mt-0.5">{data.faultLineNotice.text}</p>
             </div>
@@ -294,7 +271,7 @@ export function V2SeaBasinDetailView({
               "shrink-0 font-bold text-xs group gap-1.5",
             )}
           >
-            <span>Fay Hatları Atlasına Git</span>
+            <span>Fay Hatlarına Bak</span>
             <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
@@ -304,10 +281,6 @@ export function V2SeaBasinDetailView({
       <div className="space-y-10">
         {/* 1. PHYSICAL GEOGRAPHY */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 text-primary font-bold text-sm">
-            <Mountain className="size-4.5" />
-            <span>Fiziki Coğrafya &amp; Havza Morfolojisi</span>
-          </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
             {data.physicalGeography.title}
           </h2>
@@ -329,10 +302,6 @@ export function V2SeaBasinDetailView({
 
         {/* 2. CLIMATE IMPACT */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 text-secondary font-bold text-sm">
-            <CloudRain className="size-4.5" />
-            <span>İklim Dinamikleri</span>
-          </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
             {data.climateImpact.title}
           </h2>
@@ -354,11 +323,10 @@ export function V2SeaBasinDetailView({
 
         {/* 3. COASTAL GEOMORPHOLOGY & TYPES */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-            <div className="flex items-center gap-2 font-bold text-sm">
-              <Compass className="size-4.5" />
-              <span>Kıyı Tipleri &amp; Yer Şekilleri</span>
-            </div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+              {data.coastalGeomorphology.title}
+            </h2>
             <Link
               href={data.coastalGeomorphology.coastalTypesHref as LinkHref}
               className={cn(
@@ -366,13 +334,10 @@ export function V2SeaBasinDetailView({
                 "shrink-0 text-xs font-bold gap-1",
               )}
             >
-              <span>Kıyı Tipleri Atlası</span>
+              <span>Kıyı Tipleri Sayfası</span>
               <ArrowRight className="size-3.5" />
             </Link>
           </div>
-          <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-            {data.coastalGeomorphology.title}
-          </h2>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
             {data.coastalGeomorphology.content}
           </p>
@@ -387,10 +352,6 @@ export function V2SeaBasinDetailView({
 
         {/* 4. CURRENTS & WATER MOVEMENT */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <Waves className="size-4.5" />
-            <span>Hidrodinami &amp; Akıntı Rejimi</span>
-          </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
             {data.currentsAndWaterMovement.title}
           </h2>
@@ -412,10 +373,6 @@ export function V2SeaBasinDetailView({
 
         {/* 5. HYDROGRAPHIC BALANCE & RIVERS */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 font-bold text-sm">
-            <Droplets className="size-4.5" />
-            <span>Beslenme Kaynakları &amp; Akarsular</span>
-          </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
             {data.hydrographicBalance.title}
           </h2>
@@ -423,9 +380,7 @@ export function V2SeaBasinDetailView({
             {data.hydrographicBalance.content}
           </p>
           <div className="space-y-2 pt-1">
-            <span className="text-xs font-bold text-foreground block">
-              Havzayı Besleyen Ana Akarsular:
-            </span>
+            <span className="text-xs font-bold text-foreground block">Başlıca Akarsular:</span>
             <div className="flex flex-wrap gap-2">
               {data.hydrographicBalance.majorRivers.map((riv, i) => (
                 <Badge key={i} variant="outline" className="font-mono">
@@ -438,10 +393,6 @@ export function V2SeaBasinDetailView({
 
         {/* 6. ECONOMIC GEOGRAPHY */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 text-primary font-bold text-sm">
-            <Anchor className="size-4.5" />
-            <span>Ekonomik Coğrafya</span>
-          </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
             {data.economicGeography.title}
           </h2>
@@ -463,10 +414,6 @@ export function V2SeaBasinDetailView({
 
         {/* 7. HUMAN GEOGRAPHY & COASTAL PROVINCES */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 text-secondary font-bold text-sm">
-            <MapPin className="size-4.5" />
-            <span>Nüfus &amp; Kıyı Şehirleri</span>
-          </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
             {data.humanGeography.title}
           </h2>
@@ -475,7 +422,7 @@ export function V2SeaBasinDetailView({
           </p>
           <div className="space-y-2 pt-2">
             <span className="text-xs font-bold text-foreground block">
-              {data.nameTr}&apos;ne Kıyısı Olan {data.coastalProvinces.length} İlimiz:
+              Kıyısı Olan {data.coastalProvinces.length} İl:
             </span>
             <div className="flex flex-wrap gap-2">
               {data.coastalProvinces.map((prov) => (
@@ -496,10 +443,6 @@ export function V2SeaBasinDetailView({
 
         {/* 8. ENVIRONMENTAL ISSUES */}
         <Card as="article" variant="panel" space="4">
-          <div className="flex items-center gap-2 text-destructive font-bold text-sm">
-            <AlertTriangle className="size-4.5" />
-            <span>Çevre Sorunları &amp; Ekolojik Tehditler</span>
-          </div>
           <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
             {data.environmentalIssues.title}
           </h2>
@@ -528,11 +471,10 @@ export function V2SeaBasinDetailView({
       {/* OTHER SEAS CROSS-NAVIGATION STRIP */}
       <section className="p-6 sm:p-8 rounded-3xl border border-border bg-gradient-to-r from-card via-muted/30 to-card space-y-4">
         <div className="space-y-1">
-          <h3 className="font-heading text-lg font-bold text-foreground">
-            Diğer Deniz Havzalarını İnceleyin
-          </h3>
+          <h3 className="font-heading text-lg font-bold text-foreground">Diğer Denizler</h3>
           <p className="text-xs text-muted-foreground">
-            Türkiye&apos;yi çevreleyen 4 denizin canlı telemetri ve fiziki coğrafya atlası.
+            Diğer üç deniz de aynı sırayla anlatılıyor: yer şekilleri, iklim, kıyılar, akıntılar,
+            akarsular, ekonomi, nüfus ve çevre.
           </p>
         </div>
 

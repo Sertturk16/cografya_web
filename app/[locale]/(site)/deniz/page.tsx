@@ -19,11 +19,10 @@ import { PageHero } from "@/components/patterns/page-hero";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
-import { Waves, Home, Layers, ArrowRight } from "lucide-react";
+import { Home, Layers, ArrowRight } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { marineShowsValues } from "@/lib/marine/overview";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -204,7 +203,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Denizler & Kıyılar Atlası", path: "/deniz" },
+              { label: "Denizler ve Kıyılar", path: "/deniz" },
             ]}
             locale={locale}
             surface="trNarrative"
@@ -213,30 +212,21 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Denizler & Kıyılar Atlası"
-              badges={
-                <>
-                  <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-                    Mavi Vatan Oşinografi Portalı
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    {showValues ? "30 Canlı Telemetri İstasyonu" : "30 Referans Noktası"}
-                  </Badge>
-                </>
-              }
+              heading="Denizler ve Kıyılar"
               notice={<V2EnWorkInProgressNotice locale={locale} />}
               lede={
                 showValues ? (
                   <>
-                    Karadeniz, Marmara, Ege ve Akdeniz havzalarının saatlik deniz suyu sıcaklıkları,
-                    dalga boyları, tuzluluk oranları, akıntı rejimleri ve 28 kıyı ilinin oşinografik
-                    yapısı.
+                    Karadeniz, Marmara, Ege ve Akdeniz&apos;in açığında 30 nokta seçtik. Her birinde
+                    su sıcaklığını, dalga yüksekliğini ve rüzgârı gör; aşağıda dört denizin
+                    tuzluluğunu, derinliğini ve akıntılarını karşılaştır.
                   </>
                 ) : (
                   <>
-                    Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktasının kapsadığı
-                    deniz suyu sıcaklığı, dalga boyu, rüzgâr ve akıntı büyüklükleri; 28 kıyı ilinin
-                    oşinografik yapısıyla birlikte. Güncel ölçüm değerleri şu an yayında değil.
+                    Karadeniz, Marmara, Ege ve Akdeniz&apos;in açığında 30 nokta seçtik; her biri
+                    bir kıyı ilinin önünde. Bu noktaların güncel su sıcaklığı, dalga ve rüzgâr
+                    değerleri şu an gösterilmiyor. Dört denizin tuzluluğunu, derinliğini ve
+                    akıntılarını yine de aşağıda karşılaştırabilirsin.
                   </>
                 )
               }
@@ -255,13 +245,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
                 `deprem/fay-hatlari` it answered no and waved through a wrong one. See
                 `docs/design.md` — the test is the entity. */}
             <StatGrid gutter="hero">
-              <StatTile label="Farklı Havza & Akıntı" fact="4 Deniz" tone="primary" />
-              <StatTile
-                label={showValues ? "Saatlik Telemetri İstasyonu" : "Referans İzleme Noktası"}
-                fact="30 Nokta"
-                tone="secondary"
-              />
-              <StatTile label="Denize Kıyısı Olan Şehir" fact="28 İl" tone="accent" />
+              <StatTile label="Türkiye'yi Çevreleyen" fact="4 Deniz" tone="primary" />
+              <StatTile label="Açık Denizde Referans Noktası" fact="30 Nokta" tone="secondary" />
+              <StatTile label="Denize Kıyısı Olan İl" fact="28 İl" tone="accent" />
               <StatTile label="Toplam Kıyı Uzunluğu (HGM)" fact="8.333 km" tone="primary" />
             </StatGrid>
           </Card>
@@ -284,11 +270,11 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
             </div>
             <div>
               <span className="font-heading text-base font-bold text-foreground block">
-                Denizaltı Sismotektoniği &amp; Aktif Fay Hatları
+                Deniz Tabanındaki Faylar
               </span>
               <span className="text-xs text-muted-foreground block">
-                Kuzey Anadolu Fayı&apos;nın Marmara Denizi derin çukurlarındaki geçişi ve Ege açılma
-                tektoniği.
+                Kuzey Anadolu Fayı, Marmara&apos;nın dibindeki derin çukurların içinden geçer.
+                Ege&apos;de ise yer kabuğu gerilip açılıyor.
               </span>
             </div>
           </div>
@@ -299,7 +285,7 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
               "shrink-0 font-bold text-xs group gap-1.5",
             )}
           >
-            <span>Fay Hatları Atlasına Git</span>
+            <span>Fay Hatlarına Bak</span>
             <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>

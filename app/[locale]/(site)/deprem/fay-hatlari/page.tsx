@@ -5,9 +5,10 @@ import type { Locale } from "@/i18n/routing";
 import { learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
+import { EarthquakeAttribution } from "@/components/earthquake/earthquake-attribution";
+import { getEarthquakeMetaSafe } from "@/lib/api/earthquakes";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,9 @@ export async function generateMetadata({ params }: FaultLinesPageProps): Promise
 export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
+  // The live ticker in this page's chrome shows AFAD's latest magnitude, so the page carries
+  // AFAD's notice and the early-warning disclaimer exactly as `/deprem` does.
+  const earthquakeMeta = await getEarthquakeMetaSafe();
 
   return (
     <>
@@ -73,7 +77,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
           <Breadcrumbs
             items={[
               { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
-              { label: "Canlı Deprem Monitörü", href: "/deprem", path: "/deprem" },
+              { label: "Son Depremler", href: "/deprem", path: "/deprem" },
               { label: "Türkiye'nin Fay Hatları", path: "/deprem/fay-hatlari" },
             ]}
             locale={locale}
@@ -83,22 +87,14 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
           <Card variant="feature">
             <PageHero
               tier="hub"
-              heading="Türkiye'nin Ana Fay Hatları: KAF, DAF ve BAFS"
-              badges={
-                <>
-                  <Badge variant="destructive" size="sm" icon={<Layers className="size-3.5" />}>
-                    Sismotektonik Atlası
-                  </Badge>
-                  <Badge variant="secondary" size="sm">
-                    3 Ana Kırık Sistemi
-                  </Badge>
-                </>
-              }
+              heading="Türkiye'nin Fay Hatları"
               lede={
                 <>
-                  Avrasya, Afrika ve Arap levhalarının kıskacındaki Anadolu levhacığının sismik
-                  omurgası. Fayların oluşum mekanizmaları, geçtiği iller, segment kırılmaları ve
-                  tarihsel büyük depremler.
+                  Anadolu, Avrasya, Afrika ve Arap levhalarının arasında sıkışmış küçük bir levha.
+                  Türkiye&apos;deki depremlerin çoğunu üç büyük fay kuşağı üretir: Kuzey Anadolu
+                  Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS). Her
+                  birinin nasıl oluştuğu, hangi illerden geçtiği ve geçmişte hangi depremlere yol
+                  açtığı aşağıda.
                 </>
               }
             >
@@ -110,7 +106,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 )}
               >
                 <ArrowLeft className="size-3.5" />
-                <span>Canlı Deprem Monitörüne Dön</span>
+                <span>Son Depremlere Dön</span>
               </Link>
             </PageHero>
 
@@ -146,7 +142,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                   1.200 km
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  KAF Toplam Uzunluk
+                  KAF&apos;ın uzunluğu
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
@@ -156,17 +152,17 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                   550 km
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  DAF Toplam Uzunluk
+                  DAF&apos;ın uzunluğu
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
                 <span
                   className={`font-heading text-2xl sm:text-3xl font-bold block ${FAULT_IDENTITY.bafs.label}`}
                 >
-                  8 Graben
+                  ~800 km
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  BAFS Çöküntü Havzası
+                  BAFS kuşağının uzunluğu
                 </span>
               </div>
               <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs">
@@ -174,7 +170,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                   25 mm/yıl
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  Batıya Doğru Kaçış
+                  Anadolu&apos;nun batıya kayma hızı
                 </span>
               </div>
             </div>
@@ -199,7 +195,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                       {fault.type}
                     </span>
                     <span className="text-xs font-semibold text-destructive flex items-center gap-1">
-                      <AlertTriangle className="size-3.5" /> Sismik Risk: {fault.riskLevel}
+                      <AlertTriangle className="size-3.5" /> Deprem tehlikesi: {fault.riskLevel}
                     </span>
                   </div>
                   <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground">
@@ -208,7 +204,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 </div>
                 <div className="px-4 py-2 rounded-2xl bg-muted/50 border border-border/80 text-right">
                   <span className="text-[10px] text-muted-foreground font-medium block">
-                    Hattın Uzunluğu
+                    Uzunluğu
                   </span>
                   <span className="font-heading text-xl font-bold text-foreground">
                     ~{fault.lengthKm} km
@@ -221,7 +217,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 <div className="p-5 rounded-2xl bg-muted/20 border border-border/80 space-y-2">
                   <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
                     <Activity className={`size-4.5 ${fault.accentColor}`} />
-                    <span>Tektonik Oluşum ve Levha Sınırı</span>
+                    <span>Nasıl Oluştu?</span>
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     {fault.formation}
@@ -231,7 +227,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 <div className="p-5 rounded-2xl bg-muted/20 border border-border/80 space-y-2">
                   <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
                     <Layers className={`size-4.5 ${fault.accentColor}`} />
-                    <span>Faylanma ve Hareket Mekanizması</span>
+                    <span>Fayın İki Yanı Nasıl Hareket Eder?</span>
                   </h3>
                   <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                     {fault.movementMechanism}
@@ -241,9 +237,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
 
               {/* Segments */}
               <div className="space-y-3">
-                <h3 className="font-heading text-lg font-bold text-foreground">
-                  Ana Segmentler ve Kırık Zonu Kolları
-                </h3>
+                <h3 className="font-heading text-lg font-bold text-foreground">Fayın Parçaları</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {fault.segments.map((seg, i) => (
                     <div
@@ -264,9 +258,9 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                 <div className="flex items-center justify-between">
                   <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
                     <MapPin className="size-4 text-primary" />
-                    <span>Hattın Geçtiği ve Etkilediği İller</span>
+                    <span>Geçtiği İller</span>
                   </h3>
-                  <span className="text-xs text-muted-foreground">{fault.provinces.length} İl</span>
+                  <span className="text-xs text-muted-foreground">{fault.provinces.length} il</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {fault.provinces.map((prov) => (
@@ -292,16 +286,16 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
               <div className="space-y-3">
                 <h3 className="font-heading text-base font-bold text-foreground flex items-center gap-2">
                   <Clock className="size-4 text-secondary" />
-                  <span>Tarihsel Büyük Depremler ve Sismik Enerji Boşalımları</span>
+                  <span>Bu Fayın Geçmişteki Büyük Depremleri</span>
                 </h3>
                 <div className="overflow-x-auto rounded-2xl border border-border/80">
                   <table className="w-full text-left text-xs">
                     <thead className="bg-muted/40 border-b border-border text-muted-foreground uppercase text-[10px] tracking-wider font-semibold">
                       <tr>
                         <th className="p-3">Yıl</th>
-                        <th className="p-3">Merkez / Bölge</th>
+                        <th className="p-3">Yer</th>
                         <th className="p-3">Büyüklük</th>
-                        <th className="p-3">Sismik Etki &amp; Not</th>
+                        <th className="p-3">Ne Oldu?</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
@@ -324,7 +318,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
               <div className="p-4 rounded-2xl bg-warning/10 border border-warning/30 text-xs space-y-1">
                 <span className="font-bold text-warning-strong flex items-center gap-1.5">
                   <Info className="size-4" />
-                  <span>Sismik Boşluk &amp; Gelecek Tehlike Değerlendirmesi</span>
+                  <span>Bugünkü Tehlike</span>
                 </span>
                 <p className="text-muted-foreground leading-relaxed pl-5.5">
                   {fault.seismicGapAndRisk}
@@ -337,8 +331,7 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
                   <div className="flex items-center gap-2 text-info-strong">
                     <Waves className="size-4 shrink-0" />
                     <span>
-                      <strong>Denizaltı Fayı Bağlantısı:</strong>{" "}
-                      {fault.marineConnection.description}
+                      <strong>Deniz altında:</strong> {fault.marineConnection.description}
                     </span>
                   </div>
                   <Link
@@ -364,10 +357,11 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
         <div className="p-6 rounded-3xl border border-border bg-gradient-to-r from-card via-muted/30 to-card flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="font-heading text-lg font-bold text-foreground">
-              Anlık Sismik Hareketleri Harita Üzerinde İzleyin
+              Son Günlerin Depremleri Haritada
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              AFAD istasyonlarından 120 saniyede bir güncellenen son depremler verisi.
+              AFAD&apos;ın yayımladığı son depremleri haritada gör. Liste 120 saniyede bir
+              yenilenir.
             </p>
           </div>
           <Link
@@ -377,10 +371,16 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
               "flex items-center gap-2 font-bold",
             )}
           >
-            <span>Canlı Deprem Radarına Git</span>
+            <span>Son Depremlere Git</span>
             <Activity className="size-4" />
           </Link>
         </div>
+        {earthquakeMeta !== null && (
+          <EarthquakeAttribution
+            attributions={earthquakeMeta.attributions}
+            disclaimerTr={earthquakeMeta.disclaimerTr}
+          />
+        )}
       </PageContainer>
     </>
   );

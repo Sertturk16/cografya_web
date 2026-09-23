@@ -69,15 +69,15 @@ export function V2Footer() {
                   Coğrafya <span className="text-primary">Gurmesi</span>
                 </span>
                 <span className="text-[10px] text-muted-foreground font-medium">
-                  Atlas &amp; Eğitim Portalı
+                  Türkiye ve dünya atlası
                 </span>
               </div>
             </Link>
 
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-sm">
-              Türkiye&apos;nin 81 ili, 199 dünya ülkesi, saatlik güncellenen Copernicus deniz
-              telemetrisi, AFAD deprem verileri ve interaktif CBS harita araçlarıyla açık coğrafya
-              platformu.
+              81 il ve 199 ülke için sayfalar, dört denizde su sıcaklığı ve dalga, AFAD&apos;ın
+              kaydettiği son depremler. Yanında harita oyunları, ölçüm araçları ve video çözümlü
+              denemeler.
             </p>
 
             <nav
@@ -103,7 +103,7 @@ export function V2Footer() {
           <div className="space-y-3">
             <h3 className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
               <Map className="size-4 text-primary" />
-              Atlas &amp; Haritalar
+              Atlas ve Haritalar
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
@@ -128,12 +128,12 @@ export function V2Footer() {
               </li>
               <li>
                 <Link href="/deniz" className="hover:text-primary transition-colors block">
-                  Canlı Deniz Telemetrisi
+                  Denizler ve Kıyılar
                 </Link>
               </li>
               <li>
                 <Link href="/deprem" className="hover:text-primary transition-colors block">
-                  Canlı Deprem Radarı
+                  Son Depremler
                 </Link>
               </li>
             </ul>
@@ -143,12 +143,12 @@ export function V2Footer() {
           <div className="space-y-3">
             <h3 className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
               <Layers className="size-4 text-secondary" />
-              Etkileşim &amp; CBS
+              Oyun ve Araçlar
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
                 <Link href="/oyun" className="hover:text-secondary transition-colors block">
-                  Harita Oyunu (3 Mod)
+                  Harita Oyunları (3 Oyun)
                 </Link>
               </li>
               <li>
@@ -164,7 +164,7 @@ export function V2Footer() {
                   href="/araclar/koordinat-bulma"
                   className="hover:text-secondary transition-colors block"
                 >
-                  Koordinat Bulma &amp; Dönüştürme
+                  Koordinat Bulma
                 </Link>
               </li>
               <li>
@@ -172,7 +172,7 @@ export function V2Footer() {
                   href="/araclar/alan-hesaplama"
                   className="hover:text-secondary transition-colors block"
                 >
-                  Poligon Alan Hesaplama
+                  Alan Hesaplama
                 </Link>
               </li>
             </ul>
@@ -182,22 +182,22 @@ export function V2Footer() {
           <div className="space-y-3">
             <h3 className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
               <BookOpen className="size-4 text-accent" />
-              Yayınlar &amp; Hesap
+              Yayınlar ve Hesap
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
               <li>
                 <Link href="/kitaplar" className="hover:text-accent transition-colors block">
-                  Video Çözümlü Kitaplar
+                  Kitaplar
                 </Link>
               </li>
               <li>
                 <Link href="/hakkimizda" className="hover:text-accent transition-colors block">
-                  Platform Hakkında
+                  Hakkımızda
                 </Link>
               </li>
               <li>
                 <Link href="/giris" className="hover:text-accent transition-colors block">
-                  Kullanıcı Girişi
+                  Giriş Yap
                 </Link>
               </li>
               <li>
@@ -222,7 +222,7 @@ export function V2Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {currentYear} Coğrafya Gurmesi. Açık, bilimsel ve kaynaklı coğrafya eğitimi.</p>
+          <p>© {currentYear} Coğrafya Gurmesi</p>
           <div className="flex items-center gap-4 text-[11px]">
             <Link href="/turkiye" className="hover:underline">
               81 İl Atlası
@@ -233,7 +233,7 @@ export function V2Footer() {
             </Link>
             <span className="text-border">·</span>
             <Link href="/deniz" className="hover:underline">
-              Deniz Durumu
+              Denizler ve Kıyılar
             </Link>
             <span className="text-border">·</span>
             <Link href="/hakkimizda" className="hover:underline">

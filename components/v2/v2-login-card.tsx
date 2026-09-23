@@ -9,7 +9,6 @@ import { useAuthSession } from "@/lib/auth/use-session.client";
 import { EMAIL_SHAPE } from "@/lib/auth/form-rules";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
   Mail,
@@ -122,9 +121,9 @@ export function V2LoginCard({
           <ShieldCheck className="size-8" />
         </div>
         <div className="space-y-1.5">
-          <h3 className="font-heading text-xl font-bold text-foreground">Oturumunuz Açık</h3>
+          <h3 className="font-heading text-xl font-bold text-foreground">Zaten Giriş Yaptın</h3>
           <p className="text-xs text-muted-foreground">
-            Şu anda Coğrafya Gurmesi hesabınızla aktif olarak giriş yapmış durumdasınız.
+            Coğrafya Gurmesi hesabın bu tarayıcıda açık.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
@@ -135,7 +134,7 @@ export function V2LoginCard({
               className="w-full sm:w-auto shadow-xs"
               rightIcon={<ArrowRight className="size-4" />}
             >
-              Atlasa Devam Et
+              Ana Sayfaya Git
             </Button>
           </Link>
           <Button
@@ -158,19 +157,11 @@ export function V2LoginCard({
       {/* Header Info if not in modal */}
       {!inModal && (
         <div className="space-y-1 pb-2 border-b border-border/80">
-          <div className="flex items-center gap-2">
-            <Badge variant="primary" size="sm" icon={<LogIn className="size-3.5" />}>
-              Giriş Portalı
-            </Badge>
-            <span className="text-xs text-muted-foreground font-medium">
-              Kişiselleştirilmiş Atlas
-            </span>
-          </div>
           <h2 className="font-heading text-2xl font-bold text-primary tracking-tight">
-            Hesabınıza Giriş Yapın
+            Hesabına Giriş Yap
           </h2>
           <p className="text-xs text-muted-foreground">
-            Favorilerinize, sınav geçmişinize ve kayıtlı CBS ölçümlerinize erişin.
+            Favorilerin, oyun geçmişin ve kaydettiğin ölçümler burada seni bekliyor.
           </p>
         </div>
       )}
@@ -281,18 +272,18 @@ export function V2LoginCard({
       {/* Switch to Register footer */}
       <div className="text-center pt-2 border-t border-border/80">
         <p className="text-xs text-muted-foreground">
-          Henüz hesabınız yok mu?{" "}
+          Hesabın yok mu?{" "}
           {onSwitchToRegister ? (
             <button
               type="button"
               onClick={onSwitchToRegister}
               className="font-bold text-primary hover:underline ml-1"
             >
-              Ücretsiz Üye Olun
+              Ücretsiz üye ol
             </button>
           ) : (
             <Link href="/kayit" className="font-bold text-primary hover:underline ml-1">
-              Ücretsiz Üye Olun
+              Ücretsiz üye ol
             </Link>
           )}
         </p>

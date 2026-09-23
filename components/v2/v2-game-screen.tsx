@@ -488,7 +488,7 @@ export function V2GameScreen({
         setRevealedPlate(null);
         setLastFeedback({
           type: "correct",
-          message: `Harika! ${currentTarget.label} doğru bulundu. (+${earnedXP} XP)`,
+          message: `Doğru: ${currentTarget.label}. +${earnedXP} puan`,
         });
         setShowHint(false);
         setQuestionWrongs(0);
@@ -520,7 +520,7 @@ export function V2GameScreen({
 
         setLastFeedback({
           type: "wrong",
-          message: `Yanlış! Burası ${shapeEntry.target.name}. Aranan: ${currentTarget.label}.`,
+          message: `Yanlış, burası ${shapeEntry.target.name}. Aradığın il: ${currentTarget.label}.`,
         });
 
         // Classic 3-strikes limit check
@@ -546,7 +546,7 @@ export function V2GameScreen({
         setCorrectRegions((prev) => new Set(prev).add(currentTarget.id));
         setLastFeedback({
           type: "correct",
-          message: `Tebrikler! ${currentTarget.label} doğru tespit edildi.`,
+          message: `Doğru, burası ${currentTarget.label} Bölgesi.`,
         });
         setShowHint(false);
         setQuestionWrongs(0);
@@ -567,7 +567,7 @@ export function V2GameScreen({
         const regionName = regionLabels[shapeEntry.target.region];
         setLastFeedback({
           type: "wrong",
-          message: `Yanlış! ${shapeEntry.target.name}, ${regionName} bölgesindedir. Aranan: ${currentTarget.label}.`,
+          message: `Yanlış. ${shapeEntry.target.name}, ${regionName} Bölgesi'nde. Aradığın bölge: ${currentTarget.label}.`,
         });
 
         if (difficulty === "klasik" && wrongCount + 1 >= 3) {
@@ -591,7 +591,7 @@ export function V2GameScreen({
 
     setLastFeedback({
       type: "revealed",
-      message: `Cevap: ${currentTarget.label} (0 Puan). Haritada sarı ile işaretlendi.`,
+      message: `Cevap: ${currentTarget.label}. Bu sorudan puan alamazsın.`,
     });
 
     // Smart region focus (T-015): province mode reveals one plate; region mode's target id
@@ -626,7 +626,7 @@ export function V2GameScreen({
 
     const shapeEntry = targetEntries.find((s) => s.plateCode === currentTarget.id);
     const regionName = shapeEntry?.target?.region ? regionLabels[shapeEntry.target.region] : "";
-    return `İpucu: Bu il ${regionName} bölgesindedir. Plaka Kodu: ${currentTarget.id}`;
+    return `İpucu: ${regionName} Bölgesi'nde, plaka kodu ${currentTarget.id}.`;
   };
 
   // Submit round to API
@@ -763,7 +763,7 @@ export function V2GameScreen({
           <div className="flex items-center gap-2">
             <Link href={region ? "/oyun/bolge-bolge-il" : "/oyun"}>
               <Button variant="outline" size="sm" leftIcon={<RotateCcw className="size-3.5" />}>
-                Oyun Hub&apos;ına Dön
+                {region ? "Bölgelere Dön" : "Oyunlara Dön"}
               </Button>
             </Link>
             <Button
@@ -788,20 +788,11 @@ export function V2GameScreen({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
+                {/* The badge alone: a second line beside it said "81 İl Sınavı" next to
+                    "81 İl Bulma", and on the regional rounds repeated `modeName` verbatim. */}
                 <Badge variant="primary" size="sm" icon={<Gamepad2 className="size-3.5" />}>
                   {modeName}
                 </Badge>
-                <span className="text-xs text-muted-foreground font-medium">
-                  {mode === "provinces" && !region
-                    ? "81 İl Sınavı"
-                    : mode === "regions"
-                      ? "7 Coğrafi Bölge"
-                      : // The remaining case is the region-scoped province quiz
-                        // (`/oyun/bolge-bolge-il/[bolge]`), whose `modeName` prop already IS
-                        // "{region} İlleri" — appending " İlleri" again produced "Ege İlleri
-                        // İlleri" (T-017).
-                        modeName}
-                </span>
               </div>
             </div>
 
@@ -823,7 +814,7 @@ export function V2GameScreen({
                   }`}
                 >
                   {d === "klasik" && "Klasik (3 Hak)"}
-                  {d === "zamana-karsi" && "Zamana Karşı (60s)"}
+                  {d === "zamana-karsi" && "Zamana Karşı (60 sn)"}
                   {d === "alistirma" && "Alıştırma (Sınırsız)"}
                 </button>
               ))}
@@ -856,7 +847,7 @@ export function V2GameScreen({
               type="button"
               onClick={landscape.toggle}
               aria-pressed={landscape.active}
-              aria-label={landscape.active ? "Tam ekrandan çık" : "Tam ekran / yatay modda oyna"}
+              aria-label={landscape.active ? "Tam ekrandan çık" : "Tam ekranda, yatay oyna"}
               className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
             >
               {landscape.active ? (
@@ -878,7 +869,7 @@ export function V2GameScreen({
               className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
             >
               <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
-              <span>Daha geniş bir görünüm için telefonunu yatay çevir.</span>
+              <span>Harita daha büyük görünsün diye telefonunu yan çevir.</span>
               <button
                 type="button"
                 onClick={landscape.exit}
@@ -898,7 +889,7 @@ export function V2GameScreen({
                 </div>
                 <div>
                   <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                    Kâşif XP
+                    Puan
                   </span>
                   <span className="font-heading text-lg font-bold text-primary font-mono">
                     {score}
@@ -926,7 +917,7 @@ export function V2GameScreen({
                 </div>
                 <div>
                   <span className="text-[10px] text-muted-foreground uppercase font-bold block">
-                    Seri (Streak)
+                    Seri
                   </span>
                   <span className="font-heading text-lg font-bold text-foreground font-mono">
                     {streak} 🔥
@@ -944,7 +935,7 @@ export function V2GameScreen({
                       Kalan Süre
                     </span>
                     <span className="font-heading text-lg font-bold text-destructive font-mono">
-                      {timer}s
+                      {timer} sn
                     </span>
                   </div>
                 </div>
@@ -1025,7 +1016,7 @@ export function V2GameScreen({
                     onClick={handleAdvanceNext}
                     rightIcon={<ArrowRight className="size-3.5" />}
                   >
-                    Sıradaki Soruya Geç
+                    Sıradaki Soru
                   </Button>
                 )}
               </div>
@@ -1048,7 +1039,7 @@ export function V2GameScreen({
                   <span>
                     {getSmartHint()}{" "}
                     <em className="opacity-80">
-                      (İpucu kullanıldığı için bu sorunun maksimum puanı %50&apos;ye düşürüldü)
+                      (İpucu aldın, bu sorudan alacağın puan yarıya iner.)
                     </em>
                   </span>
                 </div>
@@ -1154,7 +1145,7 @@ export function V2GameScreen({
                 onPointerMove={handleTouchPointerMove}
                 onPointerUp={handleTouchPointerUp}
                 onPointerCancel={handleTouchPointerUp}
-                aria-label="Türkiye İnteraktif Oyun Haritası"
+                aria-label="Türkiye oyun haritası"
               >
                 {/* Background Neighbor Countries. `--map-context-land`, NOT `--map-land`: the
                   country fill on this board is `fill-card`, and `--map-land` against `--card`
@@ -1278,12 +1269,10 @@ export function V2GameScreen({
                     <Gamepad2 className="size-8" />
                   </div>
                   <div className="max-w-md space-y-1">
-                    <h2 className="font-heading text-2xl font-bold text-foreground">
-                      {modeName} Başlamaya Hazır
-                    </h2>
+                    <h2 className="font-heading text-2xl font-bold text-foreground">{modeName}</h2>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      Seçtiğiniz zorluk seviyesine göre harita üzerinde doğru konumları en yüksek
-                      başarı yüzdesiyle işaretleyin.
+                      Yukarıdan zorluğu seç: Klasik&apos;te üç yanlışta tur biter, Zamana
+                      Karşı&apos;da 60 saniyen var, Alıştırma&apos;da sınır yok.
                     </p>
                   </div>
                   <Button
@@ -1292,7 +1281,7 @@ export function V2GameScreen({
                     onClick={handleStartGameClick}
                     leftIcon={<Zap className="size-4" />}
                   >
-                    Sınavı Başlat
+                    Turu Başlat
                   </Button>
                 </div>
               )}
@@ -1326,12 +1315,12 @@ export function V2GameScreen({
                     >
                       {correctPlates.size + correctRegions.size === 0 ||
                       normalizedAcademicScore === 0
-                        ? "Puan Alınamadı"
+                        ? "Puan Yok"
                         : endedEarly
-                          ? "Yarım Tur Tamamlandı"
+                          ? "Yarım Tur"
                           : wrongCount >= 3 && difficulty === "klasik"
-                            ? "3 Hata Limiti Doldu"
-                            : "Tur Tamamlandı"}
+                            ? "3 Yanlış"
+                            : "Tur Bitti"}
                     </Badge>
                     <h2
                       ref={resultHeadingRef}
@@ -1340,20 +1329,20 @@ export function V2GameScreen({
                     >
                       {correctPlates.size + correctRegions.size === 0 ||
                       normalizedAcademicScore === 0
-                        ? "Tur Sona Erdi (Puan Alınamadı) — Tekrar Dene!"
+                        ? "Bu Tur Puansız Bitti"
                         : endedEarly
-                          ? "Yarım Tur Sonuçları"
+                          ? "Turu Erken Bitirdin"
                           : wrongCount >= 3 && difficulty === "klasik"
-                            ? "Tur Tamamlanamadı — Tekrar Dene!"
-                            : "Tebrikler, Harita Turunu Tamamladın!"}
+                            ? "Hakların Bitti"
+                            : "İşte Sonucun"}
                     </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       {correctPlates.size + correctRegions.size === 0 ||
                       normalizedAcademicScore === 0
-                        ? "Bu turda hiç puan kazanamadın. İpuçlarından yararlanarak tekrar dene!"
+                        ? "Takıldığın soruda ipucu al; olmazsa önce Alıştırma'da dene."
                         : endedEarly
                           ? `${questions.length} sorunun ${questionScores.length} tanesini oynadın.`
-                          : "Mekânsal hafıza sınavını bitirdin. İşte performans raporun:"}
+                          : "Başarı yüzdesi soru puanlarının ortalamasıdır. Toplam puanda art arda doğru bilmenin getirdiği ek de var."}
                     </p>
                   </div>
 
@@ -1361,7 +1350,7 @@ export function V2GameScreen({
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg w-full">
                     <div className="p-3 rounded-2xl bg-card border border-border">
                       <span className="text-[10px] text-muted-foreground block font-bold">
-                        Başarı Skoru
+                        Başarı
                       </span>
                       <span className="font-heading text-2xl font-bold text-primary font-mono">
                         %{normalizedAcademicScore}
@@ -1369,7 +1358,7 @@ export function V2GameScreen({
                     </div>
                     <div className="p-3 rounded-2xl bg-card border border-border">
                       <span className="text-[10px] text-muted-foreground block font-bold">
-                        Toplam XP
+                        Toplam Puan
                       </span>
                       <span className="font-heading text-2xl font-bold text-foreground font-mono">
                         {score}
@@ -1385,7 +1374,7 @@ export function V2GameScreen({
                     </div>
                     <div className="p-3 rounded-2xl bg-card border border-border">
                       <span className="text-[10px] text-muted-foreground block font-bold">
-                        Derece
+                        Yıldız
                       </span>
                       <div className="flex items-center justify-center gap-0.5 mt-1">
                         {/* The COUNT of filled stars is the value; the gold is brand accent on an
@@ -1409,7 +1398,7 @@ export function V2GameScreen({
                     <div className="max-w-md w-full p-3 rounded-2xl bg-card/90 border border-border text-left space-y-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
                         <BookOpen className="size-3.5 text-primary" />
-                        <span>Bilemediklerini Tekrar Et:</span>
+                        <span>Bilemediklerin:</span>
                       </div>
                       <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
                         {missedItems.map((item) => (
@@ -1440,7 +1429,7 @@ export function V2GameScreen({
                         className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-muted text-muted-foreground text-xs font-medium"
                       >
                         <Spinner size="sm" decorative className="text-primary" />
-                        <span>Skorunuz profilinize kaydediliyor...</span>
+                        <span>Puanın kaydediliyor…</span>
                       </div>
                     )}
                     {/* BACKDROP: the finish overlay, `bg-background/95 backdrop-blur-md` over the
@@ -1456,13 +1445,13 @@ export function V2GameScreen({
                     {saveStatus === "saved" && (
                       <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-success/15 border border-success/30 text-success-strong text-xs font-semibold">
                         <CheckCircle2 className="size-3.5" />
-                        <span>Skor profilinize kaydedildi</span>
+                        <span>Puanın hesabına kaydedildi</span>
                       </div>
                     )}
                     {saveStatus === "failed" && (
                       <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-destructive/15 border border-destructive/30 text-destructive-strong text-xs font-semibold">
                         <XCircle className="size-3.5" />
-                        <span>Skor kaydedilemedi</span>
+                        <span>Puan kaydedilemedi</span>
                         <button
                           type="button"
                           onClick={() => {
@@ -1490,7 +1479,7 @@ export function V2GameScreen({
                     <V2LeaderboardButton mode={submitModeTag} size="lg" />
                     <Link href={region ? "/oyun/bolge-bolge-il" : "/oyun"}>
                       <Button variant="outline" size="lg">
-                        Mod Seçimine Dön
+                        {region ? "Başka Bölge Seç" : "Başka Oyun Seç"}
                       </Button>
                     </Link>
                   </div>

@@ -98,8 +98,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
           </div>
           <DialogTitle className="text-2xl">{modeTitle}</DialogTitle>
           <DialogDescription>
-            Tüm coğrafya meraklıları arasında bu modda elde edilen en yüksek skorlar ve rekor
-            süreler.
+            Bu oyunda kaydedilen en yüksek puanlar ve bitirme süreleri.
           </DialogDescription>
         </DialogHeader>
 
@@ -115,8 +114,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                   Giriş Yapman Gerekiyor
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Liderlik tablosunda yer alan oyuncuları incelemek ve kazandığın skorla listeye
-                  adını yazdırmak için hesabına giriş yap.
+                  Tabloyu görmek için giriş yap. Bitirdiğin turlar da bu listede sıralanır.
                 </p>
               </div>
               <Button variant="primary" size="sm" onClick={handleSignIn} className="gap-2">
@@ -130,12 +128,12 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
               className="h-full min-h-[280px] flex flex-col items-center justify-center gap-3 text-muted-foreground"
             >
               <Spinner size="lg" decorative className="text-primary" />
-              <span className="text-sm font-medium">Liderlik tablosu yükleniyor...</span>
+              <span className="text-sm font-medium">Tablo yükleniyor…</span>
             </div>
           ) : displayError === "failed" ? (
             <div className="h-full min-h-[280px] flex flex-col items-center justify-center text-center p-8 text-muted-foreground space-y-2">
-              <p className="text-sm font-medium text-foreground">Sıralama verisi alınamadı</p>
-              <p className="text-xs">Bağlantı sırasında bir sorun oluştu. Lütfen tekrar deneyin.</p>
+              <p className="text-sm font-medium text-foreground">Sıralama yüklenemedi</p>
+              <p className="text-xs">Bağlantıda bir sorun çıktı. Birazdan yeniden dene.</p>
               <Button variant="outline" size="sm" onClick={() => setPage(1)}>
                 Tekrar Dene
               </Button>
@@ -147,11 +145,10 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
               </div>
               <div className="space-y-1 max-w-sm">
                 <h3 className="font-heading font-semibold text-foreground">
-                  Henüz Kayıtlı Skor Yok
+                  Henüz Kayıtlı Puan Yok
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  Bu modda henüz tamamlanmış ve kaydedilmiş bir sınav skoru bulunmuyor. İlk skoru
-                  kaydeden sen ol!
+                  Bir tur bitirirsen listede ilk sen görünürsün.
                 </p>
               </div>
             </div>
@@ -163,7 +160,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                     <tr className="border-b border-border bg-muted/50 text-muted-foreground font-semibold">
                       <th className="py-2.5 px-3 w-16 text-center">Sıra</th>
                       <th className="py-2.5 px-3">Oyuncu</th>
-                      <th className="py-2.5 px-3 text-right">Skor</th>
+                      <th className="py-2.5 px-3 text-right">Puan</th>
                       <th className="py-2.5 px-3 text-right hidden sm:table-cell">İsabet</th>
                       <th className="py-2.5 px-3 text-right hidden sm:table-cell">Süre</th>
                       <th className="py-2.5 px-3 text-right hidden md:table-cell">Tarih</th>
@@ -314,7 +311,7 @@ export function V2LeaderboardButton({
         size={size}
         onClick={() => setOpen(true)}
         className={`gap-1.5 text-xs font-semibold ${className}`}
-        aria-label="Lider tablosunu görüntüle"
+        aria-label="Lider tablosunu aç"
       >
         <Trophy className="size-3.5" />
         <span>Lider Tablosu</span>

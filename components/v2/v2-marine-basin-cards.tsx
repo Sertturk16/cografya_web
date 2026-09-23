@@ -3,13 +3,15 @@ import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Waves, Thermometer, ArrowRight, Sparkles, Droplets } from "lucide-react";
+import { Thermometer, ArrowRight, Sparkles, Droplets } from "lucide-react";
 import { basinIdentityOf } from "@/lib/theme/basin-identity";
 
 export interface SeaBasinInfo {
   id: "black_sea" | "marmara" | "aegean" | "mediterranean";
   nameTr: string;
   nameEn: string;
+  /** The visible text of the card's link to the basin page. */
+  pageLabel: string;
   /**
    * The basin's colour, read from `lib/theme/basin-identity.ts` by `id`.
    *
@@ -35,61 +37,64 @@ export const BASIN_DATA: SeaBasinInfo[] = [
     id: "black_sea",
     nameTr: "Karadeniz Havzası",
     nameEn: "Black Sea Basin",
+    pageLabel: "Karadeniz Sayfası",
     identity: basinIdentityOf("black_sea"),
     icon: "Waves",
     stationCount: 15,
     coastalProvinceCount: 15,
     avgSummerTemp: "24.5°C – 26.5°C",
     avgWinterTemp: "7.0°C – 9.5°C",
-    salinity: "%o17 – %o18 (En Düşük)",
+    salinity: "‰17 – ‰18 (en düşük)",
     maxDepth: "2.212 m",
     areaKm2: "436.400 km²",
     keyCharacteristics: [
-      "200 metrenin altında H2S (hidrojen sülfür) gazı nedeniyle canlı yaşamı yoktur.",
-      "Tuna, Dinyester, Dinyeper ve Kızılırmak gibi dev nehirlerle beslenir; bol tatlı su girdisi vardır.",
-      "Bol plankton ve oksijen zenginliği sayesinde Türkiye balıkçılığının %70'inden fazlasını karşılar.",
+      "Suyunun yaklaşık %90'ı oksijensiz: 200 metreden derinde su hidrojen sülfürle dolu ve balık yaşamaz.",
+      "Tuna, Dinyester, Dinyeper ve Kızılırmak bol tatlı su getirir. Tuzluluğun bu kadar düşük olmasının nedeni bu.",
+      "Türkiye'nin denizlerden avladığı balığın yaklaşık üçte ikisi Karadeniz'den çıkar.",
     ],
     currentSystem:
-      "Saat yönünün tersine dönen siklonik genel akıntı halkası (Rim Current) hâkimdir.",
+      "Ana akıntı kıyıyı izleyerek denizin çevresinde bir halka çizer ve saat yönünün tersine döner.",
   },
   {
     id: "marmara",
     nameTr: "Marmara Denizi",
     nameEn: "Sea of Marmara",
+    pageLabel: "Marmara Sayfası",
     identity: basinIdentityOf("marmara"),
     icon: "Anchor",
     stationCount: 6,
     coastalProvinceCount: 7,
     avgSummerTemp: "23.5°C – 25.5°C",
     avgWinterTemp: "8.5°C – 10.5°C",
-    salinity: "%o22 (Yüzey) / %o38 (Dip)",
+    salinity: "‰22 yüzeyde, ‰38 dipte",
     maxDepth: "1.370 m (Çınarcık Çukuru)",
     areaKm2: "11.350 km²",
     keyCharacteristics: [
-      "Tamamı Türkiye sınırları içerisinde yer alan jeolojik bir 'İç Deniz'dir.",
-      "İstanbul ve Çanakkale Boğazları ile iki farklı su kütlesini birbirine bağlar.",
-      "Kuzey Anadolu Fay Hattı deniz tabanından geçer; 3 büyük derin tektonik çukurluk bulunur.",
+      "Tüm kıyıları Türkiye'de kalan bir iç deniz.",
+      "İstanbul Boğazı'yla Karadeniz'e, Çanakkale Boğazı'yla Ege'ye bağlanır; iki ayrı denizin suyu burada buluşur.",
+      "Kuzey Anadolu Fayı tabanından geçer. Tabanda üç derin çukur var, en derini Çınarcık Çukuru.",
     ],
     currentSystem:
-      "İki tabakalı akıntı: Yüzeyde Karadeniz'den Ege'ye, dipte Akdeniz'den Karadeniz'e yoğun alt akıntı.",
+      "Su iki kat hâlinde akar: üstte Karadeniz suyu Ege'ye, dipte daha tuzlu Akdeniz suyu Karadeniz'e doğru.",
   },
   {
     id: "aegean",
     nameTr: "Ege Denizi",
     nameEn: "Aegean Sea",
+    pageLabel: "Ege Sayfası",
     identity: basinIdentityOf("aegean"),
     icon: "Sailboat",
     stationCount: 5,
     coastalProvinceCount: 5,
     avgSummerTemp: "25.0°C – 27.5°C",
     avgWinterTemp: "12.0°C – 14.5°C",
-    salinity: "%o33 – %o37 (Orta-Yüksek)",
+    salinity: "‰33 – ‰37",
     maxDepth: "2.561 m",
     areaKm2: "214.000 km²",
     keyCharacteristics: [
-      "Enine kıyı tipi nedeniyle Türkiye'nin en uzun kıyı şeridine (3.484 km adalar dahil) sahiptir.",
-      "Yüzlerce ada, koy, körfez ve doğal liman ile zengin deniz turizmi potansiyeli barındırır.",
-      "Kıta sahanlığı geniştir; dağlar denize dik uzanır ve deniz etkisi iç kesimlere sokulur.",
+      "Dağlar denize dik indiği için kıyı girintili çıkıntılı. Adalarla birlikte 3.484 km ile Türkiye'nin en uzun kıyısı.",
+      "Yüzlerce ada, koy, körfez ve doğal liman var; deniz turizmi bunların üzerine kurulu.",
+      "Kıta sahanlığı geniş. Vadiler denize açıldığı için deniz etkisi iç kesimlere kadar ulaşır.",
     ],
     currentSystem:
       "Boğazlardan gelen az tuzlu su batı kıyısından güneye, Akdeniz suyu doğu kıyısından kuzeye akar.",
@@ -98,22 +103,22 @@ export const BASIN_DATA: SeaBasinInfo[] = [
     id: "mediterranean",
     nameTr: "Akdeniz Havzası",
     nameEn: "Mediterranean Sea",
+    pageLabel: "Akdeniz Sayfası",
     identity: basinIdentityOf("mediterranean"),
     icon: "SunMedium",
     stationCount: 4,
     coastalProvinceCount: 4,
-    avgSummerTemp: "28.5°C – 30.5°C (En Sıcak)",
+    avgSummerTemp: "28.5°C – 30.5°C (en sıcak)",
     avgWinterTemp: "16.0°C – 18.0°C",
-    salinity: "%o38 – %o39 (En Tuzlu)",
+    salinity: "‰38 – ‰39 (en yüksek)",
     maxDepth: "5.267 m (Calypso Çukuru)",
     areaKm2: "2.500.000 km²",
     keyCharacteristics: [
-      "Güneşlenme süresi ve buharlaşmanın en yüksek olduğu, Türkiye'nin en sıcak ve tuzlu denizidir.",
-      "Boyuna kıyı tipi hâkimdir; Toros Dağları kıyıya paralel uzandığı için falezler yaygındır.",
-      "Kızıldeniz'den Süveyş Kanalı üzerinden gelen 'Lessepsiyen' tropikal göçmen türlere ev sahipliği yapar.",
+      "Güneş en uzun burada parlar, buharlaşma en çok burada olur. Türkiye'nin en sıcak ve en tuzlu denizi bu yüzden Akdeniz.",
+      "Toroslar kıyıya paralel uzanır; bu boyuna kıyıda dik falezler sık görülür.",
+      "Süveyş Kanalı'ndan geçip Kızıldeniz'den gelen tropikal türler burada yaşar. Bunlara Lessepsiyen türler denir.",
     ],
-    currentSystem:
-      "Doğu Akdeniz'de saat yönünün tersine dönen sıcak kıyı akıntısı sistemi etkindir.",
+    currentSystem: "Sıcak bir kıyı akıntısı Doğu Akdeniz'i saat yönünün tersine dolaşır.",
   },
 ];
 
@@ -126,23 +131,15 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
     <section className="space-y-6" aria-labelledby="v2-marine-basins-heading">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <Badge variant="primary" size="sm" icon={<Waves className="size-3.5" />}>
-              Oşinografi Atlası
-            </Badge>
-            <span className="text-xs font-semibold text-muted-foreground">
-              4 Deniz Havzası Analizi
-            </span>
-          </div>
           <h2
             id="v2-marine-basins-heading"
             className="font-heading text-2xl sm:text-3xl font-bold tracking-tight text-primary"
           >
-            Türkiye&apos;yi Çevreleyen 4 Denizin Hidrografik Yapısı
+            Dört Denizi Karşılaştır
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Karadeniz, Marmara, Ege ve Akdeniz&apos;in tuzluluk, sıcaklık, derinlik ve akıntı
-            karakteristikleri.
+            Karadeniz en az tuzlu, Akdeniz en sıcak ve en tuzlu olanı. Farkın nedeni her denizin ne
+            kadar tatlı su aldığında ve ne kadar buharlaştığında.
           </p>
         </div>
       </div>
@@ -156,13 +153,12 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <Badge variant="outline" className={basin.identity.badge}>
-                  {basin.stationCount} Canlı İstasyon • {basin.coastalProvinceCount} Kıyı İli
+                  {basin.stationCount} Nokta • {basin.coastalProvinceCount} Kıyı İli
                 </Badge>
                 <span className="text-[11px] font-mono text-muted-foreground">{basin.areaKm2}</span>
               </div>
               <CardTitle className="text-xl font-heading font-bold text-foreground group-hover:text-primary transition-colors flex items-center justify-between">
                 <span>{basin.nameTr}</span>
-                <span className="text-xs font-normal text-muted-foreground">({basin.nameEn})</span>
               </CardTitle>
               <CardDescription className="text-xs flex items-center gap-4 pt-1">
                 <span className="flex items-center gap-1">
@@ -178,7 +174,7 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
               {/* Metric Box */}
               <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-3 border border-border/60">
                 <div className="space-y-0.5">
-                  <span className="text-[10px] text-muted-foreground block">Maksimum Derinlik</span>
+                  <span className="text-[10px] text-muted-foreground block">En Derin Yeri</span>
                   <span className="font-mono font-bold text-foreground">{basin.maxDepth}</span>
                 </div>
                 <div className="space-y-0.5">
@@ -189,7 +185,7 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
 
               {/* Current System Note */}
               <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 text-[11px]">
-                <span className="font-bold text-primary block mb-0.5">Akıntı Rejimi:</span>
+                <span className="font-bold text-primary block mb-0.5">Akıntılar:</span>
                 <span className="text-muted-foreground">{basin.currentSystem}</span>
               </div>
 
@@ -220,7 +216,7 @@ export function V2MarineBasinCards({ onSelectBasin }: V2MarineBasinCardsProps) {
                   }
                   className="inline-flex items-center justify-center h-8 px-3 rounded-md bg-primary text-white hover:bg-primary text-xs font-bold shadow-xs transition-all w-full"
                 >
-                  <span>{basin.nameTr} Atlası</span>
+                  <span>{basin.pageLabel}</span>
                   <ArrowRight className="size-3.5 ml-1" />
                 </Link>
 
