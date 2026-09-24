@@ -124,7 +124,7 @@ async function loadBasinPoints(
   return marinePoints;
 }
 
-async function BasinTelemetry({
+async function BasinTelemetryTable({
   locale,
   format,
 }: {
@@ -133,6 +133,28 @@ async function BasinTelemetry({
 }) {
   const marinePoints = await loadBasinPoints(locale, format);
   return <V2BasinTelemetry basinNameTr={basinData.nameTr} marinePoints={marinePoints} />;
+}
+
+/**
+ * The Suspense boundary lives INSIDE this Server Component rather than in the page's prop
+ * expression on purpose. `V2SeaBasinDetailView` is a Client Component that renders `{telemetry}`
+ * among its other children; a bare `<Suspense>` element handed across that boundary arrives on
+ * the client without React's JSX key validation and dev logs "Each child in a list should have a
+ * unique key" on every basin page (measured on `/deniz/marmara`, 2026-09-24). A Server Component
+ * element in the same slot — the shape `faq` has always had — does not.
+ */
+function BasinTelemetry({
+  locale,
+  format,
+}: {
+  locale: Locale;
+  format: Awaited<ReturnType<typeof getFormatter>>;
+}) {
+  return (
+    <Suspense fallback={<ProseSkeleton lines={6} />}>
+      <BasinTelemetryTable locale={locale} format={format} />
+    </Suspense>
+  );
 }
 
 export default async function V2KaradenizPage({ params }: PageProps) {
@@ -188,11 +210,7 @@ export default async function V2KaradenizPage({ params }: PageProps) {
       <PageContainer>
         <V2SeaBasinDetailView
           data={basinView}
-          telemetry={
-            <Suspense fallback={<ProseSkeleton lines={6} />}>
-              <BasinTelemetry locale={locale} format={format} />
-            </Suspense>
-          }
+          telemetry={<BasinTelemetry locale={locale} format={format} />}
           breadcrumbItems={breadcrumbItems}
           /* The FAQ block is built HERE and handed to the view as a prop. `FaqSection` emits the
              `FAQPage` JSON-LD beside the questions from the one `basinData.faq` array, which is
