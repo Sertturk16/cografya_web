@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense, cache } from "react";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
@@ -8,6 +9,7 @@ import { LocatorMap } from "@/components/map/locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { ProseSkeleton } from "@/components/patterns/page-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -133,29 +135,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-export default async function V2CountryDetailPage({ params }: PageProps) {
-  const { locale, slug } = await params;
-  setRequestLocale(locale);
-
-  const country = await getCountryBySlug(slug);
-  if (!country) {
-    notFound();
-  }
-
-  const t = await getTranslations("CountryDetail");
-  const tContinents = await getTranslations("Continents");
-  const format = await getFormatter();
-
+/**
+ * Neighbour resolution — `getCountries` is itself `cache()`-wrapped (Task 2), but wrapped again
+ * here so `NeighboursNavPill` and `NeighboursSection` resolving this in the same render (they
+ * both do, one behind each of their own Suspense boundaries) fetch once. Keyed on `country`
+ * object identity, stable across one render: the page builds one `country` and passes the same
+ * reference to both callers. `t` is obtained inside via `getTranslations` (next-intl memoizes it
+ * per request) so `neighborLabel` — a closure over `country`, `locale` and `t` — can live here
+ * instead of in the page body.
+ */
+const loadNeighbours = cache(async (country: CountryDetail, locale: Locale, slug: string) => {
+  const t = await getTranslations({ locale, namespace: "CountryDetail" });
   const isTr = locale === "tr";
-  const name = nameForLocale(country, locale);
-  const continent = tContinents(country.continent);
-  const capital = locale === "en" ? country.capitalNameEn : country.capitalNameTr;
-  const localizedStatusLabel = locale === "en" ? country.statusLabelEn : country.statusLabelTr;
-  const continentTheme = CONTINENT_META[country.continent] ?? CONTINENT_META.AVRUPA!;
-  const continentSlug = CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika";
-
-  const path = `/dunya/${slugForLocale(country, locale)}`;
-
   const neighborLabel = (nName: string, iso: string): string => {
     const via = neighborViaTerritory(country.isoCode, iso, locale);
     return via === null ? nName : t(via.key, { name: nName, territory: via.territory });
@@ -185,6 +176,209 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
   } catch (error) {
     console.warn(`[v2:country:${slug}] neighbour resolution skipped: ${String(error)}`);
   }
+
+  // Same expression as `isSpecialGeography` in the page body below (used there by sections that
+  // do not need the neighbour list itself), duplicated here because this composite is cached
+  // independently and must not depend on the page body having run first.
+  const isSpecialStatus = isSpecialStatusRow(country.sovereigntyNoteTr);
+  const isSpecialGeography = isSpecialStatus || country.entityType === "special";
+  // §5.2.3 Decision 0 — the neighbours section is suppressed for the four special-geography
+  // rows at zero neighbours (Decision 2), AND for the divergent state where the contract says
+  // there are neighbours but the resolved array came back empty because the fetch failed
+  // (asserts nothing rather than rendering a false "no border" claim, VALB133R2-NEW-I1).
+  const showsNeighbourSection =
+    !(isSpecialGeography && country.neighborCount === 0) &&
+    !(country.neighborCount > 0 && neighbors.length === 0);
+
+  return { neighbors, showsNeighbourSection };
+});
+
+async function NeighboursNavPill({
+  country,
+  locale,
+  slug,
+}: {
+  country: CountryDetail;
+  locale: Locale;
+  slug: string;
+}) {
+  const t = await getTranslations({ locale, namespace: "CountryDetail" });
+  const { showsNeighbourSection } = await loadNeighbours(country, locale, slug);
+  return showsNeighbourSection ? (
+    <a
+      href="#komsular"
+      className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
+    >
+      {t("sectionNavBorders")}
+    </a>
+  ) : null;
+}
+
+async function NeighboursSection({
+  country,
+  locale,
+  slug,
+  name,
+  continent,
+  headingText,
+}: {
+  country: CountryDetail;
+  locale: Locale;
+  slug: string;
+  name: string;
+  continent: string;
+  headingText: string;
+}) {
+  const t = await getTranslations({ locale, namespace: "CountryDetail" });
+  const { neighbors, showsNeighbourSection } = await loadNeighbours(country, locale, slug);
+  return showsNeighbourSection ? (
+    <section id="komsular" className="scroll-mt-28 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+        <div className="space-y-1">
+          <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
+            <Globe className="size-6 text-primary shrink-0" />
+            <span>
+              {headingText}
+              {neighbors.length > 0 ? ` (${neighbors.length})` : ""}
+            </span>
+          </h2>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          {country.neighborCount === 0
+            ? t("neighboursHelperIsland")
+            : t("neighboursHelperWithNeighbours")}
+        </span>
+      </div>
+
+      {country.neighborCount === 0 ? (
+        <div className="p-8 rounded-3xl border border-dashed border-border bg-card/60 text-center space-y-3">
+          <div className="size-12 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center">
+            <Waves className="size-6" />
+          </div>
+          <h3 className="font-heading font-bold text-lg text-foreground">
+            {t("islandCountryHeading")}
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            {t("islandCountryBody", { name })}
+          </p>
+          <div className="pt-2">
+            <Link href="/dunya">
+              <Button variant="outline" size="sm" leftIcon={<Globe className="size-4" />}>
+                {t("islandCountryCta", { continent })}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {neighbors.map((nb) => {
+            const nbIsSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(nb.iso.toUpperCase());
+            // Same decision module as the subject country's own flag above — not a
+            // second copy of the rule that happens to agree. Membership comes from the
+            // ISO set because neighbours are resolved from the list endpoint, which
+            // carries no `sovereigntyNoteTr`.
+            const showsNeighbourFlag =
+              hasFlag(nb.iso) && showsCountryFlagForStatus(locale, nbIsSpecialStatus);
+            return nb.kind === "link" ? (
+              <Link
+                key={nb.iso}
+                href={{ pathname: "/dunya/[slug]", params: { slug: nb.slug } }}
+                className="p-4 rounded-2xl border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-all group flex items-start justify-between gap-3 shadow-xs hover:shadow-md cursor-pointer"
+              >
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {showsNeighbourFlag && (
+                      /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
+                      <img
+                        src={`/flags/${nb.iso.toUpperCase()}.svg`}
+                        alt={t("neighbourFlagAlt", { name: nb.label })}
+                        width={22}
+                        height={15}
+                        className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
+                      />
+                    )}
+                    <span className="font-mono text-[10px] text-muted-foreground font-semibold">
+                      #{nb.iso}
+                    </span>
+                    {nbIsSpecialStatus && (
+                      <Badge
+                        variant="outline"
+                        className="bg-warning/15 text-warning-strong border-warning/30 text-[10px] px-1.5 py-0"
+                      >
+                        {t("specialStatusBadge")}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="font-heading font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
+                    {nb.label}
+                  </div>
+                </div>
+                <ArrowUpRight className="size-4 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 mt-1" />
+              </Link>
+            ) : (
+              <div
+                key={nb.iso}
+                className="p-4 rounded-2xl border border-border/60 bg-muted/30 flex items-start justify-between gap-3"
+              >
+                <div className="space-y-1.5 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {showsNeighbourFlag && (
+                      /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
+                      <img
+                        src={`/flags/${nb.iso.toUpperCase()}.svg`}
+                        alt={t("neighbourFlagAlt", { name: nb.label })}
+                        width={22}
+                        height={15}
+                        className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
+                      />
+                    )}
+                    <span className="font-mono text-[10px] text-muted-foreground font-semibold">
+                      #{nb.iso}
+                    </span>
+                    {nbIsSpecialStatus && (
+                      <Badge
+                        variant="outline"
+                        className="bg-warning/15 text-warning-strong border-warning/30 text-[10px] px-1.5 py-0"
+                      >
+                        {t("specialStatusBadge")}
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="font-heading font-medium text-sm text-muted-foreground truncate">
+                    {nb.label}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  ) : null;
+}
+
+export default async function V2CountryDetailPage({ params }: PageProps) {
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
+
+  const country = await getCountryBySlug(slug);
+  if (!country) {
+    notFound();
+  }
+
+  const t = await getTranslations("CountryDetail");
+  const tContinents = await getTranslations("Continents");
+  const format = await getFormatter();
+
+  const isTr = locale === "tr";
+  const name = nameForLocale(country, locale);
+  const continent = tContinents(country.continent);
+  const capital = locale === "en" ? country.capitalNameEn : country.capitalNameTr;
+  const localizedStatusLabel = locale === "en" ? country.statusLabelEn : country.statusLabelTr;
+  const continentTheme = CONTINENT_META[country.continent] ?? CONTINENT_META.AVRUPA!;
+  const continentSlug = CONTINENT_KEY_TO_SLUG[country.continent] ?? "afrika";
+
+  const path = `/dunya/${slugForLocale(country, locale)}`;
 
   const additionalProperty: GeoPropertyValue[] = [];
   if (country.population !== null) {
@@ -269,13 +463,6 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
   const hasLeftColumnCards = Boolean(
     sovereigntyNote || governanceNote || showsGovernanceFallback || settlementNote || economyNote,
   );
-  // §5.2.3 Decision 0 — the neighbours section is suppressed for the four special-geography
-  // rows at zero neighbours (Decision 2), AND for the divergent state where the contract says
-  // there are neighbours but the resolved array came back empty because the fetch failed
-  // (asserts nothing rather than rendering a false "no border" claim, VALB133R2-NEW-I1).
-  const showsNeighbourSection =
-    !(isSpecialGeography && country.neighborCount === 0) &&
-    !(country.neighborCount > 0 && neighbors.length === 0);
 
   return (
     <>
@@ -550,14 +737,9 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
           >
             {t("sectionNavGovernance")}
           </a>
-          {showsNeighbourSection && (
-            <a
-              href="#komsular"
-              className="px-3 py-1 rounded-full bg-card hover:bg-muted border border-border text-foreground transition-colors shrink-0"
-            >
-              {t("sectionNavBorders")}
-            </a>
-          )}
+          <Suspense fallback={null}>
+            <NeighboursNavPill country={country} locale={locale} slug={slug} />
+          </Suspense>
         </div>
       </nav>
 
@@ -1001,130 +1183,16 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
         </section>
 
         {/* SECTION 4: KARA SINIRLARI VE KOMŞU ÜLKELER (EXPANSIVE FULL-WIDTH GRID) */}
-        {showsNeighbourSection && (
-          <section id="komsular" className="scroll-mt-28 space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-              <div className="space-y-1">
-                <h2 className="font-heading text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
-                  <Globe className="size-6 text-primary shrink-0" />
-                  <span>
-                    {sectionHeading("neighbors")}
-                    {neighbors.length > 0 ? ` (${neighbors.length})` : ""}
-                  </span>
-                </h2>
-              </div>
-              <span className="text-xs text-muted-foreground">
-                {country.neighborCount === 0
-                  ? t("neighboursHelperIsland")
-                  : t("neighboursHelperWithNeighbours")}
-              </span>
-            </div>
-
-            {country.neighborCount === 0 ? (
-              <div className="p-8 rounded-3xl border border-dashed border-border bg-card/60 text-center space-y-3">
-                <div className="size-12 rounded-2xl bg-primary/10 text-primary mx-auto flex items-center justify-center">
-                  <Waves className="size-6" />
-                </div>
-                <h3 className="font-heading font-bold text-lg text-foreground">
-                  {t("islandCountryHeading")}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                  {t("islandCountryBody", { name })}
-                </p>
-                <div className="pt-2">
-                  <Link href="/dunya">
-                    <Button variant="outline" size="sm" leftIcon={<Globe className="size-4" />}>
-                      {t("islandCountryCta", { continent })}
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {neighbors.map((nb) => {
-                  const nbIsSpecialStatus = SPECIAL_STATUS_ISO_CODES.has(nb.iso.toUpperCase());
-                  // Same decision module as the subject country's own flag above — not a
-                  // second copy of the rule that happens to agree. Membership comes from the
-                  // ISO set because neighbours are resolved from the list endpoint, which
-                  // carries no `sovereigntyNoteTr`.
-                  const showsNeighbourFlag =
-                    hasFlag(nb.iso) && showsCountryFlagForStatus(locale, nbIsSpecialStatus);
-                  return nb.kind === "link" ? (
-                    <Link
-                      key={nb.iso}
-                      href={{ pathname: "/dunya/[slug]", params: { slug: nb.slug } }}
-                      className="p-4 rounded-2xl border border-border bg-card hover:bg-muted/60 hover:border-primary/40 transition-all group flex items-start justify-between gap-3 shadow-xs hover:shadow-md cursor-pointer"
-                    >
-                      <div className="space-y-1.5 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {showsNeighbourFlag && (
-                            /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
-                            <img
-                              src={`/flags/${nb.iso.toUpperCase()}.svg`}
-                              alt={t("neighbourFlagAlt", { name: nb.label })}
-                              width={22}
-                              height={15}
-                              className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
-                            />
-                          )}
-                          <span className="font-mono text-[10px] text-muted-foreground font-semibold">
-                            #{nb.iso}
-                          </span>
-                          {nbIsSpecialStatus && (
-                            <Badge
-                              variant="outline"
-                              className="bg-warning/15 text-warning-strong border-warning/30 text-[10px] px-1.5 py-0"
-                            >
-                              {t("specialStatusBadge")}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="font-heading font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
-                          {nb.label}
-                        </div>
-                      </div>
-                      <ArrowUpRight className="size-4 text-muted-foreground opacity-60 group-hover:opacity-100 group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all shrink-0 mt-1" />
-                    </Link>
-                  ) : (
-                    <div
-                      key={nb.iso}
-                      className="p-4 rounded-2xl border border-border/60 bg-muted/30 flex items-start justify-between gap-3"
-                    >
-                      <div className="space-y-1.5 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {showsNeighbourFlag && (
-                            /* eslint-disable-next-line @next/next/no-img-element -- Flag icon asset */
-                            <img
-                              src={`/flags/${nb.iso.toUpperCase()}.svg`}
-                              alt={t("neighbourFlagAlt", { name: nb.label })}
-                              width={22}
-                              height={15}
-                              className="w-5.5 h-3.5 object-cover rounded-xs border border-border shrink-0"
-                            />
-                          )}
-                          <span className="font-mono text-[10px] text-muted-foreground font-semibold">
-                            #{nb.iso}
-                          </span>
-                          {nbIsSpecialStatus && (
-                            <Badge
-                              variant="outline"
-                              className="bg-warning/15 text-warning-strong border-warning/30 text-[10px] px-1.5 py-0"
-                            >
-                              {t("specialStatusBadge")}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="font-heading font-medium text-sm text-muted-foreground truncate">
-                          {nb.label}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
-        )}
+        <Suspense fallback={<ProseSkeleton lines={4} />}>
+          <NeighboursSection
+            country={country}
+            locale={locale}
+            slug={slug}
+            name={name}
+            continent={continent}
+            headingText={sectionHeading("neighbors")}
+          />
+        </Suspense>
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-4 border-t border-border">

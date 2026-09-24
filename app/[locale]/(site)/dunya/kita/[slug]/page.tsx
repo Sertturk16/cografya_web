@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
@@ -6,9 +7,14 @@ import { V2RichProse } from "@/components/v2/v2-rich-prose";
 import { V2ContinentLocatorMap } from "@/components/v2/v2-continent-locator-map";
 import { PageContainer } from "@/components/patterns/page-container";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
+import { PlateSkeleton, ProseSkeleton } from "@/components/patterns/page-skeleton";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
-import { getAllContinents, getContinentBySlug } from "@/lib/geo/continents";
+import {
+  getAllContinents,
+  getContinentBySlug,
+  type ContinentDetailData,
+} from "@/lib/geo/continents";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
 import { FaqSection } from "@/components/patterns/faq-section";
@@ -88,6 +94,98 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
+/**
+ * The interactive locator map. `getCountryMapSummaryResilient` is itself `cache()`-wrapped
+ * (Task 2), so this and `ContinentDirectory` calling it independently, each behind its own
+ * Suspense boundary, still fetch once per request.
+ */
+async function ContinentLocator({ continent }: { continent: ContinentDetailData; locale: Locale }) {
+  const all = await getCountryMapSummaryResilient();
+  const continentCountries = all.filter((c) => c.continent === continent.id);
+  return (
+    <V2ContinentLocatorMap
+      continentName={continent.nameTr}
+      continentSlug={continent.slugTr}
+      countries={continentCountries}
+    />
+  );
+}
+
+/**
+ * The all-countries directory grid, sorted by population descending. Same caching reasoning as
+ * `ContinentLocator` above.
+ */
+async function ContinentDirectory({
+  continent,
+}: {
+  continent: ContinentDetailData;
+  locale: Locale;
+}) {
+  const all = await getCountryMapSummaryResilient();
+  const sortedCountries = [...all.filter((c) => c.continent === continent.id)].sort(
+    (a, b) => (b.population ?? 0) - (a.population ?? 0),
+  );
+  return sortedCountries.length > 0 ? (
+    <div className="space-y-3 pt-4">
+      <div className="flex items-center justify-between">
+        <h3 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
+          <Building2 className="size-4 text-primary" />
+          <span>
+            {continent.nameTr} Ülkeleri ({sortedCountries.length})
+          </span>
+        </h3>
+        <span className="text-xs text-muted-foreground">En kalabalıktan başlayarak</span>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {sortedCountries.map((country) => (
+          <Link
+            key={country.isoCode}
+            href={{
+              pathname: "/dunya/[slug]",
+              params: { slug: country.slugTr },
+            }}
+            className="group rounded-2xl border border-border bg-card p-3 hover:border-primary/50 hover:shadow-xs transition-all flex flex-col justify-between space-y-2"
+          >
+            <div className="flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9 */}
+              <img
+                src={`/flags/${country.isoCode.toUpperCase()}.svg`}
+                alt={`${country.nameTr} bayrağı`}
+                className="w-5 h-3.5 object-cover rounded-xs border border-border shadow-2xs shrink-0"
+              />
+              <span className="font-heading font-bold text-xs text-foreground group-hover:text-primary transition-colors truncate">
+                {country.nameTr}
+              </span>
+            </div>
+
+            <div className="text-[10px] text-muted-foreground space-y-0.5">
+              {country.statusLabelTr ? (
+                <div className="truncate font-medium">{country.statusLabelTr}</div>
+              ) : country.areaKm2 ? (
+                <div className="truncate font-mono">
+                  {country.areaIsApproximate ? "≈" : ""}
+                  {new Intl.NumberFormat("tr-TR").format(country.areaKm2)} km²
+                </div>
+              ) : null}
+              {country.population ? (
+                <div className="font-mono">
+                  {new Intl.NumberFormat("tr-TR").format(country.population)} kişi
+                </div>
+              ) : null}
+            </div>
+
+            <div className="pt-1 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground group-hover:text-primary transition-colors">
+              <span>İncele</span>
+              <ArrowUpRight className="size-3" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  ) : null;
+}
+
 export default async function V2ContinentDetailPage({ params }: PageProps) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
@@ -97,15 +195,6 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
   if (!continent) {
     notFound();
   }
-
-  // Fetch all countries and filter for this continent
-  const allCountries = await getCountryMapSummaryResilient();
-  const continentCountries = allCountries.filter((c) => c.continent === continent.id);
-
-  // Sort countries by population descending
-  const sortedCountries = [...continentCountries].sort(
-    (a, b) => (b.population ?? 0) - (a.population ?? 0),
-  );
 
   const theme = CONTINENT_META[continent.id] ?? CONTINENT_META.AVRUPA!;
   const path = `/dunya/kita/${continent.slugTr}`;
@@ -274,11 +363,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
           </Card>
 
           {/* Interactive World Locator Map */}
-          <V2ContinentLocatorMap
-            continentName={continent.nameTr}
-            continentSlug={continent.slugTr}
-            countries={continentCountries}
-          />
+          <Suspense fallback={<PlateSkeleton aspect="continent" />}>
+            <ContinentLocator continent={continent} locale={locale} />
+          </Suspense>
         </section>
 
         {/* SECTION 2: COĞRAFİ KONUM VE SINIRLAR */}
@@ -409,65 +496,9 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
           )}
 
           {/* All countries interactive directory */}
-          {sortedCountries.length > 0 && (
-            <div className="space-y-3 pt-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-heading font-bold text-base text-foreground flex items-center gap-2">
-                  <Building2 className="size-4 text-primary" />
-                  <span>
-                    {continent.nameTr} Ülkeleri ({sortedCountries.length})
-                  </span>
-                </h3>
-                <span className="text-xs text-muted-foreground">En kalabalıktan başlayarak</span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                {sortedCountries.map((country) => (
-                  <Link
-                    key={country.isoCode}
-                    href={{
-                      pathname: "/dunya/[slug]",
-                      params: { slug: country.slugTr },
-                    }}
-                    className="group rounded-2xl border border-border bg-card p-3 hover:border-primary/50 hover:shadow-xs transition-all flex flex-col justify-between space-y-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      {/* eslint-disable-next-line @next/next/no-img-element -- ENGINEERING.md §4 #9 */}
-                      <img
-                        src={`/flags/${country.isoCode.toUpperCase()}.svg`}
-                        alt={`${country.nameTr} bayrağı`}
-                        className="w-5 h-3.5 object-cover rounded-xs border border-border shadow-2xs shrink-0"
-                      />
-                      <span className="font-heading font-bold text-xs text-foreground group-hover:text-primary transition-colors truncate">
-                        {country.nameTr}
-                      </span>
-                    </div>
-
-                    <div className="text-[10px] text-muted-foreground space-y-0.5">
-                      {country.statusLabelTr ? (
-                        <div className="truncate font-medium">{country.statusLabelTr}</div>
-                      ) : country.areaKm2 ? (
-                        <div className="truncate font-mono">
-                          {country.areaIsApproximate ? "≈" : ""}
-                          {new Intl.NumberFormat("tr-TR").format(country.areaKm2)} km²
-                        </div>
-                      ) : null}
-                      {country.population ? (
-                        <div className="font-mono">
-                          {new Intl.NumberFormat("tr-TR").format(country.population)} kişi
-                        </div>
-                      ) : null}
-                    </div>
-
-                    <div className="pt-1 border-t border-border/40 flex items-center justify-between text-[10px] text-muted-foreground group-hover:text-primary transition-colors">
-                      <span>İncele</span>
-                      <ArrowUpRight className="size-3" />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
+          <Suspense fallback={<ProseSkeleton lines={6} />}>
+            <ContinentDirectory continent={continent} locale={locale} />
+          </Suspense>
         </section>
 
         {/* SECTION 9: DOĞAL AFETLER, SİSMİK KUŞAKLAR VE ÇEVRE RİSKLERİ */}
@@ -583,7 +614,8 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
         </section>
 
         {/* NO SOURCES SECTION. The continent figures come from `lib/geo/continents.ts`, a
-            hand-written registry; this page reads no api and the one map it draws
+            hand-written registry; this page reads the country map summary for its locator and
+            directory, both behind Suspense, and the one map it draws
             (`V2ContinentLocatorMap`) credits Natural Earth itself, in the line under the map,
             more precisely than a card at the foot of the page could. The other four entries in
             the `dunya` list — the UN & World Bank, the CIA World Factbook, USGS/NASA, IHO

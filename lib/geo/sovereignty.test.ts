@@ -170,7 +170,13 @@ describe("country page reads both gates from the single decision module", () => 
   it("gives the flag a localized alt and explicit dimensions", () => {
     // An informative image: a real alt, from the catalogue, never a literal and never `alt=""`.
     // `width`/`height` are the CLS half of the ENGINEERING §4 #9 raw-`<img>` exception.
-    const flagBlock = /src=\{`\/flags\/[\s\S]{0,400}?\/>/.exec(countryPage)?.[0];
+    // Anchored on `country.isoCode` (same anchor as "has exactly one flag call site" above),
+    // not the first `/flags/` occurrence in the file: T-037 Task 8 moved `NeighboursSection`
+    // (whose own neighbour-flag `<img>`s also match `src={`/flags/`) above the default export,
+    // so the neighbour flags now appear earlier in source order than the subject's.
+    const flagBlock = /src=\{`\/flags\/\$\{country\.isoCode[\s\S]{0,400}?\/>/.exec(
+      countryPage,
+    )?.[0];
     expect(flagBlock, "flag <img> element").toBeDefined();
     expect(flagBlock).toMatch(/alt=\{t\("flagAlt", \{ name \}\)\}/);
     expect(flagBlock).not.toMatch(/alt=""/);
