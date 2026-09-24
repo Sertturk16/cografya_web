@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
@@ -330,4 +330,30 @@ export function PageSkeleton({
   return (
     <Status announce>{shape === "hub" ? <HubShape plate={plate} /> : OTHER_SHAPES[shape]()}</Status>
   );
+}
+
+/**
+ * The `(play)` Suspense boundary, one per game page (T-037 Task 13).
+ *
+ * Each `/oyun/*` page renders `<V2Header />` and `<V2LiveTicker />` as page-level chrome — moved
+ * out of `V2GameScreen` itself, which used to render both unconditionally — and then this
+ * boundary around the fetch-bound game section. Both branches it can show, the `"play"` skeleton
+ * above and the `V2GameScreen` the section resolves to, own their own `max-w-7xl` wrapper, the
+ * same shape `V2GameScreen` is already exempted for in
+ * `components/v2/page-composition-containers.test.ts`'s `OUTSIDE_THE_BODY` table.
+ *
+ * Named rather than inline `<Suspense>` for exactly that exemption: `importBindingsOf` drops bare
+ * package specifiers (`import { Suspense } from "react"` resolves to `null`), so a raw `<Suspense>`
+ * at the top of a page can never be matched to a module+export pair and would read as an
+ * uncontained render root forever, regardless of what it wraps. `PlaySuspense` is a local
+ * component with a real file, so the same import-resolution path that already clears
+ * `V2GameScreen` and `V2LiveTicker` clears this one too.
+ */
+export function PlaySuspense({
+  children,
+}: {
+  readonly children: ReactNode;
+  readonly className?: never;
+}) {
+  return <Suspense fallback={<PageSkeleton shape="play" />}>{children}</Suspense>;
 }

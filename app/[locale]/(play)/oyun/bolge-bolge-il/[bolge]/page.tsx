@@ -4,6 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
+import type { GeographicRegion } from "@/lib/api/types";
 import { viewBoxForPaths } from "@/lib/game/map-bbox";
 import { buildGameShapes, toTargetEntries } from "@/lib/game/map-shapes";
 import { getRegionLabels } from "@/components/game/region-labels";
@@ -12,6 +13,9 @@ import { SLUG_PLACEHOLDER } from "@/lib/game/province-url";
 import { buildGameRoundModeTag } from "@/lib/game/round-mode-tag";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { PlaySuspense } from "@/components/patterns/page-skeleton";
+import { V2Header } from "@/components/v2/v2-header";
+import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2GameScreen } from "@/components/v2/v2-game-screen";
 
 interface PageProps {
@@ -43,6 +47,45 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
+async function RegionalProvinceGame({
+  locale,
+  bolge,
+  region,
+  modeName,
+  regionLabels,
+}: {
+  locale: Locale;
+  bolge: string;
+  region: GeographicRegion;
+  modeName: string;
+  regionLabels: Awaited<ReturnType<typeof getRegionLabels>>;
+}) {
+  const summaries = await getMapSummaryResilient();
+  const allShapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
+  const shapes = allShapes.filter((shape) => shape.target?.region === region);
+  const targetEntries = toTargetEntries(shapes);
+  const viewBox = viewBoxForPaths(shapes.map((s) => s.d)) ?? MAP_VIEWBOX;
+
+  return (
+    <V2GameScreen
+      mode="provinces"
+      modeName={modeName}
+      shapes={shapes}
+      targetEntries={targetEntries}
+      regionLabels={regionLabels}
+      allowEarlyFinish={false}
+      provinceUrlTemplate={getPathname({
+        locale,
+        href: { pathname: "/turkiye/[slug]", params: { slug: SLUG_PLACEHOLDER } },
+      })}
+      submitModeTag={buildGameRoundModeTag("provinces", region)}
+      region={region}
+      viewBox={viewBox}
+      currentPath={`/oyun/bolge-bolge-il/${bolge}`}
+    />
+  );
+}
+
 export default async function V2RegionalProvinceModePage({ params }: PageProps) {
   const { locale, bolge } = await params;
   setRequestLocale(locale);
@@ -50,33 +93,22 @@ export default async function V2RegionalProvinceModePage({ params }: PageProps) 
   const region = regionFromSlug(bolge);
   if (!region) notFound();
 
-  const summaries = await getMapSummaryResilient();
   const regionLabels = await getRegionLabels(locale);
-  const allShapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
-  const shapes = allShapes.filter((shape) => shape.target?.region === region);
-  const targetEntries = toTargetEntries(shapes);
-
-  const viewBox = viewBoxForPaths(shapes.map((s) => s.d)) ?? MAP_VIEWBOX;
-  const provinceUrlTemplate = getPathname({
-    locale,
-    href: { pathname: "/turkiye/[slug]", params: { slug: SLUG_PLACEHOLDER } },
-  });
-  const submitModeTag = buildGameRoundModeTag("provinces", region);
   const regionName = regionLabels[region];
 
   return (
-    <V2GameScreen
-      mode="provinces"
-      modeName={`${regionName} İlleri`}
-      shapes={shapes}
-      targetEntries={targetEntries}
-      regionLabels={regionLabels}
-      allowEarlyFinish={false}
-      provinceUrlTemplate={provinceUrlTemplate}
-      submitModeTag={submitModeTag}
-      region={region}
-      viewBox={viewBox}
-      currentPath={`/oyun/bolge-bolge-il/${bolge}`}
-    />
+    <>
+      <V2Header />
+      <V2LiveTicker />
+      <PlaySuspense>
+        <RegionalProvinceGame
+          locale={locale}
+          bolge={bolge}
+          region={region}
+          modeName={`${regionName} İlleri`}
+          regionLabels={regionLabels}
+        />
+      </PlaySuspense>
+    </>
   );
 }

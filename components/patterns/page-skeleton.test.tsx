@@ -65,8 +65,8 @@ describe("PageSkeleton", () => {
       readFileSync(fileURLToPath(new URL("./page-skeleton.tsx", import.meta.url)), "utf8"),
     );
     // Once in the shared `Announce` props (six pieces), once on `BreadcrumbsSkeleton`, once on
-    // `PageSkeleton`. Every `export function` must reach one of the three.
-    expect(source.match(/className\?: never/g)?.length).toBe(3);
+    // `PageSkeleton`, once on `PlaySuspense`. Every `export function` must reach one of the four.
+    expect(source.match(/className\?: never/g)?.length).toBe(4);
     const exportsWithoutIt = [...source.matchAll(/export function (\w+)\(([^)]*)\)/g)]
       .filter(([, , params]) => !/Announce|className\?: never/.test(params ?? ""))
       .map(([, name]) => name);
