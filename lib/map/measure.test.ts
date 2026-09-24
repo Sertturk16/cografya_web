@@ -12,6 +12,7 @@ import {
   ringCrossesAntimeridian,
   ringPerimeterKm,
   ringSelfIntersects,
+  readRingArea,
   scaleBarKm,
   toDmsParts,
   unprojectMapPoint,
@@ -472,6 +473,109 @@ describe("ringSelfIntersects", () => {
         { lon: 30, lat: 40 },
       ]),
     ).toBe(false);
+  });
+});
+
+describe("ringSelfIntersects — the shapes a reader draws (T-094)", () => {
+  it("is false for a simple concave outline (an L)", () => {
+    // Concave is not crossing: the inner corner turns the other way, but no two edges meet.
+    expect(
+      ringSelfIntersects([
+        { lon: 30, lat: 38 },
+        { lon: 34, lat: 38 },
+        { lon: 34, lat: 39 },
+        { lon: 31, lat: 39 },
+        { lon: 31, lat: 42 },
+        { lon: 30, lat: 42 },
+      ]),
+    ).toBe(false);
+  });
+
+  it("is false for a simple concave arrowhead", () => {
+    expect(
+      ringSelfIntersects([
+        { lon: 30, lat: 38 },
+        { lon: 32, lat: 39 },
+        { lon: 34, lat: 38 },
+        { lon: 32, lat: 42 },
+      ]),
+    ).toBe(false);
+  });
+
+  it("is false for a convex pentagon", () => {
+    expect(
+      ringSelfIntersects([
+        { lon: 32, lat: 38 },
+        { lon: 34, lat: 39 },
+        { lon: 33.5, lat: 41 },
+        { lon: 30.5, lat: 41 },
+        { lon: 30, lat: 39 },
+      ]),
+    ).toBe(false);
+  });
+
+  it("is true when a vertex lands on a non-adjacent edge (a touch, not a cross)", () => {
+    // The fourth vertex sits exactly on the first edge: the outline touches itself there.
+    expect(
+      ringSelfIntersects([
+        { lon: 30, lat: 38 },
+        { lon: 34, lat: 38 },
+        { lon: 34, lat: 42 },
+        { lon: 32, lat: 38 },
+        { lon: 30, lat: 42 },
+      ]),
+    ).toBe(true);
+  });
+
+  it("is true when the outline is drawn as a star (every edge crosses two others)", () => {
+    expect(
+      ringSelfIntersects([
+        { lon: 32, lat: 42 },
+        { lon: 33.2, lat: 38.2 },
+        { lon: 30, lat: 40.6 },
+        { lon: 34, lat: 40.6 },
+        { lon: 30.8, lat: 38.2 },
+      ]),
+    ).toBe(true);
+  });
+});
+
+describe("readRingArea (T-094)", () => {
+  const square = [
+    { lon: 30, lat: 38 },
+    { lon: 32, lat: 38 },
+    { lon: 32, lat: 40 },
+    { lon: 30, lat: 40 },
+  ];
+
+  it("asks for more points under three", () => {
+    expect(readRingArea([])).toEqual({ kind: "tooFew" });
+    expect(readRingArea(square.slice(0, 2))).toEqual({ kind: "tooFew" });
+  });
+
+  it("gives an area for a simple ring, the same one ringAreaKm2 computes", () => {
+    const reading = readRingArea(square);
+    expect(reading.kind).toBe("area");
+    if (reading.kind === "area") {
+      expect(reading.km2).toBe(ringAreaKm2(square));
+      expect(reading.km2).toBeGreaterThan(0);
+    }
+  });
+
+  it("gives no number for a bow-tie, even though the formula would return one", () => {
+    const bowTie = [square[0]!, square[2]!, square[1]!, square[3]!];
+    expect(ringAreaKm2(bowTie)).not.toBeNull();
+    expect(readRingArea(bowTie)).toEqual({ kind: "selfIntersecting" });
+  });
+
+  it("reports the antimeridian refusal separately", () => {
+    expect(
+      readRingArea([
+        { lon: 179, lat: 10 },
+        { lon: -179, lat: 10 },
+        { lon: -179, lat: 12 },
+      ]),
+    ).toEqual({ kind: "antimeridian" });
   });
 });
 
