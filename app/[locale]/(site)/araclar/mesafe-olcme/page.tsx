@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { getProvincesResilient } from "@/lib/api/provinces";
@@ -12,6 +13,7 @@ import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
 import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-content";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { PlateSkeleton } from "@/components/patterns/page-skeleton";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +43,7 @@ export async function generateMetadata({ params }: V2DistancePageProps): Promise
   });
 }
 
-export default async function V2DistanceToolPage({ params }: V2DistancePageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
+async function DistanceWorkbench({ locale }: { locale: Locale }) {
   const provinces = await getProvincesResilient();
   const provincePoints = buildProvincePoints(provinces);
   const provinceAreas = provinces.map((p) => ({
@@ -52,6 +51,20 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
     name: p.nameTr,
     slug: locale === "en" ? p.slugEn : p.slugTr,
   }));
+  return (
+    <V2ToolWorkbench
+      initialMode="distance"
+      lockMode={true}
+      provincePoints={provincePoints}
+      provinceAreas={provinceAreas}
+      downloadName="cografya-mesafe"
+    />
+  );
+}
+
+export default async function V2DistanceToolPage({ params }: V2DistancePageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
 
   return (
     <>
@@ -118,13 +131,9 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
         </div>
 
         {/* SECTION 1: STANDALONE DISTANCE WORKBENCH */}
-        <V2ToolWorkbench
-          initialMode="distance"
-          lockMode={true}
-          provincePoints={provincePoints}
-          provinceAreas={provinceAreas}
-          downloadName="cografya-mesafe"
-        />
+        <Suspense fallback={<PlateSkeleton aspect="map" />}>
+          <DistanceWorkbench locale={locale} />
+        </Suspense>
 
         {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}
         <V2ToolEducationalContent mode="distance" />
