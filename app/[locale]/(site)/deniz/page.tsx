@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { getMarinePointsSafe, getMarineOverviewSafe, getMarineLayersSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
@@ -16,6 +17,7 @@ import { FaqSection } from "@/components/patterns/faq-section";
 import { buildMarineExplainers } from "@/lib/marine/explainers";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { InlineSkeleton, PlateSkeleton, ProseSkeleton } from "@/components/patterns/page-skeleton";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
@@ -50,44 +52,7 @@ export async function generateMetadata({ params }: V2DenizPageProps): Promise<Me
   });
 }
 
-export default async function V2DenizPage({ params }: V2DenizPageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-  const format = await getFormatter();
-  const t = await getTranslations("Deniz");
-
-  /**
-   * The eight FAQ pairs, from `lib/marine/explainers.ts` — THE DECLARED SINGLE SOURCE for this
-   * set, not a loop over `q1..q8` written here.
-   *
-   * `V2MarineFaqAccordion` held seven of these as Turkish string literals in a `FAQ_ITEMS`
-   * constant — the only FAQ block in the tree that was not message-driven. The catalogue already
-   * had the eight pairs AND a module declaring which keys they are and in what order, so the
-   * only correct thing to read is that module.
-   *
-   * THE ORDER IS EDITORIAL AND IS NOT `q1…q8`. `MARINE_EXPLAINER_KEYS` is
-   * `q1 q2 q3 q4 q5 q8 q6 q7`: the owner-approved eighth block (`dataFreshness`) sits SIXTH,
-   * immediately after `q5`, because both answer the same fact — each provider's own publication
-   * cadence — from two angles. Its key stayed `q8` rather than being renumbered so the two
-   * entries that shift down keep their copy byte-identical. That module's docblock records all
-   * of it. A hand-written numeric loop cannot express any of it: it ships `dataFreshness` last,
-   * and it would silently drop a ninth block the day one is added.
-   *
-   * `MarineExplainer` carries an `id` alongside `question`/`answer`; `FaqEntry` needs only the
-   * latter two, and a wider object satisfies it, so the array is passed through untouched rather
-   * than projected — a projection here would be a second place for the order to drift.
-   *
-   * THE `tr` GATE IS ON THE DATA, NOT ONLY ON THE MARKUP, and that is the whole reason this is a
-   * conditional rather than a plain call. `messages/en.json` carries none of these sixteen keys,
-   * and next-intl's default handler for a missing key is a `console.error` plus the dotted key
-   * rendered in place of the copy — it does not throw. Building the array unconditionally and
-   * gating only the JSX therefore rendered nothing on `/en/sea` while still resolving all sixteen,
-   * so every prerender and every ISR revalidation of that route logged sixteen `MISSING_MESSAGE`
-   * lines for copy the page had already decided not to show. Invisible to the reader, noisy in the
-   * server log, and paid again on each revalidate. The gate has to sit where the READ is.
-   */
-  const marineFaqs = locale === "tr" ? buildMarineExplainers(t) : [];
-
+async function loadDeniz(locale: Locale, format: Awaited<ReturnType<typeof getFormatter>>) {
   // Fetch points, live overview, layers and provinces
   const [rawPoints, rawOverview, rawLayers, rawProvinces] = await Promise.all([
     getMarinePointsSafe(),
@@ -171,6 +136,80 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
     };
   });
 
+  return { showValues, marinePoints, rawLayers };
+}
+
+async function DenizLede() {
+  const showValues = marineShowsValues(await getMarineOverviewSafe());
+  return showValues ? (
+    <>
+      Karadeniz, Marmara, Ege ve Akdeniz&apos;in açığında 30 nokta seçtik. Her birinde su
+      sıcaklığını, dalga yüksekliğini ve rüzgârı gör; aşağıda dört denizin tuzluluğunu, derinliğini
+      ve akıntılarını karşılaştır.
+    </>
+  ) : (
+    <>
+      Karadeniz, Marmara, Ege ve Akdeniz&apos;in açığında 30 nokta seçtik; her biri bir kıyı ilinin
+      önünde. Bu noktaların güncel su sıcaklığı, dalga ve rüzgâr değerleri şu an gösterilmiyor. Dört
+      denizin tuzluluğunu, derinliğini ve akıntılarını yine de aşağıda karşılaştırabilirsin.
+    </>
+  );
+}
+
+async function DenizExplorer({
+  locale,
+  format,
+}: {
+  locale: Locale;
+  format: Awaited<ReturnType<typeof getFormatter>>;
+}) {
+  const { marinePoints } = await loadDeniz(locale, format);
+  return <V2MarineMapExplorer marinePoints={marinePoints} locale={locale} />;
+}
+
+async function DenizLayerCatalogue() {
+  const layers = await getMarineLayersSafe();
+  return <V2MarineLayerCatalogue layers={layers} />;
+}
+
+export default async function V2DenizPage({ params }: V2DenizPageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const format = await getFormatter();
+  const t = await getTranslations("Deniz");
+
+  /**
+   * The eight FAQ pairs, from `lib/marine/explainers.ts` — THE DECLARED SINGLE SOURCE for this
+   * set, not a loop over `q1..q8` written here.
+   *
+   * `V2MarineFaqAccordion` held seven of these as Turkish string literals in a `FAQ_ITEMS`
+   * constant — the only FAQ block in the tree that was not message-driven. The catalogue already
+   * had the eight pairs AND a module declaring which keys they are and in what order, so the
+   * only correct thing to read is that module.
+   *
+   * THE ORDER IS EDITORIAL AND IS NOT `q1…q8`. `MARINE_EXPLAINER_KEYS` is
+   * `q1 q2 q3 q4 q5 q8 q6 q7`: the owner-approved eighth block (`dataFreshness`) sits SIXTH,
+   * immediately after `q5`, because both answer the same fact — each provider's own publication
+   * cadence — from two angles. Its key stayed `q8` rather than being renumbered so the two
+   * entries that shift down keep their copy byte-identical. That module's docblock records all
+   * of it. A hand-written numeric loop cannot express any of it: it ships `dataFreshness` last,
+   * and it would silently drop a ninth block the day one is added.
+   *
+   * `MarineExplainer` carries an `id` alongside `question`/`answer`; `FaqEntry` needs only the
+   * latter two, and a wider object satisfies it, so the array is passed through untouched rather
+   * than projected — a projection here would be a second place for the order to drift.
+   *
+   * THE `tr` GATE IS ON THE DATA, NOT ONLY ON THE MARKUP, and that is the whole reason this is a
+   * conditional rather than a plain call. `messages/en.json` carries none of these sixteen keys,
+   * and next-intl's default handler for a missing key is a `console.error` plus the dotted key
+   * rendered in place of the copy — it does not throw. Building the array unconditionally and
+   * gating only the JSX therefore rendered nothing on `/en/sea` while still resolving all sixteen,
+   * so every prerender and every ISR revalidation of that route logged sixteen `MISSING_MESSAGE`
+   * lines for copy the page had already decided not to show. Invisible to the reader, noisy in the
+   * server log, and paid again on each revalidate. The gate has to sit where the READ is.
+   */
+  const marineFaqs = locale === "tr" ? buildMarineExplainers(t) : [];
+
   return (
     <>
       {/* Structured Data / JSON-LD */}
@@ -215,20 +254,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
               heading="Denizler ve Kıyılar"
               notice={<V2EnWorkInProgressNotice locale={locale} />}
               lede={
-                showValues ? (
-                  <>
-                    Karadeniz, Marmara, Ege ve Akdeniz&apos;in açığında 30 nokta seçtik. Her birinde
-                    su sıcaklığını, dalga yüksekliğini ve rüzgârı gör; aşağıda dört denizin
-                    tuzluluğunu, derinliğini ve akıntılarını karşılaştır.
-                  </>
-                ) : (
-                  <>
-                    Karadeniz, Marmara, Ege ve Akdeniz&apos;in açığında 30 nokta seçtik; her biri
-                    bir kıyı ilinin önünde. Bu noktaların güncel su sıcaklığı, dalga ve rüzgâr
-                    değerleri şu an gösterilmiyor. Dört denizin tuzluluğunu, derinliğini ve
-                    akıntılarını yine de aşağıda karşılaştırabilirsin.
-                  </>
-                )
+                <Suspense fallback={<InlineSkeleton width="lg" />}>
+                  <DenizLede />
+                </Suspense>
               }
             />
 
@@ -254,7 +282,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         </div>
 
         {/* SECTION 1: INTERACTIVE REALISTIC TURKEY & SEA MAP EXPLORER */}
-        <V2MarineMapExplorer marinePoints={marinePoints} locale={locale} />
+        <Suspense fallback={<PlateSkeleton aspect="map" />}>
+          <DenizExplorer locale={locale} format={format} />
+        </Suspense>
 
         {/* SECTION 2: 4 SEA BASINS COMPREHENSIVE GUIDE */}
         <V2MarineBasinCards />
@@ -291,7 +321,9 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         </div>
 
         {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}
-        <V2MarineLayerCatalogue layers={rawLayers} />
+        <Suspense fallback={<ProseSkeleton lines={4} />}>
+          <DenizLayerCatalogue />
+        </Suspense>
 
         {/* SECTION 5: PEDAGOGICAL FAQ ACCORDION.
 
