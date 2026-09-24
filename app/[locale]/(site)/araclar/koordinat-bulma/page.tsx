@@ -35,9 +35,9 @@ export async function generateMetadata({ params }: V2CoordinatesPageProps): Prom
     // disagree about this page. It read `"noindex"` while the tier lived under `/v2`.
     surface: TOOLS_SURFACE,
     hrefForLocale: () => "/araclar/koordinat-bulma",
-    title: "Haritada Koordinat Bulma & Dönüştürme — Enlem, Boylam ve WGS84 GPS",
+    title: "Haritada Koordinat Bulma: Enlem, Boylam ve WGS84 Koordinatı",
     description:
-      "İnteraktif harita üzerinde tıklayarak veya arama yaparak Ondalık Derece (DD), Derece-Dakika-Saniye (DMS) ve UTM koordinatlarını WGS84 standardında tespit edin.",
+      "Haritaya tıkla ya da listeden il seç: noktanın enlem ve boylamını ondalık derece ve derece-dakika-saniye olarak, UTM dilimini ve hangi ilde olduğunu gör.",
   });
 }
 
@@ -59,13 +59,13 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={learningResourceJsonLd({
-          name: "Haritada Koordinat Bulma & Dönüştürme",
-          description:
-            "Haritada dilediğiniz noktanın enlem, boylam ve WGS84 coğrafi koordinatlarını bulun.",
+          name: "Haritada Koordinat Bulma",
+          description: "Haritada seçtiğin noktanın enlemini, boylamını ve WGS84 koordinatını bul.",
           path: "/araclar/koordinat-bulma",
           locale,
           learningResourceType: "Interactive tool",
-          teaches: "Enlem, boylam, WGS84 koordinat sistemi, DMS ve ondalık derece dönüşümü",
+          teaches:
+            "Enlem, boylam, WGS84 koordinat sistemi, derece-dakika-saniye ve ondalık derece dönüşümü",
         })}
       />
 

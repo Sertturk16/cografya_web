@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     surface: "trOnly",
     hrefForLocale: () => "/deniz/kiyi-tipleri",
-    title: "Türkiye'nin Kıyı Tipleri Atlası: Boyuna, Enine, Ria, Dalmaçya & Lagün Kıyıları",
+    title: "Türkiye'nin Kıyı Tipleri: Boyuna, Enine, Ria ve Dalmaçya",
     description:
-      "Türkiye'de görülen 6 temel kıyı tipi (boyuna, enine, ria, dalmaçya, lagün, kalanklı) ve Türkiye'de görülmeyen kıyı tipleri (fiyort, haliç) jeomorfoloji rehberi.",
+      "Türkiye'de görülen 6 kıyı tipi: boyuna, enine, ria, dalmaçya, lagün ve kalanklı. Her biri nasıl oluşur, nerede görülür; fiyort, skyer ve haliç neden yok?",
   });
 }
 
@@ -45,13 +45,13 @@ export default async function V2CoastalTypesPage({ params }: PageProps) {
       <JsonLd
         schema={[
           learningResourceJsonLd({
-            name: "Türkiye'nin Kıyı Tipleri ve Kıyı Jeomorfolojisi Atlası",
+            name: "Türkiye'nin Kıyı Tipleri",
             description:
-              "Dağların uzanış doğrultusu ve deniz seviyesi değişimlerine göre şekillenen kıyı tipleri analizi.",
+              "Dağların kıyıya paralel ya da dik uzanmasına ve deniz seviyesinin değişmesine göre şekillenen kıyı tipleri.",
             path: "/deniz/kiyi-tipleri",
             locale,
             learningResourceType: "Article",
-            teaches: "Kıyı tipleri, falezler, kıta sahanlığı, tombolo, lagün ve jeomorfoloji",
+            teaches: "Kıyı tipleri, falezler, kıta sahanlığı, tombolo ve lagün",
           }),
         ]}
       />

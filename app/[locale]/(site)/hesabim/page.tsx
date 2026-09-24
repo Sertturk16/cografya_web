@@ -28,9 +28,8 @@ export async function generateMetadata({ params }: V2MemberHubPageProps): Promis
   return buildAuthMetadata({
     locale,
     pathname: "/hesabim",
-    title: "Hesabım & Üyelik Merkezi — Coğrafya Gurmesi",
-    description:
-      "Kişisel coğrafya üyelik merkeziniz: favorileriniz, video çözümleriniz, sınav geçmişiniz ve kayıtlı ölçümleriniz.",
+    title: "Hesabım",
+    description: "Favorilerin, video ilerlemen, oyun geçmişin ve kayıtlı ölçümlerin tek yerde.",
   });
 }
 

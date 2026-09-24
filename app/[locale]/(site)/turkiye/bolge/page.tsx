@@ -45,11 +45,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }),
     title:
       locale === "tr"
-        ? "Türkiye'nin 7 Coğrafi Bölgesi: İlleri, İklimi ve Haritası | Coğrafya Gurmesi"
+        ? "Türkiye'nin 7 Coğrafi Bölgesi: İlleri, İklimi ve Haritası"
         : "Türkiye's 7 Geographic Regions: Provinces, Climate and Map",
     description:
       locale === "tr"
-        ? "1941 Birinci Türk Coğrafya Kongresi kararlarıyla belirlenen Türkiye'nin 7 coğrafi bölgesi ve 21 bölümü. Nüfus dağılımı, yüzölçümü, iklim özellikleri ve analitik karşılaştırma rehberi."
+        ? "1941'deki Birinci Türk Coğrafya Kongresi'nin belirlediği 7 coğrafi bölge ve 21 bölüm. Her bölgenin il sayısı, nüfusu, yüzölçümü ve iklimi yan yana."
         : "Türkiye's 7 geographic regions and 21 subregions. Population distribution, area, climate features and an analytical comparison guide.",
   });
 }

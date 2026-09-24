@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     surface: "trOnly",
     hrefForLocale: () => "/deniz/karadeniz",
-    title: "Karadeniz Fiziki Coğrafyası & Canlı Telemetri Atlası | Coğrafya Gurmesi",
+    title: "Karadeniz Havzası: Fiziki Coğrafyası, Akıntıları ve Kıyıları",
     description:
-      "Karadeniz'in 15 kıyı istasyonundan canlı su sıcaklığı, dalga boyu, akıntı rejimleri, 200m H2S tabakası ve fiziki coğrafya analizi.",
+      "Karadeniz'in açığında 15 noktada su sıcaklığı, dalga yüksekliği ve rüzgâr. Akıntılar, 200 metrenin altındaki hidrojen sülfürlü su, kıyılar ve fiziki coğrafya.",
   });
 }
 
@@ -150,13 +150,13 @@ export default async function V2KaradenizPage({ params }: PageProps) {
           // four callers (this page and its three basin siblings) plus `Breadcrumbs` itself.
           ...breadcrumbListSchema(breadcrumbItems, locale, "trOnly"),
           learningResourceJsonLd({
-            name: "Karadeniz Coğrafi Analizi ve Oşinografi Rehberi",
+            name: "Karadeniz Havzası: Fiziki Coğrafya ve Akıntılar",
             description: basinData.physicalGeography.content,
             path: "/deniz/karadeniz",
             locale,
             learningResourceType: "Article",
             teaches:
-              "Karadeniz'in fiziki coğrafyası, akıntıları, H2S tabakası ve kıyı yer şekilleri",
+              "Karadeniz'in fiziki coğrafyası, akıntıları, hidrojen sülfürlü derin suyu ve kıyı yer şekilleri",
           }),
         ]}
       />

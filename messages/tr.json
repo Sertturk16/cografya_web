@@ -196,7 +196,7 @@
   "Game": {
     "brandName": "Kâşif",
     "metaTitle": "{brand} — Coğrafya Harita Oyunu",
-    "metaDescription": "Türkiye'nin 81 ilini ve 7 coğrafi bölgesini haritada bulma oyunu. Üç mod: bölge bulma, 81 il bulma, bölge bölge il bulma. Ücretsiz, kayıt gerekmez.",
+    "metaDescription": "Türkiye'nin 81 ilini ve 7 coğrafi bölgesini haritada bulma oyunu. Üç mod: bölge bulma, 81 il bulma, bölge bölge il bulma.",
     "heading": "{brand} — Coğrafya Harita Oyunu",
     "subtitle": "Bir mod seç, haritada ili ya da bölgeyi bul.",
     "teaches": "Türkiye'nin illeri ve coğrafi bölgeleri",
@@ -550,8 +550,8 @@
   },
   "Dunya": {
     "metaTitle": "Dünya Haritası — Ülkeler",
-    "metaDescription": "İnteraktif dünya haritası ve {count} ülkelik alfabetik liste. Her ülke için başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
-    "metaDescriptionFallback": "İnteraktif dünya haritası ve alfabetik ülke listesi. Her ülke için başkent, nüfus, yüzölçümü ve fiziki coğrafya; kaynaklı, düzenli detay sayfaları.",
+    "metaDescription": "İnteraktif dünya haritası ve {count} ülkelik alfabetik liste. Bir ülke seç; başkentini, nüfusunu, yüzölçümünü ve fiziki coğrafyasını gör.",
+    "metaDescriptionFallback": "İnteraktif dünya haritası ve alfabetik ülke listesi. Bir ülke seç; başkentini, nüfusunu, yüzölçümünü ve fiziki coğrafyasını gör.",
     "heading": "Dünya Haritası",
     "intro": "Haritada bir ülkeye tıkla, detaylarını gör.",
     "indexHeading": "Alfabetik Ülke Listesi",
@@ -1072,7 +1072,7 @@
     },
     "profile": {
       "metaTitle": "Profil",
-      "metaDescription": "Profil bilgilerinizi görüntüleyin ve yönetin.",
+      "metaDescription": "Profil bilgilerini gör ve düzenle.",
       "heading": "Profilini Tamamla",
       "teacherHeading": "Profilin",
       "teacherDescription": "Öğretmen hesabın için ek bir profil alanı bulunmuyor.",

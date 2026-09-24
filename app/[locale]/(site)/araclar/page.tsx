@@ -3,7 +3,12 @@ import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
 import { buildMetadata } from "@/lib/seo/metadata";
-import { TOOLS_SURFACE } from "@/lib/tools/tool-registry";
+import {
+  AREA_TOOL,
+  COORDINATE_TOOL,
+  DISTANCE_TOOL,
+  TOOLS_SURFACE,
+} from "@/lib/tools/tool-registry";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2ToolsHub } from "@/components/v2/v2-tools-hub";
 import { V2GisMethodologyGuide } from "@/components/v2/v2-gis-methodology-guide";
@@ -32,9 +37,9 @@ export async function generateMetadata({ params }: V2AraclarPageProps): Promise<
     // disagree about this page. It read `"noindex"` while the tier lived under `/v2`.
     surface: TOOLS_SURFACE,
     hrefForLocale: () => "/araclar",
-    title: "CBS & Coğrafi Ölçüm Araçları — Mesafe, Koordinat ve Alan Hesaplama",
+    title: "Harita Araçları: Mesafe Ölçme, Koordinat ve Alan Hesaplama",
     description:
-      "İnteraktif harita üzerinde kuş uçuşu jeodezik mesafe ölçümü, enlem/boylam koordinat tespiti ve çokgen alan hesabı.",
+      "Türkiye haritasında üç araç: iki nokta arası kuş uçuşu mesafeyi ölç, bir yerin enlem ve boylamını bul, çizdiğin alanın kaç km² olduğunu gör. Kayıt gerekmez.",
   });
 }
 
@@ -48,18 +53,20 @@ export default async function V2AraclarPage({ params }: V2AraclarPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "CBS & Coğrafi Ölçüm Araçları",
+            name: "Harita Araçları",
             description:
-              "İnteraktif harita üzerinde kuş uçuşu jeodezik mesafe ölçümü, enlem/boylam koordinat tespiti ve çokgen alan hesabı.",
+              "Türkiye haritasında üç araç: iki nokta arası kuş uçuşu mesafeyi ölç, bir yerin enlem ve boylamını bul, çizdiğin alanın kaç km² olduğunu gör. Kayıt gerekmez.",
             path: "/araclar",
             locale,
           }),
           itemListJsonLd({
-            name: "CBS Coğrafi Ölçüm Araçları",
+            name: "Harita Araçları",
+            // Each tool at its own page. All three used to point at `/araclar`, so the list
+            // named three tools and linked none of them.
             items: [
-              { name: "Kuş Uçuşu Mesafe Ölçer", path: "/araclar" },
-              { name: "Koordinat Bulucu & GPS", path: "/araclar" },
-              { name: "Çokgen Yüzölçümü ve Alan Hesabı", path: "/araclar" },
+              { name: "Kuş Uçuşu Mesafe Ölçme", path: DISTANCE_TOOL.pathname },
+              { name: "Koordinat Bulma", path: COORDINATE_TOOL.pathname },
+              { name: "Alan Hesaplama", path: AREA_TOOL.pathname },
             ],
           }),
         ]}

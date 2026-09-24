@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: V2RegisterPageProps): Promise
   return buildAuthMetadata({
     locale,
     pathname: "/kayit",
-    title: `${t("register.heading")} — Coğrafya Gurmesi`,
+    title: t("register.heading"),
     description: t("register.metaDescription"),
   });
 }

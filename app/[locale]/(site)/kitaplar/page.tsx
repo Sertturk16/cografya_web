@@ -64,11 +64,11 @@ export async function generateMetadata({ params }: V2KitaplarPageProps): Promise
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     surface: "trOnly",
     hrefForLocale: () => "/kitaplar",
-    title: "Video Çözümlü Coğrafya Kitapları — AYT & TYT Branş Denemeleri",
+    title: "Video Çözümlü Coğrafya Kitapları — AYT Branş Denemeleri",
     // No book-level count is published any more (P0 generic-catalogue cut-over,
     // `DEC 2026-09-10c` md.1) — fixed editorial copy, no interpolated numbers.
     description:
-      "Coğrafya kitaplarının soru bazlı ayrıntılı video çözümleri, konu kazanım analizleri ve sınav hazırlık rehberi.",
+      "Coğrafya deneme kitaplarının video çözümleri; her sorunun videoda başladığı an işaretli. Kitabı adına ya da yayınevine göre ara, çözüm videolarını aç.",
   });
 }
 
@@ -86,7 +86,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
           collectionPageJsonLd({
             name: "Video Çözümlü Coğrafya Kitapları",
             description:
-              "Coğrafya kitaplarının soru bazlı video çözümleri ve sınav hazırlık rehberi.",
+              "Coğrafya deneme kitaplarının video çözümleri; her sorunun videoda başladığı an işaretli. Kitabı adına ya da yayınevine göre ara, çözüm videolarını aç.",
             path: "/kitaplar",
             locale,
           }),

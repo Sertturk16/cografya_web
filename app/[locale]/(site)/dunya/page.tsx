@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Me
     // counterpart did — `app/sitemap.ts` already publishes this URL, and a `noindex`
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     hrefForLocale: () => "/dunya",
-    title: "Dünya Ülkeleri & Kıtalar Atlası — İnteraktif Dünya Haritası",
+    title: "Dünya Atlası — İnteraktif Dünya Haritası ve Ülkeler",
     /**
      * The count comes from the FETCH, never from a literal (`lib/seo/hub-description.ts`).
      * `getCountriesResilient` degrades to an empty list on an api blip; a description still
@@ -132,7 +132,7 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Dünya Ülkeleri & Kıtalar Atlası",
+            name: "Dünya Atlası",
             // Structured data may not carry what the page does not show (SEO-POLICY §B5 5.7).
             description: pickHubDescription(
               t("metaDescription", { count: totalCountries }),

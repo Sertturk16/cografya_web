@@ -497,7 +497,7 @@ export function V2EarthquakeExplorer({
             <svg
               viewBox={TR_CONTEXT_VIEWBOX}
               className="w-full h-full block select-none"
-              aria-label="Türkiye Canlı Deprem Haritası"
+              aria-label="Türkiye Son Depremler Haritası"
             >
               {/* Surrounding Context Countries */}
               <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">

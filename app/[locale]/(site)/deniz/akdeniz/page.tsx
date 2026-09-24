@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     surface: "trOnly",
     hrefForLocale: () => "/deniz/akdeniz",
-    title: "Akdeniz Fiziki Coğrafyası, Boyuna Kıyılar & Canlı Telemetri | Coğrafya Gurmesi",
+    title: "Doğu Akdeniz Havzası: Boyuna Kıyılar, Tuzluluk ve Falezler",
     description:
-      "Akdeniz'in 4 istasyonundan canlı su sıcaklığı, en yüksek tuzluluk, Toroslar boyuna kıyı tipi, falezler ve Lessepsiyen türler.",
+      "Akdeniz'in açığında 4 noktada su sıcaklığı, dalga yüksekliği ve rüzgâr. Dört denizin en tuzlusu, Torosların boyuna kıyıları, falezler ve Lessepsiyen türler.",
   });
 }
 
@@ -150,13 +150,12 @@ export default async function V2AkdenizPage({ params }: PageProps) {
           // four callers (this page and its three basin siblings) plus `Breadcrumbs` itself.
           ...breadcrumbListSchema(breadcrumbItems, locale, "trOnly"),
           learningResourceJsonLd({
-            name: "Akdeniz Havzası Coğrafi Analizi ve Termal Rejimi Rehberi",
+            name: "Doğu Akdeniz Havzası: Boyuna Kıyılar ve Tuzluluk",
             description: basinData.physicalGeography.content,
             path: "/deniz/akdeniz",
             locale,
             learningResourceType: "Article",
-            teaches:
-              "Akdeniz'in boyuna kıyı morfolojisi, yüksek tuzluluğu, falezleri ve biyolojik yapısı",
+            teaches: "Akdeniz'in boyuna kıyıları, yüksek tuzluluğu, falezleri ve canlı türleri",
           }),
         ]}
       />

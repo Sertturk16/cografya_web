@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: FaultLinesPageProps): Promise
     locale,
     surface: "trOnly",
     hrefForLocale: () => "/deprem/fay-hatlari",
-    title: "Türkiye'nin Ana Fay Hatları: KAF, DAF ve BAFS Sismotektonik Atlası",
+    title: "Türkiye'nin Fay Hatları: KAF, DAF, Batı Anadolu Fay Sistemi",
     description:
       "Kuzey Anadolu Fayı, Doğu Anadolu Fayı ve Batı Anadolu Fay Sistemi'nin tektonik oluşumu, geçtiği iller, tarihsel büyük depremler ve sismik riskleri.",
   });
@@ -59,13 +59,13 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
       <JsonLd
         schema={[
           learningResourceJsonLd({
-            name: "Türkiye'nin Ana Fay Hatları Sismotektonik Atlası",
+            name: "Türkiye'nin Fay Hatları",
             description:
-              "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS) tektonik analizi.",
+              "Kuzey Anadolu Fayı (KAF), Doğu Anadolu Fayı (DAF) ve Batı Anadolu Fay Sistemi (BAFS): nasıl oluştular, hangi illerden geçerler, hangi büyük depremleri ürettiler.",
             path: "/deprem/fay-hatlari",
             locale,
             learningResourceType: "Article",
-            teaches: "Fay hatları, tektonik levhalar, segment kırılmaları ve sismik risk",
+            teaches: "Fay hatları, levha hareketleri, fayın parça parça kırılması ve deprem riski",
           }),
         ]}
       />

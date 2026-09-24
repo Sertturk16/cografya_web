@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: V2LoginPageProps): Promise<Me
   return buildAuthMetadata({
     locale,
     pathname: "/giris",
-    title: `${t("login.heading")} — Coğrafya Gurmesi`,
+    title: t("login.heading"),
     description: t("login.metaDescription"),
   });
 }

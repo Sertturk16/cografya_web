@@ -27,7 +27,7 @@ describe("the earthquake explorer reads the one magnitude ramp", () => {
   it("still is the explorer — positive control", () => {
     // Without this, every `not.toContain` below would pass against a renamed or emptied file.
     expect(source).toContain("V2EarthquakeExplorer");
-    expect(source).toContain("Türkiye Canlı Deprem Haritası");
+    expect(source).toContain("Türkiye Son Depremler Haritası");
   });
 
   it("has no local magnitude-to-colour classifier left", () => {

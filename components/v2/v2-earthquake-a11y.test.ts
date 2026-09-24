@@ -42,7 +42,12 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
 
     const pageUrl = new URL("../../app/[locale]/(site)/deprem/page.tsx", import.meta.url);
     const pageContent = readFileSync(pageUrl, "utf8");
-    expect(pageContent).toContain("Canlı Deprem Takip & Sismik Monitör");
+    expect(pageContent).toContain("Türkiye'de Son Depremler — AFAD Verileriyle Deprem Haritası");
+    // T-098: the page refreshes every 120 s from AFAD; "Canlı", "Sismik Monitör" and "anlık"
+    // promised a live feed it is not.
+    expect(pageContent).not.toContain("Canlı Deprem Takip");
+    expect(pageContent).not.toContain("Sismik Monitör");
+    expect(pageContent).not.toContain("anlık takip");
     expect(pageContent).not.toContain("Sismik Fay Monitörü");
     expect(pageContent).not.toContain("ve fay hatlarıyla anlık takip edin");
   });
