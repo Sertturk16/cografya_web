@@ -30,6 +30,17 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   which walks `app/` and `components/` and reds if a module returns. One of the earlier deletions,
   `components/map/map.module.css`, was 876 lines whose four consumers PR4 deleted; its own orphan
   test could not see it, because a substring match let `locator-map.module.css` answer for it.
+- **Loading states (T-037).** A route gets a `loading.tsx` only when it is `force-dynamic` AND its
+  page decides neither `notFound()` nor `redirect()` before its first return — a rendered loading
+  boundary commits the response to 200, so a later 404 or redirect can only become a `<meta>` tag.
+  Three routes today (`/turkiye`, `/dunya`, `/kayit`); the `[slug]` details and the account pages
+  deliberately have none and keep their real 404/307. Every other server fetch renders behind
+  `<Suspense>` with a piece of `components/patterns/page-skeleton.tsx` as its fallback, and the
+  section component is a top-level `async function` in the same `page.tsx` — the composition
+  scanners pin exact page paths, and an in-file declaration is followed by their render walk while
+  a new file is not. `components/v2/page-composition-loading.test.ts` holds all three rules. The
+  FAQ scanner follows JSX nesting inside one function only, so a gated `<FaqSection>` inside a
+  section component repeats the gate.
 
 ## i18n (next-intl 4)
 
@@ -93,6 +104,12 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   degrades legibly (a thinner list, a map that loses only hover stats, a section that omits
   itself instead of rendering with nothing under a heading) — and prefer a shorter window
   over a needlessly long one even then.
+- **Shared loaders are `cache()`-wrapped.** `apiGet` passes an `AbortSignal`, and Next's fetch
+  memoization returns the raw `fetch` when a signal is present — so two Suspense sections calling
+  the same loader would fetch twice. The loaders read by more than one boundary (or by
+  `generateMetadata` and the body) are `export const x = cache(async () => …)` in `lib/api/*`;
+  `lib/api/request-dedupe.test.ts` pins the list. A page-local composite loader follows the same
+  form (`const loadX = cache(async (plateCode) => …)` at module scope in the page).
 
 ## SEO (`lib/seo/`)
 

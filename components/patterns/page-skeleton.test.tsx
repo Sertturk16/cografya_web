@@ -17,7 +17,7 @@ import {
   StatTileSkeleton,
 } from "./page-skeleton";
 
-const SHAPES = ["hub", "detail", "account", "auth", "play"] as const;
+const SHAPES = ["hub", "auth", "play"] as const;
 
 function render(node: React.ReactNode, locale: "tr" | "en" = "tr") {
   const messages = locale === "tr" ? tr : en;
@@ -138,13 +138,6 @@ describe("PageSkeleton", () => {
     const html = render(<HeroSkeleton tier="hub" tiles={4} />);
     expect(count(html, 'data-skeleton="stat-tile"')).toBe(4);
     expect(html).toContain("grid-cols-2 sm:grid-cols-4");
-  });
-
-  it("the detail shape renders the band and the 12-column body", () => {
-    const html = render(<PageSkeleton shape="detail" />);
-    expect(html).toContain("lg:grid-cols-12");
-    expect(html).toContain("lg:col-span-8");
-    expect(html).toContain("lg:col-span-4");
   });
 
   it("CardGridSkeleton sizes a single box for a form shell when asked", () => {

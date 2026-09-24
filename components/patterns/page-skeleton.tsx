@@ -49,7 +49,7 @@ const PLATE_RADIUS: Record<keyof typeof PLATE_ASPECT, string> = {
 };
 
 export type PlateAspect = keyof typeof PLATE_ASPECT;
-export type PageSkeletonShape = "hub" | "detail" | "account" | "auth" | "play";
+export type PageSkeletonShape = "hub" | "auth" | "play";
 
 interface Announce {
   /** `false` inside a tree that already carries one `role="status"`. */
@@ -234,43 +234,6 @@ function HubShape({ plate }: { readonly plate: PlateAspect }) {
   );
 }
 
-function DetailShape() {
-  return (
-    <>
-      <section className="relative overflow-hidden py-10 sm:py-14">
-        <PageContainer space="band">
-          <BreadcrumbsSkeleton />
-          <HeroSkeleton tier="detail" tiles={4} announce={false} />
-        </PageContainer>
-      </section>
-      <PageContainer space="default">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          <div className="lg:col-span-8 space-y-8">
-            <Bar className="h-64 rounded-3xl" />
-            <Bar className="h-48 rounded-3xl" />
-          </div>
-          <div className="lg:col-span-4">
-            <Bar className="h-96 rounded-3xl" />
-          </div>
-        </div>
-      </PageContainer>
-    </>
-  );
-}
-
-function AccountShape() {
-  return (
-    <PageContainer space="tight">
-      <BreadcrumbsSkeleton />
-      <div className="space-y-1.5">
-        <Bar className="h-9 w-64 sm:h-12" />
-        <Bar className="h-4 w-96 max-w-full" />
-      </div>
-      <CardGridSkeleton columns="2" count={4} announce={false} />
-    </PageContainer>
-  );
-}
-
 function AuthShape() {
   return (
     <PageContainer>
@@ -312,8 +275,6 @@ function PlayShape() {
 }
 
 const OTHER_SHAPES: Record<Exclude<PageSkeletonShape, "hub">, () => ReactNode> = {
-  detail: DetailShape,
-  account: AccountShape,
   auth: AuthShape,
   play: PlayShape,
 };

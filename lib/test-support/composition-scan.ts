@@ -69,7 +69,8 @@ export function walkPages(): string[] {
  * page with a real `<h1>`, so a counter named `PAGES_WITHOUT_H1` that cannot see those two files
  * would claim more than it measures. `app/[locale]/(site)/error.tsx` and
  * `app/[locale]/(site)/not-found.tsx` are the only two in the tree today; there is no `(play)`
- * equivalent and no `loading.tsx` or `template.tsx` anywhere.
+ * equivalent and no `template.tsx` anywhere; the three `loading.tsx` files (T-037) are walked by
+ * `walkLoadingFiles()` and are deliberately not render roots.
  *
  * NOT WIDENED PAST `PAGE_ROOTS`. `app/global-error.tsx` and `app/not-found.tsx` are app-ROOT
  * special files that sit ABOVE `app/[locale]`, outside both roots — the same placement
@@ -99,6 +100,18 @@ export function isRenderRootPath(path: string): boolean {
 export function walkRenderRoots(): string[] {
   return PAGE_ROOTS.flatMap((rel) => walk(join(repoRoot, rel)))
     .filter(isRenderRootPath)
+    .sort();
+}
+
+/**
+ * Every `loading.tsx` under `PAGE_ROOTS`. NOT a render root (`RENDER_ROOT_FILENAMES` is not
+ * widened): a loading file renders a skeleton, never a heading or a breadcrumb, so folding it into
+ * the heading and container counters would give them ten files that legitimately have none.
+ * `components/v2/page-composition-loading.test.ts` owns this walk.
+ */
+export function walkLoadingFiles(): string[] {
+  return PAGE_ROOTS.flatMap((rel) => walk(join(repoRoot, rel)))
+    .filter((path) => basename(path) === "loading.tsx")
     .sort();
 }
 
