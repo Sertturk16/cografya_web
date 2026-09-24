@@ -195,14 +195,14 @@ before the first return, by design.
 
 ### Detail pages
 
-| Page                            | Blocking                           | S                                                                                                                                                                                                                                                                                                                             | L              |
-| ------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| `/turkiye/[slug]` (120)         | `getProvinceBySlug` → `notFound()` | Locator card's neighbour + similar-climate chips (`getProvinces`); marine block — points → layers/conditions → `ProvinceMarineSection`, the air/marine row layout and `MarineDataNotice`, one boundary; earthquake block — list + meta → `ProvinceEarthquakeSection` and the page-foot `EarthquakeAttribution`, one boundary. | **L** `detail` |
-| `/turkiye/bolge/[slug]` (86400) | `getRegionBySlug` → `notFound()`   | None: the single fetch feeds every section. Nothing to stream.                                                                                                                                                                                                                                                                | **L** `detail` |
-| `/dunya/[slug]` (86400)         | `getCountryBySlug` → `notFound()`  | `#komsular` section and its sticky-nav pill, both async over the cached `getCountries` (the pill hides when the section would).                                                                                                                                                                                               | **L** `detail` |
-| `/dunya/kita/[slug]` (86400)    | static registry `notFound()`       | Locator map; country directory. Same cached `getCountryMapSummaryResilient`. The stale "this page reads no api" comment is corrected.                                                                                                                                                                                         | **L** `detail` |
-| `/kitaplar/[slug]` (86400)      | `getBookBySlug` → `notFound()`     | None: single fetch.                                                                                                                                                                                                                                                                                                           | **L** `detail` |
-| `/deniz/{4 basins}` (900)       | —                                  | Telemetry section: `V2SeaBasinDetailView` takes a `telemetry` ReactNode slot instead of `marinePoints`; the page fills it with a boundary around an async loader that renders the existing telemetry markup as a small client component.                                                                                      | no             |
+| Page                            | Blocking                                   | S                                                                                                                                                                                                                                                                                                                             | L                                           |
+| ------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `/turkiye/[slug]` (120)         | `getProvinceBySlug` → `notFound()`         | Locator card's neighbour + similar-climate chips (`getProvinces`); marine block — points → layers/conditions → `ProvinceMarineSection`, the air/marine row layout and `MarineDataNotice`, one boundary; earthquake block — list + meta → `ProvinceEarthquakeSection` and the page-foot `EarthquakeAttribution`, one boundary. | **L** `detail`                              |
+| `/turkiye/bolge/[slug]` (86400) | `getRegionBySlug` → `notFound()`           | None: the single fetch feeds every section. Nothing to stream.                                                                                                                                                                                                                                                                | **L** `detail`                              |
+| `/dunya/[slug]` (86400)         | `getCountryBySlug` → `notFound()`          | `#komsular` section and its sticky-nav pill, both async over the cached `getCountries` (the pill hides when the section would).                                                                                                                                                                                               | **L** `detail`                              |
+| `/dunya/kita/[slug]` (86400)    | static registry `notFound()` (synchronous) | Locator map; country directory. Same cached `getCountryMapSummaryResilient`. The stale "this page reads no api" comment is corrected.                                                                                                                                                                                         | no — nothing blocks before the first return |
+| `/kitaplar/[slug]` (86400)      | `getBookBySlug` → `notFound()`             | None: single fetch.                                                                                                                                                                                                                                                                                                           | **L** `detail`                              |
+| `/deniz/{4 basins}` (900)       | —                                          | Telemetry section: `V2SeaBasinDetailView` takes a `telemetry` ReactNode slot instead of `marinePoints`; the page fills it with a boundary around an async loader that renders the existing telemetry markup as a small client component.                                                                                      | no                                          |
 
 ### Tools, account, auth
 
@@ -233,8 +233,8 @@ no `loading.tsx`.
 `/e-posta-dogrulama`, `/gizlilik`, `/kullanim-sartlari`, `/deniz/kiyi-tipleri`, `/hakkimizda`'s
 body, the design-system route, `error.tsx`, `not-found.tsx`.
 
-Totals after the split: **10 `loading.tsx`** (`turkiye`, `dunya`, `hesabim`, `hesabim/ayarlar`,
-`kayit`, five `[slug]` details) and roughly **35 Suspense boundaries** across 30 pages. The `play`
+Totals after the split: **9 `loading.tsx`** (`turkiye`, `dunya`, `hesabim`, `hesabim/ayarlar`,
+`kayit`, four `[slug]` details) and roughly **35 Suspense boundaries** across 30 pages. The `play`
 shape is used only as a Suspense fallback.
 
 ## Section 5 — Guards
@@ -251,7 +251,7 @@ source-text assertion; one scanner; mutation-checked before trusted).
    - `ROUTES_OWED_A_LOADING_FILE_WITHOUT_ONE = 0` — a route is owed one when its page exports
      `dynamic = "force-dynamic"` OR its default export contains `await <loader>(` (loader = an
      import from `lib/api/*`, `lib/auth/session`, `lib/profile/*`) before its first `return`. The
-     ten routes in Section 4 are the expected population and are named in the test so the list
+     nine routes in Section 4 are the expected population and are named in the test so the list
      cannot drift silently; a new blocking await or a new dynamic route without `loading.tsx` goes
      red.
    - `SKELETON_SPELLINGS_OUTSIDE_PATTERNS = 0` — `animate-pulse` and `<Skeleton` do not appear
