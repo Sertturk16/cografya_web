@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
 import {
@@ -45,6 +46,7 @@ import { V2Hero } from "@/components/v2/v2-hero";
 import { V2LearningPaths } from "@/components/v2/v2-learning-paths";
 import { V2InteractiveTools } from "@/components/v2/v2-interactive-tools";
 import { PageContainer } from "@/components/patterns/page-container";
+import { InlineSkeleton, CardGridSkeleton } from "@/components/patterns/page-skeleton";
 
 interface V2PageProps {
   params: Promise<{ locale: Locale }>;
@@ -70,55 +72,232 @@ export async function generateMetadata({ params }: V2PageProps): Promise<Metadat
   });
 }
 
-export default async function V2HomePage({ params }: V2PageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
+/**
+ * A hardcoded literal, deliberately module-scope and unexported. This page is a Server
+ * Component that pulls `next-intl/server` and API-fetch modules in at module scope, which is
+ * not safe to import into `V2Hero` (a `"use client"` component), so a shared export would be a
+ * liability rather than a convenience. It tracks the three mode routes in the `(play)` group:
+ * `/oyun/bolge-bulma`, `/oyun/81-il`, `/oyun/bolge-bolge-il`.
+ *
+ * `lib/home/game-modes.test.ts` reads this literal out of the source and compares it with the
+ * real directory count, so the number cannot drift from the routes without CI noticing.
+ */
+const V2_GAME_MODE_COUNT = 3;
 
-  const t = await getTranslations("Home");
-  const tRegions = await getTranslations("Regions");
-  const tContinents = await getTranslations("Continents");
-  const tDetail = await getTranslations("ProvinceDetail");
-  const format = await getFormatter();
-
-  // Four parallel reads matching resilient architecture
-  // No layer catalogue read any more. It was fetched for one reason — `MarineAttribution`
-  // derives ECMWF's required copyright YEAR from the ingested cycle's künye — and that block
-  // now renders on `/hakkimizda`, which does the read itself.
-  const [provinces, countries, marinePoints, marineOverview] = await Promise.all([
+/**
+ * Hero stat trio (T-026): reuses the Home namespace's existing bilingual
+ * statProvincesLabel/statCountriesLabel/statGameModesLabel copy (already correct in both
+ * messages/tr.json and messages/en.json, same pattern as the V1 homepage's stat strip) so EN
+ * renders real English numbers instead of showing nothing.
+ *
+ * Streamed independently of the rest of the page (T-037): the hero's `<h1>`/lede render
+ * immediately from `V2HomePage`'s own translations, and this piece waits on the two resilient
+ * map-summary fetches behind its own `Suspense` boundary.
+ */
+async function HeroStats({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "Home" });
+  const [provinces, countries] = await Promise.all([
     getMapSummaryResilient(),
     getCountryMapSummaryResilient(),
+  ]);
+  const totalProvinces = provinces.length;
+  const totalCountries = countries.length;
+  return (
+    <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground font-medium flex-wrap">
+      <span>
+        <strong className="font-heading text-foreground">{totalProvinces}</strong>{" "}
+        {t("statProvincesLabel", { count: totalProvinces })}
+      </span>
+      <span aria-hidden="true" className="text-border">
+        &bull;
+      </span>
+      <span>
+        <strong className="font-heading text-foreground">{totalCountries}</strong>{" "}
+        {t("statCountriesLabel", { count: totalCountries })}
+      </span>
+      <span aria-hidden="true" className="text-border">
+        &bull;
+      </span>
+      <span>
+        <strong className="font-heading text-foreground">{V2_GAME_MODE_COUNT}</strong>{" "}
+        {t("statGameModesLabel", { count: V2_GAME_MODE_COUNT })}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Section 1's Türkiye-card data line: "N il · 7 coğrafi bölge · nüfus …". Reads the resilient
+ * provinces fetch and derives the national population from it (`null`, nothing printed, on a
+ * partial fetch — see `lib/geo/national-population.ts`).
+ */
+async function ProvinceCountLine() {
+  const provinces = await getMapSummaryResilient();
+  const totalProvinces = provinces.length;
+  // The sum of the 81 provinces' TÜİK figures; `null` (nothing printed) on a partial fetch.
+  const population = nationalPopulation(provinces);
+  return (
+    <>
+      {totalProvinces} il · 7 coğrafi bölge
+      {population !== null &&
+        ` · nüfus ${tr(population.total / 1_000_000, 1)} milyon (TÜİK ${population.year})`}
+    </>
+  );
+}
+
+/**
+ * Section 1's Dünya-card data line: "N ülke · M kıta". Only `totalCountries` reads a fetch;
+ * `totalContinents` is synchronous (`getAllContinents().length`) and is passed in from the
+ * default export rather than re-derived here.
+ */
+async function CountryCountLine({ totalContinents }: { totalContinents: number }) {
+  const countries = await getCountryMapSummaryResilient();
+  const totalCountries = countries.length;
+  return (
+    <>
+      {totalCountries} ülke · {totalContinents} kıta
+    </>
+  );
+}
+
+/** Section 4's body: the "Denizlerde Bugün" basin cards, the model vintage line and the marine
+ *  safety notice — or the "not yet published" fallback alert. Reads the marine points/overview
+ *  fetches; the heading row and the "Tüm Denizler" link stay in the default export. */
+async function MarineToday({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "Home" });
+  const format = await getFormatter();
+  const [marinePoints, marineOverview] = await Promise.all([
     getMarinePointsSafe(),
     getMarineOverviewSafe(),
   ]);
-
-  // NO `|| 81` and NO `|| 199`. PR #171 removed both of these expressions from `/turkiye` and
-  // `/dunya`; the home page kept its own copies, because the guard that found them
-  // (`lib/geo/country-sources.test.ts`) opens one file. A degraded fetch lists nothing, and the
-  // hero reads these counts out as "81 İl · 199 Ülke" — a promise about what the atlas contains,
-  // made at the moment it contains neither.
-  const totalProvinces = provinces.length;
-  const totalCountries = countries.length;
-  // Derived, not typed: the card said "6 Kıta" while `/dunya` — the page this card links to —
-  // said "7 Kıta", and the registry has seven (Antarktika included). A hardcoded count drifts
-  // from the page it advertises; this one had.
-  const totalContinents = getAllContinents().length;
-  // The sum of the 81 provinces' TÜİK figures; `null` (nothing printed) on a partial fetch.
-  const population = nationalPopulation(provinces);
-  /**
-   * A hardcoded literal, deliberately local and unexported. This page is a Server Component
-   * that pulls `next-intl/server` and API-fetch modules in at module scope, which is not safe
-   * to import into `V2Hero` (a `"use client"` component), so a shared export would be a
-   * liability rather than a convenience. It tracks the three mode routes in the `(play)`
-   * group: `/oyun/bolge-bulma`, `/oyun/81-il`, `/oyun/bolge-bolge-il`.
-   *
-   * `lib/home/game-modes.test.ts` reads this literal out of the source and compares it with
-   * the real directory count, so the number cannot drift from the routes without CI noticing.
-   */
-  const V2_GAME_MODE_COUNT = 3;
-
   const marine = buildMarineHomeSummary(marineOverview, locale);
   const scope = marineScope(marinePoints);
   const showMarineValues = marineSummaryShowsValues(marine);
+
+  return showMarineValues ? (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {marine.basins.map((basin) => {
+          const tempDigits = basin.seaSurfaceTemperature
+            ? MARINE_VALUE_FRACTION_DIGITS[basin.seaSurfaceTemperature.unit]
+            : 1;
+          const waveDigits = basin.waveHeight
+            ? MARINE_VALUE_FRACTION_DIGITS[basin.waveHeight.unit]
+            : 1;
+
+          return (
+            <Card
+              key={basin.basin}
+              className="hover:border-accent/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-card flex flex-col justify-between"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <Badge variant="info" size="sm" dot>
+                    {basin.label}
+                  </Badge>
+                  <Waves className="size-4 text-accent" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {basin.seaSurfaceTemperature && (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border">
+                    <span className="text-xs text-muted-foreground">Su Sıcaklığı</span>
+                    <span className="font-heading font-bold text-base text-primary">
+                      {format.number(basin.seaSurfaceTemperature.median, {
+                        minimumFractionDigits: tempDigits,
+                        maximumFractionDigits: tempDigits,
+                      })}{" "}
+                      °C
+                    </span>
+                  </div>
+                )}
+
+                {basin.waveHeight ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border">
+                    <span className="text-xs text-muted-foreground">Dalga Yüksekliği</span>
+                    <span className="font-heading font-bold text-base text-foreground">
+                      {format.number(basin.waveHeight.median, {
+                        minimumFractionDigits: waveDigits,
+                        maximumFractionDigits: waveDigits,
+                      })}{" "}
+                      m
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
+                    <span>Dalga Yüksekliği</span>
+                    <span className="italic">Veri yok</span>
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="pt-0 text-[11px] text-muted-foreground justify-between border-t border-border/50 bg-muted/10">
+                <span>{basin.seaSurfaceTemperature?.pointCount || 0} noktanın ortancası</span>
+                <Link
+                  href="/deniz"
+                  className="text-accent hover:underline font-medium inline-flex items-center gap-0.5"
+                >
+                  Ayrıntılar <ArrowRight className="size-3" />
+                </Link>
+              </CardFooter>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Model Zaman Bilgisi */}
+      <div className="p-3.5 rounded-2xl border border-border/80 bg-card/60 text-xs text-muted-foreground flex items-center gap-2.5 shadow-2xs">
+        <Clock className="size-4 text-muted-foreground/80 shrink-0" />
+        <VintageLine values={marine.values} />
+      </div>
+
+      {/* The marine safety disclaimer and the link to the licence text — the SAME
+            component `/deniz`, the four basin pages and the 27 coastal province pages
+            render.
+
+            The four cards above publish each basin's median sea-surface temperature and
+            wave height, which are CMEMS/ECMWF-derived values. ECMWF's and Copernicus
+            Marine's required wording is published once, on `/hakkimizda`, reached from
+            the link in this block (CC BY 4.0 §3(a)(2)); the sentence that must be beside
+            the numbers rather than a click away — "eğitim amaçlıdır… can güvenliği
+            kararlarında kullanılamaz" — is the body of the block itself.
+
+            GATED on `showMarineValues`, the same expression the cards themselves are
+            gated on — so the notice can neither go missing where a value appears nor
+            appear where none does. The `else` branch below renders an "on its way"
+            alert and no derived value, and owes nothing. */}
+      <MarineDataNotice />
+    </div>
+  ) : (
+    <Alert variant="info">
+      <AlertTitle>Deniz değerleri henüz yayında değil</AlertTitle>
+      <AlertDescription>
+        {scope.pointCount > 0
+          ? t("seaScope", {
+              basins: scope.basinCount,
+              points: scope.pointCount,
+              provinces: scope.provinceCount,
+            })
+          : t("seaScopeFallback")}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+/** Section 5's body: the "Bugün keşfet" featured province and country cards. Reads both
+ *  resilient map-summary fetches and day-seeds the draw from them (`lib/home/featured.ts`); the
+ *  `<section>` wrapper stays in the default export. */
+async function FeaturedPlaces({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "Home" });
+  const tRegions = await getTranslations({ locale, namespace: "Regions" });
+  const tContinents = await getTranslations({ locale, namespace: "Continents" });
+  const tDetail = await getTranslations({ locale, namespace: "ProvinceDetail" });
+  const format = await getFormatter();
+  const [provinces, countries] = await Promise.all([
+    getMapSummaryResilient(),
+    getCountryMapSummaryResilient(),
+  ]);
+  const totalProvinces = provinces.length;
+  const totalCountries = countries.length;
 
   const populationFact = (population: number | null, year: number | null) => {
     const fact = featuredPopulationFact(population, year);
@@ -156,6 +335,115 @@ export default async function V2HomePage({ params }: V2PageProps) {
 
   return (
     <>
+      {/* Featured Provinces */}
+      {provinceCards.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+                {t("discoverProvinces")}
+              </h3>
+            </div>
+            <Link href="/turkiye">
+              <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
+                Tüm İller ({totalProvinces})
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {provinceCards.map((card) => (
+              <a
+                key={card.id}
+                href={card.href}
+                className="group block p-6 rounded-2xl border border-border bg-card hover:border-primary/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="outline" size="sm" className="font-medium">
+                    {card.meta}
+                  </Badge>
+                  <span className="size-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-colors">
+                    <ArrowRight className="size-4" />
+                  </span>
+                </div>
+                <h4 className="font-heading text-2xl font-bold text-foreground group-hover:text-primary transition-colors mt-2">
+                  {card.name}
+                </h4>
+                {card.fact && (
+                  <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{card.fact.label}</span>
+                    <span className="font-bold text-foreground font-mono">{card.fact.value}</span>
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Featured Countries */}
+      {countryCards.length > 0 && (
+        <div className="space-y-4 pt-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+                {t("discoverCountries")}
+              </h3>
+            </div>
+            <Link href="/dunya">
+              <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
+                Tüm Ülkeler ({totalCountries})
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {countryCards.map((card) => (
+              <a
+                key={card.id}
+                href={card.href}
+                className="group block p-6 rounded-2xl border border-border bg-card hover:border-secondary/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <Badge variant="secondary" size="sm">
+                    {card.meta}
+                  </Badge>
+                  <span className="size-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:text-secondary group-hover:text-white transition-colors">
+                    <ArrowRight className="size-4" />
+                  </span>
+                </div>
+                <h4 className="font-heading text-2xl font-bold text-foreground group-hover:text-secondary transition-colors mt-2">
+                  {card.name}
+                </h4>
+                {card.fact && (
+                  <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">{card.fact.label}</span>
+                    <span className="font-bold text-foreground font-mono">{card.fact.value}</span>
+                  </div>
+                )}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+export default async function V2HomePage({ params }: V2PageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const t = await getTranslations("Home");
+
+  // Derived, not typed: the card said "6 Kıta" while `/dunya` — the page this card links to —
+  // said "7 Kıta", and the registry has seven (Antarktika included). A hardcoded count drifts
+  // from the page it advertises; this one had. Synchronous (`getAllContinents()` reads a local
+  // registry, not the api), so it needs no `Suspense` boundary of its own.
+  const totalContinents = getAllContinents().length;
+
+  return (
+    <>
       <JsonLd schema={[websiteJsonLd(locale), organizationJsonLd()]} />
 
       <V2LiveTicker />
@@ -163,14 +451,13 @@ export default async function V2HomePage({ params }: V2PageProps) {
       <PageContainer space="loose">
         {/* HERO SECTION */}
         <V2Hero
-          provinceCount={totalProvinces}
-          countryCount={totalCountries}
           title={t("heading")}
           lede={t("lede")}
-          provinceStatLabel={t("statProvincesLabel", { count: totalProvinces })}
-          countryStatLabel={t("statCountriesLabel", { count: totalCountries })}
-          modeCount={V2_GAME_MODE_COUNT}
-          modeStatLabel={t("statGameModesLabel", { count: V2_GAME_MODE_COUNT })}
+          stats={
+            <Suspense fallback={<InlineSkeleton width="lg" />}>
+              <HeroStats locale={locale} />
+            </Suspense>
+          }
         />
 
         {/* SECTION 1: ATLAS SPOTLIGHT & COĞRAFİ MERKEZLER */}
@@ -188,9 +475,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
             <Card className="overflow-hidden hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between group">
               <CardHeader className="space-y-2">
                 <span className="text-xs font-mono text-muted-foreground">
-                  {totalProvinces} il · 7 coğrafi bölge
-                  {population !== null &&
-                    ` · nüfus\u00a0${tr(population.total / 1_000_000, 1)}\u00a0milyon (TÜİK\u00a0${population.year})`}
+                  <Suspense fallback={<InlineSkeleton width="md" />}>
+                    <ProvinceCountLine />
+                  </Suspense>
                 </span>
                 <CardTitle className="text-2xl">{t("mapHeading")}</CardTitle>
                 <CardDescription className="text-sm leading-relaxed">
@@ -214,7 +501,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
             <Card className="overflow-hidden hover:border-primary/60 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col justify-between group">
               <CardHeader className="space-y-2">
                 <span className="text-xs font-mono text-muted-foreground">
-                  {totalCountries} ülke · {totalContinents} kıta
+                  <Suspense fallback={<InlineSkeleton width="md" />}>
+                    <CountryCountLine totalContinents={totalContinents} />
+                  </Suspense>
                 </span>
                 <CardTitle className="text-2xl">{t("worldHeading")}</CardTitle>
                 <CardDescription className="text-sm leading-relaxed">
@@ -260,214 +549,16 @@ export default async function V2HomePage({ params }: V2PageProps) {
             </Link>
           </div>
 
-          {showMarineValues ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {marine.basins.map((basin) => {
-                  const tempDigits = basin.seaSurfaceTemperature
-                    ? MARINE_VALUE_FRACTION_DIGITS[basin.seaSurfaceTemperature.unit]
-                    : 1;
-                  const waveDigits = basin.waveHeight
-                    ? MARINE_VALUE_FRACTION_DIGITS[basin.waveHeight.unit]
-                    : 1;
-
-                  return (
-                    <Card
-                      key={basin.basin}
-                      className="hover:border-accent/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-card flex flex-col justify-between"
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="info" size="sm" dot>
-                            {basin.label}
-                          </Badge>
-                          <Waves className="size-4 text-accent" />
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {basin.seaSurfaceTemperature && (
-                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border">
-                            <span className="text-xs text-muted-foreground">Su Sıcaklığı</span>
-                            <span className="font-heading font-bold text-base text-primary">
-                              {format.number(basin.seaSurfaceTemperature.median, {
-                                minimumFractionDigits: tempDigits,
-                                maximumFractionDigits: tempDigits,
-                              })}{" "}
-                              °C
-                            </span>
-                          </div>
-                        )}
-
-                        {basin.waveHeight ? (
-                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border">
-                            <span className="text-xs text-muted-foreground">Dalga Yüksekliği</span>
-                            <span className="font-heading font-bold text-base text-foreground">
-                              {format.number(basin.waveHeight.median, {
-                                minimumFractionDigits: waveDigits,
-                                maximumFractionDigits: waveDigits,
-                              })}{" "}
-                              m
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/20 border border-dashed border-border text-muted-foreground text-xs">
-                            <span>Dalga Yüksekliği</span>
-                            <span className="italic">Veri yok</span>
-                          </div>
-                        )}
-                      </CardContent>
-                      <CardFooter className="pt-0 text-[11px] text-muted-foreground justify-between border-t border-border/50 bg-muted/10">
-                        <span>
-                          {basin.seaSurfaceTemperature?.pointCount || 0} noktanın ortancası
-                        </span>
-                        <Link
-                          href="/deniz"
-                          className="text-accent hover:underline font-medium inline-flex items-center gap-0.5"
-                        >
-                          Ayrıntılar <ArrowRight className="size-3" />
-                        </Link>
-                      </CardFooter>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              {/* Model Zaman Bilgisi */}
-              <div className="p-3.5 rounded-2xl border border-border/80 bg-card/60 text-xs text-muted-foreground flex items-center gap-2.5 shadow-2xs">
-                <Clock className="size-4 text-muted-foreground/80 shrink-0" />
-                <VintageLine values={marine.values} />
-              </div>
-
-              {/* The marine safety disclaimer and the link to the licence text — the SAME
-                    component `/deniz`, the four basin pages and the 27 coastal province pages
-                    render.
-
-                    The four cards above publish each basin's median sea-surface temperature and
-                    wave height, which are CMEMS/ECMWF-derived values. ECMWF's and Copernicus
-                    Marine's required wording is published once, on `/hakkimizda`, reached from
-                    the link in this block (CC BY 4.0 §3(a)(2)); the sentence that must be beside
-                    the numbers rather than a click away — "eğitim amaçlıdır… can güvenliği
-                    kararlarında kullanılamaz" — is the body of the block itself.
-
-                    GATED on `showMarineValues`, the same expression the cards themselves are
-                    gated on — so the notice can neither go missing where a value appears nor
-                    appear where none does. The `else` branch below renders an "on its way"
-                    alert and no derived value, and owes nothing. */}
-              <MarineDataNotice />
-            </div>
-          ) : (
-            <Alert variant="info">
-              <AlertTitle>Deniz değerleri henüz yayında değil</AlertTitle>
-              <AlertDescription>
-                {scope.pointCount > 0
-                  ? t("seaScope", {
-                      basins: scope.basinCount,
-                      points: scope.pointCount,
-                      provinces: scope.provinceCount,
-                    })
-                  : t("seaScopeFallback")}
-              </AlertDescription>
-            </Alert>
-          )}
+          <Suspense fallback={<CardGridSkeleton columns="2-4" count={4} />}>
+            <MarineToday locale={locale} />
+          </Suspense>
         </section>
 
         {/* SECTION 5: FEATURED PROVINCES & COUNTRIES VITRINI */}
         <section className="space-y-8">
-          {/* Featured Provinces */}
-          {provinceCards.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div>
-                  <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-                    {t("discoverProvinces")}
-                  </h3>
-                </div>
-                <Link href="/turkiye">
-                  <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
-                    Tüm İller ({totalProvinces})
-                  </Button>
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {provinceCards.map((card) => (
-                  <a
-                    key={card.id}
-                    href={card.href}
-                    className="group block p-6 rounded-2xl border border-border bg-card hover:border-primary/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="outline" size="sm" className="font-medium">
-                        {card.meta}
-                      </Badge>
-                      <span className="size-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-colors">
-                        <ArrowRight className="size-4" />
-                      </span>
-                    </div>
-                    <h4 className="font-heading text-2xl font-bold text-foreground group-hover:text-primary transition-colors mt-2">
-                      {card.name}
-                    </h4>
-                    {card.fact && (
-                      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{card.fact.label}</span>
-                        <span className="font-bold text-foreground font-mono">
-                          {card.fact.value}
-                        </span>
-                      </div>
-                    )}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Featured Countries */}
-          {countryCards.length > 0 && (
-            <div className="space-y-4 pt-4">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div>
-                  <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-                    {t("discoverCountries")}
-                  </h3>
-                </div>
-                <Link href="/dunya">
-                  <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
-                    Tüm Ülkeler ({totalCountries})
-                  </Button>
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {countryCards.map((card) => (
-                  <a
-                    key={card.id}
-                    href={card.href}
-                    className="group block p-6 rounded-2xl border border-border bg-card hover:border-secondary/60 transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <Badge variant="secondary" size="sm">
-                        {card.meta}
-                      </Badge>
-                      <span className="size-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:text-secondary group-hover:text-white transition-colors">
-                        <ArrowRight className="size-4" />
-                      </span>
-                    </div>
-                    <h4 className="font-heading text-2xl font-bold text-foreground group-hover:text-secondary transition-colors mt-2">
-                      {card.name}
-                    </h4>
-                    {card.fact && (
-                      <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{card.fact.label}</span>
-                        <span className="font-bold text-foreground font-mono">
-                          {card.fact.value}
-                        </span>
-                      </div>
-                    )}
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
+          <Suspense fallback={<CardGridSkeleton columns="3" count={6} />}>
+            <FeaturedPlaces locale={locale} />
+          </Suspense>
         </section>
 
         {/* SECTION 6: GAMIFICATION CHALLENGE BANNER */}
