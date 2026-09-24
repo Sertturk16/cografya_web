@@ -377,10 +377,13 @@ function fillParams(
 export function buildSweepUrls(
   pathnames: PathnameTable,
   shapes: readonly SweepShape[] = SWEEP_SHAPES,
+  // The locales the site actually serves (`routing.locales`). While `ENGLISH_ENABLED` is off
+  // every `/en` URL is a 301 to the Turkish page, so measuring it would only measure TR twice.
+  servedLocales: readonly SweepLocale[] = ["tr", "en"],
 ): SweepUrl[] {
   const urls: SweepUrl[] = [];
   for (const shape of shapes) {
-    for (const locale of shape.locales) {
+    for (const locale of shape.locales.filter((l) => servedLocales.includes(l))) {
       const template = resolveTemplate(pathnames, shape.pathname, locale);
       // Always, even with no params: a dynamic pathname whose `params` were forgotten would
       // otherwise be requested verbatim, and `/turkiye/[slug]` is a 404 — a page with no

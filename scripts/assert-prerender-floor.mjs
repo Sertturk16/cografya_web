@@ -15,48 +15,57 @@
  * provinces and 7 regions, and the showcase has 7 categories, so those numbers moving is
  * news either way. Country and book counts are floors, because seeds are added over time.
  *
- * All figures measured from `.next/prerender-manifest.json` on 2026-09-19.
+ * All figures measured from `.next/prerender-manifest.json` on 2026-09-19, with both locales
+ * served; the rules below store them per locale.
  */
 import { readFileSync } from "node:fs";
 
-/** @typedef {{ label: string, kind: "exact" | "floor", expected: number, pattern: RegExp }} Rule */
+/** @typedef {{ label: string, kind: "exact" | "floor", perLocale: number, pattern: RegExp }} Rule */
 
-/** @type {readonly Rule[]} */
+/**
+ * Counts are PER SERVED LOCALE and multiplied by how many locales the build serves
+ * (`routing.locales`, which drops `en` while `ENGLISH_ENABLED` is off — T-105). The patterns
+ * still accept both prefixes, so an English page leaking into a Turkish-only build breaks the
+ * exact rows instead of hiding in them.
+ *
+ * @type {readonly Rule[]}
+ */
 const RULES = [
-  { label: "total", kind: "floor", expected: 980, pattern: /^\// },
+  { label: "total", kind: "floor", perLocale: 490, pattern: /^\// },
   {
     label: "provinces",
     kind: "exact",
-    expected: 162,
+    perLocale: 81,
     pattern: /^\/(tr|en)\/turkiye\/(?!bolge)[^/]+$/,
   },
-  { label: "regions", kind: "exact", expected: 14, pattern: /^\/(tr|en)\/turkiye\/bolge\/[^/]+$/ },
+  { label: "regions", kind: "exact", perLocale: 7, pattern: /^\/(tr|en)\/turkiye\/bolge\/[^/]+$/ },
   {
     label: "countries",
     kind: "floor",
-    expected: 398,
+    perLocale: 199,
     pattern: /^\/(tr|en)\/(dunya|world)\/(?!kita|continent)[^/]+$/,
   },
   {
     label: "continents",
     kind: "exact",
-    expected: 28,
+    perLocale: 14,
     pattern: /^\/(tr|en)\/(dunya\/kita|world\/continent)\/[^/]+$/,
   },
-  { label: "books", kind: "floor", expected: 2, pattern: /^\/(tr|en)\/(kitaplar|books)\/[^/]+$/ },
+  { label: "books", kind: "floor", perLocale: 1, pattern: /^\/(tr|en)\/(kitaplar|books)\/[^/]+$/ },
   {
     label: "design-system",
     kind: "exact",
-    expected: 14,
+    perLocale: 7,
     pattern: /^\/(tr|en)\/design-system\/[^/]+$/,
   },
 ];
 
 /**
  * @param {unknown} manifest
+ * @param {number} [localeCount] how many locales the build serves (`routing.locales.length`)
  * @returns {{ label: string, kind: "exact" | "floor", expected: number, actual: number }[]}
  */
-export function readPrerenderFloors(manifest) {
+export function readPrerenderFloors(manifest, localeCount = 2) {
   if (
     manifest === null ||
     typeof manifest !== "object" ||
@@ -70,12 +79,14 @@ export function readPrerenderFloors(manifest) {
   return RULES.map((rule) => ({
     label: rule.label,
     kind: rule.kind,
-    expected: rule.expected,
+    expected: rule.perLocale * localeCount,
     actual: paths.filter((p) => rule.pattern.test(p)).length,
   }));
 }
 
-function main() {
+async function main() {
+  // The routing table itself, not a copy of the switch: plain Node strips the types.
+  const { routing } = await import("../i18n/routing.ts");
   const path = ".next/prerender-manifest.json";
   let manifest;
   try {
@@ -88,7 +99,7 @@ function main() {
 
   let rows;
   try {
-    rows = readPrerenderFloors(manifest);
+    rows = readPrerenderFloors(manifest, routing.locales.length);
   } catch (cause) {
     console.error(`prerender floor: ${path} parsed but is not shaped like a prerender manifest.`);
     console.error(String(cause));
@@ -120,5 +131,5 @@ if (
   process.argv[1] !== undefined &&
   import.meta.url.endsWith(process.argv[1].replace(/^.*[/\\]/, ""))
 ) {
-  main();
+  await main();
 }

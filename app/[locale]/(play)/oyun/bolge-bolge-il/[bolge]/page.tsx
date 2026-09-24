@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getPathname } from "@/i18n/navigation";
-import type { Locale } from "@/i18n/routing";
+import { routing, type Locale } from "@/i18n/routing";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
 import { viewBoxForPaths } from "@/lib/game/map-bbox";
 import { buildGameShapes, toTargetEntries } from "@/lib/game/map-shapes";
@@ -19,10 +19,9 @@ interface PageProps {
 }
 
 export function generateStaticParams() {
-  return REGION_KEYS.flatMap((region) => [
-    { locale: "tr" as const, bolge: regionSlug(region) },
-    { locale: "en" as const, bolge: regionSlug(region) },
-  ]);
+  return REGION_KEYS.flatMap((region) =>
+    routing.locales.map((locale) => ({ locale, bolge: regionSlug(region) })),
+  );
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

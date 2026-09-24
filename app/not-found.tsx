@@ -1,4 +1,5 @@
 import "./globals.css";
+import { ENGLISH_ENABLED } from "@/i18n/routing";
 
 /**
  * ROOT 404 — the boundary for a URL that matches no route at all.
@@ -11,7 +12,7 @@ import "./globals.css";
  *
  * It renders outside `app/[locale]/layout.tsx`, so it supplies its own `<html>`/`<body>`.
  *
- * DELIBERATELY BILINGUAL AND STATIC. Resolving a locale here means a request read, which in
+ * DELIBERATELY BILINGUAL (while `ENGLISH_ENABLED` is on) AND STATIC. Resolving a locale here means a request read, which in
  * this SSG setup flips the statically-prerendered route that threw `notFound()` from static
  * to dynamic at runtime and 500s instead of returning 404 — the regression
  * `app/[locale]/(site)/not-found.tsx` already documents. Showing both languages is the honest
@@ -70,20 +71,26 @@ export default function RootNotFound() {
             </a>
           </div>
 
-          <hr className="border-border" />
+          {/* The English half links to `/en`, which is a redirect while the English site is
+              withdrawn (`ENGLISH_ENABLED`, T-105), so it is shown only while `/en` is served. */}
+          {ENGLISH_ENABLED && (
+            <>
+              <hr className="border-border" />
 
-          <div className="space-y-3">
-            <h2 className="font-heading text-2xl font-bold">Page not found</h2>
-            <p className="text-muted-foreground">
-              The address you requested may have moved, or may never have existed.
-            </p>
-            <a
-              href="/en"
-              className="inline-block font-semibold text-primary underline underline-offset-4"
-            >
-              Back to the homepage
-            </a>
-          </div>
+              <div className="space-y-3" lang="en">
+                <h2 className="font-heading text-2xl font-bold">Page not found</h2>
+                <p className="text-muted-foreground">
+                  The address you requested may have moved, or may never have existed.
+                </p>
+                <a
+                  href="/en"
+                  className="inline-block font-semibold text-primary underline underline-offset-4"
+                >
+                  Back to the homepage
+                </a>
+              </div>
+            </>
+          )}
         </main>
       </body>
     </html>

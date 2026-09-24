@@ -1,6 +1,33 @@
 import { defineRouting } from "next-intl/routing";
 
 /**
+ * THE ENGLISH SITE SWITCH (T-105). The one line that withdraws or restores `/en`.
+ *
+ * `false`: `routing.locales` below is `["tr"]`, so next-intl serves no `/en` route, emits no
+ * EN hreflang (head, sitemap) and no `Link` header, and `proxy.ts` answers every `/en` and
+ * `/en/...` request with a 301 to its Turkish equivalent (`lib/i18n/english-redirect.ts`).
+ *
+ * `true`: everything English comes back as it was. Nothing English is deleted or commented
+ * out — the EN `pathnames` below, `messages/en.json` and the EN tests stay live behind this
+ * line, and `lib/i18n/english-switch.{off,on}.test.ts` pin both positions.
+ *
+ * It lives in this file rather than its own module because `scripts/sweep-overflow.mjs`
+ * imports this file under plain Node, where an extensionless relative import does not resolve.
+ */
+export const ENGLISH_ENABLED: boolean = false;
+
+/**
+ * Every locale the codebase KNOWS — messages, pathnames and the `Locale` type. The locales
+ * the site SERVES are `routing.locales`, which drops `en` while `ENGLISH_ENABLED` is off
+ * (the switch above). Keeping the two apart is what lets the EN code stay compiled
+ * and tested behind the switch instead of being deleted.
+ */
+export const ALL_LOCALES = ["tr", "en"] as const;
+export type Locale = (typeof ALL_LOCALES)[number];
+
+const SERVED_LOCALES: readonly Locale[] = ENGLISH_ENABLED ? ALL_LOCALES : ["tr"];
+
+/**
  * Central i18n routing config (CONVENTIONS §3 web foundations).
  *
  * - Sub-path routing: TR at root `/`, EN at `/en/...`.
@@ -22,7 +49,7 @@ import { defineRouting } from "next-intl/routing";
  *   per-locale by the caller — resolution lives in the page + `lib/api`, not here.
  */
 export const routing = defineRouting({
-  locales: ["tr", "en"],
+  locales: SERVED_LOCALES,
   defaultLocale: "tr",
   localePrefix: "as-needed",
   localeDetection: false,
@@ -318,5 +345,4 @@ export const routing = defineRouting({
   },
 });
 
-export type Locale = (typeof routing.locales)[number];
 export type AppPathname = keyof typeof routing.pathnames;
