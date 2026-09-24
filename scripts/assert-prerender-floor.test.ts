@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { routing } from "@/i18n/routing";
 import { readPrerenderFloors } from "./assert-prerender-floor.mjs";
 
 const scriptPath = fileURLToPath(new URL("./assert-prerender-floor.mjs", import.meta.url));
@@ -42,6 +43,24 @@ describe("readPrerenderFloors", () => {
   it("counts the 81 provinces in both locales", () => {
     const provinces = readPrerenderFloors(healthyManifest()).find((r) => r.label === "provinces");
     expect(provinces).toMatchObject({ kind: "exact", expected: 162, actual: 162 });
+  });
+
+  it("scales every row by the served locale count — Turkish only while English is off", () => {
+    const trOnly = {
+      routes: Object.fromEntries(
+        Object.keys(healthyManifest().routes)
+          .filter((path) => path.startsWith("/tr/"))
+          .map((path) => [path, {}]),
+      ),
+    };
+    const rows = readPrerenderFloors(trOnly, 1);
+    expect(rows.find((r) => r.label === "provinces")).toMatchObject({ expected: 81, actual: 81 });
+    expect(
+      rows.filter((r) => (r.kind === "exact" ? r.actual !== r.expected : r.actual < r.expected)),
+    ).toEqual([]);
+    // An English page leaking into a Turkish-only build breaks the exact rows.
+    const leaked = readPrerenderFloors(healthyManifest(), 1).find((r) => r.label === "provinces");
+    expect(leaked).toMatchObject({ expected: 81, actual: 162 });
   });
 
   it("fails the province row when the API was unreachable — the case this exists for", () => {
@@ -108,8 +127,10 @@ describe("the CLI entrypoint (main)", () => {
       expect(result.status).toBe(1);
       // Rows go to stdout, the closing summary to stderr. Naming `provinces` specifically is
       // the point: a single total is satisfiable while a whole category is missing.
-      expect(result.stdout).toMatch(/^FAIL provinces\s+0 = 162$/m);
-      expect(result.stdout).toMatch(/^FAIL total\s+4 >= 980$/m);
+      // The CLI scales by the locales the build SERVES (`ENGLISH_ENABLED`, T-105).
+      const served = routing.locales.length;
+      expect(result.stdout).toMatch(new RegExp(`^FAIL provinces\\s+0 = ${81 * served}$`, "m"));
+      expect(result.stdout).toMatch(new RegExp(`^FAIL total\\s+4 >= ${490 * served}$`, "m"));
       expect(result.stderr).toMatch(/route families short/);
       expect(result.stderr).toMatch(/An API-less build looks exactly like this/);
     } finally {

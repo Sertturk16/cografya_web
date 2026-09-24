@@ -33,7 +33,12 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 
 ## i18n (next-intl 4)
 
-- `i18n/routing.ts`: locales `tr` (default, unprefixed) / `en` (`/en`),
+- **English is withdrawn behind ONE switch** (T-105): `ENGLISH_ENABLED` in `i18n/routing.ts`. Off,
+  `routing.locales` is `["tr"]` (EN hreflang, sitemap rows and `Link` header vanish with it) and
+  `proxy.ts` 301s every `/en/...` to its TR path via `lib/i18n/english-redirect.ts`; EN pathnames,
+  messages and tests stay. `ALL_LOCALES`/`Locale` still include `en`; tests pin both positions by
+  mocking the module (`lib/test-support/english-switch.ts`). Flip it to `true` to restore EN.
+- `i18n/routing.ts`: locales `tr` (default, unprefixed) / `en` (`/en`, served only when switched on),
   `localePrefix: "as-needed"`, `localeDetection: false`, **39** `pathnames` entries, none of
   which says `v2`. `type AppPathname` derives from it. English segments are `/turkiye/...`, not
   `/turkey/...` — the table's own recorded decision, which the V2 entries had contradicted.

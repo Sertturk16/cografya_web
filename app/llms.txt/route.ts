@@ -1,5 +1,5 @@
 import { getPathname } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
+import { ENGLISH_ENABLED, routing } from "@/i18n/routing";
 import { absoluteUrl } from "@/lib/seo/site";
 
 /**
@@ -36,24 +36,9 @@ function url(locale: (typeof routing.locales)[number], href: Href): string {
   return absoluteUrl(getPathname({ locale, href }));
 }
 
-function buildLlmsTxt(): string {
-  const sitemapUrl = absoluteUrl("/sitemap.xml");
-
-  return `# Coğrafya Gurmesi
-
-> Free, open geography education platform for Türkiye and the world. Turkish-first (TR at the root, English under /en), with source-grounded content on the 81 provinces of Türkiye, world countries, landforms and geography concepts.
-
-Coğrafya Gurmesi is an education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs. Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.
-
-## Main sections (Turkish, default locale)
-
-- [Ana Sayfa (Home)](${url("tr", "/")}): Overview and entry point to the province and country hubs.
-- [Türkiye](${url("tr", "/turkiye")}): Interactive map hub linking the detail pages for all 81 provinces of Türkiye.
-- [Dünya (World)](${url("tr", "/dunya")}): World map hub linking country detail pages.
-- [Deniz (Sea)](${url("tr", "/deniz")}): Marine hub for the coasts of Türkiye — offshore reference points, the measurement catalogue, and explanatory blocks on wave height, wind and sea-surface temperature. Turkish only; its English counterpart is served with "noindex".
-- [Oyun (Map Game)](${url("tr", "/oyun")}): A map game for locating the provinces of Türkiye. The hub page describes the game; the individual play screens are application screens and are served with "noindex".
-- [Hakkımızda (About)](${url("tr", "/hakkimizda")}): What the platform is and how its content is sourced and verified.
-
+/** Listed only while `ENGLISH_ENABLED` is on: a withdrawn `/en` URL is a redirect, not a page. */
+function englishSection(): string {
+  return `
 ## Main sections (English)
 
 - [Home](${url("en", "/")})
@@ -61,10 +46,30 @@ Coğrafya Gurmesi is an education project. All content is free to read, grounded
 - [World](${url("en", "/dunya")})
 - [Map Game](${url("en", "/oyun")})
 - [About](${url("en", "/hakkimizda")})
+`;
+}
 
+function buildLlmsTxt(): string {
+  const sitemapUrl = absoluteUrl("/sitemap.xml");
+
+  return `# Coğrafya Gurmesi
+
+> Free, open geography education platform for Türkiye and the world. ${ENGLISH_ENABLED ? "Turkish-first (TR at the root, English under /en)" : "Published in Turkish"}, with source-grounded content on the 81 provinces of Türkiye, world countries, landforms and geography concepts.
+
+Coğrafya Gurmesi is an education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs.${ENGLISH_ENABLED ? ' Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.' : ""}
+
+## Main sections (Turkish, default locale)
+
+- [Ana Sayfa (Home)](${url("tr", "/")}): Overview and entry point to the province and country hubs.
+- [Türkiye](${url("tr", "/turkiye")}): Interactive map hub linking the detail pages for all 81 provinces of Türkiye.
+- [Dünya (World)](${url("tr", "/dunya")}): World map hub linking country detail pages.
+- [Deniz (Sea)](${url("tr", "/deniz")}): Marine hub for the coasts of Türkiye — offshore reference points, the measurement catalogue, and explanatory blocks on wave height, wind and sea-surface temperature.${ENGLISH_ENABLED ? ' Turkish only; its English counterpart is served with "noindex".' : ""}
+- [Oyun (Map Game)](${url("tr", "/oyun")}): A map game for locating the provinces of Türkiye. The hub page describes the game; the individual play screens are application screens and are served with "noindex".
+- [Hakkımızda (About)](${url("tr", "/hakkimizda")}): What the platform is and how its content is sourced and verified.
+${ENGLISH_ENABLED ? englishSection() : ""}
 ## Full crawl discovery
 
-- [Sitemap](${sitemapUrl}): Every indexable URL, with hreflang annotations and real last-modified dates. Sections listed above appear in both locales; detail pages appear in Turkish only for now.
+- [Sitemap](${sitemapUrl}): Every indexable URL, with hreflang annotations and real last-modified dates.${ENGLISH_ENABLED ? " Sections listed above appear in both locales; detail pages appear in Turkish only for now." : ""}
 `;
 }
 

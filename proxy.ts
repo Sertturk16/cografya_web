@@ -1,9 +1,25 @@
 import createMiddleware from "next-intl/middleware";
-import { routing } from "./i18n/routing";
+import { type NextRequest, NextResponse } from "next/server";
+import { ENGLISH_ENABLED, routing } from "./i18n/routing";
+import { isEnglishPath, turkishPathFor } from "./lib/i18n/english-redirect";
+import { resolveEnglishSlug } from "./lib/i18n/english-slugs.server";
 
 // Next.js 16 renamed the `middleware` file convention to `proxy` (createMiddleware
 // itself is unchanged). This wires next-intl locale routing + localized `pathnames`.
-export default createMiddleware(routing);
+const intlMiddleware = createMiddleware(routing);
+
+export default async function proxy(request: NextRequest) {
+  // T-105: with the English site withdrawn, `en` is not a served locale, so next-intl would
+  // read `/en/...` as a Turkish path and 404 it. Every such URL — old links, indexed pages,
+  // e-mails the api sent with `/en/reset-password/new?token=…` — gets a permanent redirect to
+  // its Turkish equivalent instead, query string included.
+  if (!ENGLISH_ENABLED && isEnglishPath(request.nextUrl.pathname)) {
+    const target = request.nextUrl.clone();
+    target.pathname = await turkishPathFor(request.nextUrl.pathname, resolveEnglishSlug);
+    return NextResponse.redirect(target, 301);
+  }
+  return intlMiddleware(request);
+}
 
 export const config = {
   // Run on everything EXCEPT: Next internals (`_next`), Vercel internals

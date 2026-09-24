@@ -213,7 +213,7 @@ async function visit(page, url) {
   };
 }
 
-const allUrls = buildSweepUrls(routing.pathnames);
+const allUrls = buildSweepUrls(routing.pathnames, undefined, routing.locales);
 const urls = FILTER
   ? allUrls.filter((u) => u.url.includes(FILTER) || u.id.includes(FILTER))
   : allUrls;
