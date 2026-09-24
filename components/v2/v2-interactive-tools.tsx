@@ -13,6 +13,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Compass, ArrowRight, MapPin, Navigation, Layers } from "lucide-react";
+import { tr } from "@/lib/text/format-number";
 
 // Coordinates for sample major cities in Turkey & World
 const CITIES: Record<string, { lat: number; lng: number; name: string }> = {
@@ -121,10 +122,10 @@ export function V2InteractiveTools() {
               </div>
               <div className="text-right text-xs text-muted-foreground font-mono space-y-0.5">
                 <div>
-                  {cityObjA.name}: {cityObjA.lat.toFixed(2)}°K, {cityObjA.lng.toFixed(2)}°D
+                  {cityObjA.name}: {tr(cityObjA.lat, 2)}°K, {tr(cityObjA.lng, 2)}°D
                 </div>
                 <div>
-                  {cityObjB.name}: {cityObjB.lat.toFixed(2)}°K, {cityObjB.lng.toFixed(2)}°D
+                  {cityObjB.name}: {tr(cityObjB.lat, 2)}°K, {tr(cityObjB.lng, 2)}°D
                 </div>
               </div>
             </div>

@@ -13,6 +13,8 @@ import { PageHero } from "@/components/patterns/page-hero";
 import { cn } from "@/lib/utils";
 import { Layers, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { tr } from "@/lib/text/format-number";
+
 type LinkHref = React.ComponentProps<typeof Link>["href"];
 
 /**
@@ -216,16 +218,16 @@ export function V2SeaBasinDetailView({
                         )}
                       </td>
                       <td className="p-3 sm:p-4 font-mono font-bold text-foreground">
-                        {pt.sst !== null && pt.sst !== undefined ? `${pt.sst.toFixed(1)} °C` : "—"}
+                        {pt.sst !== null && pt.sst !== undefined ? `${tr(pt.sst, 1)} °C` : "—"}
                       </td>
                       <td className="p-3 sm:p-4 font-mono text-foreground">
                         {pt.waveHeight !== null && pt.waveHeight !== undefined
-                          ? `${pt.waveHeight.toFixed(2)} m`
+                          ? `${tr(pt.waveHeight, 2)} m`
                           : "—"}
                       </td>
                       <td className="p-3 sm:p-4 font-mono text-foreground">
                         {pt.windSpeedKmh !== null && pt.windSpeedKmh !== undefined
-                          ? `${pt.windSpeedKmh.toFixed(0)} km/h`
+                          ? `${tr(pt.windSpeedKmh, 0)} km/h`
                           : "—"}
                       </td>
                       <td className="p-3 sm:p-4 text-[11px] text-muted-foreground font-mono">
