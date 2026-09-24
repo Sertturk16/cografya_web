@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getFormatter, setRequestLocale } from "next-intl/server";
 import { getMarinePointsSafe, getMarineOverviewSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
@@ -11,6 +12,8 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2SeaBasinDetailView } from "@/components/v2/v2-sea-basin-detail-view";
 import { PageContainer } from "@/components/patterns/page-container";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
+import { ProseSkeleton } from "@/components/patterns/page-skeleton";
+import { V2BasinTelemetry } from "@/components/v2/v2-basin-telemetry";
 import type { MarinePointData } from "@/components/v2/v2-marine-map-explorer";
 import { breadcrumbListSchema, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { SEA_BASINS_DETAIL } from "@/lib/marine/sea-basins-detail";
@@ -35,24 +38,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-export default async function V2MarmaraPage({ params }: PageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-  const format = await getFormatter();
-  const basinData = SEA_BASINS_DETAIL.marmara;
-  /* SPLIT AT THE BOUNDARY, not narrowed by the type alone. `V2SeaBasinDetailView` is a
-     Client Component, so whatever object it is handed is serialised into the Flight payload
-     in this page's HTML — every field, read or not. It stopped reading `data.faq` in PR5,
-     so `faq` was being shipped to the browser for nothing, and on `/en/sea/*` that meant
-     untranslated Turkish prose on a page whose FAQ block is deliberately hidden.
-     `data={basinData}` would still type-check against `SeaBasinViewData` — excess-property
-     checking does not apply to a variable — so the field has to be removed for real. `faq`
-     then feeds `<FaqSection>` below, which is the only thing that still wants it. */
-  const { faq: basinFaq, ...basinView } = basinData;
+const basinData = SEA_BASINS_DETAIL.marmara;
 
-  // No layer catalogue read any more. It was fetched for one reason — `MarineAttribution`
-  // derives ECMWF's required copyright YEAR from the ingested cycle's künye — and that block
-  // now renders on `/hakkimizda`, which does the read itself.
+// No layer catalogue read any more. It was fetched for one reason — `MarineAttribution`
+// derives ECMWF's required copyright YEAR from the ingested cycle's künye — and that block
+// now renders on `/hakkimizda`, which does the read itself.
+async function loadBasinPoints(
+  locale: Locale,
+  format: Awaited<ReturnType<typeof getFormatter>>,
+): Promise<MarinePointData[]> {
   const [rawPoints, rawOverview, rawProvinces] = await Promise.all([
     getMarinePointsSafe(),
     getMarineOverviewSafe(),
@@ -128,6 +122,34 @@ export default async function V2MarmaraPage({ params }: PageProps) {
     };
   });
 
+  return marinePoints;
+}
+
+async function BasinTelemetry({
+  locale,
+  format,
+}: {
+  locale: Locale;
+  format: Awaited<ReturnType<typeof getFormatter>>;
+}) {
+  const marinePoints = await loadBasinPoints(locale, format);
+  return <V2BasinTelemetry basinNameTr={basinData.nameTr} marinePoints={marinePoints} />;
+}
+
+export default async function V2MarmaraPage({ params }: PageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const format = await getFormatter();
+  /* SPLIT AT THE BOUNDARY, not narrowed by the type alone. `V2SeaBasinDetailView` is a
+     Client Component, so whatever object it is handed is serialised into the Flight payload
+     in this page's HTML — every field, read or not. It stopped reading `data.faq` in PR5,
+     so `faq` was being shipped to the browser for nothing, and on `/en/sea/*` that meant
+     untranslated Turkish prose on a page whose FAQ block is deliberately hidden.
+     `data={basinData}` would still type-check against `SeaBasinViewData` — excess-property
+     checking does not apply to a variable — so the field has to be removed for real. `faq`
+     then feeds `<FaqSection>` below, which is the only thing that still wants it. */
+  const { faq: basinFaq, ...basinView } = basinData;
+
   // The ONE array: feeds both the visible nav (`V2SeaBasinDetailView` renders it through
   // `BreadcrumbsNav`, the client-safe half of `components/patterns/breadcrumbs.tsx`) and the
   // `breadcrumbListSchema` call below. `V2SeaBasinDetailView` is a Client Component and cannot
@@ -167,7 +189,11 @@ export default async function V2MarmaraPage({ params }: PageProps) {
       <PageContainer>
         <V2SeaBasinDetailView
           data={basinView}
-          marinePoints={marinePoints}
+          telemetry={
+            <Suspense fallback={<ProseSkeleton lines={6} />}>
+              <BasinTelemetry locale={locale} format={format} />
+            </Suspense>
+          }
           breadcrumbItems={breadcrumbItems}
           /* The FAQ block is built HERE and handed to the view as a prop. `FaqSection` emits the
              `FAQPage` JSON-LD beside the questions from the one `basinData.faq` array, which is

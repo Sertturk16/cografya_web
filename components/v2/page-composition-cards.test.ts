@@ -1414,7 +1414,13 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // `earthquake-attribution.tsx` and `marine-data-notice.tsx` each held one boxed notice and
     // nothing else; both are footnotes now. 61 after T-101: `/gizlilik`,
     // `legal-controller-identity.tsx` and the settings personal card (its consent fieldset) join.
-    expect(handDrawnTotals().files).toBe(61);
+    // 62 after T-037 Task 9: the basin telemetry table (its `rounded-3xl border border-border
+    // bg-card` wrapper and its `rounded-3xl border border-dashed border-border bg-card/40`
+    // empty state) moved out of `v2-sea-basin-detail-view.tsx` into the new
+    // `v2-basin-telemetry.tsx`, which now joins the surface on its own; the view stays on it
+    // through its metric strip and fault-line callout. Net one more file, not one more pattern —
+    // {@link HAND_DRAWN_CARDS} and {@link HAND_DRAWN_WELLS} are unchanged.
+    expect(handDrawnTotals().files).toBe(62);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
