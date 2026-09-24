@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { ApiError, apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
 import type { CountryDetail, CountryListItem, CountryMapSummary } from "./types";
@@ -14,10 +15,14 @@ import type { CountryDetail, CountryListItem, CountryMapSummary } from "./types"
  * Next keeps serving the last good static artifact.
  */
 
-/** All countries, as the api returns them. Throws on failure. */
-export async function getCountries(): Promise<CountryListItem[]> {
+/**
+ * All countries, as the api returns them. Throws on failure.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
+ */
+export const getCountries = cache(async (): Promise<CountryListItem[]> => {
   return apiGet<CountryListItem[]>("/api/countries");
-}
+});
 
 /**
  * Freshness-bounded membership for `/flags/{ISO}.svg` runtime authorization.
@@ -40,10 +45,12 @@ export async function getCountriesForFlagAuthorization(): Promise<CountryListIte
  * keyed by ISO code. Purpose-built lean payload — one fetch, build-time embedded. Returns
  * only seeded countries; numeric fields are null until fact-checked. Throws on failure — the
  * caller degrades the map (best-effort enhancement).
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getCountryMapSummary(): Promise<CountryMapSummary[]> {
+export const getCountryMapSummary = cache(async (): Promise<CountryMapSummary[]> => {
   return apiGet<CountryMapSummary[]>("/api/countries/map-summary");
-}
+});
 
 /**
  * One country by its TR or EN slug (the api resolves both). Returns `null` on a genuine
@@ -66,8 +73,10 @@ export async function getCountryBySlug(slug: string): Promise<CountryDetail | nu
  * (generateStaticParams, the `/dunya` hub, sitemap). At BUILD an api outage yields `[]`
  * (routes fall back to on-demand ISR); at RUNTIME it re-throws so a transient blip keeps
  * the last good static page/sitemap. Mirrors `getProvincesResilient()`.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getCountriesResilient(): Promise<CountryListItem[]> {
+export const getCountriesResilient = cache(async (): Promise<CountryListItem[]> => {
   try {
     return await getCountries();
   } catch (error) {
@@ -79,7 +88,7 @@ export async function getCountriesResilient(): Promise<CountryListItem[]> {
     }
     throw error;
   }
-}
+});
 
 /**
  * Build-safe country map summary — the country mirror of `getMapSummaryResilient()`
@@ -89,8 +98,10 @@ export async function getCountriesResilient(): Promise<CountryListItem[]> {
  * RUNTIME it re-throws, so a transient blip leaves the last good static page in place rather
  * than caching one that silently lost its country data. Used by the homepage, whose featured
  * country cards need the numeric fields the plain list does not carry.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getCountryMapSummaryResilient(): Promise<CountryMapSummary[]> {
+export const getCountryMapSummaryResilient = cache(async (): Promise<CountryMapSummary[]> => {
   try {
     return await getCountryMapSummary();
   } catch (error) {
@@ -102,7 +113,7 @@ export async function getCountryMapSummaryResilient(): Promise<CountryMapSummary
     }
     throw error;
   }
-}
+});
 
 /**
  * Index any ISO-code-bearing payload by its `isoCode` (the map's shape↔data join, the

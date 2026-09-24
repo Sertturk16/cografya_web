@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { absoluteUrl } from "@/lib/seo/site";
 import { ApiError, apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
@@ -150,8 +151,10 @@ export async function getBooks(): Promise<BookListItem[]> {
  * rather than a behaviour that exists today: the hub it builds is required to answer
  * `notFound()` on an empty list instead of rendering a heading with nothing under it, so a
  * degraded build shows up as a 404 rather than as a thin page. No hub exists yet.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getBooksResilient(): Promise<BookListItem[]> {
+export const getBooksResilient = cache(async (): Promise<BookListItem[]> => {
   try {
     return await getBooks();
   } catch (error) {
@@ -163,7 +166,7 @@ export async function getBooksResilient(): Promise<BookListItem[]> {
     }
     throw error;
   }
-}
+});
 
 /**
  * One book by its TR or EN slug (the api resolves both — the `ProvinceController`
