@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getCountriesResilient, getCountryMapSummaryResilient } from "@/lib/api/countries";
 import { hasFlag } from "@/lib/geo/flag-set";
@@ -12,6 +13,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { pickHubDescription } from "@/lib/seo/hub-description";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { PlateSkeleton, StatTileSkeleton } from "@/components/patterns/page-skeleton";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -66,11 +68,7 @@ export async function generateMetadata({ params }: V2DunyaPageProps): Promise<Me
   });
 }
 
-export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "Dunya" });
-
+async function loadDunyaHub(locale: Locale) {
   // Fetch country summary and resilient list
   const [mapSummaries, rawCountries] = await Promise.all([
     getCountryMapSummaryResilient(),
@@ -126,6 +124,29 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
       (continentCounts[c.continent as Continent] || 0) + 1;
   }
 
+  return {
+    countries,
+    totalCountries,
+    continentCounts,
+  };
+}
+
+async function CountryCountTile() {
+  const { totalCountries } = await loadDunyaHub("tr");
+  return (
+    <StatTile
+      label="Ülke ve bölge"
+      value={totalCountries}
+      unit="Ülke"
+      tone="primary"
+      absent={{ label: "Ülke listesi yok", hint: "Liste şu an yüklenemedi" }}
+    />
+  );
+}
+
+async function DunyaExplorer({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "Dunya" });
+  const { countries, totalCountries, continentCounts } = await loadDunyaHub(locale);
   return (
     <>
       {/* Structured Data / JSON-LD */}
@@ -151,7 +172,29 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
           }),
         ]}
       />
+      <V2WorldMapExplorer
+        countries={countries}
+        locale={locale}
+        middleSections={
+          <div key="v2-world-middle-sections" className="space-y-12 my-6">
+            {/* SECTION 2: 7 CONTINENTS COMPREHENSIVE GUIDE */}
+            <V2WorldContinents countryCounts={continentCounts} />
 
+            {/* SECTION 3: WORLD SUPERLATIVES & EXTREMES */}
+            <V2WorldStatsSpotlight />
+          </div>
+        }
+      />
+    </>
+  );
+}
+
+export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  return (
+    <>
       <V2LiveTicker />
 
       <PageContainer>
@@ -185,13 +228,9 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
                 `turkiye/page.tsx` for the one rule all four data-backed tiles in this PR share,
                 and for why the `absent` copy below is type-required but unreachable today. */}
             <StatGrid gutter="hero">
-              <StatTile
-                label="Ülke ve bölge"
-                value={totalCountries}
-                unit="Ülke"
-                tone="primary"
-                absent={{ label: "Ülke listesi yok", hint: "Liste şu an yüklenemedi" }}
-              />
+              <Suspense fallback={<StatTileSkeleton />}>
+                <CountryCountTile />
+              </Suspense>
               <StatTile label="Kıta" fact="7" tone="secondary" />
               <StatTile label="Dünya nüfusu" fact="~8,1 milyar" hint="BM tahmini" tone="accent" />
               <StatTile label="Kara alanı" fact="~148,9 milyon km²" tone="primary" />
@@ -200,19 +239,9 @@ export default async function V2DunyaPage({ params }: V2DunyaPageProps) {
         </div>
 
         {/* SECTION 1: INTERACTIVE VECTOR WORLD MAP WITH INTEGRATED MIDDLE SECTIONS & 199 COUNTRIES CATALOGUE */}
-        <V2WorldMapExplorer
-          countries={countries}
-          locale={locale}
-          middleSections={
-            <div key="v2-world-middle-sections" className="space-y-12 my-6">
-              {/* SECTION 2: 7 CONTINENTS COMPREHENSIVE GUIDE */}
-              <V2WorldContinents countryCounts={continentCounts} />
-
-              {/* SECTION 3: WORLD SUPERLATIVES & EXTREMES */}
-              <V2WorldStatsSpotlight />
-            </div>
-          }
-        />
+        <Suspense fallback={<PlateSkeleton aspect="world" />}>
+          <DunyaExplorer locale={locale} />
+        </Suspense>
 
         {/* SECTION 4: GAMIFICATION & EXPLORER BANNER */}
         <section className="rounded-3xl border border-secondary/40 bg-gradient-to-r from-muted via-card to-muted p-6 sm:p-10 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
