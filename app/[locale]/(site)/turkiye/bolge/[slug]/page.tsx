@@ -378,7 +378,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       pathname: "/turkiye/bolge/[slug]",
       params: { slug },
     }),
-    title: `${region.metaTitle} | Coğrafya Gurmesi`,
+    title: region.metaTitle,
     description: region.metaDescription,
     surface: "trOnly",
   });

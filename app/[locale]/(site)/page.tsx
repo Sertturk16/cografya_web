@@ -62,7 +62,10 @@ export async function generateMetadata({ params }: V2PageProps): Promise<Metadat
     // counterpart did — `app/sitemap.ts` already publishes this URL, and a `noindex`
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     hrefForLocale: () => "/",
-    title: `${t("metaTitle")}`,
+    // Absolute: `Home.metaTitle` already opens with the brand, so the root layout's
+    // `%s · brand` template would print it twice.
+    title: t("metaTitle"),
+    titleAbsolute: true,
     description: t("metaDescription"),
   });
 }

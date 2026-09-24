@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: AccountSettingsPageProps): Pr
   return buildAuthMetadata({
     locale,
     pathname: "/hesabim/ayarlar",
-    title: `${t("metaTitle")} — Coğrafya Gurmesi`,
+    title: t("metaTitle"),
     description: t("metaDescription"),
   });
 }
