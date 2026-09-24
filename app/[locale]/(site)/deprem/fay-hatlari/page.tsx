@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -9,6 +10,7 @@ import { EarthquakeAttribution } from "@/components/earthquake/earthquake-attrib
 import { getEarthquakeMetaSafe } from "@/lib/api/earthquakes";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { ProseSkeleton } from "@/components/patterns/page-skeleton";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
@@ -46,12 +48,22 @@ export async function generateMetadata({ params }: FaultLinesPageProps): Promise
   });
 }
 
+// The live ticker in this page's chrome shows AFAD's latest magnitude, so the page carries
+// AFAD's notice and the early-warning disclaimer exactly as `/deprem` does.
+async function AfadAttribution() {
+  const earthquakeMeta = await getEarthquakeMetaSafe();
+  if (earthquakeMeta === null) return null;
+  return (
+    <EarthquakeAttribution
+      attributions={earthquakeMeta.attributions}
+      disclaimerTr={earthquakeMeta.disclaimerTr}
+    />
+  );
+}
+
 export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  // The live ticker in this page's chrome shows AFAD's latest magnitude, so the page carries
-  // AFAD's notice and the early-warning disclaimer exactly as `/deprem` does.
-  const earthquakeMeta = await getEarthquakeMetaSafe();
 
   return (
     <>
@@ -381,12 +393,9 @@ export default async function FaultLinesPage({ params }: FaultLinesPageProps) {
             <Activity className="size-4" />
           </Link>
         </div>
-        {earthquakeMeta !== null && (
-          <EarthquakeAttribution
-            attributions={earthquakeMeta.attributions}
-            disclaimerTr={earthquakeMeta.disclaimerTr}
-          />
-        )}
+        <Suspense fallback={<ProseSkeleton lines={2} heading={false} />}>
+          <AfadAttribution />
+        </Suspense>
       </PageContainer>
     </>
   );
