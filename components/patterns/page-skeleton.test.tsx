@@ -146,4 +146,8 @@ describe("PageSkeleton", () => {
     expect(html).toContain("lg:col-span-8");
     expect(html).toContain("lg:col-span-4");
   });
+
+  it("CardGridSkeleton sizes a single box for a form shell when asked", () => {
+    expect(render(<CardGridSkeleton columns="2" count={1} height="form" />)).toContain("h-[520px]");
+  });
 });

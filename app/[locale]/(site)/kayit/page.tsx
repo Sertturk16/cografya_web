@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
+import { CardGridSkeleton } from "@/components/patterns/page-skeleton";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
@@ -40,10 +42,14 @@ export async function generateMetadata({ params }: V2RegisterPageProps): Promise
   });
 }
 
+async function RegisterCard({ locale }: { locale: Locale }) {
+  const provinces = await getProvinces();
+  return <V2RegisterCard locale={locale} provinces={provinces} />;
+}
+
 export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const provinces = await getProvinces();
   const t = await getTranslations({ locale, namespace: "Auth" });
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
@@ -71,7 +77,9 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Register Form Container */}
           <div className="lg:col-span-6 xl:col-span-5 w-full">
-            <V2RegisterCard locale={locale} provinces={provinces} />
+            <Suspense fallback={<CardGridSkeleton columns="2" count={1} height="form" />}>
+              <RegisterCard locale={locale} />
+            </Suspense>
           </div>
 
           {/* Value Proposition & Feature Showcase */}

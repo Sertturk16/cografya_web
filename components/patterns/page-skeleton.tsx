@@ -172,16 +172,24 @@ const GRID_COLUMNS = {
   "2-4": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
 } as const;
 
+const GRID_ITEM_HEIGHT = { card: "h-40", form: "h-[520px]" } as const;
+
 export function CardGridSkeleton({
   columns,
   count,
+  height = "card",
   announce = true,
-}: Announce & { readonly columns: keyof typeof GRID_COLUMNS; readonly count: number }) {
+}: Announce & {
+  readonly columns: keyof typeof GRID_COLUMNS;
+  readonly count: number;
+  /** `"form"` sizes each box for `V2RegisterCard`'s form shell instead of a summary card. */
+  readonly height?: "card" | "form";
+}) {
   return (
     <Status announce={announce}>
       <div className={cn("grid gap-5", GRID_COLUMNS[columns])}>
         {Array.from({ length: count }, (_, i) => (
-          <Bar key={i} className="h-40 rounded-3xl" />
+          <Bar key={i} className={cn(GRID_ITEM_HEIGHT[height], "rounded-3xl")} />
         ))}
       </div>
     </Status>
