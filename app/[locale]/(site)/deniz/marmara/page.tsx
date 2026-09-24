@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     surface: "trOnly",
     hrefForLocale: () => "/deniz/marmara",
-    title: "Marmara Denizi Fiziki Coğrafyası, Boğazlar & Canlı Telemetri | Coğrafya Gurmesi",
+    title: "Marmara Denizi Havzası: Boğazlar, Akıntılar ve Çukurlar",
     description:
-      "Marmara'nın 6 kıyı istasyonundan canlı su sıcaklığı, iki tabakalı zıt akıntı rejimleri, KAF derin çukurları ve iç deniz coğrafyası.",
+      "Marmara'nın açığında 6 noktada su sıcaklığı ve rüzgâr. Boğazlardaki iki katlı zıt akıntılar ve Kuzey Anadolu Fayı'nın açtığı derin çukurlar.",
   });
 }
 
@@ -151,7 +151,7 @@ export default async function V2MarmaraPage({ params }: PageProps) {
           // four callers (this page and its three basin siblings) plus `Breadcrumbs` itself.
           ...breadcrumbListSchema(breadcrumbItems, locale, "trOnly"),
           learningResourceJsonLd({
-            name: "Marmara Denizi Coğrafi Analizi ve İki Tabakalı Akıntı Rehberi",
+            name: "Marmara Denizi Havzası: Boğazlar ve İki Katlı Akıntı",
             description: basinData.physicalGeography.content,
             path: "/deniz/marmara",
             locale,

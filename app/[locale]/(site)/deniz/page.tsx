@@ -44,9 +44,9 @@ export async function generateMetadata({ params }: V2DenizPageProps): Promise<Me
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     surface: "trNarrative",
     hrefForLocale: () => "/deniz",
-    title: "Denizler & Kıyılar Atlası — Deniz Telemetrisi ve Su Sıcaklıkları",
+    title: "Denizler ve Kıyılar — Deniz Suyu Sıcaklığı, Dalga ve Rüzgâr",
     description:
-      "Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktası: su sıcaklığı, dalga boyu, rüzgâr vektörleri ve oşinografi modelleri.",
+      "Karadeniz, Marmara, Ege ve Akdeniz'de 27 kıyı ilinin açığında 30 nokta: deniz suyu sıcaklığı, dalga yüksekliği ve rüzgâr. Dört denizin tuzluluğu ve akıntıları.",
   });
 }
 
@@ -177,20 +177,20 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Denizler & Kıyılar Atlası",
+            name: "Denizler ve Kıyılar",
             description:
-              "Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktası: su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
+              "Karadeniz, Marmara, Ege ve Akdeniz'de 27 kıyı ilinin açığında 30 nokta: deniz suyu sıcaklığı, dalga yüksekliği ve rüzgâr. Dört denizin tuzluluğu ve akıntıları.",
             path: "/deniz",
             locale,
           }),
           learningResourceJsonLd({
-            name: "Denizler & Kıyılar Atlası",
+            name: "Denizler ve Kıyılar",
             description:
-              "Karadeniz, Marmara, Ege ve Akdeniz açığındaki 30 referans noktası: su sıcaklığı, dalga yüksekliği ve oşinografi verileri.",
+              "Karadeniz, Marmara, Ege ve Akdeniz'de 27 kıyı ilinin açığında 30 nokta: deniz suyu sıcaklığı, dalga yüksekliği ve rüzgâr. Dört denizin tuzluluğu ve akıntıları.",
             path: "/deniz",
             locale,
             learningResourceType: "Article",
-            teaches: "Türkiye denizlerinin oşinografik yapısı, su sıcaklığı ve dalga rejimleri",
+            teaches: "Türkiye denizlerinin su sıcaklığı, dalgası, tuzluluğu ve akıntıları",
           }),
         ]}
       />

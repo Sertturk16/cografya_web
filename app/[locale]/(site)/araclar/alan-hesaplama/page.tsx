@@ -35,9 +35,9 @@ export async function generateMetadata({ params }: V2AreaPageProps): Promise<Met
     // disagree about this page. It read `"noindex"` while the tier lived under `/v2`.
     surface: TOOLS_SURFACE,
     hrefForLocale: () => "/araclar/alan-hesaplama",
-    title: "Haritada Alan & Yüzölçümü Hesaplama — Çokgen (Polygon) Ölçümü",
+    title: "Haritada Alan Hesaplama — Yüzölçümü ve Çevre Uzunluğu",
     description:
-      "İnteraktif harita üzerinde çokgen çizerek WGS84 küresel elipsoid jeodezik modeliyle km², hektar, dönüm ve metrekare cinsinden gerçek yüzölçümü ve çevre uzunluğu hesaplama.",
+      "Haritada bir alanın sınırını çiz; yüzölçümünü km², hektar ve dönüm, çevresini km olarak gör. Hesap, Dünya'yı 6.371 km yarıçaplı bir küre sayarak yapılır.",
   });
 }
 
@@ -58,14 +58,14 @@ export default async function V2AreaToolPage({ params }: V2AreaPageProps) {
       {/* Structured Data / JSON-LD */}
       <JsonLd
         schema={learningResourceJsonLd({
-          name: "Haritada Alan & Yüzölçümü Hesaplama",
+          name: "Haritada Alan Hesaplama",
           description:
-            "Haritada çokgen köşe noktaları belirleyerek jeodezik poligon alanını hesaplayın.",
+            "Haritada köşe noktalarını koyarak çizdiğin alanın yüzölçümünü ve çevresini hesapla.",
           path: "/araclar/alan-hesaplama",
           locale,
           learningResourceType: "Interactive tool",
           teaches:
-            "İzdüşüm alanı, gerçek alan, küresel trigonometri, çokgen alan hesabı, km², hektar, dönüm",
+            "İzdüşüm alan ve gerçek alan farkı, küre üzerinde alan hesabı, km², hektar, dönüm",
         })}
       />
 

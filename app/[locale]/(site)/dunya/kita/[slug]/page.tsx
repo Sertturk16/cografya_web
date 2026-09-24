@@ -46,6 +46,21 @@ export function generateStaticParams() {
   );
 }
 
+/**
+ * TR meta description for a continent page. Antarktika has no countries and no population
+ * figure ("Kalıcı nüfus yok"), so both parts are phrased from the data rather than templated
+ * as "… nüfus", which read "Kalıcı nüfus yok nüfus".
+ */
+function continentDescriptionTr(continent: NonNullable<ReturnType<typeof getContinentBySlug>>) {
+  const population = continent.populationFormattedTr.toLocaleLowerCase("tr-TR");
+  const facts = [
+    continent.countryCount > 0 ? `${continent.countryCount} bağımsız ülke` : null,
+    `${continent.areaFormattedTr.toLocaleLowerCase("tr-TR")} yüzölçümü`,
+    /milyar|milyon/.test(population) ? `${population} nüfus` : population,
+  ].filter(Boolean);
+  return `${continent.nameTr} kıtası: ${facts.join(", ")}. En yüksek noktası ${continent.highestPoint.name}. Haritası, yeryüzü şekilleri ve iklimi.`;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { locale, slug } = await params;
   const continent = getContinentBySlug(slug);
@@ -63,11 +78,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         ? // No ` | Coğrafya Gurmesi`: the root layout's `%s · Coğrafya Gurmesi` template adds it,
           // and the EN arm below never carried it — so the brand appeared twice in TR and once
           // in EN, from one title expression.
-          `${continent.nameTr} Kıtası: Coğrafi Özellikleri, İklimi, Ülkeleri ve Haritası`
+          `${continent.nameTr} Kıtası: Coğrafyası, İklimi ve Ülkeleri`
         : `${continent.nameEn} Continent: Geography, Climate, Countries and Map`,
     description:
       locale === "tr"
-        ? `${continent.nameTr} kıtası coğrafi rehberi. ${continent.countryCount > 0 ? `${continent.countryCount} bağımsız ülke, ` : ""}${continent.areaFormattedTr} yüzölçümü, ${continent.populationFormattedTr} nüfus, ${continent.highestPoint.name} zirvesi ve fiziki coğrafya analizi.`
+        ? continentDescriptionTr(continent)
         : `${continent.nameEn} continent geography guide. Area, population, highest peaks and countries.`,
     openGraphType: "article",
   });

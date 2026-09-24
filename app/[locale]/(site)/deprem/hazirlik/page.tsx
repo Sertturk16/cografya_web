@@ -31,9 +31,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     surface: "trOnly",
     hrefForLocale: () => "/deprem/hazirlik",
-    title: "Deprem Hazırlık Rehberi: Öncesi, Sırası ve Sonrası Hayatta Kalma Kılavuzu",
+    title: "Deprem Hazırlık Rehberi: Öncesi, Sırası ve Sonrası",
     description:
-      "AFAD ve AKUT standartlarında kapsamlı afet bilinci kılavuzu. Eşya sabitleme, afet çantası, Çök-Kapan-Tutun tekniği, ilk 72 saat ve toplanma alanları.",
+      "AFAD'ın önerilerine dayanan deprem hazırlık rehberi: eşyaları sabitle, afet çantası hazırla, sarsıntıda çök-kapan-tutun. İlk 72 saat ve toplanma alanları.",
   });
 }
 
@@ -50,13 +50,14 @@ export default async function V2PreparednessPage({ params }: PageProps) {
       <JsonLd
         schema={[
           learningResourceJsonLd({
-            name: "Deprem Öncesi, Sırası ve Sonrası Kapsamlı Hazırlık Kılavuzu",
+            name: "Deprem Hazırlık Rehberi: Öncesi, Sırası ve Sonrası",
             description:
-              "Deprem öncesi yaşam alanı sabitlemeleri, afet çantası, sarsıntı anı doğru davranışları ve ilk 72 saatlik tahliye adımları.",
+              "Depremden önce evdeki eşyaları sabitlemek, afet çantası, sarsıntı anında ne yapılacağı ve depremden sonraki ilk 72 saat.",
             path: "/deprem/hazirlik",
             locale,
             learningResourceType: "Article",
-            teaches: "Temel afet bilinci, deprem çantası hazırlığı ve hayatta kalma refleksleri",
+            teaches:
+              "Deprem çantası hazırlığı, sarsıntı anında doğru davranış ve depremden sonraki ilk adımlar",
           }),
         ]}
       />

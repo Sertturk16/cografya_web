@@ -33,11 +33,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }),
     title:
       locale === "tr"
-        ? "Dünyanın 7 Kıtası: Coğrafi Özellikleri, Haritaları ve Ülkeleri | Coğrafya Gurmesi"
+        ? "Kıtalar Atlası: Dünyanın 7 Kıtası, Ülkeleri ve Haritaları"
         : "The 7 Continents of the World: Geography, Maps and Countries",
     description:
       locale === "tr"
-        ? "Asya, Afrika, Kuzey Amerika, Güney Amerika, Antarktika, Avrupa ve Okyanusya. Yüzölçümü, nüfus dağılımı, iklim kuşakları, dağ zirveleri ve analitik karşılaştırma rehberi."
+        ? "Asya, Afrika, Kuzey Amerika, Güney Amerika, Antarktika, Avrupa ve Okyanusya'yı yüzölçümü, nüfusu ve en yüksek zirvesiyle yan yana karşılaştır."
         : "Asia, Africa, North America, South America, Antarctica, Europe and Oceania. Analytical comparison guide for area, population, climate and highest peaks.",
   });
 }

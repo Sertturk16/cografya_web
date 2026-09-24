@@ -47,9 +47,9 @@ export async function generateMetadata({ params }: V2DepremPageProps): Promise<M
     // carries an `Earthquake` namespace; wiring this page to it and moving the surface back to
     // `"localized"` is the real fix, and it is a content task rather than a metadata one.
     surface: "trOnly",
-    title: "Canlı Deprem Takip & Sismik Monitör — AFAD TDVMS Verileri",
+    title: "Türkiye'de Son Depremler — AFAD Verileriyle Deprem Haritası",
     description:
-      "Türkiye ve çevre coğrafyadaki son depremler, merkez üsleri ve odak derinlikleri canlı harita üzerinde.",
+      "AFAD'ın kaydettiği son depremler haritada ve listede: büyüklük, yer, saat ve derinlik. Türkiye ve yakın çevresi; sayfa 120 saniyede bir yenilenir.",
   });
 }
 
@@ -89,9 +89,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Canlı Deprem Takip & Sismik Monitör",
+            name: "Türkiye'de Son Depremler",
             description:
-              "Türkiye ve yakın çevresinde gerçekleşen son depremleri interaktif vektör harita üzerinde merkez üssü ve odak derinliğiyle anlık takip edin.",
+              "Türkiye ve yakın çevresindeki son depremler haritada: her depremin merkez üssünü, büyüklüğünü ve derinliğini gör.",
             path: "/deprem",
             locale,
           }),

@@ -35,9 +35,9 @@ export async function generateMetadata({ params }: V2DistancePageProps): Promise
     // disagree about this page. It read `"noindex"` while the tier lived under `/v2`.
     surface: TOOLS_SURFACE,
     hrefForLocale: () => "/araclar/mesafe-olcme",
-    title: "Haritada Kuş Uçuşu Mesafe Ölçme — Büyük Daire Jeodezik Hesaplama",
+    title: "Haritada Kuş Uçuşu Mesafe Ölçme — İller Arası Mesafe",
     description:
-      "İki veya çok duraklı noktalar arasında WGS84 küresel elipsoid modeli ve Haversine formülü ile kuş uçuşu mesafe, uçuş süresi ve karayolu tahmini hesaplama.",
+      "İki nokta ya da çok duraklı bir rota arasındaki kuş uçuşu mesafeyi km ve deniz mili olarak ölç; uçuş süresini ve kaba karayolu tahminini de gör.",
   });
 }
 
@@ -60,7 +60,7 @@ export default async function V2DistanceToolPage({ params }: V2DistancePageProps
         schema={learningResourceJsonLd({
           name: "Haritada Kuş Uçuşu Mesafe Ölçme",
           description:
-            "İki nokta ya da çok duraklı güzergâh boyunca büyük daire jeodezik uzaklığını haritada ölçün.",
+            "İki nokta ya da çok duraklı bir rota boyunca kuş uçuşu mesafeyi haritada ölç.",
           path: "/araclar/mesafe-olcme",
           locale,
           learningResourceType: "Interactive tool",

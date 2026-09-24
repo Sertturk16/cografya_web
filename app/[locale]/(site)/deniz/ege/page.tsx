@@ -29,9 +29,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     locale,
     surface: "trOnly",
     hrefForLocale: () => "/deniz/ege",
-    title: "Ege Denizi Fiziki Coğrafyası, Enine Kıyılar & Canlı Telemetri | Coğrafya Gurmesi",
+    title: "Ege Denizi Havzası: Enine Kıyılar, Adalar ve Grabenler",
     description:
-      "Ege Denizi'nin 5 istasyonundan canlı su sıcaklığı, enine kıyı morfolojisi, geniş kıta sahanlığı ve graben sistemleri.",
+      "Ege Denizi'nin açığında 5 noktada su sıcaklığı, dalga yüksekliği ve rüzgâr. Dağların denize dik indiği enine kıyılar, geniş kıta sahanlığı, adalar ve grabenler.",
   });
 }
 
@@ -150,13 +150,12 @@ export default async function V2EgePage({ params }: PageProps) {
           // four callers (this page and its three basin siblings) plus `Breadcrumbs` itself.
           ...breadcrumbListSchema(breadcrumbItems, locale, "trOnly"),
           learningResourceJsonLd({
-            name: "Ege Denizi Coğrafi Analizi ve Enine Kıyı Morfolojisi Rehberi",
+            name: "Ege Denizi Havzası: Enine Kıyılar ve Grabenler",
             description: basinData.physicalGeography.content,
             path: "/deniz/ege",
             locale,
             learningResourceType: "Article",
-            teaches:
-              "Ege Denizi'nin enine kıyı morfolojisi, kıta sahanlığı, adaları ve graben akıntıları",
+            teaches: "Ege Denizi'nin enine kıyıları, kıta sahanlığı, adaları ve grabenleri",
           }),
         ]}
       />

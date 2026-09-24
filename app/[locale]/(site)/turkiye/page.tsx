@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<
     // counterpart did — `app/sitemap.ts` already publishes this URL, and a `noindex`
     // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
     hrefForLocale: () => "/turkiye",
-    title: "Türkiye İller Atlası — 81 İl İnteraktif Haritası ve Coğrafyası",
+    title: "Türkiye İlleri — 81 İl İnteraktif Haritası ve Coğrafyası",
     /**
      * The count comes from the FETCH, never from a literal (`lib/seo/hub-description.ts`).
      *
@@ -116,7 +116,7 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
       <JsonLd
         schema={[
           collectionPageJsonLd({
-            name: "Türkiye İlleri Atlası",
+            name: "Türkiye İlleri",
             // Structured data may not carry what the page does not show (SEO-POLICY §B5 5.7).
             description: pickHubDescription(
               t("metaDescription", { count: totalProvinces }),

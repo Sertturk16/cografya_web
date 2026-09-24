@@ -35,9 +35,9 @@ export async function generateMetadata({ params }: V2OyunPageProps): Promise<Met
     // claiming to be the English version of it. See that page's note; `messages/en.json`'s
     // `Game` namespace is the larger of the two and the wiring is the real fix.
     surface: "trOnly",
-    title: "Harita Oyunları & Sınavlar — 81 İl ve Bölge Bulma",
+    title: "Harita Oyunları — Dilsiz Haritada 81 İl ve Bölge Bulma",
     description:
-      "Dilsiz harita üzerinde Türkiye illerini ve coğrafi bölgelerini bularak harita hafızanızı geliştirin.",
+      "Dilsiz Türkiye haritasında 81 ili ve 7 coğrafi bölgeyi bul. Üç oyun var: bölge bulma, 81 il bulma ve bölge bölge il bulma. Takılırsan ipucu al.",
   });
 }
 
@@ -51,7 +51,7 @@ export default async function V2OyunPage({ params }: V2OyunPageProps) {
       <JsonLd
         schema={[
           learningResourceJsonLd({
-            name: "Harita Oyunları & Coğrafya Sınavları",
+            name: "Harita Oyunları",
             description: "Dilsiz Türkiye haritası üzerinde illeri ve coğrafi bölgeleri keşfet.",
             path: "/oyun",
             locale,
