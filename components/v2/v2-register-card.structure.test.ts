@@ -135,9 +135,9 @@ describe("V2RegisterCard structural contract", () => {
     );
     expect(block).not.toBeNull();
     const ids = [...(block?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1] ?? "");
-    // Positive control: all seven FieldKeys are present, so a shrunken regex cannot make the
-    // loop below vacuous.
-    expect(ids).toHaveLength(7);
+    // Positive control: all eight FieldKeys are present (T-101 added the terms box), so a
+    // shrunken regex cannot make the loop below vacuous.
+    expect(ids).toHaveLength(8);
     for (const id of ids) {
       expect(
         source,

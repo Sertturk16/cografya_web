@@ -106,6 +106,8 @@ describe("buildRegisterPayload key sets agree with the committed contract", () =
     passwordConfirm: "Aa123456",
     provincePlateCode: "34",
     districtId: "6b3f6f5a-6f5a-4f5a-8f5a-6f5a6f5a6f5a",
+    termsAccepted: true,
+    marketingConsent: false,
   };
 
   const FIXTURES: Record<string, RegisterFormState> = {

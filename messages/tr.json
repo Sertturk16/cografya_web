@@ -157,26 +157,131 @@
   },
   "Terms": {
     "metaTitle": "Kullanım Şartları",
-    "metaDescription": "Coğrafya Gurmesi platformunun kullanım şartları, üyelik kuralları, telif hakları ve KVKK kapsamındaki kişisel veri politikası.",
+    "metaDescription": "Coğrafya Gurmesi platformunun kullanım şartları: hizmet kapsamı, üyelik kuralları, telif hakları ve adil kullanım.",
     "heading": "Kullanım Şartları",
-    "lede": "Coğrafya Gurmesi'ni kullanarak aşağıdaki şartları kabul etmiş olursun. Bu metin platformun hizmet kapsamını, üyelik kurallarını, telif haklarını ve kişisel verilerin işlenmesine dair esasları açıklar.",
-    "updated": "Son güncelleme: 20 Eylül 2026",
+    "lede": "Coğrafya Gurmesi'ni kullanarak aşağıdaki şartları kabul etmiş olursun. Bu metin platformun hizmet kapsamını, üyelik kurallarını, telif haklarını ve adil kullanım kurallarını açıklar.",
+    "updated": "Son güncelleme: 24 Eylül 2026",
     "scopeHeading": "1. Hizmet Kapsamı",
-    "scopeBody": "Coğrafya Gurmesi; coğrafya eğitimi, YKS ve KPSS sınav hazırlığı, interaktif CBS harita analizleri, video çözümlü branş denemeleri ve coğrafi telemetri sunan bir eğitim portalıdır. Platformdaki harita, telemetri ve istatistik verileri bilgilendirme ve eğitim amaçlıdır; seyrüsefer, afet müdahalesi, mühendislik ya da hukuki işlem gibi kritik kullanımlar için kaynak alınamaz. Deprem, deniz ve hava kalitesi verileri ilgili kurumların yayınlarından türetilir ve gecikmeli veya eksik olabilir.",
+    "scopeBody": "Coğrafya Gurmesi; coğrafya öğrenmek ve YKS, KPSS gibi sınavlara hazırlanmak için haritalar, harita oyunları, il ve ülke sayfaları, harita üzerinde ölçüm araçları ve video çözümlü branş denemeleri sunan bir eğitim sitesidir. Sitedeki harita, deprem, deniz ve hava kalitesi verileri ile istatistikler bilgilendirme ve eğitim amaçlıdır; seyrüsefer, afet müdahalesi, mühendislik ya da hukuki işlem gibi kritik kullanımlar için kaynak alınamaz. Deprem, deniz ve hava kalitesi verileri ilgili kurumların yayınlarından türetilir ve gecikmeli veya eksik olabilir.",
     "membershipHeading": "2. Üyelik ve Hesap Güvenliği",
     "membershipBody": "Üyelik sırasında verdiğin bilgilerin (ad, soyad, telefon, e-posta) doğru ve güncel olduğunu kabul edersin. Hesabının şifresinin gizliliğinden ve hesabınla yapılan tüm işlemlerden sen sorumlusun. Hesaplar üçüncü kişilere devredilemez, ödünç verilemez ve ticari amaçla paylaşılamaz. Hesabının izinsiz kullanıldığını fark edersen gecikmeden bize bildirmen gerekir.",
     "ipHeading": "3. Fikri Mülkiyet ve Telif Hakları",
     "ipBody": "Coğrafya Gurmesi Yayınları'na ait soru metinleri, denemeler, video çözümleri, özgün harita katmanları, görseller ve yazılım kodları telif hakkı ile korunmaktadır. Bu içerikler izinsiz kopyalanamaz, çoğaltılamaz, indirilemez, yeniden yayımlanamaz ve ticari amaçla dağıtılamaz. Platformda üçüncü taraf kaynaklardan (örneğin AFAD, TÜİK, Copernicus, ECMWF, OpenStreetMap) türetilen veriler, ilgili kaynağın kendi lisansı altında ve atfı korunarak sunulur; bu verilerin kullanımı o lisansların şartlarına tabidir.",
     "fairUseHeading": "4. Adil Kullanım ve Platform Güvenliği",
     "fairUseBody": "Otomatik bot çalıştırmak, içeriği toplu olarak çekmek (scraping), sistemi aşırı yüklemek, güvenlik açıklarını aramak ya da istismar etmek, başka bir kullanıcının hesabına erişmeye çalışmak yasaktır. Bu kuralların ihlali halinde üyelik önceden bildirim yapılmaksızın askıya alınabilir veya sonlandırılabilir.",
-    "kvkkHeading": "5. Kişisel Verilerin Korunması (KVKK)",
-    "kvkkBody1": "Üyelik sırasında verdiğin ad, soyad, e-posta adresi, telefon numarası ve eğitim bilgilerin; üyeliğin doğrulanması, hesabının yönetilmesi, platformun sana göre kişiselleştirilmesi (ilerleme kaydı, favoriler, oyun skorları) ve yasal yükümlülüklerin yerine getirilmesi amaçlarıyla, 6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında işlenir.",
-    "kvkkBody2": "Kişisel verilerin üçüncü taraflara satılmaz ve pazarlama amacıyla paylaşılmaz. Veriler yalnızca hizmetin sunulması için gereken altyapı sağlayıcılarıyla, gereken ölçüde paylaşılır. KVKK'nın 11. maddesi uyarınca verilerine erişme, düzeltme, silinmesini isteme ve işlemeye itiraz etme haklarına sahipsin; bu haklarını aşağıdaki iletişim adresinden kullanabilirsin.",
-    "kvkkBody3": "Video çözümleri YouTube'un gizlilik korumalı alan adı üzerinden sunulur ve video yalnızca sen başlattığında yüklenir; platform reklam amaçlı takip çerezleri kullanmaz.",
+    "privacyHeading": "5. Kişisel Verilerin Korunması",
+    "privacyBody": "Kişisel verilerinin hangi amaçla işlendiği, hangi sağlayıcılarla paylaşıldığı, ne kadar saklandığı ve KVKK kapsamındaki hakların ayrı bir metinde anlatılır:",
+    "privacyLink": "Gizlilik ve KVKK Aydınlatma Metni",
     "changesHeading": "6. Değişiklikler ve İletişim",
     "changesBody": "Bu şartlar, hizmetin kapsamı değiştikçe güncellenebilir. Güncel metin her zaman bu sayfada yayımlanır ve yukarıdaki tarih değişiklik anını gösterir. Şartlar hakkındaki sorularını ve KVKK taleplerini aşağıdaki adrese iletebilirsin.",
     "contactLabel": "İletişim",
     "authoritative": "Bu metnin Türkçe sürümü bağlayıcıdır."
+  },
+  "Privacy": {
+    "metaTitle": "Gizlilik ve KVKK Aydınlatma Metni",
+    "metaDescription": "Coğrafya Gurmesi'nin hangi kişisel verileri, hangi amaçla ve ne kadar süre işlediği; verilerin aktarıldığı sağlayıcılar ve KVKK kapsamındaki hakların.",
+    "heading": "Gizlilik ve KVKK Aydınlatma Metni",
+    "lede": "Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (KVKK) 10. maddesi uyarınca, Coğrafya Gurmesi'ni kullanırken kişisel verilerinin nasıl işlendiğini anlatır.",
+    "updated": "Son güncelleme: 24 Eylül 2026",
+    "authoritative": "Bu metnin Türkçe sürümü bağlayıcıdır.",
+    "controllerHeading": "1. Veri Sorumlusu",
+    "controllerBody": "Kişisel verilerin, veri sorumlusu sıfatıyla aşağıda bilgileri yer alan Coğrafya Gurmesi tarafından işlenir. Bu bilgiler aynı zamanda 5651 sayılı Kanun kapsamındaki içerik sağlayıcı bilgileridir.",
+    "controllerLabels": {
+      "siteName": "Site",
+      "legalName": "Unvan",
+      "address": "Adres",
+      "phone": "Telefon",
+      "email": "E-posta"
+    },
+    "dataHeading": "2. İşlenen Kişisel Veriler",
+    "dataItems": [
+      "Kimlik: ad ve soyad.",
+      "İletişim: e-posta adresi ve cep telefonu numarası.",
+      "Konum: kayıtta seçtiğin il ve ilçe. Cihazının konumu alınmaz.",
+      "Eğitim bilgileri: hesap türü (öğrenci, öğretmen, veli), eğitim düzeyi, sınıf, alan, okul, üniversite ve bölüm.",
+      "Kullanım bilgileri: oyun turların ve puanların, favorilerin, video izleme ilerlemen ve kaydettiğin ölçümler.",
+      "Güvenlik ve işlem kayıtları: şifrenin geri döndürülemez özeti (şifrenin kendisi saklanmaz), oturum kayıtları, IP adresi ve siteye erişim kayıtları.",
+      "Pazarlama tercihi: ticari elektronik ileti onayı verip vermediğin ve onay tarihi."
+    ],
+    "methodHeading": "3. Verilerin Toplanma Yöntemi",
+    "methodBody": "Veriler; kayıt formu, Ayarlar sayfası ve siteyi kullanman sırasında (oyun oynaman, favori eklemen, video izlemen gibi) elektronik ortamda, otomatik ya da kısmen otomatik yollarla toplanır. Erişim kayıtları, siteye her bağlandığında sunucu tarafından kendiliğinden oluşturulur.",
+    "purposesHeading": "4. İşleme Amaçları",
+    "purposesItems": [
+      "Üyeliğinin oluşturulması, e-posta adresinin doğrulanması ve hesabına girişin sağlanması.",
+      "Oyunların, puanların, liderlik tablosunun, favorilerin, video ilerlemesinin ve ölçüm araçlarının sunulması.",
+      "Eğitim bilgilerine göre sana uygun içeriğin gösterilmesi.",
+      "Hesabının ve sitenin güvenliğinin sağlanması, kötüye kullanımın ve aşırı isteklerin önlenmesi.",
+      "Soru, talep ve başvurularının yanıtlanması.",
+      "Kanunlardan doğan yükümlülüklerin yerine getirilmesi (örneğin 5651 sayılı Kanun kapsamında erişim kayıtlarının saklanması ve yetkili mercilerin taleplerinin karşılanması).",
+      "Yalnızca açık rızan bulunması halinde: kampanya, yenilik ve duyurulardan haberdar edilmen için e-posta ve SMS ile ticari elektronik ileti gönderilmesi. Bu amaçla e-posta adresin, telefon numaran ve il/ilçe bilgin kullanılır."
+    ],
+    "legalHeading": "5. Hukuki Sebepler",
+    "legalItems": [
+      "KVKK md. 5/2-c, bir sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması: üyelik, hesap ve sitenin hizmetleri.",
+      "KVKK md. 5/2-ç, veri sorumlusunun hukuki yükümlülüğünü yerine getirmesi: erişim kayıtlarının saklanması ve yetkili mercilere bilgi verilmesi.",
+      "KVKK md. 5/2-f, temel hak ve özgürlüklerine zarar vermemek kaydıyla veri sorumlusunun meşru menfaati: güvenlik, kötüye kullanımın ve aşırı isteklerin önlenmesi.",
+      "KVKK md. 5/1, açık rıza: ticari elektronik ileti gönderimi. Bu onay isteğe bağlıdır; vermemen üyeliğini etkilemez."
+    ],
+    "recipientsHeading": "6. Verilerin Aktarıldığı Taraflar ve Yurt Dışına Aktarım",
+    "recipientsIntro": "Kişisel verilerin satılmaz ve reklam amacıyla üçüncü kişilerle paylaşılmaz. Site aşağıdaki hizmet sağlayıcıların altyapısıyla çalışır; veriler bu sağlayıcılara yalnız hizmetin sunulması için gereken ölçüde aktarılır:",
+    "recipients": [
+      {
+        "name": "Hetzner Online GmbH",
+        "role": "Sunucu ve veritabanı barındırma. Hesap bilgilerin burada saklanır.",
+        "location": "Avrupa Birliği"
+      },
+      {
+        "name": "Amazon Web Services (Amazon SES)",
+        "role": "Doğrulama kodu, şifre sıfırlama ve bilgilendirme e-postalarının gönderilmesi.",
+        "location": "İsveç (eu-north-1)"
+      },
+      {
+        "name": "Cloudflare, Inc.",
+        "role": "Alan adı, ağ güvenliği ve trafik yönlendirme. Siteye her bağlantın, IP adresin ve istek bilgilerinle Cloudflare üzerinden geçer.",
+        "location": "ABD"
+      },
+      {
+        "name": "Google LLC (YouTube)",
+        "role": "Video çözümlerinin oynatılması. Yalnız bir videoyu sen başlattığında YouTube'a bağlanılır; video, YouTube'un gizlilik korumalı alan adından yüklenir.",
+        "location": "ABD"
+      }
+    ],
+    "recipientsAuthorities": "Ayrıca, kanunen yetkili kamu kurum ve kuruluşlarına ve yargı mercilerine, talep etmeleri halinde ve kanunun izin verdiği ölçüde bilgi verilebilir.",
+    "abroadBody": "Bu sağlayıcıların tamamı Türkiye dışındadır; bu nedenle yukarıdaki veriler, KVKK'nın 9. maddesi kapsamında yurt dışına aktarılır ve belirtilen ülkelerde işlenir.",
+    "publicHeading": "7. Herkese Açık Görünen Bilgiler",
+    "publicBody": "Oyunların liderlik tablosunda yalnız adın, soyadının baş harfi ve tur sonuçların (puan, bulunan yer sayısı gibi) görünür. E-posta adresin, telefon numaran ve konum bilgin hiçbir zaman herkese açık gösterilmez.",
+    "retentionHeading": "8. Saklama Süreleri ve İmha",
+    "retentionItems": [
+      "Hesap bilgilerin, oyun turların (ve liderlik tablosundaki yerin), favorilerin, video ilerlemen, ölçümlerin ve oturum kayıtların: hesabını silene kadar. Hesabını sildiğinde bunların tamamı kalıcı olarak silinir.",
+      "Ticari elektronik ileti onayın: onayı geri alana ya da hesabını silene kadar.",
+      "Doğrulanmamış kayıt başvuruları: doğrulama kodu 10 dakika geçerlidir; süresi dolan başvuru en geç 1 gün içinde otomatik silinir.",
+      "Şifre sıfırlama bağlantıları: 30 dakika geçerlidir; süresi dolan bağlantı en geç 1 gün içinde otomatik silinir.",
+      "Aşırı istekleri önlemek için tutulan sayaçlar: e-posta adresin yerine onun geri döndürülemez özetiyle tutulur ve süresi dolunca (en geç 1 gün içinde) otomatik silinir.",
+      "Erişim kayıtları (IP adresi, tarih ve saat, istenen sayfa): 5651 sayılı Kanun kapsamında 2 yıl saklanır, ardından silinir."
+    ],
+    "minorsHeading": "9. 18 Yaşından Küçük Kullanıcılar",
+    "minorsBody": "Sitenin kullanıcılarının önemli bir kısmı lise öğrencisidir. 18 yaşından küçük kullanıcıların siteyi veli veya vasilerinin bilgisi dahilinde kullanmalarını öneririz. Veli veya vasi, çocuğu adına aşağıdaki haklarını kullanabilir; bu durumda velayet ya da vesayeti gösteren bir belge istenebilir.",
+    "cookiesHeading": "10. Çerezler",
+    "cookiesBody": "Sitede yalnız zorunlu çerezler kullanılır: giriş yaptığında oturumunu açık tutan çerezler, oturumun açık olduğunu gösteren bir işaret çerezi ve sitenin hangi dilde açılacağını hatırlayan dil çerezi. Analitik, reklam ya da takip çerezi kullanılmaz; bu nedenle çerez onayı istenmez. Açık ya da koyu tema tercihin yalnız kendi tarayıcında saklanır ve bize gönderilmez.",
+    "rightsHeading": "11. KVKK Madde 11 Kapsamındaki Hakların",
+    "rightsItems": [
+      "Kişisel verilerinin işlenip işlenmediğini öğrenme,",
+      "İşlenmişse buna ilişkin bilgi talep etme,",
+      "İşlenme amacını ve bunların amacına uygun kullanılıp kullanılmadığını öğrenme,",
+      "Yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme,",
+      "Eksik veya yanlış işlenmişse düzeltilmesini isteme,",
+      "KVKK md. 7'deki şartlar çerçevesinde silinmesini veya yok edilmesini isteme,",
+      "Düzeltme ve silme işlemlerinin, verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme,",
+      "Münhasıran otomatik sistemlerle analiz edilmesi sonucu aleyhine bir sonuç çıkmasına itiraz etme,",
+      "Kanuna aykırı işleme nedeniyle zarara uğrarsan zararın giderilmesini talep etme."
+    ],
+    "applyHeading": "12. Başvuru",
+    "applyBody": "Bu haklarını kullanmak için talebini, hesabına kayıtlı e-posta adresinden aşağıdaki adrese yazabilirsin. Kimliğini doğrulayabilmemiz için ek bilgi isteyebiliriz. Başvurun en geç 30 gün içinde ücretsiz olarak sonuçlandırılır. Yanıtı yetersiz bulursan, yanıtı aldığın tarihten itibaren 30 gün, yanıt alamazsan başvuru tarihinden itibaren 60 gün içinde Kişisel Verileri Koruma Kurulu'na şikâyette bulunabilirsin.",
+    "selfServiceHeading": "13. Hesabını Silme ve Onayını Geri Alma",
+    "selfServiceBody": "Hesabını, Ayarlar sayfasındaki \"Hesabımı Kalıcı Olarak Sil\" bölümünden şifreni girerek kendin silebilirsin; silme geri alınamaz. Ticari elektronik ileti onayını da yine Ayarlar'dan, istediğin zaman geri alabilirsin. Onayı geri alman, o ana kadar yapılan işlemleri etkilemez.",
+    "settingsLink": "Ayarlar'a git",
+    "changesHeading": "14. Değişiklikler",
+    "changesBody": "Bu metin, verilerin işlenme biçimi ya da hizmetler değiştikçe güncellenir. Güncel metin her zaman bu sayfada yayımlanır ve yukarıdaki tarih son değişikliği gösterir."
   },
   "Turkiye": {
     "metaTitle": "Türkiye Haritası — 81 İl",
@@ -1220,7 +1325,10 @@
       "phone": "Telefon",
       "phoneInvalid": "Geçerli bir cep telefonu numarası gir (örn: 05xx xxx xx xx).",
       "province": "İl",
-      "district": "İlçe"
+      "district": "İlçe",
+      "consentTitle": "İletişim İzni",
+      "consentLabel": "Kampanya, yenilik ve duyurulardan haberdar olmak için bana e-posta ve SMS ile ticari elektronik ileti gönderilmesine onay veriyorum.",
+      "consentHint": "İsteğe bağlı. İşareti kaldırıp kaydedersen onayın geri alınır."
     },
     "education": {
       "title": "Eğitim Bilgileri",
@@ -1257,6 +1365,15 @@
       "roleTeacher": "Öğretmen",
       "roleParent": "Veli",
       "emailNotice": "E-posta adresini şimdilik buradan değiştiremezsin; değişmesi gerekiyorsa bize ulaş."
+    },
+    "delete": {
+      "title": "Hesabımı Kalıcı Olarak Sil",
+      "description": "Hesabını ve ona bağlı tüm bilgilerini sil.",
+      "warning": "Bu işlem geri alınamaz. Hesabın; profil ve eğitim bilgilerin, oyun turların ve liderlik tablosundaki yerin, favorilerin, video ilerlemen ve ölçümlerinle birlikte kalıcı olarak silinir. Tüm cihazlardaki oturumların kapanır.",
+      "password": "Mevcut şifren",
+      "confirm": "Hesabımın ve tüm bilgilerimin kalıcı olarak silineceğini ve bunun geri alınamayacağını anlıyorum.",
+      "confirmRequired": "Devam etmek için bu kutuyu işaretle.",
+      "submit": "Hesabımı Kalıcı Olarak Sil"
     }
   }
 }

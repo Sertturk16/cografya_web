@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { Home, Mail } from "lucide-react";
+import { Home } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { H1, H2, Lede } from "@/components/patterns/typography";
 import { PageContainer } from "@/components/patterns/page-container";
+import { LegalControllerIdentity } from "@/components/v2/legal-controller-identity";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { ClimateAttribution } from "@/components/climate/climate-attribution";
 import { getMarineLayersSafe } from "@/lib/api/marine";
 import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
-import { env } from "@/lib/env";
 
 interface V2AboutPageProps {
   params: Promise<{ locale: Locale }>;
@@ -84,6 +84,7 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
   setRequestLocale(locale);
   const t = await getTranslations("About");
   const tb = await getTranslations("Breadcrumb");
+  const tp = await getTranslations("Privacy");
 
   // The catalogue, for `MarineAttribution` below: it is where ECMWF's required copyright YEAR is
   // derived from (the ingested cycle's own year — `lib/marine/attribution.ts`). `…Safe` returns
@@ -118,19 +119,18 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
         <section className="space-y-4">
           <H2>{t("contactHeading")}</H2>
           <p className="max-w-prose leading-relaxed">{t("contactBody")}</p>
-          {/* A real `mailto:`, so it stays a plain anchor rather than a routed Link. It
-              is the page's one action, which is why it gets a surface of its own. */}
-          {/* `max-w-full` plus a breakable span, not `wrap-break-word` on the anchor.
-              An `inline-flex` box sizes to its content and does not shrink, so the
-              overflow-wrap never got a chance: at 320px this address pushed the document
-              to 318px against a 305px viewport. The span is what is allowed to break. */}
-          <a
-            href={`mailto:${env.NEXT_PUBLIC_CONTACT_EMAIL}`}
-            className="inline-flex max-w-full items-center gap-2.5 rounded-2xl border border-border bg-card px-4 py-3 font-semibold text-primary transition-colors hover:border-primary/50 hover:bg-muted"
-          >
-            <Mail className="size-4 shrink-0" aria-hidden="true" />
-            <span className="min-w-0 break-all">{env.NEXT_PUBLIC_CONTACT_EMAIL}</span>
-          </a>
+          {/* T-101, 5651 md. 3 künye: the same controller block `/gizlilik` shows, read from
+              `LEGAL_CONTROLLER`. Unvan, adres and telefon appear here the moment the owner fills
+              them there; until then the block carries the site name and the e-mail address. */}
+          <LegalControllerIdentity
+            labels={{
+              siteName: tp("controllerLabels.siteName"),
+              legalName: tp("controllerLabels.legalName"),
+              address: tp("controllerLabels.address"),
+              phone: tp("controllerLabels.phone"),
+              email: tp("controllerLabels.email"),
+            }}
+          />
         </section>
 
         {/* THE SITE'S DATA-SOURCE COLOPHON, and the target of the footer's source badges and

@@ -17,6 +17,7 @@ const PERSONAL_BLOCK = {
   provincePlateCode: "34",
   provinceName: "İstanbul",
   createdAt: "2026-01-02T03:04:05.000Z",
+  marketingConsent: false,
 } as const;
 
 const VALID_STUDENT_PROFILE: Profile = {

@@ -66,6 +66,7 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
   const [phone, setPhone] = React.useState(() => formatTurkishMobileInput(profile.phone));
   const [plateCode, setPlateCode] = React.useState(profile.provincePlateCode);
   const [districtId, setDistrictId] = React.useState(profile.districtId);
+  const [marketingConsent, setMarketingConsent] = React.useState(profile.marketingConsent);
 
   const [districts, setDistricts] = React.useState<Array<{ id: string; nameTr: string }>>([
     { id: profile.districtId, nameTr: profile.districtName },
@@ -90,6 +91,7 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
     phone: formatTurkishMobileInput(profile.phone),
     provincePlateCode: profile.provincePlateCode,
     districtId: profile.districtId,
+    marketingConsent: profile.marketingConsent,
   });
 
   useUnsavedChanges(
@@ -97,7 +99,8 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
       lastName !== baseline.lastName ||
       phone !== baseline.phone ||
       plateCode !== baseline.provincePlateCode ||
-      districtId !== baseline.districtId,
+      districtId !== baseline.districtId ||
+      marketingConsent !== baseline.marketingConsent,
   );
 
   React.useEffect(() => {
@@ -157,6 +160,8 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
         phone: cleanPhone as string,
         provincePlateCode: plateCode,
         districtId,
+        // T-101: sent explicitly on every save, so the box on screen is what the api stores.
+        marketingConsent,
       });
       if (res.ok) {
         setSaved(true);
@@ -165,12 +170,14 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
         setPhone(formatTurkishMobileInput(res.profile.phone));
         setPlateCode(res.profile.provincePlateCode);
         setDistrictId(res.profile.districtId);
+        setMarketingConsent(res.profile.marketingConsent);
         setBaseline({
           firstName: res.profile.firstName,
           lastName: res.profile.lastName,
           phone: formatTurkishMobileInput(res.profile.phone),
           provincePlateCode: res.profile.provincePlateCode,
           districtId: res.profile.districtId,
+          marketingConsent: res.profile.marketingConsent,
         });
         // The header greets the member by first name and reads it from the session, so a
         // rename has to invalidate the server render, not just this card's state.
@@ -299,6 +306,32 @@ export function V2SettingsPersonalCard({ profile, provinces }: V2SettingsPersona
             <SettingsFieldError id={`${IDS.districtId}-error`} message={errors.districtId} />
           </div>
         </div>
+
+        {/* T-101: the commercial-message consent given (or not) at registration, grantable and
+            withdrawable here. Optional, and saved with this card because the api takes it on
+            the same `PUT /api/auth/account` as the fields above. */}
+        <fieldset className="space-y-2 rounded-2xl border border-border p-3.5">
+          <legend className="px-1 text-xs font-bold text-foreground">
+            {t("personal.consentTitle")}
+          </legend>
+          <label
+            htmlFor="settings-marketing-consent"
+            className="flex items-start gap-2.5 text-xs leading-relaxed text-foreground cursor-pointer"
+          >
+            <input
+              id="settings-marketing-consent"
+              type="checkbox"
+              checked={marketingConsent}
+              onChange={(e) => setMarketingConsent(e.target.checked)}
+              disabled={submitting}
+              className="mt-0.5 size-4 shrink-0 accent-primary cursor-pointer"
+            />
+            <span>{t("personal.consentLabel")}</span>
+          </label>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            {t("personal.consentHint")}
+          </p>
+        </fieldset>
 
         <div className="pt-1">
           <Button

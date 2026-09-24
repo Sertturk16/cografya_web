@@ -206,8 +206,8 @@ export const PAGE_BODY_SPELLINGS = 0;
 describe("the scanner itself", () => {
   it("walked the product surface and nothing else", () => {
     const pages = walkPages().map(label);
-    // 37 → 38 in T-073: `/kullanim-sartlari`, the terms page.
-    expect(pages.length).toBe(38);
+    // 37 → 38 in T-073: `/kullanim-sartlari`, the terms page. 38 → 39 in T-101: `/gizlilik`.
+    expect(pages.length).toBe(39);
     expect(pages).toContain("app/[locale]/(site)/araclar/page.tsx");
     expect(pages.some((p) => p.includes("design-system"))).toBe(false);
   });
@@ -708,8 +708,8 @@ describe("every render root's body sits inside a PageContainer", () => {
     // clean surface rather than as a failure, which is this programme's own founding mistake.
     const roots = walkRenderRoots();
     // 39 → 40 in T-073: `/kullanim-sartlari`, the 38th `(site)` page, plus the two special
-    // render roots this walk adds on top of the page list.
-    expect(roots.length).toBe(40);
+    // render roots this walk adds on top of the page list. 40 → 41 in T-101: `/gizlilik`.
+    expect(roots.length).toBe(41);
     const empty = roots.filter((file) => topLevelRenderNodes(file).length === 0).map(label);
     expect(
       empty,

@@ -21,6 +21,7 @@ const PERSONAL = read("v2-settings-personal-card.tsx");
 const EDUCATION = read("v2-settings-education-card.tsx");
 const PASSWORD = read("v2-settings-password-card.tsx");
 const ACCOUNT = read("v2-settings-account-card.tsx");
+const DELETE = read("v2-settings-delete-card.tsx");
 const PAGE = stripComments(
   readFileSync(join(__dirname, "../../app/[locale]/(site)/hesabim/ayarlar/page.tsx"), "utf8"),
 );
@@ -31,12 +32,13 @@ const PAGE = stripComments(
  * the decisions that are easy to undo by accident, not the markup.
  */
 describe("the settings page's four sections", () => {
-  it("renders all four for a student, in the ruled order", () => {
+  it("renders all five for a student, in the ruled order, deletion last", () => {
     const order = [
       "V2SettingsPersonalCard",
       "V2SettingsEducationCard",
       "V2SettingsPasswordCard",
       "V2SettingsAccountCard",
+      "V2SettingsDeleteCard",
     ];
     const positions = order.map((name) => SHELL.indexOf(`<${name}`));
     expect(
@@ -81,6 +83,7 @@ describe("the settings page's four sections", () => {
       ["education", EDUCATION],
       ["password", PASSWORD],
       ["account", ACCOUNT],
+      ["delete", DELETE],
       ["page", PAGE],
     ] as const) {
       expect(source, `${name} signs out`).not.toContain('submitAuth("logout"');
@@ -114,6 +117,7 @@ describe("one heading, and it belongs to the page", () => {
       ["education", EDUCATION],
       ["password", PASSWORD],
       ["account", ACCOUNT],
+      ["delete", DELETE],
     ] as const) {
       expect(source, `${name} draws its own header`).toContain("<SettingsCard");
       expect(source, `${name} draws its own heading`).not.toContain("<h2");
@@ -167,5 +171,44 @@ describe("the account section is read-only, and honest about it", () => {
     expect(ACCOUNT).toContain("account.emailNotice");
     expect(ACCOUNT).not.toContain("<form");
     expect(ACCOUNT).not.toContain("<Input");
+  });
+});
+
+describe("marketing consent in settings (T-101)", () => {
+  it("starts from the stored consent and sends it with the personal block", () => {
+    expect(PERSONAL).toContain("React.useState(profile.marketingConsent)");
+    const submit = PERSONAL.slice(PERSONAL.indexOf("submitAccountReplacement({"));
+    expect(submit.slice(0, submit.indexOf("});"))).toContain("marketingConsent,");
+  });
+
+  it("counts an unsaved consent change as an unsaved edit", () => {
+    expect(PERSONAL).toContain("marketingConsent !== baseline.marketingConsent");
+  });
+});
+
+describe("account deletion (T-101)", () => {
+  it("deletes through the authenticated BFF action with the current password", () => {
+    expect(DELETE).toContain('submitAuth("account/delete", { currentPassword: password })');
+    expect(DELETE).toContain('autoComplete="current-password"');
+  });
+
+  it("refuses to submit without the password and the irreversible-action box", () => {
+    expect(DELETE).toContain('if (!password) next.password = tAuth("fieldErrors.required")');
+    expect(DELETE).toContain('if (!understood) next.understood = t("delete.confirmRequired")');
+    expect(DELETE).toContain("React.useState(false)");
+  });
+
+  it("signs the member out and leaves for the home page on success", () => {
+    const success = DELETE.slice(
+      DELETE.indexOf("if (res.ok)"),
+      DELETE.indexOf("setSubmitError(res.code)"),
+    );
+    expect(success).toContain('setSessionState("anonymous")');
+    expect(success).toContain('router.replace("/")');
+  });
+
+  it("shows the warning and uses the destructive button", () => {
+    expect(DELETE).toContain('t("delete.warning")');
+    expect(DELETE).toContain('variant="destructive"');
   });
 });

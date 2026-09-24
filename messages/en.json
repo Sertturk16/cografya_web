@@ -157,26 +157,131 @@
   },
   "Terms": {
     "metaTitle": "Terms of Use",
-    "metaDescription": "Terms of use for the Coğrafya Gurmesi platform: service scope, membership rules, copyright, and personal data under Turkish data protection law (KVKK).",
+    "metaDescription": "Terms of use for the Coğrafya Gurmesi platform: service scope, membership rules, copyright and fair use.",
     "heading": "Terms of Use",
-    "lede": "By using Coğrafya Gurmesi you accept the terms below. They describe what the platform offers, the rules of membership, the copyright that covers its content, and how personal data is handled.",
-    "updated": "Last updated: 20 September 2026",
+    "lede": "By using Coğrafya Gurmesi you accept the terms below. They describe what the platform offers, the rules of membership, the copyright that covers its content, and the rules of fair use.",
+    "updated": "Last updated: 24 September 2026",
     "scopeHeading": "1. Scope of the Service",
-    "scopeBody": "Coğrafya Gurmesi is an education portal for geography: exam preparation for the Turkish YKS and KPSS, interactive GIS map analysis, practice exams with video solutions, and geographic telemetry. Its maps, telemetry and statistics are published for learning and information only; they are not a source for navigation, disaster response, engineering or legal purposes. Earthquake, marine and air quality figures are derived from the publications of the institutions that produce them and may be delayed or incomplete.",
+    "scopeBody": "Coğrafya Gurmesi is an education site for learning geography and preparing for Turkish exams such as YKS and KPSS: maps, map games, province and country pages, measurement tools on the map, and practice exams with video solutions. Its maps, earthquake, marine and air quality data and statistics are published for learning and information only; they are not a source for navigation, disaster response, engineering or legal purposes. Earthquake, marine and air quality figures are derived from the publications of the institutions that produce them and may be delayed or incomplete.",
     "membershipHeading": "2. Membership and Account Security",
     "membershipBody": "You confirm that the details you give when registering (first name, last name, phone number, e-mail address) are correct and current. You are responsible for keeping your password confidential and for everything done through your account. Accounts may not be transferred, lent or shared commercially. Tell us without delay if you notice your account being used without your permission.",
     "ipHeading": "3. Intellectual Property and Copyright",
     "ipBody": "Question texts, practice exams, video solutions, original map layers, images and software code belonging to Coğrafya Gurmesi Yayınları are protected by copyright. They may not be copied, reproduced, downloaded, republished or distributed commercially without permission. Data derived from third-party sources (AFAD, TÜİK, Copernicus, ECMWF, OpenStreetMap and others) is published under that source's own licence with its attribution intact, and your use of it is subject to those licences.",
     "fairUseHeading": "4. Fair Use and Platform Security",
     "fairUseBody": "Running bots, scraping content in bulk, overloading the service, probing or exploiting security weaknesses, and attempting to reach another member's account are all prohibited. Membership may be suspended or ended without prior notice if these rules are broken.",
-    "kvkkHeading": "5. Protection of Personal Data (KVKK)",
-    "kvkkBody1": "The first name, last name, e-mail address, phone number and education details you give at registration are processed under Turkish Personal Data Protection Law no. 6698 (KVKK), for verifying your membership, managing your account, personalising the platform for you (progress, favourites, game scores) and meeting legal obligations.",
-    "kvkkBody2": "Your personal data is never sold to third parties and never shared for marketing. It is shared only with the infrastructure providers the service needs, and only as far as the service needs. Under article 11 of the KVKK you may access your data, have it corrected, ask for it to be deleted and object to its processing; write to the address below to do so.",
-    "kvkkBody3": "Video solutions are served through YouTube's privacy-enhanced domain and a video loads only when you start it. The platform sets no advertising or tracking cookies.",
+    "privacyHeading": "5. Personal Data",
+    "privacyBody": "Why your personal data is processed, which providers it is shared with, how long it is kept and your rights under KVKK are set out in a separate notice:",
+    "privacyLink": "Privacy and KVKK Notice",
     "changesHeading": "6. Changes and Contact",
     "changesBody": "These terms may be updated as the service changes. The current text is always published on this page and the date above marks the last change. Questions about the terms and KVKK requests can be sent to the address below.",
     "contactLabel": "Contact",
     "authoritative": "This English text is provided for information. The Turkish version of these terms is the binding one."
+  },
+  "Privacy": {
+    "metaTitle": "Privacy and KVKK Notice",
+    "metaDescription": "Which personal data Coğrafya Gurmesi processes, why and for how long; the providers it is shared with and your rights under Turkish data protection law (KVKK).",
+    "heading": "Privacy and KVKK Notice",
+    "lede": "This notice, given under Article 10 of Turkey's Personal Data Protection Law No. 6698 (KVKK), explains how your personal data is processed when you use Coğrafya Gurmesi.",
+    "updated": "Last updated: 24 September 2026",
+    "authoritative": "The Turkish version of this notice is authoritative.",
+    "controllerHeading": "1. Data Controller",
+    "controllerBody": "Your personal data is processed by Coğrafya Gurmesi, the data controller identified below. The same details are the content provider information required by Law No. 5651.",
+    "controllerLabels": {
+      "siteName": "Site",
+      "legalName": "Legal name",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "E-mail"
+    },
+    "dataHeading": "2. Personal Data We Process",
+    "dataItems": [
+      "Identity: first and last name.",
+      "Contact: e-mail address and mobile phone number.",
+      "Location: the province and district you choose when registering. Your device location is never collected.",
+      "Education: account type (student, teacher, parent), education level, grade, track, school, university and department.",
+      "Usage: your game rounds and scores, favourites, video progress and saved measurements.",
+      "Security and transaction records: an irreversible hash of your password (the password itself is not stored), session records, IP address and access logs.",
+      "Marketing preference: whether you consented to commercial electronic messages, and when."
+    ],
+    "methodHeading": "3. How Data Is Collected",
+    "methodBody": "Data is collected electronically, by automated or partly automated means, through the registration form, the Settings page and your use of the site (playing games, adding favourites, watching videos). Access logs are created by the server each time you connect.",
+    "purposesHeading": "4. Purposes",
+    "purposesItems": [
+      "Creating your account, verifying your e-mail address and signing you in.",
+      "Providing games, scores, the leaderboard, favourites, video progress and measurement tools.",
+      "Showing content suited to your education details.",
+      "Keeping your account and the site secure and preventing abuse and excessive requests.",
+      "Answering your questions, requests and applications.",
+      "Meeting legal obligations (for example keeping access logs under Law No. 5651 and responding to authorised bodies).",
+      "Only with your explicit consent: sending commercial electronic messages by e-mail and SMS about campaigns, new features and announcements, using your e-mail address, phone number and province/district."
+    ],
+    "legalHeading": "5. Legal Grounds",
+    "legalItems": [
+      "KVKK Art. 5/2-c, necessity for entering into or performing a contract: membership, your account and the site's services.",
+      "KVKK Art. 5/2-ç, compliance with a legal obligation: keeping access logs and informing authorised bodies.",
+      "KVKK Art. 5/2-f, legitimate interest, without harming your fundamental rights: security and preventing abuse and excessive requests.",
+      "KVKK Art. 5/1, explicit consent: commercial electronic messages. This consent is optional; not giving it does not affect your membership."
+    ],
+    "recipientsHeading": "6. Recipients and Transfers Abroad",
+    "recipientsIntro": "Your personal data is not sold and is not shared with third parties for advertising. The site runs on the infrastructure of the providers below, and data reaches them only as far as needed to provide the service:",
+    "recipients": [
+      {
+        "name": "Hetzner Online GmbH",
+        "role": "Server and database hosting. Your account data is stored here.",
+        "location": "European Union"
+      },
+      {
+        "name": "Amazon Web Services (Amazon SES)",
+        "role": "Sending verification codes, password resets and notification e-mails.",
+        "location": "Sweden (eu-north-1)"
+      },
+      {
+        "name": "Cloudflare, Inc.",
+        "role": "Domain, network security and traffic routing. Every connection to the site passes through Cloudflare with your IP address and request details.",
+        "location": "USA"
+      },
+      {
+        "name": "Google LLC (YouTube)",
+        "role": "Playing video solutions. YouTube is contacted only when you start a video, which loads from YouTube's privacy-enhanced domain.",
+        "location": "USA"
+      }
+    ],
+    "recipientsAuthorities": "Information may also be given to legally authorised public bodies and courts, on request and as far as the law allows.",
+    "abroadBody": "All of these providers are outside Turkey, so the data above is transferred abroad within the scope of KVKK Article 9 and processed in the countries listed.",
+    "publicHeading": "7. Publicly Visible Information",
+    "publicBody": "Game leaderboards show only your first name, the initial of your last name and your round results (score, places found and similar). Your e-mail address, phone number and location are never shown publicly.",
+    "retentionHeading": "8. Retention and Deletion",
+    "retentionItems": [
+      "Your account details, game rounds (and leaderboard entries), favourites, video progress, measurements and session records: until you delete your account. Deleting it permanently removes all of them.",
+      "Your consent to commercial electronic messages: until you withdraw it or delete your account.",
+      "Unverified registrations: the verification code is valid for 10 minutes; an expired registration is deleted automatically within 1 day.",
+      "Password reset links: valid for 30 minutes; an expired link is deleted automatically within 1 day.",
+      "Counters kept to prevent excessive requests: stored with an irreversible hash instead of your e-mail address and deleted automatically when they expire (within 1 day at most).",
+      "Access logs (IP address, date and time, requested page): kept for 2 years under Law No. 5651, then deleted."
+    ],
+    "minorsHeading": "9. Users Under 18",
+    "minorsBody": "Many of the site's users are secondary school students. We recommend that users under 18 use the site with the knowledge of their parent or guardian. A parent or guardian may exercise the rights below on the child's behalf; proof of custody or guardianship may be requested.",
+    "cookiesHeading": "10. Cookies",
+    "cookiesBody": "The site uses only strictly necessary cookies: those that keep you signed in, a flag cookie showing that a session is open, and a language cookie that remembers which language the site opens in. No analytics, advertising or tracking cookies are used, so no cookie consent is requested. Your light or dark theme choice is stored only in your own browser and is never sent to us.",
+    "rightsHeading": "11. Your Rights Under KVKK Article 11",
+    "rightsItems": [
+      "to learn whether your personal data is processed,",
+      "to request information about it if it is,",
+      "to learn the purpose of processing and whether data is used accordingly,",
+      "to know the third parties in Turkey or abroad to whom it is transferred,",
+      "to request correction of incomplete or inaccurate data,",
+      "to request deletion or destruction under the conditions of KVKK Article 7,",
+      "to request that corrections and deletions be notified to the third parties the data was transferred to,",
+      "to object to a result against you arising solely from automated analysis,",
+      "to claim compensation for damage caused by unlawful processing."
+    ],
+    "applyHeading": "12. How to Apply",
+    "applyBody": "To exercise these rights, write to the address below from the e-mail address registered to your account. We may ask for additional information to verify your identity. Your application is concluded free of charge within 30 days at the latest. If you find the answer insufficient, you may complain to the Personal Data Protection Board within 30 days of receiving it, or within 60 days of your application if you receive no answer.",
+    "selfServiceHeading": "13. Deleting Your Account and Withdrawing Consent",
+    "selfServiceBody": "You can delete your account yourself, with your password, in the \"Delete My Account Permanently\" section of the Settings page; deletion cannot be undone. You can also withdraw your consent to commercial electronic messages in Settings at any time. Withdrawal does not affect processing carried out before it.",
+    "settingsLink": "Go to Settings",
+    "changesHeading": "14. Changes",
+    "changesBody": "This notice is updated when the way data is processed or the services change. The current version is always published on this page, and the date above shows the latest change."
   },
   "Turkiye": {
     "metaTitle": "Map of Türkiye — 81 Provinces",
@@ -1203,7 +1308,10 @@
       "phone": "Phone",
       "phoneInvalid": "Enter a valid mobile number (e.g. 05xx xxx xx xx).",
       "province": "Province",
-      "district": "District"
+      "district": "District",
+      "consentTitle": "Contact Permission",
+      "consentLabel": "I agree to receive commercial electronic messages by e-mail and SMS about campaigns, new features and announcements.",
+      "consentHint": "Optional. Untick and save to withdraw your consent."
     },
     "education": {
       "title": "Education details",
@@ -1240,6 +1348,15 @@
       "roleTeacher": "Teacher",
       "roleParent": "Parent",
       "emailNotice": "You cannot change your e-mail address here yet; get in touch with us if it needs to change."
+    },
+    "delete": {
+      "title": "Delete My Account Permanently",
+      "description": "Delete your account and everything linked to it.",
+      "warning": "This cannot be undone. Your account is permanently deleted together with your profile and education details, game rounds and leaderboard entries, favourites, video progress and measurements. You are signed out on every device.",
+      "password": "Current password",
+      "confirm": "I understand that my account and all my data will be permanently deleted and that this cannot be undone.",
+      "confirmRequired": "Tick this box to continue.",
+      "submit": "Delete My Account Permanently"
     }
   }
 }

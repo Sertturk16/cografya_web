@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useUnsavedChanges } from "@/lib/forms/use-unsaved-changes.client";
 import { Link, getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { PRIVACY_ANCHOR } from "@/lib/legal/terms-anchor";
 import { submitAuth } from "@/lib/auth/submit.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import {
@@ -15,6 +14,7 @@ import {
   PHONE_INPUT_MAX_LENGTH,
   buildRegisterPayload,
   isPasswordPolicyCompliant,
+  missingRegisterConsents,
   type RegisterFormState,
   type UserType,
 } from "@/lib/auth/form-rules";
@@ -71,7 +71,14 @@ const USER_ROLES: Array<{
 ];
 
 type FieldKey =
-  "firstName" | "lastName" | "phone" | "email" | "provincePlateCode" | "districtId" | "password";
+  | "firstName"
+  | "lastName"
+  | "phone"
+  | "email"
+  | "provincePlateCode"
+  | "districtId"
+  | "password"
+  | "termsAccepted";
 
 const FIELD_ELEMENT_IDS: Record<FieldKey, string> = {
   firstName: "v2-register-firstname",
@@ -81,6 +88,7 @@ const FIELD_ELEMENT_IDS: Record<FieldKey, string> = {
   password: "v2-register-password",
   provincePlateCode: "v2-register-province",
   districtId: "v2-register-district",
+  termsAccepted: "v2-register-terms",
 };
 
 function FieldError({ id, message }: { id: string; message?: string }) {
@@ -158,6 +166,10 @@ export function V2RegisterCard({
   const [selectedPlate, setSelectedPlate] = React.useState("");
   const [districts, setDistricts] = React.useState<Array<{ id: string; nameTr: string }>>([]);
   const [selectedDistrictId, setSelectedDistrictId] = React.useState("");
+  // T-101: two separate boxes, both unticked. The terms are required; the marketing consent
+  // is optional and is never a condition of registering.
+  const [termsAccepted, setTermsAccepted] = React.useState(false);
+  const [marketingConsent, setMarketingConsent] = React.useState(false);
   const [fetchedProvinces, setFetchedProvinces] = React.useState<
     Array<{ plateCode: string; nameTr: string }>
   >([]);
@@ -288,6 +300,10 @@ export function V2RegisterCard({
         "Şifren 6 ile 128 karakter arasında olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.";
     }
 
+    if (missingRegisterConsents({ termsAccepted, marketingConsent }).includes("termsAccepted")) {
+      errors.termsAccepted = "Devam etmek için Kullanım Şartları'nı kabul etmelisin.";
+    }
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       const firstErrorKey = Object.keys(errors)[0] as FieldKey;
@@ -331,6 +347,8 @@ export function V2RegisterCard({
         userType: userTypeFor(selectedRole, education),
         provincePlateCode: selectedPlate,
         districtId: selectedDistrictId,
+        termsAccepted,
+        marketingConsent,
         ...(selectedRole === "teacher"
           ? {}
           : {
@@ -792,6 +810,71 @@ export function V2RegisterCard({
             </div>
           </div>
 
+          {/* T-101: consent, unbundled. The terms box is required; the privacy notice is a
+              plain line of INFORMATION (KVKK asks us to inform, not to collect a second
+              "accept"); the marketing box is separate, optional and unticked, so saying no
+              never blocks the account. The owner rules follow Ferrum's /kayit. */}
+          <div className="space-y-3 pt-1">
+            <div className="space-y-1">
+              <label
+                htmlFor="v2-register-terms"
+                className="flex items-start gap-2.5 text-xs leading-relaxed text-foreground cursor-pointer"
+              >
+                <input
+                  id="v2-register-terms"
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  required
+                  aria-invalid={Boolean(fieldErrors.termsAccepted)}
+                  aria-describedby={fieldErrors.termsAccepted ? "v2-error-terms" : undefined}
+                  className="mt-0.5 size-4 shrink-0 accent-primary cursor-pointer"
+                />
+                <span>
+                  <Link
+                    href="/kullanim-sartlari"
+                    target="_blank"
+                    className="font-semibold underline underline-offset-2 hover:text-primary"
+                  >
+                    Kullanım Şartları
+                  </Link>
+                  &apos;nı okudum, kabul ediyorum.
+                </span>
+              </label>
+              <FieldError id="v2-error-terms" message={fieldErrors.termsAccepted} />
+            </div>
+
+            <label
+              htmlFor="v2-register-marketing"
+              className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground cursor-pointer"
+            >
+              <input
+                id="v2-register-marketing"
+                type="checkbox"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-primary cursor-pointer"
+              />
+              <span>
+                Kampanya, yenilik ve duyurulardan haberdar olmak için bana e-posta ve SMS ile ticari
+                elektronik ileti gönderilmesine onay veriyorum. (İsteğe bağlı; istediğin zaman
+                Ayarlar&apos;dan geri alabilirsin.)
+              </span>
+            </label>
+
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              Kişisel verilerinin nasıl işlendiğini{" "}
+              <Link
+                href="/gizlilik"
+                target="_blank"
+                className="font-semibold text-foreground underline underline-offset-2 hover:text-primary"
+              >
+                Gizlilik ve KVKK Aydınlatma Metni
+              </Link>
+              &apos;nde bulabilirsin.
+            </p>
+          </div>
+
           {/* A student has one more step to go, so this button must not promise the account
               is being created. A teacher's flow is unchanged and the button still says so. */}
           <Button
@@ -804,32 +887,6 @@ export function V2RegisterCard({
           >
             {selectedRole === "teacher" ? "Ücretsiz Kayıt Ol" : "Devam Et"}
           </Button>
-
-          {/* THE CONSENT LINE (T-073). A statement, not a checkbox — ruled that way by the
-              owner: the act of submitting the form is the consent, and a box that only ever
-              gets ticked adds a press without adding a decision.
-              It sits UNDER the button rather than above it, which is where a reader looks for
-              it, and it names the two documents separately because that is what a reader
-              expects to read — both links land on the one page, the second on its KVKK
-              section. `/kullanim-sartlari` is in the pathname table, so the typed `Link`
-              resolves `/en/terms` for an English reader without a second href here. */}
-          <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
-            Kayıt olarak{" "}
-            <Link
-              href="/kullanim-sartlari"
-              className="font-semibold text-foreground underline underline-offset-2 hover:text-primary"
-            >
-              Kullanım Şartları
-            </Link>{" "}
-            ve{" "}
-            <Link
-              href={PRIVACY_ANCHOR}
-              className="font-semibold text-foreground underline underline-offset-2 hover:text-primary"
-            >
-              Gizlilik Politikası
-            </Link>
-            &apos;nı kabul etmiş olursun.
-          </p>
 
           {/* Switch to Login footer */}
           <div className="text-center pt-2 border-t border-border/80">
