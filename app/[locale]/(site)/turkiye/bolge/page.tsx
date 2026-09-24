@@ -579,7 +579,7 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 fallback={
                   <>
                     <StatTileSkeleton />
-                    <StatTileSkeleton />
+                    <StatTileSkeleton announce={false} />
                   </>
                 }
               >

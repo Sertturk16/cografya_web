@@ -42,7 +42,8 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   scanners pin exact page paths, and an in-file declaration is followed by their render walk while
   a new file is not. `components/v2/page-composition-loading.test.ts` holds all these rules. The
   FAQ scanner follows JSX nesting inside one function only, so a gated `<FaqSection>` inside a
-  section component repeats the gate.
+  section component repeats the gate. On the `force-dynamic` routes a loader that throws
+  mid-stream yields 200 + `error.tsx` rather than a 500; accepted, see the T-037 spec.
 
 ## i18n (next-intl 4)
 

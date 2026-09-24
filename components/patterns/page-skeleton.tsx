@@ -15,9 +15,9 @@ import { StatGrid } from "./stat-grid";
  * fallback inside a page renders one piece. Because both draw from this file, the swap from the
  * route-level skeleton to the page shell with its section fallbacks moves nothing.
  *
- * Only `bg-muted` (through `Skeleton`) — never `bg-card` or `border-border`. The card counters in
- * `components/v2/page-composition-cards.test.ts` walk `components/patterns/` too, and a skeleton
- * that borrowed a card's tokens would enter them as a hand-drawn card.
+ * Skeleton BARS are `bg-muted` only — never `bg-card` or `border-border` on a bar — so nothing here
+ * enters the hand-drawn card counters; the real `Card` primitive is allowed where the live page
+ * renders one.
  *
  * `useTranslations`, not `getTranslations`: a Suspense fallback must not itself suspend, and the
  * sync hook is legal in a Server Component (`map-attribution.tsx` is the precedent).
@@ -49,7 +49,7 @@ const PLATE_RADIUS: Record<keyof typeof PLATE_ASPECT, string> = {
 };
 
 export type PlateAspect = keyof typeof PLATE_ASPECT;
-export type PageSkeletonShape = "hub" | "auth" | "play";
+export type PageSkeletonShape = "auth" | "play";
 
 interface Announce {
   /** `false` inside a tree that already carries one `role="status"`. */
@@ -104,11 +104,9 @@ export function StatTileSkeleton({ announce = true }: Announce) {
 }
 
 export function HeroSkeleton({
-  tier,
   tiles = 0,
   announce = true,
-}: Announce & { readonly tier: "hub" | "detail"; readonly tiles?: 0 | 2 | 4 }) {
-  const heading = tier === "hub" ? "h-9 w-3/4 sm:h-12" : "h-10 w-2/3 sm:h-[60px]";
+}: Announce & { readonly tier: "hub"; readonly tiles?: 0 | 4 }) {
   const body = (
     <>
       <div className="relative z-10 max-w-3xl space-y-4">
@@ -116,14 +114,14 @@ export function HeroSkeleton({
           <Bar className="h-6 w-24 rounded-full" />
           <Bar className="h-6 w-32 rounded-full" />
         </div>
-        <Bar className={heading} />
+        <Bar className="h-9 w-3/4 sm:h-12" />
         <div className="space-y-2">
           <Bar className="h-4 w-full" />
           <Bar className="h-4 w-11/12" />
         </div>
       </div>
       {tiles > 0 ? (
-        <StatGrid columns={tiles === 2 ? "2" : "2-4"} gutter="hero">
+        <StatGrid columns="2-4" gutter="hero">
           {Array.from({ length: tiles }, (_, i) => (
             <StatTileSkeleton key={i} announce={false} />
           ))}
@@ -133,7 +131,7 @@ export function HeroSkeleton({
   );
   return (
     <Status announce={announce}>
-      {tier === "hub" ? <Card variant="feature">{body}</Card> : body}
+      <Card variant="feature">{body}</Card>
     </Status>
   );
 }
@@ -172,26 +170,30 @@ const GRID_COLUMNS = {
   "2-4": "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4",
 } as const;
 
-const GRID_ITEM_HEIGHT = { card: "h-40", form: "h-[520px]" } as const;
-
 export function CardGridSkeleton({
   columns,
   count,
-  height = "card",
   announce = true,
 }: Announce & {
   readonly columns: keyof typeof GRID_COLUMNS;
   readonly count: number;
-  /** `"form"` sizes each box for `V2RegisterCard`'s form shell instead of a summary card. */
-  readonly height?: "card" | "form";
 }) {
   return (
     <Status announce={announce}>
       <div className={cn("grid gap-5", GRID_COLUMNS[columns])}>
         {Array.from({ length: count }, (_, i) => (
-          <Bar key={i} className={cn(GRID_ITEM_HEIGHT[height], "rounded-3xl")} />
+          <Bar key={i} className="h-40 rounded-3xl" />
         ))}
       </div>
+    </Status>
+  );
+}
+
+/** `V2RegisterCard`'s form shell — the one box on `/kayit` that isn't a summary card. */
+export function FormCardSkeleton({ announce = true }: Announce) {
+  return (
+    <Status announce={announce}>
+      <Bar className="h-[520px] w-full rounded-3xl" />
     </Status>
   );
 }
@@ -222,26 +224,16 @@ export function InlineSkeleton({
   );
 }
 
-function HubShape({ plate }: { readonly plate: PlateAspect }) {
-  return (
-    <PageContainer>
-      <div className="space-y-4">
-        <BreadcrumbsSkeleton />
-        <HeroSkeleton tier="hub" tiles={4} announce={false} />
-      </div>
-      <PlateSkeleton aspect={plate} announce={false} />
-    </PageContainer>
-  );
-}
-
 function AuthShape() {
   return (
     <PageContainer>
       <BreadcrumbsSkeleton />
-      <HeroSkeleton tier="hub" announce={false} />
+      <div className="relative z-10 max-w-3xl space-y-4">
+        <Bar className="h-9 w-64 sm:h-12" />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-6 xl:col-span-5">
-          <Bar className="h-[520px] rounded-3xl" />
+        <div className="lg:col-span-6 xl:col-span-5 w-full">
+          <FormCardSkeleton announce={false} />
         </div>
         <div className="lg:col-span-6 xl:col-span-7">
           <Bar className="h-[520px] rounded-3xl" />
@@ -253,7 +245,7 @@ function AuthShape() {
 
 function PlayShape() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6 pb-24">
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6 pb-24">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <BreadcrumbsSkeleton />
         <div className="flex gap-2">
@@ -270,27 +262,22 @@ function PlayShape() {
         </div>
         <PlateSkeleton aspect="game" announce={false} />
       </div>
-    </div>
+    </main>
   );
 }
 
-const OTHER_SHAPES: Record<Exclude<PageSkeletonShape, "hub">, () => ReactNode> = {
+const SHAPES: Record<PageSkeletonShape, () => ReactNode> = {
   auth: AuthShape,
   play: PlayShape,
 };
 
 export function PageSkeleton({
   shape,
-  plate = "map",
 }: {
   readonly shape: PageSkeletonShape;
-  /** The hub shape's explorer plate; ignored by every other shape. */
-  readonly plate?: PlateAspect;
   readonly className?: never;
 }) {
-  return (
-    <Status announce>{shape === "hub" ? <HubShape plate={plate} /> : OTHER_SHAPES[shape]()}</Status>
-  );
+  return <Status announce>{SHAPES[shape]()}</Status>;
 }
 
 /**

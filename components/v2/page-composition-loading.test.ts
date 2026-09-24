@@ -1,11 +1,12 @@
 import { existsSync } from "node:fs";
-import { dirname, join, sep } from "node:path";
+import { basename, dirname, join, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   label,
   repoRoot,
   sourceOf,
   surfaceFiles,
+  walk,
   walkLoadingFiles,
   walkPages,
 } from "@/lib/test-support/composition-scan";
@@ -84,7 +85,7 @@ describe("loading.tsx coverage", () => {
     expect(missing).toEqual([]);
   });
 
-  it("the owed population is exactly the three routes the spec names", () => {
+  it("the owed population is exactly the one route the spec names", () => {
     const owed = walkPages().filter(isOwedALoadingFile).map(label).sort();
     expect(owed).toEqual([...ROUTES_OWED_A_LOADING_FILE].sort());
   });
@@ -106,8 +107,11 @@ describe("loading.tsx coverage", () => {
   });
 
   it("the predicate sees a real 404/redirect hazard — anti-vacuity", () => {
-    // force-dynamic, but redirects an unauthenticated reader before its first return.
-    expect(isOwedALoadingFile(join(repoRoot, "app/[locale]/(site)/hesabim/page.tsx"))).toBe(false);
+    // force-dynamic AND a leaf, but redirects an unauthenticated reader before its first
+    // return — deleting the `redirect(` regex from either predicate must turn this red.
+    const ayarlar = join(repoRoot, "app/[locale]/(site)/hesabim/ayarlar/page.tsx");
+    expect(isOwedALoadingFile(ayarlar)).toBe(false);
+    expect(mustNotHaveLoadingFile(ayarlar)).toBe(true);
     expect(
       mustNotHaveLoadingFile(join(repoRoot, "app/[locale]/(site)/turkiye/[slug]/page.tsx")),
     ).toBe(true);
@@ -123,6 +127,24 @@ describe("loading.tsx coverage", () => {
   });
 });
 
+/**
+ * `walkLoadingFiles()` above is scoped to `PAGE_ROOTS` (`(site)` and `(play)`), so it cannot see
+ * a `loading.tsx` placed ABOVE them — `app/loading.tsx` or `app/[locale]/loading.tsx`. Either
+ * would wrap every locale's every route in one Suspense boundary, reproducing at app scope
+ * exactly the soft-404/zero-prerender failure Task 15 measured for `/turkiye` and `/dunya`'s
+ * segment-level `loading.tsx` files (Ruling B above): every `[slug]` family below it would build
+ * fully dynamic and answer 200 for an unknown slug instead of the page's own `notFound()`. This
+ * walks the whole `app/` tree, not just `PAGE_ROOTS`, so that hazard cannot hide above the walker.
+ */
+describe("no loading.tsx sits above PAGE_ROOTS", () => {
+  it("app/ carries exactly the one loading.tsx the spec names", () => {
+    const files = walk(join(repoRoot, "app"))
+      .filter((file) => basename(file) === "loading.tsx")
+      .map(label);
+    expect(files).toEqual(["app/[locale]/(site)/kayit/loading.tsx"]);
+  });
+});
+
 describe("every loading.tsx is one PageSkeleton", () => {
   it("imports and renders PageSkeleton and nothing else", () => {
     for (const file of walkLoadingFiles()) {
@@ -130,9 +152,7 @@ describe("every loading.tsx is one PageSkeleton", () => {
       expect(source, label(file)).toMatch(
         /import \{ PageSkeleton \} from "@\/components\/patterns\/page-skeleton"/,
       );
-      expect(source, label(file)).toMatch(
-        /return <PageSkeleton shape="(hub|auth|play)"( plate="(map|continent|game|turkey|world)")? \/>;/,
-      );
+      expect(source, label(file)).toMatch(/return <PageSkeleton shape="(auth|play)" \/>;/);
       expect(source, label(file)).not.toMatch(/<Skeleton\b|animate-pulse/);
     }
   });

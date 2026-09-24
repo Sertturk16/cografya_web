@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
-import { CardGridSkeleton } from "@/components/patterns/page-skeleton";
+import { FormCardSkeleton } from "@/components/patterns/page-skeleton";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2RegisterCard } from "@/components/v2/v2-register-card";
 import { V2AuthBenefitsPlate } from "@/components/v2/v2-auth-benefits-plate";
@@ -77,7 +77,7 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Register Form Container */}
           <div className="lg:col-span-6 xl:col-span-5 w-full">
-            <Suspense fallback={<CardGridSkeleton columns="2" count={1} height="form" />}>
+            <Suspense fallback={<FormCardSkeleton />}>
               <RegisterCard locale={locale} />
             </Suspense>
           </div>

@@ -290,7 +290,15 @@ async function ProvinceLinkChips({
   const climateSeries = isTr ? province.climate : null;
   const hasClimateClass = province.climateClassTr !== null && province.climateKoppen !== null;
   const hasClimateSeries = climateSeries !== null;
-  const showSimilar = isTr && (hasClimateClass || hasClimateSeries || similarClimate.length > 0);
+  const showSimilar = climateBlockGates({
+    isTr,
+    hasClimateClass,
+    hasClimateSeries,
+    hasSimilarClimate: similarClimate.length > 0,
+    hasCurriculumName: province.climateCurriculumNameTr !== null,
+    hasClimateNote: province.climateNoteTr !== null,
+    hasCurriculumNoteText: province.climateCurriculumNoteTr !== null,
+  }).showSection;
   return (
     <>
       {/* Neighboring Provinces Chips */}

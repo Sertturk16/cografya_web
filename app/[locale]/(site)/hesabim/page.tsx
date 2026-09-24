@@ -103,13 +103,7 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
         <Breadcrumbs items={breadcrumbItems} locale={locale} surface={AUTH_SURFACE} />
 
         {/* Member Hub Island */}
-        <Suspense
-          fallback={
-            <div aria-busy="true">
-              <CardGridSkeleton columns="2" count={4} announce={false} />
-            </div>
-          }
-        >
+        <Suspense fallback={<CardGridSkeleton columns="2" count={4} />}>
           <MemberHub session={session} profile={profile} />
         </Suspense>
       </PageContainer>

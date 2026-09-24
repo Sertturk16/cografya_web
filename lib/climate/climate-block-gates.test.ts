@@ -258,12 +258,18 @@ describe("the province page reads its climate gates from this module", () => {
     // `toContain` would pass on the first one and say nothing about the other three — which is
     // precisely how they came apart.
     expect(code.match(/climate\.showClass/g) ?? []).toHaveLength(3);
-    // T-037 task 7: the similar-climate chips resolve inside their own `<Suspense>` boundary
-    // (`ProvinceLinkChips`), so the page passes `hasSimilarClimate: false` into `climate` and the
-    // chips recompute the section's own gate locally as `showSimilar`, exactly as
-    // `climateBlockGates` would have evaluated it — see the comment beside `climate = ` above.
-    expect(code).toMatch(/hasSimilarClimate: false/);
-    expect(code).toMatch(/showSimilar && similarClimate\.length/);
+    // T-037 task 7 / Important 3: the similar-climate chips resolve inside their own
+    // `<Suspense>` boundary (`ProvinceLinkChips`), so the page passes `hasSimilarClimate: false`
+    // into `climate` and the chips call `climateBlockGates` again themselves, this time with the
+    // real `hasSimilarClimate` — sliced to the function's own body so the binding cannot be
+    // satisfied by a stray match elsewhere in the file.
+    const chipsStart = code.indexOf("async function ProvinceLinkChips");
+    const chipsEnd = code.indexOf("async function ProvinceEnvironmentRow", chipsStart);
+    expect(chipsStart).toBeGreaterThan(-1);
+    expect(chipsEnd).toBeGreaterThan(chipsStart);
+    const chipsBody = code.slice(chipsStart, chipsEnd);
+    expect(chipsBody).toContain("climateBlockGates(");
+    expect(chipsBody).toContain("hasSimilarClimate: similarClimate.length > 0");
     expect(code).toMatch(/climate\.showCurriculumNote/);
   });
 

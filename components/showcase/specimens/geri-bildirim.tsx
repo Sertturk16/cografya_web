@@ -3,7 +3,7 @@
 import { toast } from "sonner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageSkeleton, PlateSkeleton, StatTileSkeleton } from "@/components/patterns/page-skeleton";
+import { PageSkeleton } from "@/components/patterns/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Specimen, SpecimenRow } from "../specimen";
@@ -70,12 +70,8 @@ export function GeriBildirimSpecimens() {
         description="Bir sayfanın yükleme hâli. loading.tsx ve Suspense fallback'leri bu parçalardan kurulur; içerik gelince hiçbir şey yerinden oynamaz, çünkü parçalar gerçek sayfanın ölçüsünü taşır. Tek role=status, çubuklar aria-hidden."
       >
         <div className="space-y-6">
-          <PageSkeleton shape="hub" />
-          <div className="grid grid-cols-2 gap-3">
-            <StatTileSkeleton />
-            <StatTileSkeleton />
-          </div>
-          <PlateSkeleton aspect="continent" />
+          <PageSkeleton shape="auth" />
+          <PageSkeleton shape="play" />
         </div>
       </Specimen>
 

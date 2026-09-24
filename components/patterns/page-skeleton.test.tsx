@@ -17,7 +17,7 @@ import {
   StatTileSkeleton,
 } from "./page-skeleton";
 
-const SHAPES = ["hub", "auth", "play"] as const;
+const SHAPES = ["auth", "play"] as const;
 
 function render(node: React.ReactNode, locale: "tr" | "en" = "tr") {
   const messages = locale === "tr" ? tr : en;
@@ -39,16 +39,22 @@ describe("PageSkeleton", () => {
   });
 
   it("reads the label from the active locale", () => {
-    expect(render(<PageSkeleton shape="hub" />, "en")).toContain("Loading…");
+    expect(render(<PageSkeleton shape="auth" />, "en")).toContain("Loading…");
   });
 
   it("hides every bar from assistive tech", () => {
-    const html = render(<PageSkeleton shape="hub" />);
+    const html = render(<PageSkeleton shape="auth" />);
     const bars = html.match(/<(div|span)[^>]*data-slot="skeleton"[^>]*>/g) ?? [];
     expect(bars.length).toBeGreaterThan(5);
     for (const bar of bars) {
       expect(bar).toContain('aria-hidden="true"');
     }
+  });
+
+  it("the auth shape mirrors /kayit's bare hero and never draws a feature card", () => {
+    const html = render(<PageSkeleton shape="auth" />);
+    expect(html).not.toContain('data-slot="card"');
+    expect(html).toContain("lg:col-span-6");
   });
 
   it("uses no card surface token — the hand-drawn card counters must not see it", () => {
@@ -64,7 +70,7 @@ describe("PageSkeleton", () => {
     const source = stripComments(
       readFileSync(fileURLToPath(new URL("./page-skeleton.tsx", import.meta.url)), "utf8"),
     );
-    // Once in the shared `Announce` props (six pieces), once on `BreadcrumbsSkeleton`, once on
+    // Once in the shared `Announce` props (seven pieces), once on `BreadcrumbsSkeleton`, once on
     // `PageSkeleton`, once on `PlaySuspense`. Every `export function` must reach one of the four.
     expect(source.match(/className\?: never/g)?.length).toBe(4);
     const exportsWithoutIt = [...source.matchAll(/export function (\w+)\(([^)]*)\)/g)]
@@ -111,13 +117,9 @@ describe("PageSkeleton", () => {
     );
   });
 
-  it("the hub shape's plate defaults to map, and can be swapped for the turkey explorer's", () => {
-    const defaultHtml = render(<PageSkeleton shape="hub" />);
-    expect(defaultHtml).toContain("aspect-[1270/580]");
-    expect(defaultHtml).not.toContain("aspect-square");
-
-    const turkeyHtml = render(<PageSkeleton shape="hub" plate="turkey" />);
-    expect(turkeyHtml).toContain("aspect-square sm:aspect-[1270/580]");
+  it("the play shape's arena carries the game plate", () => {
+    const html = render(<PageSkeleton shape="play" />);
+    expect(html).toContain("aspect-[2.33/1] min-h-[380px] sm:min-h-[480px]");
   });
 
   it("pieces can be silenced so a page announces once", () => {
@@ -138,9 +140,5 @@ describe("PageSkeleton", () => {
     const html = render(<HeroSkeleton tier="hub" tiles={4} />);
     expect(count(html, 'data-skeleton="stat-tile"')).toBe(4);
     expect(html).toContain("grid-cols-2 sm:grid-cols-4");
-  });
-
-  it("CardGridSkeleton sizes a single box for a form shell when asked", () => {
-    expect(render(<CardGridSkeleton columns="2" count={1} height="form" />)).toContain("h-[520px]");
   });
 });
