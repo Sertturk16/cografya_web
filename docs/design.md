@@ -178,7 +178,7 @@ Two directories, and the boundary is operational rather than taxonomic:
 - **`components/ui/`** — output of `shadcn add` (`base-nova` style), Terra-themed. CLI-managed.
 - **`components/patterns/`** — written here: `typography` (with `Kbd`), `stat-tile`, `stat-grid`,
   `metric-value`, `form-field`, `map-attribution`, `page-container`, `page-hero`, `breadcrumbs`,
-  `breadcrumbs-nav`, `faq-section`.
+  `breadcrumbs-nav`, `faq-section`, `page-skeleton`.
 - **`components/showcase/`** — the `/design-system` route's own machinery, audited as such and
   never as patterns: `specimen`, `registry`, the specimen files, and `theme-pair`, which wraps
   every specimen in its light/dark panel pair.

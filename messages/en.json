@@ -4,6 +4,7 @@
     "localeSwitcherLabel": "Language selection",
     "localeName": "English",
     "enWorkInProgress": "The detailed sections of this page are in Turkish for now.",
+    "loading": "Loading…",
     "unsavedChanges": {
       "title": "You have unsaved changes",
       "body": "If you leave this page, your changes will not be saved.",
