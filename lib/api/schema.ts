@@ -755,7 +755,11 @@ export interface paths {
          */
         put: operations["AuthController_replaceAccount"];
         post?: never;
-        delete?: never;
+        /**
+         * Permanently delete the authenticated caller's account (T-101).
+         * @description Mevcut şifre doğrulanır; doğruysa kullanıcı satırı ve ona bağlı her kayıt (oturumlar, şifre sıfırlama bağlantıları, favoriler, video ilerlemesi, oyun turları ve dolayısıyla liderlik tablosu girdileri, ölçümler) tek işlemde, geri alınamaz biçimde silinir. Yanıt gövdesizdir; çağıran kendi oturum çerezini temizler.
+         */
+        delete: operations["AuthController_deleteAccount"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3400,6 +3404,11 @@ export interface components {
              * @enum {string}
              */
             locale: "tr" | "en";
+            /**
+             * @description Ticari elektronik ileti (kampanya, yenilik, duyuru) için ayrı ve isteğe bağlı açık rıza (T-101). Kullanım şartlarından bağımsızdır; false ya da hiç gönderilmemesi kaydı engellemez. true ise onay anı saklanır ve doğrulamada hesaba taşınır.
+             * @default false
+             */
+            marketingConsent: boolean;
         };
         ApiErrorDto: {
             /**
@@ -3598,6 +3607,11 @@ export interface components {
              * @example true
              */
             isComplete: boolean;
+            /**
+             * @description Ticari elektronik ileti onayı var mı (T-101). Kayıtta ayrı kutuyla verilir, `PUT /api/auth/account` ile verilip geri alınır.
+             * @example false
+             */
+            marketingConsent: boolean;
         };
         UpdateProfileRequestDto: {
             /**
@@ -3655,6 +3669,12 @@ export interface components {
              * @example 6b3f6f5a-6f5a-4f5a-8f5a-6f5a6f5a6f5a
              */
             districtId: string;
+            /** @description Ticari elektronik ileti onayı (T-101). true: onay verilir (zaten varsa ilk onay anı korunur). false: onay geri alınır. Gönderilmezse mevcut durum değişmez. */
+            marketingConsent?: boolean;
+        };
+        DeleteAccountRequestDto: {
+            /** @description Üyenin bugünkü şifresi — hesabın gerçekten sahibinin isteğiyle silindiğinin kanıtı. Hiçbir yanıtta, örnekte ya da logda dönmez. */
+            currentPassword: string;
         };
         BookProgressResumeDto: {
             /**
@@ -5187,6 +5207,54 @@ export interface operations {
                 };
             };
             /** @description errors.auth.rateLimited — IP ekseni tavanı aşıldı. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+        };
+    };
+    AuthController_deleteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteAccountRequestDto"];
+            };
+        };
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Eksik ya da boş currentPassword. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.unauthenticated ya da errors.password.currentInvalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
+            };
+            /** @description errors.auth.rateLimited (IP ekseni) ya da errors.auth.tooManyAttempts (kimlik ekseni, şifre değiştirme ile ortak bütçe). */
             429: {
                 headers: {
                     [name: string]: unknown;

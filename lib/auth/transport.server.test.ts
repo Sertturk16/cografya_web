@@ -1252,3 +1252,95 @@ describe("T-061 — password/change", () => {
     expect(mock).not.toHaveBeenCalled();
   });
 });
+
+// -----------------------------------------------------------------------------------------
+// T-101 — `account/delete`: authenticated, forwarded as the api's DELETE, and the one success
+// that must CLEAR the session cookies rather than write new ones.
+// -----------------------------------------------------------------------------------------
+
+describe("T-101 — account/delete", () => {
+  const DELETE_BODY = JSON.stringify({ currentPassword: "Current1" });
+
+  function deleteRequest(cookie?: string): Request {
+    return makeRequest("POST", "/api/auth/account/delete", {
+      origin: SITE_URL,
+      body: DELETE_BODY,
+      ...(cookie === undefined ? {} : { cookie }),
+    });
+  }
+
+  it("forwards as DELETE /api/auth/account with the bearer header and the password body", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValueOnce(emptyResponse(204));
+
+    await handleAuthRequest(deleteRequest(`${ACCESS_COOKIE_NAME}=live-access-token`), [
+      "account",
+      "delete",
+    ]);
+
+    expect(mock).toHaveBeenCalledTimes(1);
+    expect(mock.mock.calls[0]?.[0]).toBe("http://api.test/api/auth/account");
+    const init = mock.mock.calls[0]?.[1] as RequestInit;
+    expect(init.method).toBe("DELETE");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer live-access-token");
+    expect(init.body).toBe(DELETE_BODY);
+  });
+
+  it("clears both session cookies on success", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValueOnce(emptyResponse(204));
+
+    const result = await handleAuthRequest(
+      deleteRequest(`${ACCESS_COOKIE_NAME}=live-access-token`),
+      ["account", "delete"],
+    );
+
+    expect(result.status).toBe(200);
+    expect(result.body).toEqual({ ok: true });
+    const names = result.cookies.map((cookie) => cookie.name).sort();
+    expect(names).toEqual([ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME].sort());
+    for (const cookie of result.cookies) {
+      expect(cookie.value).toBe("");
+      expect(cookie.options.maxAge).toBe(0);
+    }
+  });
+
+  it("keeps the session on a wrong password and passes the api's key through", async () => {
+    const mock = fetchMock();
+    mock.mockResolvedValueOnce(jsonResponse(401, { message: "errors.password.currentInvalid" }));
+
+    const result = await handleAuthRequest(
+      deleteRequest(`${ACCESS_COOKIE_NAME}=live-access-token`),
+      ["account", "delete"],
+    );
+
+    expect(result.status).toBe(401);
+    expect(result.body).toEqual({ ok: false, code: "errors.password.currentInvalid" });
+    expect(result.cookies).toHaveLength(0);
+  });
+
+  it("answers 401 with no api call when there is no access cookie", async () => {
+    const mock = fetchMock();
+
+    const result = await handleAuthRequest(deleteRequest(), ["account", "delete"]);
+
+    expect(result.status).toBe(401);
+    expect(mock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a cross-origin delete before calling the api", async () => {
+    const mock = fetchMock();
+
+    const result = await handleAuthRequest(
+      makeRequest("POST", "/api/auth/account/delete", {
+        origin: "https://evil.test",
+        body: DELETE_BODY,
+        cookie: `${ACCESS_COOKIE_NAME}=live-access-token`,
+      }),
+      ["account", "delete"],
+    );
+
+    expect(result.status).toBe(403);
+    expect(mock).not.toHaveBeenCalled();
+  });
+});

@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import type { Profile } from "@/lib/api/types";
 import { V2SettingsAccountCard } from "./v2-settings-account-card";
+import { V2SettingsDeleteCard } from "./v2-settings-delete-card";
 import { V2SettingsEducationCard } from "./v2-settings-education-card";
 import { V2SettingsPersonalCard, type ProvinceOption } from "./v2-settings-personal-card";
 import { V2SettingsPasswordCard } from "./v2-settings-password-card";
@@ -15,7 +16,8 @@ export interface V2AccountSettingsProps {
 }
 
 /**
- * `/hesabim/ayarlar` (T-061) — one page, four independent sections.
+ * `/hesabim/ayarlar` (T-061) — one page, independent sections (T-101 added the fifth, account
+ * deletion, last).
  *
  * **Why sections and not tabs.** The hub next door already uses tabs, for content a member
  * browses. Settings are not browsed: a member arrives wanting one specific change, and a
@@ -41,6 +43,7 @@ export function V2AccountSettings({ locale, profile, provinces }: V2AccountSetti
     ...(showsEducation ? [{ id: "egitim-bilgileri", label: t("education.title") }] : []),
     { id: "guvenlik", label: t("password.title") },
     { id: "hesap", label: t("account.title") },
+    { id: "hesabi-sil", label: t("delete.title") },
   ];
 
   // The page owns the `<h1>`, not this component. Both of the page's branches — the loaded
@@ -74,6 +77,8 @@ export function V2AccountSettings({ locale, profile, provinces }: V2AccountSetti
           {showsEducation && <V2SettingsEducationCard locale={locale} profile={profile} />}
           <V2SettingsPasswordCard />
           <V2SettingsAccountCard locale={locale} profile={profile} />
+          {/* T-101: last, below everything a member might have come to change. */}
+          <V2SettingsDeleteCard />
         </div>
       </div>
     </div>

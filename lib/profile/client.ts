@@ -62,6 +62,7 @@ export function isProfileLike(value: unknown): value is Profile {
     hasPersonalBlock &&
     isValidRole &&
     typeof p.isComplete === "boolean" &&
+    typeof p.marketingConsent === "boolean" &&
     isValidEducationLevel &&
     isValidGradeLevel &&
     isValidStudyStream &&

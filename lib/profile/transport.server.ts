@@ -89,6 +89,7 @@ export const profileSchema = z.object({
   universityName: z.string().nullable(),
   departmentName: z.string().nullable(),
   isComplete: z.boolean(),
+  marketingConsent: z.boolean(),
 });
 
 type ProfileShape = z.infer<typeof profileSchema>;
@@ -163,6 +164,8 @@ const updateAccountRequestSchema = z
     phone: z.string().min(1).max(32),
     provincePlateCode: z.string().length(2),
     districtId: z.string().min(1),
+    // T-101: optional on purpose — absent leaves the stored consent untouched.
+    marketingConsent: z.boolean().optional(),
   })
   .strict();
 

@@ -215,6 +215,26 @@ export interface RegisterFormState {
   readonly schoolName?: string;
   readonly universityName?: string;
   readonly departmentName?: string;
+  /**
+   * T-101. Two separate decisions, never bundled: accepting the terms is REQUIRED to register;
+   * commercial electronic messages are an OPTIONAL, unticked-by-default consent (KVKK md. 5/1,
+   * 6563 sayılı Kanun) that must never be a condition of the service.
+   */
+  readonly termsAccepted: boolean;
+  readonly marketingConsent: boolean;
+}
+
+/** The consent fields the register form refuses to submit without (T-101). */
+export type RequiredRegisterConsent = "termsAccepted";
+
+/**
+ * Which REQUIRED consents are missing. Only the terms are required; `marketingConsent` is
+ * deliberately absent from this check, so leaving it unticked can never block registration.
+ */
+export function missingRegisterConsents(
+  state: Pick<RegisterFormState, "termsAccepted" | "marketingConsent">,
+): RequiredRegisterConsent[] {
+  return state.termsAccepted ? [] : ["termsAccepted"];
 }
 
 /**
@@ -265,6 +285,8 @@ export function buildRegisterPayload(
     districtId: formState.districtId,
     provincePlateCode: formState.provincePlateCode,
     locale,
+    // Sent on every branch, `false` included: the API stores a consent instant only for `true`.
+    marketingConsent: formState.marketingConsent,
   };
 
   switch (formState.userType) {

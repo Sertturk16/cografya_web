@@ -568,7 +568,11 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // 188 → **187** in T-088: `v2-sources-section.tsx` was deleted with its one hand-drawn card.
 // 187 → **186** in T-095: the tool pages' second "other tools" panel in
 // `v2-tool-educational-content.tsx` deleted; `V2RelatedTools` (a `Card`) is the one that stays.
-export const HAND_DRAWN_CARDS = 186;
+// 186 → **188** in T-101, net of three moves: `/gizlilik` adds the provider list's item card and
+// the mailto card (the same spelling the terms page uses), `LegalControllerIdentity` is one
+// `rounded-2xl border bg-card` definition list, and `/hakkimizda`'s own mailto card left because
+// that block now renders the address.
+export const HAND_DRAWN_CARDS = 188;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -595,7 +599,9 @@ export const HAND_DRAWN_CARDS = 186;
 // in `earthquake-attribution.tsx` and `MarineDataNotice`'s panel. A notice is not a panel.
 // 156 → **150** in T-090: the home page's two decorative three-tile strips (6 wells) deleted.
 // 150 → **146** in T-095: the four link wells of the duplicate "Başka bir araca geç" row.
-export const HAND_DRAWN_WELLS = 146;
+// 146 → **148** in T-101: `/gizlilik`'s English-reader notice (the terms page's spelling) and
+// the settings personal card's consent `<fieldset>`, a bordered group and not a panel.
+export const HAND_DRAWN_WELLS = 148;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -615,8 +621,11 @@ export const HAND_DRAWN_WELLS = 146;
  * spelling, so both left the set with them.
  * 227 → **226** in T-090: the home strips' tile spelling left with them.
  * 226 → **221** in T-095: the duplicate "other tools" row's panel and its four link wells were
- * five one-off spellings (each link carried its own hover hue). */
-export const HAND_DRAWN_CARD_SPELLINGS = 221;
+ * five one-off spellings (each link carried its own hover hue).
+ * 221 → **224** in T-101: the privacy notice's provider card, `LegalControllerIdentity`'s block
+ * and the consent fieldset are new strings; `/gizlilik`'s mailto card and notice reuse the
+ * terms page's spellings verbatim. */
+export const HAND_DRAWN_CARD_SPELLINGS = 224;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1399,8 +1408,9 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // explorers now render; the explorers stay on it through their other shapes.
     // 60 after T-088: `v2-sources-section.tsx` was deleted. 58 after T-091:
     // `earthquake-attribution.tsx` and `marine-data-notice.tsx` each held one boxed notice and
-    // nothing else; both are footnotes now.
-    expect(handDrawnTotals().files).toBe(58);
+    // nothing else; both are footnotes now. 61 after T-101: `/gizlilik`,
+    // `legal-controller-identity.tsx` and the settings personal card (its consent fieldset) join.
+    expect(handDrawnTotals().files).toBe(61);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
@@ -1509,7 +1519,9 @@ const INTERACTIVE_CARD_CARRIERS: readonly string[] = [
   "app/[locale]/(site)/dunya/[slug]/page.tsx <Link>",
   "app/[locale]/(site)/dunya/kita/[slug]/page.tsx <Link>",
   "app/[locale]/(site)/dunya/kita/[slug]/page.tsx <Link>",
-  "app/[locale]/(site)/hakkimizda/page.tsx <a>",
+  // T-101: `/hakkimizda`'s mailto card became `LegalControllerIdentity`'s plain link, and
+  // `/gizlilik` carries the terms page's mailto card.
+  "app/[locale]/(site)/gizlilik/page.tsx <a>",
   "app/[locale]/(site)/kullanim-sartlari/page.tsx <a>",
   "app/[locale]/(site)/page.tsx <a>",
   "app/[locale]/(site)/page.tsx <a>",

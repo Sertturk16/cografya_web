@@ -216,6 +216,12 @@ export function V2Footer() {
                   Kullanım Şartları
                 </Link>
               </li>
+              {/* T-101: the KVKK aydınlatma metni has its own page; it sits beside the terms. */}
+              <li>
+                <Link href="/gizlilik" className="hover:text-accent transition-colors block">
+                  Gizlilik ve KVKK
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

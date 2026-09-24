@@ -32,7 +32,7 @@ export const routing = defineRouting({
       tr: "/hakkimizda",
       en: "/about",
     },
-    // The platform's terms of use and its KVKK/privacy section, one page (T-073). LOCALIZED
+    // The platform's terms of use (T-073). LOCALIZED
     // segment on the `/hakkimizda ↔ /en/about` precedent — "kullanım şartları" does not read
     // as English at all. The page is `surface: "trOnly"`: it is a Turkish legal text governed
     // by Turkish law, so an indexable English twin would be a translation of a contract, which
@@ -43,6 +43,13 @@ export const routing = defineRouting({
     "/kullanim-sartlari": {
       tr: "/kullanim-sartlari",
       en: "/terms",
+    },
+    // The KVKK aydınlatma metni, split out of the terms page by T-101. Same reasoning and the
+    // same `surface: "trOnly"` as the terms: a Turkish legal notice with an English rendering
+    // for reading, not an indexable translation.
+    "/gizlilik": {
+      tr: "/gizlilik",
+      en: "/privacy",
     },
     "/turkiye": "/turkiye",
     "/turkiye/[slug]": "/turkiye/[slug]",

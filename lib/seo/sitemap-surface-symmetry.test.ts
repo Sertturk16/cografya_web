@@ -75,6 +75,7 @@ const PAGE_FOR: Record<string, string> = {
   "/dunya/kita": "app/[locale]/(site)/dunya/kita/page.tsx",
   "/hakkimizda": "app/[locale]/(site)/hakkimizda/page.tsx",
   "/kullanim-sartlari": "app/[locale]/(site)/kullanim-sartlari/page.tsx",
+  "/gizlilik": "app/[locale]/(site)/gizlilik/page.tsx",
   "/turkiye/bolge": "app/[locale]/(site)/turkiye/bolge/page.tsx",
   "/deniz/marmara": "app/[locale]/(site)/deniz/marmara/page.tsx",
   "/deniz/ege": "app/[locale]/(site)/deniz/ege/page.tsx",
@@ -376,7 +377,8 @@ const pairs = sitePages.flatMap(pairsIn);
  * T-073: 29 → **30**, and 34 `(site)` pages → 35. `/kullanim-sartlari` renders `<Breadcrumbs>`
  * the way `/hakkimizda` does, with the same surface its `buildMetadata` declares (`trOnly`).
  */
-const BREADCRUMB_SURFACE_PAIRS = 30;
+// 30 → 31 in T-101: `/gizlilik`.
+const BREADCRUMB_SURFACE_PAIRS = 31;
 const SCHEMA_SURFACE_PAIRS = 4;
 
 describe("the page's metadata surface and its breadcrumb surface", () => {

@@ -7,7 +7,7 @@ import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/bre
 import { H1, H2, Lede } from "@/components/patterns/typography";
 import { PageContainer } from "@/components/patterns/page-container";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
-import { PRIVACY_FRAGMENT } from "@/lib/legal/terms-anchor";
+import { Link } from "@/i18n/navigation";
 import { env } from "@/lib/env";
 
 interface TermsPageProps {
@@ -28,13 +28,10 @@ export async function generateMetadata({ params }: TermsPageProps): Promise<Meta
 }
 
 /**
- * `/kullanim-sartlari` · `/en/terms` (T-073) — the platform's terms of use, with the KVKK
- * section inside them rather than on a page of its own.
+ * `/kullanim-sartlari` · `/en/terms` (T-073) — the platform's terms of use.
  *
- * ONE PAGE, TWO LINKS. The register card's consent line names "Kullanım Şartları" and
- * "Gizlilik Politikası" separately, which is what a reader expects to read, and both land
- * here: the second on {@link PRIVACY_FRAGMENT}. Two routes would mean two legal texts to keep
- * in step, and the privacy half of a platform this size is one section, not a document.
+ * The privacy/KVKK text used to be section 5 of this page. T-101 moved it to its own page,
+ * `/gizlilik`, so there is ONE source for it; section 5 here is now only a pointer there.
  *
  * `surface: "trOnly"`, and that is a deliberate choice rather than the EN-content default.
  * This is a Turkish legal text governed by Turkish law; the English rendering below exists so
@@ -97,14 +94,17 @@ export default async function TermsPage({ params }: TermsPageProps) {
           <p className="max-w-prose leading-relaxed">{t("fairUseBody")}</p>
         </section>
 
-        {/* `scroll-mt-*` for the same reason `/hakkimizda`'s source colophon carries it: this
-            is a link target, and the sticky header would otherwise cover the heading the
-            reader was sent to. */}
-        <section id={PRIVACY_FRAGMENT} className="scroll-mt-24 space-y-4">
-          <H2>{t("kvkkHeading")}</H2>
-          <p className="max-w-prose leading-relaxed">{t("kvkkBody1")}</p>
-          <p className="max-w-prose leading-relaxed">{t("kvkkBody2")}</p>
-          <p className="max-w-prose leading-relaxed">{t("kvkkBody3")}</p>
+        <section className="space-y-4">
+          <H2>{t("privacyHeading")}</H2>
+          <p className="max-w-prose leading-relaxed">
+            {t("privacyBody")}{" "}
+            <Link
+              href="/gizlilik"
+              className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80"
+            >
+              {t("privacyLink")}
+            </Link>
+          </p>
         </section>
 
         <section className="space-y-4">

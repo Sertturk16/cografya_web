@@ -183,6 +183,9 @@ const AUTH_ACTIONS: Readonly<Record<string, AuthAction>> = {
   // response carries `Set-Cookie` exactly as `login` does. Without that, a member would change
   // their password and be signed out by their own success.
   "password/change": { method: "POST", apiPath: "/api/auth/password/change" },
+  // T-101. The BFF takes a same-origin POST (like every other mutation here, so the origin and
+  // body-size gates below apply unchanged) and forwards it as the api's `DELETE /api/auth/account`.
+  "account/delete": { method: "POST", apiPath: "/api/auth/account" },
 };
 
 /** The twelve error keys the api publishes (plan §3), verbatim in `ApiErrorDto.message`. */
@@ -306,7 +309,7 @@ function logAuthOutcome(action: string, outcome: string): void {
 
 async function sendApiRequest(
   apiPath: string,
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "DELETE",
   body: string | undefined,
   extraHeaders: Record<string, string> = {},
 ): Promise<Response> {
@@ -381,7 +384,7 @@ async function classifyResponse(res: Response): Promise<ApiCallOutcome> {
 async function callAuthApiForStatus(
   apiPath: string,
   body: string,
-  method: "GET" | "POST" = "POST",
+  method: "GET" | "POST" | "DELETE" = "POST",
   extraHeaders?: Record<string, string>,
 ): Promise<ApiCallOutcome> {
   let res: Response;
@@ -660,6 +663,44 @@ async function handlePasswordChange(action: AuthAction, request: Request): Promi
  *  no cookie mutation: the api's site-wide `refresh` rate limit (`cografya_api/ENGINEERING.md`
  *  §3.1) is a single shared bucket, and treating its 429 as a dead session would force every
  *  signed-in visitor to re-authenticate the moment the bucket fills. */
+/**
+ * `account/delete` (T-101) — permanent account deletion.
+ *
+ * Authenticated like `password/change`: the access cookie is forwarded as a bearer header and
+ * the body carries the current password. On success the api has already deleted the refresh
+ * sessions with the account, so there is nothing to revoke; the cookies are cleared here so the
+ * browser stops presenting tokens that no longer resolve to anyone. A failure clears nothing —
+ * a wrong password must leave the member signed in.
+ */
+async function handleAccountDelete(action: AuthAction, request: Request): Promise<AuthBffResult> {
+  const actionKey = "account/delete";
+  const accessToken = readCookieValue(request, ACCESS_COOKIE_NAME);
+
+  if (!accessToken) {
+    logAuthOutcome(actionKey, "errors.auth.unauthenticated");
+    return bffResult(401, { ok: false, code: "errors.auth.unauthenticated" });
+  }
+
+  const read = await readClientBody(actionKey, request);
+  if (!read.ok) return read.result;
+
+  const outcome = await callAuthApiForStatus(action.apiPath, read.body, "DELETE", {
+    Authorization: `Bearer ${accessToken}`,
+  });
+
+  if (outcome.kind === "unavailable") {
+    logAuthOutcome(actionKey, "unavailable");
+    return bffResult(502, { ok: false, code: "errors.transport.unavailable" });
+  }
+  if (outcome.kind === "mapped-error") {
+    logAuthOutcome(actionKey, outcome.code);
+    return bffResult(outcome.status, { ok: false, code: outcome.code });
+  }
+
+  logAuthOutcome(actionKey, "ok");
+  return bffResult(200, { ok: true }, clearSessionCookies(getSiteUrl()));
+}
+
 async function handleRefresh(request: Request): Promise<AuthBffResult> {
   const siteUrl = getSiteUrl();
   const refreshToken = readCookieValue(request, REFRESH_COOKIE_NAME);
@@ -944,6 +985,8 @@ export async function handleAuthRequest(
       return handleSession(request);
     case "password/change":
       return handlePasswordChange(action, request);
+    case "account/delete":
+      return handleAccountDelete(action, request);
     default:
       // Unreachable: every key in `AUTH_ACTIONS` is handled above, and an unmatched key
       // already returned 404 before this switch is reached.
