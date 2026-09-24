@@ -566,7 +566,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // 189 → **188** in T-079: `/turkiye`'s and `/dunya`'s selection cards, two copies of one
 // spelling, became the single `MapSelectionCard` in `components/v2/map-selection-card.tsx`.
 // 188 → **187** in T-088: `v2-sources-section.tsx` was deleted with its one hand-drawn card.
-export const HAND_DRAWN_CARDS = 187;
+// 187 → **186** in T-095: the tool pages' second "other tools" panel in
+// `v2-tool-educational-content.tsx` deleted; `V2RelatedTools` (a `Card`) is the one that stays.
+export const HAND_DRAWN_CARDS = 186;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -592,7 +594,8 @@ export const HAND_DRAWN_CARDS = 187;
 // 158 → **156** in T-091: the two boxed attribution notes became footnotes — the AFAD disclaimer
 // in `earthquake-attribution.tsx` and `MarineDataNotice`'s panel. A notice is not a panel.
 // 156 → **150** in T-090: the home page's two decorative three-tile strips (6 wells) deleted.
-export const HAND_DRAWN_WELLS = 150;
+// 150 → **146** in T-095: the four link wells of the duplicate "Başka bir araca geç" row.
+export const HAND_DRAWN_WELLS = 146;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -610,8 +613,10 @@ export const HAND_DRAWN_WELLS = 150;
  * 230 → **229** in T-089: the deleted `/oyun` feature strip was the only element with its spelling.
  * 229 → **227** in T-091: the two wells above ({@link HAND_DRAWN_WELLS}) were each a one-off
  * spelling, so both left the set with them.
- * 227 → **226** in T-090: the home strips' tile spelling left with them. */
-export const HAND_DRAWN_CARD_SPELLINGS = 226;
+ * 227 → **226** in T-090: the home strips' tile spelling left with them.
+ * 226 → **221** in T-095: the duplicate "other tools" row's panel and its four link wells were
+ * five one-off spellings (each link carried its own hover hue). */
+export const HAND_DRAWN_CARD_SPELLINGS = 221;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1532,10 +1537,6 @@ const INTERACTIVE_CARD_CARRIERS: readonly string[] = [
   "components/v2/v2-related-tools.tsx <Link>",
   "components/v2/v2-sea-basin-detail-view.tsx <Link>",
   "components/v2/v2-sea-basin-detail-view.tsx <Link>",
-  "components/v2/v2-tool-educational-content.tsx <Link>",
-  "components/v2/v2-tool-educational-content.tsx <Link>",
-  "components/v2/v2-tool-educational-content.tsx <Link>",
-  "components/v2/v2-tool-educational-content.tsx <Link>",
   "components/v2/v2-turkey-map-explorer.tsx <Link>",
   "components/v2/v2-turkey-map-explorer.tsx <Link>",
   "components/v2/v2-world-continents.tsx <Link>",
@@ -1805,12 +1806,13 @@ describe("the three card-shaped populations PR4 must not touch", () => {
  */
 // 47 → 46: T-090 dropped the muted sentence on the `oyun/bolge-bolge-il` region cards,
 // so that grid no longer reads as tiles. 46 → 44 in T-090: the home page's two three-tile
-// count strips deleted.
-export const STAT_GRIDS_WITHOUT_STATTILE = 44;
+// count strips deleted. 44 → 43 in T-095: the duplicate "other tools" link row in
+// `v2-tool-educational-content.tsx` read as a four-tile grid; deleted.
+export const STAT_GRIDS_WITHOUT_STATTILE = 43;
 
 export const STAT_GRID_FILES = 24; // 25 → 24, same T-090 change
 
-export const STAT_TILES_WITHOUT_STATTILE = 104; // 111 → 110 (/oyun region cards) → 104 (home strips), T-090
+export const STAT_TILES_WITHOUT_STATTILE = 100; // 111 → 110 (/oyun region cards) → 104 (home strips), T-090; → 100 (duplicate tool links row), T-095
 
 /**
  * The floor that is supposed to RISE. Zero for three tasks; 13 once the metric-strip family
@@ -1833,8 +1835,8 @@ export const SURFACE_FILES_RENDERING_STATTILE = 12;
  * If you are auditing this number, read both.
  */
 // 59 → 56 in T-090: the /oyun region-card grid and the home page's two count strips left the
-// census; none was migrated.
-export const STAT_GRIDS_TOTAL = 56;
+// census; none was migrated. 56 → 55 in T-095: the duplicate "other tools" row deleted.
+export const STAT_GRIDS_TOTAL = 55;
 
 const TILE_VALUE_SIZE = /^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl|\[)/;
 
