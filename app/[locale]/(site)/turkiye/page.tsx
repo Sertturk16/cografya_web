@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getProvincesResilient, getMapSummaryResilient } from "@/lib/api/provinces";
 import { hasSeaCoast } from "@/lib/geo/coastal-provinces";
@@ -13,6 +14,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyMapExplorer, type ProvinceItem } from "@/components/v2/v2-turkey-map-explorer";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { PlateSkeleton, StatTileSkeleton } from "@/components/patterns/page-skeleton";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { Button } from "@/components/ui/button";
@@ -66,11 +68,7 @@ export async function generateMetadata({ params }: V2TurkiyePageProps): Promise<
   });
 }
 
-export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "Turkiye" });
-
+async function loadTurkiyeHub(locale: Locale) {
   const [rawProvinces, rawSummary] = await Promise.all([
     getProvincesResilient(),
     getMapSummaryResilient(),
@@ -110,6 +108,41 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
   const totalProvinces = provinces.length;
   const totalDistricts = rawSummary.reduce((acc, s) => acc + (s.districtCount ?? 0), 0);
 
+  return {
+    provinces,
+    totalProvinces,
+    totalDistricts,
+  };
+}
+
+async function ProvinceCountTile() {
+  const { totalProvinces } = await loadTurkiyeHub("tr");
+  return (
+    <StatTile
+      label="İl sayısı"
+      value={totalProvinces}
+      unit="İl"
+      tone="primary"
+      absent={{ label: "İl listesi yok", hint: "Liste yüklenemedi" }}
+    />
+  );
+}
+
+async function DistrictCountTile() {
+  const { totalDistricts } = await loadTurkiyeHub("tr");
+  return (
+    <StatTile
+      label="İlçe sayısı"
+      value={totalDistricts}
+      tone="accent"
+      absent={{ label: "İlçe sayısı yok", hint: "Özet verisi gelmedi" }}
+    />
+  );
+}
+
+async function TurkiyeExplorer({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "Turkiye" });
+  const { provinces, totalProvinces } = await loadTurkiyeHub(locale);
   return (
     <>
       {/* Structured Data / JSON-LD */}
@@ -135,7 +168,38 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
           }),
         ]}
       />
+      <V2TurkeyMapExplorer
+        provinces={provinces}
+        regionsSection={
+          <div className="rounded-3xl border border-border bg-gradient-to-r from-card via-card to-muted/40 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <span className="text-xs text-muted-foreground">1941 Coğrafya Kongresi</span>
+              <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
+                7 Coğrafi Bölge, 21 Bölüm
+              </h3>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                Yedi bölgeyi bir tabloda yan yana karşılaştır: illeri, nüfusu, yüzölçümü ve en
+                yüksek zirveleri.
+              </p>
+            </div>
+            <Link href="/turkiye/bolge" className="shrink-0">
+              <Button variant="primary" size="md" rightIcon={<ArrowRight className="size-4" />}>
+                Bölgelere Git
+              </Button>
+            </Link>
+          </div>
+        }
+      />
+    </>
+  );
+}
 
+export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  return (
+    <>
       <V2LiveTicker />
 
       <PageContainer>
@@ -185,48 +249,22 @@ export default async function V2TurkiyePage({ params }: V2TurkiyePageProps) {
                 "what if it is not there" even when the honest answer is "it always arrives" — and
                 it is not a defect to paper over with a `> 0` guard that changes live copy. */}
             <StatGrid gutter="hero">
-              <StatTile
-                label="İl sayısı"
-                value={totalProvinces}
-                unit="İl"
-                tone="primary"
-                absent={{ label: "İl listesi yok", hint: "Liste yüklenemedi" }}
-              />
+              <Suspense fallback={<StatTileSkeleton />}>
+                <ProvinceCountTile />
+              </Suspense>
               <StatTile label="Coğrafi bölge" fact="7" tone="secondary" />
-              <StatTile
-                label="İlçe sayısı"
-                value={totalDistricts}
-                tone="accent"
-                absent={{ label: "İlçe sayısı yok", hint: "Özet verisi gelmedi" }}
-              />
+              <Suspense fallback={<StatTileSkeleton />}>
+                <DistrictCountTile />
+              </Suspense>
               <StatTile label="Yüzölçümü (HGM)" fact="783.562 km²" tone="primary" />
             </StatGrid>
           </Card>
         </div>
 
         {/* SECTION 1: INTERACTIVE REALISTIC VECTOR MAP EXPLORER & REGIONS HUB BANNER */}
-        <V2TurkeyMapExplorer
-          provinces={provinces}
-          regionsSection={
-            <div className="rounded-3xl border border-border bg-gradient-to-r from-card via-card to-muted/40 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-2xl">
-                <span className="text-xs text-muted-foreground">1941 Coğrafya Kongresi</span>
-                <h3 className="font-heading text-xl sm:text-2xl font-bold text-foreground">
-                  7 Coğrafi Bölge, 21 Bölüm
-                </h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Yedi bölgeyi bir tabloda yan yana karşılaştır: illeri, nüfusu, yüzölçümü ve en
-                  yüksek zirveleri.
-                </p>
-              </div>
-              <Link href="/turkiye/bolge" className="shrink-0">
-                <Button variant="primary" size="md" rightIcon={<ArrowRight className="size-4" />}>
-                  Bölgelere Git
-                </Button>
-              </Link>
-            </div>
-          }
-        />
+        <Suspense fallback={<PlateSkeleton aspect="turkey" />}>
+          <TurkiyeExplorer locale={locale} />
+        </Suspense>
 
         {/* SECTION 3: 3-HUB CROSS-LINK CARDS */}
         <section className="space-y-6">

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { getBooksResilient } from "@/lib/api/books";
@@ -10,6 +11,7 @@ import { V2BooksHub } from "@/components/v2/v2-books-hub";
 import { V2StudyStrategyGuide } from "@/components/v2/v2-study-strategy-guide";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { CardGridSkeleton, StatTileSkeleton } from "@/components/patterns/page-skeleton";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
@@ -72,11 +74,32 @@ export async function generateMetadata({ params }: V2KitaplarPageProps): Promise
   });
 }
 
+async function BooksCountTile() {
+  const { books } = await loadBooks("tr");
+  return (
+    <StatTile
+      label="Çözümü yayında"
+      value={books.length}
+      unit="kitap"
+      tone="primary"
+      absent={{ label: "Liste okunamadı", hint: "Kitap listesi gelmedi" }}
+    />
+  );
+}
+
+async function BooksCatalogue({ locale }: { locale: Locale }) {
+  const { books, items } = await loadBooks(locale);
+  return (
+    <>
+      <JsonLd schema={[itemListJsonLd({ name: "Video Çözümlü Kitaplar", items })]} />
+      <V2BooksHub books={books} locale={locale} />
+    </>
+  );
+}
+
 export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-
-  const { books, items } = await loadBooks(locale);
 
   return (
     <>
@@ -89,10 +112,6 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
               "Coğrafya deneme kitaplarının video çözümleri; her sorunun videoda başladığı an işaretli. Kitabı adına ya da yayınevine göre ara, çözüm videolarını aç.",
             path: "/kitaplar",
             locale,
-          }),
-          itemListJsonLd({
-            name: "Video Çözümlü Kitaplar",
-            items,
           }),
         ]}
       />
@@ -150,20 +169,18 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                   data-backed tiles now share — including that the `absent` copy below is
                   type-required and currently unreachable (`books.length` is a number by
                   construction), so it is not shipped user-facing text. */}
-              <StatTile
-                label="Çözümü yayında"
-                value={books.length}
-                unit="kitap"
-                tone="primary"
-                absent={{ label: "Liste okunamadı", hint: "Kitap listesi gelmedi" }}
-              />
+              <Suspense fallback={<StatTileSkeleton />}>
+                <BooksCountTile />
+              </Suspense>
               <StatTile label="Videoları izlemek için" fact="Ücretsiz üyelik" tone="primary" />
             </StatGrid>
           </Card>
         </div>
 
         {/* SECTION 1: DYNAMIC BOOKS CATALOGUE */}
-        <V2BooksHub books={books} locale={locale} />
+        <Suspense fallback={<CardGridSkeleton columns="2" count={4} />}>
+          <BooksCatalogue locale={locale} />
+        </Suspense>
 
         {/* SECTION 2: STUDY STRATEGY & EXAM TOPIC GUIDE */}
         <V2StudyStrategyGuide />

@@ -30,6 +30,20 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   which walks `app/` and `components/` and reds if a module returns. One of the earlier deletions,
   `components/map/map.module.css`, was 876 lines whose four consumers PR4 deleted; its own orphan
   test could not see it, because a substring match let `locator-map.module.css` answer for it.
+- **Loading states (T-037).** A route gets a `loading.tsx` only when it is `force-dynamic`, its
+  page decides neither `notFound()` nor `redirect()` before its first return, AND its segment is a
+  leaf (no descendant `page.tsx`) — a `loading.tsx` wraps every child route in a Suspense boundary,
+  which commits those routes to a 200 before their own `notFound()` runs and, measured in T-037,
+  made four `[slug]` families build fully dynamic with zero prerendered params. One route today
+  (`/kayit`). `/turkiye` and `/dunya` stream their hero and sections but carry no route-level
+  skeleton because they parent the detail routes. Every other server fetch renders behind
+  `<Suspense>` with a piece of `components/patterns/page-skeleton.tsx` as its fallback, and the
+  section component is a top-level `async function` in the same `page.tsx` — the composition
+  scanners pin exact page paths, and an in-file declaration is followed by their render walk while
+  a new file is not. `components/v2/page-composition-loading.test.ts` holds all these rules. The
+  FAQ scanner follows JSX nesting inside one function only, so a gated `<FaqSection>` inside a
+  section component repeats the gate. On the `force-dynamic` routes a loader that throws
+  mid-stream yields 200 + `error.tsx` rather than a 500; accepted, see the T-037 spec.
 
 ## i18n (next-intl 4)
 
@@ -93,6 +107,12 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   degrades legibly (a thinner list, a map that loses only hover stats, a section that omits
   itself instead of rendering with nothing under a heading) — and prefer a shorter window
   over a needlessly long one even then.
+- **Shared loaders are `cache()`-wrapped.** `apiGet` passes an `AbortSignal`, and Next's fetch
+  memoization returns the raw `fetch` when a signal is present — so two Suspense sections calling
+  the same loader would fetch twice. The loaders read by more than one boundary (or by
+  `generateMetadata` and the body) are `export const x = cache(async () => …)` in `lib/api/*`;
+  `lib/api/request-dedupe.test.ts` pins the list. A page-local composite loader follows the same
+  form (`const loadX = cache(async (plateCode) => …)` at module scope in the page).
 
 ## SEO (`lib/seo/`)
 
@@ -152,6 +172,9 @@ Details and the open dark-mode bugs: `docs/design.md`.
   `codegen:check`, `pnpm test`, `pnpm build`.
 - `deploy.yml` on push to `main`: repeats the gate, then SSH → `git reset --hard origin/main`
   in `/opt/cografya/cografya_web` → compose build/up `web` → `sleep 5`. No health check.
+- To test the standalone output locally, run `node .next/standalone/server.js` with `PORT` set
+  and WITHOUT `HOSTNAME=127.0.0.1` — an IPv4-only bind makes next-intl's proxy self-dispatch
+  loop with 307s.
 
 ## Known gaps (recorded, not fixed)
 
@@ -173,6 +196,9 @@ Details and the open dark-mode bugs: `docs/design.md`.
   had already healed itself. The tell is a 404 in ~30 ms with no API call, on a route whose
   endpoint answers 200 from inside the container. `rm -rf /app/.next/cache` before the restart;
   clearing only `fetch-cache` is not enough, because the poisoned artefact is the rendered page.
+  Turbopack dev keeps the fetch Data Cache at `/app/.next/dev/cache/fetch-cache` inside the
+  container; purge that path (not `/app/.next/cache`) to see a Suspense fallback with the API
+  paused.
 
 - **`V2LiveTicker` publishes AFAD and CMEMS/ECMWF values on 33 pages with no attribution.**
   It fetches `/api/earthquakes` and `/api/marine/overview` itself and renders a magnitude with

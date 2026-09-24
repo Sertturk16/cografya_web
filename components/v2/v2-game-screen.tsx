@@ -28,8 +28,6 @@ import {
   playHintSound,
   playVictorySound,
 } from "@/lib/game/game-sound";
-import { V2Header } from "@/components/v2/v2-header";
-import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -700,12 +698,6 @@ export function V2GameScreen({
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24">
-      {/* V2 Header */}
-      <V2Header />
-
-      {/* Live Telemetry Ticker */}
-      <V2LiveTicker />
-
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
         {/*
           THE PLAY SURFACE'S `<h1>`, VISUALLY HIDDEN ON PURPOSE — one element serving all three

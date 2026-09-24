@@ -353,8 +353,12 @@ describe("V2 sovereignty and naming invariants", () => {
     expect(strippedPageContent.match(/\{showsNeighbourFlag && \(/g) ?? []).toHaveLength(2);
 
     // The neighbours-section suppression gate: exactly its two known call sites (the quicknav
-    // chip and the section itself).
-    expect(strippedPageContent.match(/\{showsNeighbourSection && \(/g) ?? []).toHaveLength(2);
+    // chip and the section itself). T-037 Task 8 moved both behind Suspense, each in its own
+    // `cache()`-backed async component (`NeighboursNavPill`, `NeighboursSection`) returning
+    // `showsNeighbourSection ? (…) : null` rather than gating inline with `&&` — same gate,
+    // same two call sites, new shape because each is now a component's own return statement
+    // instead of an inline JSX expression.
+    expect(strippedPageContent.match(/showsNeighbourSection \? \(/g) ?? []).toHaveLength(2);
 
     // The three remaining isSpecialGeography call sites the declaration pin does not reach. (T-090
     // deleted the hero neighbour/island chip, which repeated the KPI tile, and its gate with it.)

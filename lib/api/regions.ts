@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { ApiError, apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
 import type { RegionDetail, RegionListItem } from "./types";
@@ -41,8 +42,10 @@ export async function getRegionBySlug(slug: string): Promise<RegionDetail | null
  * - At BUILD (`next build`): if the api is unreachable it returns `[]` instead of
  *   failing the build — the routes then fall back to on-demand ISR at runtime.
  * - At RUNTIME: it re-throws, so a transient api blip keeps serving the last good static page.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getRegionsResilient(): Promise<RegionListItem[]> {
+export const getRegionsResilient = cache(async (): Promise<RegionListItem[]> => {
   try {
     return await getRegions();
   } catch (error) {
@@ -54,4 +57,4 @@ export async function getRegionsResilient(): Promise<RegionListItem[]> {
     }
     throw error;
   }
-}
+});

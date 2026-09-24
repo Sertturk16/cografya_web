@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { getEarthquakeListResilient, getEarthquakeMetaSafe } from "@/lib/api/earthquakes";
 import { getProvincesResilient } from "@/lib/api/provinces";
@@ -12,6 +13,7 @@ import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2EarthquakeExplorer, type ProvinceMeta } from "@/components/v2/v2-earthquake-explorer";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { PlateSkeleton, ProseSkeleton } from "@/components/patterns/page-skeleton";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { buttonVariants } from "@/components/ui/button";
@@ -53,10 +55,7 @@ export async function generateMetadata({ params }: V2DepremPageProps): Promise<M
   });
 }
 
-export default async function V2DepremPage({ params }: V2DepremPageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
+async function loadDeprem(locale: Locale) {
   let initialEvents: EarthquakeEvent[] = [];
   const provinceMap = new Map<string, ProvinceMeta>();
   // The provider's own required notice and the mandatory early-warning disclaimer. `…Safe`
@@ -82,6 +81,36 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
   } catch (err) {
     console.warn("[v2/deprem] Live fetch degraded gracefully:", err);
   }
+
+  return { initialEvents, provinceMap, earthquakeMeta };
+}
+
+async function DepremExplorer({ locale }: { locale: Locale }) {
+  const { initialEvents, provinceMap } = await loadDeprem(locale);
+  return (
+    <V2EarthquakeExplorer
+      initialEvents={initialEvents}
+      provinceMap={provinceMap}
+      defaultMinMagnitude={2.5}
+      defaultWindowDays={7}
+    />
+  );
+}
+
+async function DepremAttribution() {
+  const earthquakeMeta = await getEarthquakeMetaSafe();
+  if (earthquakeMeta === null) return null;
+  return (
+    <EarthquakeAttribution
+      attributions={earthquakeMeta.attributions}
+      disclaimerTr={earthquakeMeta.disclaimerTr}
+    />
+  );
+}
+
+export default async function V2DepremPage({ params }: V2DepremPageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
 
   return (
     <>
@@ -137,12 +166,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
         </div>
 
         {/* SECTION 1: INTERACTIVE REAL-TIME EARTHQUAKE MAP & DATA TABLE */}
-        <V2EarthquakeExplorer
-          initialEvents={initialEvents}
-          provinceMap={provinceMap}
-          defaultMinMagnitude={2.5}
-          defaultWindowDays={7}
-        />
+        <Suspense fallback={<PlateSkeleton aspect="map" />}>
+          <DepremExplorer locale={locale} />
+        </Suspense>
 
         {/* SECTION 2: FAULT LINES NAVIGATION CARD */}
         <section
@@ -300,12 +326,9 @@ export default async function V2DepremPage({ params }: V2DepremPageProps) {
             re-author. The V2 rewrite once dropped it from this page entirely and kept only a
             hand-written sources card, which is how a required notice went missing without a
             single test turning red (T-032 PR3 found it by re-pointing V1's guards at V2). */}
-        {earthquakeMeta !== null && (
-          <EarthquakeAttribution
-            attributions={earthquakeMeta.attributions}
-            disclaimerTr={earthquakeMeta.disclaimerTr}
-          />
-        )}
+        <Suspense fallback={<ProseSkeleton lines={2} heading={false} />}>
+          <DepremAttribution />
+        </Suspense>
       </PageContainer>
     </>
   );

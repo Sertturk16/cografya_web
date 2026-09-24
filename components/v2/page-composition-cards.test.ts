@@ -998,7 +998,12 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // and sixteen in its panel. The file's two remaining identifiers are the icons' `ICON`.
 // T-100: 176 → **177**. The province page's `Kaynaklar` footnote (`SOURCE_NOTE`); not a card.
 // T-096: 177 → **178**. `/deprem/fay-hatlari`'s `Kaynaklar` footnote (`SOURCE_NOTE`); not a card.
-export const COMPUTED_CARD_CLASSNAMES = 178;
+// T-037: 178 → **179**. `components/patterns/page-skeleton.tsx`'s `Bar` helper reads its own
+// `className` prop back (`<Skeleton className={className} />`); not a card: `Bar` renders
+// `Skeleton`'s `bg-muted` token, never `bg-card` or `border-border`. (The final fix wave removed
+// the `HeroSkeleton` piece, whose computed heading class had been the 180th identifier — one fewer
+// identifier, not a new one.)
+export const COMPUTED_CARD_CLASSNAMES = 179;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -1018,9 +1023,9 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   // primitive. 192 → 193 in T-067: the command dialog's `CloseIcon`. 193 → 195 in T-070: the
   // index row's `<summary>` and its chevron. 195 → 176 in T-054: the search combobox's
   // unmounted `default` branch. 176 → 177 in T-100: the province page's `SOURCE_NOTE`
-  // footnote. 177 → 178 in T-096: the fault-line page's `SOURCE_NOTE` footnote. See
-  // {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 178],
+  // footnote. 177 → 178 in T-096: the fault-line page's `SOURCE_NOTE` footnote. 178 → 179 in
+  // T-037: `page-skeleton.tsx`'s `Bar`. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 179],
   // 9 → 8 in T-090: `/dunya/kita` dropped the continent-name chip that repeated each card's title.
   ["member", 8],
   ["ternary", 2],
@@ -1410,7 +1415,13 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // `earthquake-attribution.tsx` and `marine-data-notice.tsx` each held one boxed notice and
     // nothing else; both are footnotes now. 61 after T-101: `/gizlilik`,
     // `legal-controller-identity.tsx` and the settings personal card (its consent fieldset) join.
-    expect(handDrawnTotals().files).toBe(61);
+    // 62 after T-037 Task 9: the basin telemetry table (its `rounded-3xl border border-border
+    // bg-card` wrapper and its `rounded-3xl border border-dashed border-border bg-card/40`
+    // empty state) moved out of `v2-sea-basin-detail-view.tsx` into the new
+    // `v2-basin-telemetry.tsx`, which now joins the surface on its own; the view stays on it
+    // through its metric strip and fault-line callout. Net one more file, not one more pattern —
+    // {@link HAND_DRAWN_CARDS} and {@link HAND_DRAWN_WELLS} are unchanged.
+    expect(handDrawnTotals().files).toBe(62);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

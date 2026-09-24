@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createWarnLimiter } from "@/lib/marine/warn-limiter";
 import { buildEarthquakeQuery, type EarthquakeFilter } from "@/lib/earthquake/query";
 import { apiGet } from "./client";
@@ -176,8 +177,10 @@ const earthquakeMetaWarnLimiter = createWarnLimiter();
  * unique URL — calling it from all 81 province pages × 2 locales is a cache read, not a
  * dedicated per-page fetch, which is what makes it cheaper than the omission this PR shipped
  * with originally assumed.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getEarthquakeMetaSafe(): Promise<EarthquakeMeta | null> {
+export const getEarthquakeMetaSafe = cache(async (): Promise<EarthquakeMeta | null> => {
   try {
     const meta = await getEarthquakeMeta();
     earthquakeMetaWarnLimiter.reset();
@@ -190,7 +193,7 @@ export async function getEarthquakeMetaSafe(): Promise<EarthquakeMeta | null> {
     if (line !== null) console.warn(line);
     return null;
   }
-}
+});
 
 /**
  * The honest cold shape a real `dataStatus: "unavailable"` response carries — reused as the

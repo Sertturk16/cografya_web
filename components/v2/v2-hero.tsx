@@ -9,19 +9,12 @@ import { toast } from "sonner";
 import { foldForSearch } from "@/lib/search/normalize";
 
 interface V2HeroProps {
-  provinceCount: number;
-  countryCount: number;
   /** The `<h1>`. `Home.heading`, resolved on the server — see this file's hero docblock. */
   title: string;
   /** The value proposition under it. `Home.lede`, same source. */
   lede: string;
-  /** "İl" / "Provinces" — reuses the Home namespace's existing bilingual stat labels. */
-  provinceStatLabel: string;
-  /** "Ülke" / "Countries" — same source of truth as the country-count fallback below. */
-  countryStatLabel: string;
-  modeCount: number;
-  /** "Oyun Modu" / "Modes". */
-  modeStatLabel: string;
+  /** The stat trio under the lede, rendered by the server (it waits on two fetches). */
+  stats: React.ReactNode;
 }
 
 interface SearchEntry {
@@ -99,25 +92,13 @@ const STATIC_SHORTCUTS: SearchEntry[] = [
   },
 ];
 
-export function V2Hero({
-  provinceCount,
-  countryCount,
-  title,
-  lede,
-  provinceStatLabel,
-  countryStatLabel,
-  modeCount,
-  modeStatLabel,
-}: V2HeroProps) {
+export function V2Hero({ title, lede, stats }: V2HeroProps) {
   const router = useRouter();
   const [query, setQuery] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [allEntries, setAllEntries] = React.useState<SearchEntry[]>(STATIC_SHORTCUTS);
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
-
-  const totalCountries = countryCount > 0 ? countryCount : 199;
-  const totalProvinces = provinceCount > 0 ? provinceCount : 81;
 
   // Fetch search index from API on mount
   React.useEffect(() => {
@@ -308,25 +289,7 @@ export function V2Hero({
               statProvincesLabel/statCountriesLabel/statGameModesLabel copy (already correct in
               both messages/tr.json and messages/en.json, same pattern as the V1 homepage's stat
               strip) so EN renders real English numbers instead of showing nothing. */}
-          <div className="flex items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground font-medium flex-wrap">
-            <span>
-              <strong className="font-heading text-foreground">{totalProvinces}</strong>{" "}
-              {provinceStatLabel}
-            </span>
-            <span aria-hidden="true" className="text-border">
-              &bull;
-            </span>
-            <span>
-              <strong className="font-heading text-foreground">{totalCountries}</strong>{" "}
-              {countryStatLabel}
-            </span>
-            <span aria-hidden="true" className="text-border">
-              &bull;
-            </span>
-            <span>
-              <strong className="font-heading text-foreground">{modeCount}</strong> {modeStatLabel}
-            </span>
-          </div>
+          {stats}
         </div>
 
         {/* Central Omni-Search Bar (Interactive & Integrated) */}

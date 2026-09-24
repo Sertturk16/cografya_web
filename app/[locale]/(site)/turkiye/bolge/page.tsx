@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2TurkeyRegions } from "@/components/v2/v2-turkey-regions";
 import { PageContainer } from "@/components/patterns/page-container";
+import {
+  CardGridSkeleton,
+  ProseSkeleton,
+  StatTileSkeleton,
+} from "@/components/patterns/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
@@ -242,10 +248,7 @@ function buildBolgelerFaqs(regions: RegionsListEntry[]): { question: string; ans
   ];
 }
 
-export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
+async function loadRegions() {
   // Fetch real region figures from API
   const apiRegions = await getRegionsResilient();
   const regionsList =
@@ -293,7 +296,193 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
   // emptied they would have fired silently. The totals are now whatever the rows actually sum to.
   const totalPop = regionsList.reduce((acc, r) => acc + r.population, 0);
   const totalArea = regionsList.reduce((acc, r) => acc + r.areaKm2, 0);
-  const bolgelerFaqs = buildBolgelerFaqs(regionsList);
+
+  return { regionsList, figuresAreLive, totalPop, totalArea };
+}
+
+async function RegionTotalsTiles({ locale }: { locale: Locale }) {
+  const { figuresAreLive, totalPop, totalArea } = await loadRegions();
+  return (
+    <>
+      <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
+        <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+          <Users className="size-3.5 text-accent" />{" "}
+          {locale === "tr" ? "Toplam Nüfus" : "Total Population"}
+        </span>
+        <span className="font-heading text-2xl sm:text-3xl font-extrabold text-accent block">
+          {totalPop.toLocaleString("tr-TR")}
+        </span>
+        {figuresAreLive && (
+          <span className="text-[11px] text-muted-foreground/80 block">
+            {locale === "tr" ? "TÜİK 31 Aralık 2025" : "TÜİK, 31 December 2025"}
+          </span>
+        )}
+      </div>
+
+      <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
+        <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+          <Maximize2 className="size-3.5 text-primary" /> {locale === "tr" ? "Yüzölçümü" : "Area"}
+        </span>
+        <span className="font-heading text-2xl sm:text-3xl font-extrabold text-primary block">
+          {totalArea.toLocaleString("tr-TR")} km²
+        </span>
+        <span className="text-[11px] text-muted-foreground/80 block">
+          {locale === "tr"
+            ? "81 ilin toplamı, HGM"
+            : "81 Provinces, General Directorate of Mapping (HGM)"}
+        </span>
+      </div>
+    </>
+  );
+}
+
+async function RegionsGrid() {
+  const { regionsList } = await loadRegions();
+  return <V2TurkeyRegions regions={regionsList} />;
+}
+
+async function RegionsComparison() {
+  const { regionsList, figuresAreLive, totalPop, totalArea } = await loadRegions();
+  return (
+    <Card variant="panel" space="6">
+      <div className="space-y-2 border-b border-border/70 pb-5">
+        {figuresAreLive && (
+          <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 ve HGM</span>
+        )}
+        <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+          <Table className="size-6 text-primary shrink-0" />
+          <span>Türkiye&apos;nin Yedi Coğrafi Bölgesi Karşılaştırması</span>
+        </h2>
+        <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
+          Yedi bölgeyi nüfusa, yüzölçümüne, yoğunluğa ve en yüksek zirveye göre yan yana gör.
+          Bölgenin adına tıklarsan kendi sayfası açılır.
+        </p>
+      </div>
+
+      <div className="overflow-x-auto rounded-2xl border border-border">
+        <table className="w-full text-left text-xs sm:text-sm">
+          <thead className="bg-muted/60 text-muted-foreground border-b border-border font-heading font-semibold text-xs">
+            <tr>
+              <th className="p-3.5 sm:p-4">Bölge</th>
+              <th className="p-3.5 sm:p-4 text-center">İl / Bölüm</th>
+              <th className="p-3.5 sm:p-4 text-right">Yüzölçümü (km²)</th>
+              <th className="p-3.5 sm:p-4 text-right">Alan Payı</th>
+              <th className="p-3.5 sm:p-4 text-right">Nüfus (2025)</th>
+              <th className="p-3.5 sm:p-4 text-right">Nüfus Payı</th>
+              <th className="p-3.5 sm:p-4 text-right">Yoğunluk</th>
+              <th className="p-3.5 sm:p-4">En Yüksek Zirve</th>
+              <th className="p-3.5 sm:p-4 text-center">Detay</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {regionsList.map((r, idx) => (
+              <tr key={r.slug} className="hover:bg-muted/30 transition-colors group">
+                <td className="p-3.5 sm:p-4 font-bold text-foreground flex items-center gap-2">
+                  <span className="font-mono text-xs text-muted-foreground font-normal">
+                    0{idx + 1}
+                  </span>
+                  <Link
+                    href={{
+                      pathname: "/turkiye/bolge/[slug]",
+                      params: { slug: r.slug },
+                    }}
+                    className="hover:text-primary transition-colors hover:underline"
+                  >
+                    {r.nameTr}
+                  </Link>
+                  <span className="inline-flex items-center gap-1 shrink-0">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
+                    />
+                    <span className="text-[10px] text-muted-foreground">
+                      {r.isCoastal === true ? "Kıyı" : r.isCoastal === false ? "İç" : "Bilinmiyor"}
+                    </span>
+                  </span>
+                </td>
+                <td className="p-3.5 sm:p-4 text-center text-muted-foreground font-mono">
+                  {r.provinceCount} İl / {r.subregionCount} Bölüm
+                </td>
+                <td className="p-3.5 sm:p-4 text-right font-mono">
+                  {r.areaKm2.toLocaleString("tr-TR")}
+                </td>
+                <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-primary">
+                  %{tr(r.areaSharePercent, 1)}
+                </td>
+                <td className="p-3.5 sm:p-4 text-right font-mono">
+                  {r.population.toLocaleString("tr-TR")}
+                </td>
+                <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-secondary">
+                  %{tr(r.populationSharePercent, 1)}
+                </td>
+                <td className="p-3.5 sm:p-4 text-right font-mono">
+                  {r.populationDensity} kişi/km²
+                </td>
+                <td className="p-3.5 sm:p-4 text-muted-foreground text-xs">
+                  <span className="font-semibold text-foreground block">{r.highestPeakNameTr}</span>
+                  <span className="font-mono text-[10px]">
+                    {r.highestPeakElevationM > 0 ? `${r.highestPeakElevationM} m` : "-"}
+                  </span>
+                </td>
+                <td className="p-3.5 sm:p-4 text-center">
+                  <Link
+                    href={{
+                      pathname: "/turkiye/bolge/[slug]",
+                      params: { slug: r.slug },
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
+                  >
+                    <span>İncele</span>
+                    <ArrowRight className="size-3" />
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {/* The totals are interpolated, not spelled out. They were written as "86.092.168 nüfus
+        ve 780.040 km²" — the same two numbers that sat in `|| 86092168` / `|| 780040` above,
+        restated as prose, so correcting the code left the sentence still claiming them.
+        A share is computed FROM these totals, so the sentence has to read them too. */}
+      <p className="text-[11px] text-muted-foreground/80 italic">
+        {figuresAreLive
+          ? "* Nüfus: TÜİK ADNKS, 31 Aralık 2025. Yüzölçümü: Harita Genel Müdürlüğü (HGM) kayıtları. "
+          : "* Bu rakamlar sitenin kendi arşivinden geliyor; güncel TÜİK ve HGM kayıtlarıyla karşılaştırılmadı. "}
+        Paylarda Türkiye toplamı olarak {totalPop.toLocaleString("tr-TR")} kişi ve 81 ilin yüzölçümü
+        toplamı olan {totalArea.toLocaleString("tr-TR")} km² alındı.
+      </p>
+    </Card>
+  );
+}
+
+async function RegionsFaq({ locale }: { locale: Locale }) {
+  const { regionsList } = await loadRegions();
+  // The default export ALSO gates the `<Suspense>` boundary around this component on the same
+  // `locale === "tr"` check (SECTION 4's comment below), so this inner gate never actually
+  // decides anything at runtime. It stays because `page-composition-faq.test.ts`'s
+  // `writtenUnderCondition` walks JSX-tag nesting within one function only — a `<FaqSection>`
+  // returned as the root of an async section component has no JSX parent for that walk to find,
+  // so the outer gate is invisible to it. Repeating the condition here is what keeps this file's
+  // `<FaqSection>` reading as gated rather than as a new ungated site.
+  return (
+    <>
+      {locale === "tr" && (
+        <FaqSection
+          heading="Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular"
+          lede="Bölgelerin nasıl çizildiği, en büyüğü ve denize kıyısı olanlar."
+          locale={locale}
+          items={buildBolgelerFaqs(regionsList)}
+          structuredData="trOnly"
+        />
+      )}
+    </>
+  );
+}
+
+export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
 
   return (
     <>
@@ -386,35 +575,16 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
                 )}
               </div>
 
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
-                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                  <Users className="size-3.5 text-accent" />{" "}
-                  {locale === "tr" ? "Toplam Nüfus" : "Total Population"}
-                </span>
-                <span className="font-heading text-2xl sm:text-3xl font-extrabold text-accent block">
-                  {totalPop.toLocaleString("tr-TR")}
-                </span>
-                {figuresAreLive && (
-                  <span className="text-[11px] text-muted-foreground/80 block">
-                    {locale === "tr" ? "TÜİK 31 Aralık 2025" : "TÜİK, 31 December 2025"}
-                  </span>
-                )}
-              </div>
-
-              <div className="p-4 rounded-2xl bg-card border border-border shadow-2xs space-y-1">
-                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
-                  <Maximize2 className="size-3.5 text-primary" />{" "}
-                  {locale === "tr" ? "Yüzölçümü" : "Area"}
-                </span>
-                <span className="font-heading text-2xl sm:text-3xl font-extrabold text-primary block">
-                  {totalArea.toLocaleString("tr-TR")} km²
-                </span>
-                <span className="text-[11px] text-muted-foreground/80 block">
-                  {locale === "tr"
-                    ? "81 ilin toplamı, HGM"
-                    : "81 Provinces, General Directorate of Mapping (HGM)"}
-                </span>
-              </div>
+              <Suspense
+                fallback={
+                  <>
+                    <StatTileSkeleton />
+                    <StatTileSkeleton announce={false} />
+                  </>
+                }
+              >
+                <RegionTotalsTiles locale={locale} />
+              </Suspense>
             </div>
           </div>
         </PageContainer>
@@ -473,7 +643,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
       <PageContainer space="default">
         {/* SECTION 1: 7 BÖLGE VİTRİNİ */}
         <section id="bolgeler" className="scroll-mt-28" tabIndex={-1}>
-          <V2TurkeyRegions regions={regionsList} />
+          <Suspense fallback={<CardGridSkeleton columns="2-4" count={7} />}>
+            <RegionsGrid />
+          </Suspense>
         </section>
 
         {/* SECTION 2: 1941 COĞRAFYA KONGRESİ & TARİHÇE */}
@@ -556,121 +728,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
 
         {/* SECTION 3: ANALİTİK KIYASLAMA TABLOSU */}
         <section id="kiyaslama" className="scroll-mt-28" tabIndex={-1}>
-          <Card variant="panel" space="6">
-            <div className="space-y-2 border-b border-border/70 pb-5">
-              {figuresAreLive && (
-                <span className="text-xs text-muted-foreground">TÜİK ADNKS 2025 ve HGM</span>
-              )}
-              <h2 className="font-heading text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
-                <Table className="size-6 text-primary shrink-0" />
-                <span>Türkiye&apos;nin Yedi Coğrafi Bölgesi Karşılaştırması</span>
-              </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground max-w-3xl leading-relaxed">
-                Yedi bölgeyi nüfusa, yüzölçümüne, yoğunluğa ve en yüksek zirveye göre yan yana gör.
-                Bölgenin adına tıklarsan kendi sayfası açılır.
-              </p>
-            </div>
-
-            <div className="overflow-x-auto rounded-2xl border border-border">
-              <table className="w-full text-left text-xs sm:text-sm">
-                <thead className="bg-muted/60 text-muted-foreground border-b border-border font-heading font-semibold text-xs">
-                  <tr>
-                    <th className="p-3.5 sm:p-4">Bölge</th>
-                    <th className="p-3.5 sm:p-4 text-center">İl / Bölüm</th>
-                    <th className="p-3.5 sm:p-4 text-right">Yüzölçümü (km²)</th>
-                    <th className="p-3.5 sm:p-4 text-right">Alan Payı</th>
-                    <th className="p-3.5 sm:p-4 text-right">Nüfus (2025)</th>
-                    <th className="p-3.5 sm:p-4 text-right">Nüfus Payı</th>
-                    <th className="p-3.5 sm:p-4 text-right">Yoğunluk</th>
-                    <th className="p-3.5 sm:p-4">En Yüksek Zirve</th>
-                    <th className="p-3.5 sm:p-4 text-center">Detay</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {regionsList.map((r, idx) => (
-                    <tr key={r.slug} className="hover:bg-muted/30 transition-colors group">
-                      <td className="p-3.5 sm:p-4 font-bold text-foreground flex items-center gap-2">
-                        <span className="font-mono text-xs text-muted-foreground font-normal">
-                          0{idx + 1}
-                        </span>
-                        <Link
-                          href={{
-                            pathname: "/turkiye/bolge/[slug]",
-                            params: { slug: r.slug },
-                          }}
-                          className="hover:text-primary transition-colors hover:underline"
-                        >
-                          {r.nameTr}
-                        </Link>
-                        <span className="inline-flex items-center gap-1 shrink-0">
-                          <span
-                            aria-hidden="true"
-                            className="inline-flex size-2 rounded-full bg-muted-foreground/40 shrink-0"
-                          />
-                          <span className="text-[10px] text-muted-foreground">
-                            {r.isCoastal === true
-                              ? "Kıyı"
-                              : r.isCoastal === false
-                                ? "İç"
-                                : "Bilinmiyor"}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-center text-muted-foreground font-mono">
-                        {r.provinceCount} İl / {r.subregionCount} Bölüm
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono">
-                        {r.areaKm2.toLocaleString("tr-TR")}
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-primary">
-                        %{tr(r.areaSharePercent, 1)}
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono">
-                        {r.population.toLocaleString("tr-TR")}
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono font-semibold text-secondary">
-                        %{tr(r.populationSharePercent, 1)}
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-right font-mono">
-                        {r.populationDensity} kişi/km²
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-muted-foreground text-xs">
-                        <span className="font-semibold text-foreground block">
-                          {r.highestPeakNameTr}
-                        </span>
-                        <span className="font-mono text-[10px]">
-                          {r.highestPeakElevationM > 0 ? `${r.highestPeakElevationM} m` : "-"}
-                        </span>
-                      </td>
-                      <td className="p-3.5 sm:p-4 text-center">
-                        <Link
-                          href={{
-                            pathname: "/turkiye/bolge/[slug]",
-                            params: { slug: r.slug },
-                          }}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 transition-colors"
-                        >
-                          <span>İncele</span>
-                          <ArrowRight className="size-3" />
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* The totals are interpolated, not spelled out. They were written as "86.092.168 nüfus
-              ve 780.040 km²" — the same two numbers that sat in `|| 86092168` / `|| 780040` above,
-              restated as prose, so correcting the code left the sentence still claiming them.
-              A share is computed FROM these totals, so the sentence has to read them too. */}
-            <p className="text-[11px] text-muted-foreground/80 italic">
-              {figuresAreLive
-                ? "* Nüfus: TÜİK ADNKS, 31 Aralık 2025. Yüzölçümü: Harita Genel Müdürlüğü (HGM) kayıtları. "
-                : "* Bu rakamlar sitenin kendi arşivinden geliyor; güncel TÜİK ve HGM kayıtlarıyla karşılaştırılmadı. "}
-              Paylarda Türkiye toplamı olarak {totalPop.toLocaleString("tr-TR")} kişi ve 81 ilin
-              yüzölçümü toplamı olan {totalArea.toLocaleString("tr-TR")} km² alındı.
-            </p>
-          </Card>
+          <Suspense fallback={<ProseSkeleton lines={6} />}>
+            <RegionsComparison />
+          </Suspense>
         </section>
 
         {/* SECTION 4: SIKÇA SORULAN SORULAR.
@@ -690,13 +750,9 @@ export default async function V2TurkiyeBolgelerPage({ params }: PageProps) {
             — one switch, not two — reached by gating the component rather than by deleting the
             gate. `/deniz` carries the identical shape for the identical reason. */}
         {locale === "tr" && (
-          <FaqSection
-            heading="Coğrafi Bölgeler Hakkında Sıkça Sorulan Sorular"
-            lede="Bölgelerin nasıl çizildiği, en büyüğü ve denize kıyısı olanlar."
-            locale={locale}
-            items={bolgelerFaqs}
-            structuredData="trOnly"
-          />
+          <Suspense fallback={<ProseSkeleton lines={4} />}>
+            <RegionsFaq locale={locale} />
+          </Suspense>
         )}
 
         {/* BOTTOM NAVIGATION ACTIONS */}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Home } from "lucide-react";
 import type { Locale } from "@/i18n/routing";
@@ -6,6 +7,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { H1, H2, Lede } from "@/components/patterns/typography";
 import { PageContainer } from "@/components/patterns/page-container";
+import { ProseSkeleton } from "@/components/patterns/page-skeleton";
 import { LegalControllerIdentity } from "@/components/v2/legal-controller-identity";
 import { MarineAttribution } from "@/components/marine/marine-attribution";
 import { ClimateAttribution } from "@/components/climate/climate-attribution";
@@ -79,19 +81,24 @@ export async function generateMetadata({ params }: V2AboutPageProps): Promise<Me
  * is done here by Tailwind's `wrap-break-word` — the identical `overflow-wrap: break-word`,
  * with no global to leave behind.
  */
+// The catalogue, for `MarineAttribution` below: it is where ECMWF's required copyright YEAR is
+// derived from (the ingested cycle's own year — `lib/marine/attribution.ts`). `…Safe` returns
+// `[]` when the API is unreachable or `MARINE_ENABLED` is off, and the component then omits the
+// copyright LINE and still publishes the notice, which is the only correct behaviour: a year
+// invented to fill a template is the one thing an attribution may not do.
+async function MarineDataCredit({ heading }: { heading: string }) {
+  const marineLayers = await getMarineLayersSafe();
+  return (
+    <MarineAttribution layers={marineLayers} headingId="veri-kaynaklari-deniz" heading={heading} />
+  );
+}
+
 export default async function V2AboutPage({ params }: V2AboutPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("About");
   const tb = await getTranslations("Breadcrumb");
   const tp = await getTranslations("Privacy");
-
-  // The catalogue, for `MarineAttribution` below: it is where ECMWF's required copyright YEAR is
-  // derived from (the ingested cycle's own year — `lib/marine/attribution.ts`). `…Safe` returns
-  // `[]` when the API is unreachable or `MARINE_ENABLED` is off, and the component then omits the
-  // copyright LINE and still publishes the notice, which is the only correct behaviour: a year
-  // invented to fill a template is the one thing an attribution may not do.
-  const marineLayers = await getMarineLayersSafe();
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
     { label: tb("home"), href: "/", path: "/", icon: <Home className="size-3.5" /> },
@@ -178,11 +185,9 @@ export default async function V2AboutPage({ params }: V2AboutPageProps) {
               English notices with Turkish phonetics (WCAG 3.1.2), exactly as the JRC citation
               above does. The heading is this page's own, not `/deniz`'s "Kaynaklar ve
               kullanım": it sits under a colophon that already names other sources. */}
-          <MarineAttribution
-            layers={marineLayers}
-            headingId="veri-kaynaklari-deniz"
-            heading={t("marineDataHeading")}
-          />
+          <Suspense fallback={<ProseSkeleton lines={3} />}>
+            <MarineDataCredit heading={t("marineDataHeading")} />
+          </Suspense>
 
           {/* THE C3S / ERA5-LAND LICENCE NOTICE, in its one place, under its own anchor
               (`#iklim-verisi`) — the target of every climate section's "Lisans" link. A

@@ -3,6 +3,7 @@
 import { toast } from "sonner";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageSkeleton, PlateSkeleton } from "@/components/patterns/page-skeleton";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { Specimen, SpecimenRow } from "../specimen";
@@ -61,6 +62,19 @@ export function GeriBildirimSpecimens() {
           <Skeleton className="h-6 w-2/3" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-5/6" />
+        </div>
+      </Specimen>
+
+      <Specimen
+        name="PageSkeleton"
+        description="Bir sayfanın yükleme hâli. loading.tsx ve Suspense fallback'leri bu parçalardan kurulur; içerik gelince hiçbir şey yerinden oynamaz, çünkü parçalar gerçek sayfanın ölçüsünü taşır. Tek role=status, çubuklar aria-hidden."
+      >
+        {/* `play` is not rendered here: its shape carries the `(play)` group's own `<main>`
+            landmark, and the showcase already sits inside the root layout's `<main>`. The
+            game plate it draws is shown on its own instead. */}
+        <div className="space-y-6">
+          <PageSkeleton shape="auth" />
+          <PlateSkeleton aspect="game" />
         </div>
       </Specimen>
 

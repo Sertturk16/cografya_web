@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense, cache } from "react";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { AirPollutionSection } from "@/components/air/air-pollution-section";
@@ -14,6 +15,7 @@ import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { SOURCE_NOTE } from "@/components/patterns/source-note";
+import { ProseSkeleton } from "@/components/patterns/page-skeleton";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -209,6 +211,300 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
+/**
+ * Cross-links: this province's neighbours plus other provinces sharing its climate. NOT wrapped
+ * around a single API call the way the marine/earthquake composites below are — `getProvinces`
+ * already carries `cache()` (Task 2) — but wrapped anyway so `ProvinceLinkChips` computing this
+ * twice in one render (it does not today, but the pattern matches its two siblings) fetches once.
+ * Keyed on `province` object identity, which is stable across one render: the page builds one
+ * `province` and passes the same reference everywhere.
+ */
+const loadProvinceLinks = cache(async (province: ProvinceDetail, slug: string) => {
+  try {
+    const all = await getProvinces();
+    const byCode = byPlateCode(all);
+    const neighbors = province.neighborPlateCodes
+      .map((code) => byCode.get(code))
+      .filter((p): p is ProvinceListItem => p !== undefined);
+    const ownAnnualMeanTempC = province.climate?.derived.annualMeanTempC ?? null;
+    return {
+      neighbors,
+      similarClimate: selectSimilarClimateProvinces(all, province, ownAnnualMeanTempC),
+    };
+  } catch (error) {
+    console.warn(`[province:${slug}] cross-links skipped: ${String(error)}`);
+    return { neighbors: [] as ProvinceListItem[], similarClimate: [] as ProvinceListItem[] };
+  }
+});
+
+/**
+ * Marine layers, blocks and the `showMarine` signal, for the two sections that need them
+ * (`ProvinceEnvironmentRow`, `ProvinceMarineNotice`). `getMarineProvinceConditionsSafe` is NOT
+ * itself `cache()`-wrapped, so this composite is — one request, one fetch, whichever section
+ * resolves first.
+ */
+const loadProvinceMarine = cache(async (plateCode: string) => {
+  const marinePoints = await getMarinePointsSafe();
+  const [marineLayers, marineConditions] = hasMarinePoint(marinePoints, plateCode)
+    ? await Promise.all([getMarineLayersSafe(), getMarineProvinceConditionsSafe(plateCode)])
+    : [[], null];
+  return {
+    marineLayers,
+    marineBlocks: provinceMarineBlocks(marineConditions),
+    showMarine: provinceShowsMarine(marineConditions),
+  };
+});
+
+/**
+ * The province's earthquake list and the global meta, for the two sections that need them
+ * (`ProvinceEarthquakeCard`, `ProvinceEarthquakeCredit`). `getProvinceEarthquakesSafe` is NOT
+ * itself `cache()`-wrapped, same reasoning as `loadProvinceMarine` above.
+ */
+const loadProvinceEarthquakes = cache(async (plateCode: string) => {
+  const [provinceEarthquakes, earthquakeMeta] = await Promise.all([
+    getProvinceEarthquakesSafe(plateCode),
+    getEarthquakeMetaSafe(),
+  ]);
+  return { provinceEarthquakes, earthquakeMeta };
+});
+
+async function ProvinceLinkChips({
+  province,
+  slug,
+  locale,
+  isTr,
+  format,
+}: {
+  province: ProvinceDetail;
+  slug: string;
+  locale: Locale;
+  isTr: boolean;
+  format: Awaited<ReturnType<typeof getFormatter>>;
+}) {
+  const { neighbors, similarClimate } = await loadProvinceLinks(province, slug);
+  // Recomputes `climateBlockGates`'s own `showSection` locally, because this chip list resolves
+  // inside its own boundary and the default export passes `hasSimilarClimate: false` into that
+  // call (see the comment beside `climate = climateBlockGates({…})`). `climateSeries` mirrors the
+  // page's own derivation (`const climateSeries = isTr ? province.climate : null;`) so the two
+  // cannot drift apart.
+  const climateSeries = isTr ? province.climate : null;
+  const hasClimateClass = province.climateClassTr !== null && province.climateKoppen !== null;
+  const hasClimateSeries = climateSeries !== null;
+  const showSimilar = climateBlockGates({
+    isTr,
+    hasClimateClass,
+    hasClimateSeries,
+    hasSimilarClimate: similarClimate.length > 0,
+    hasCurriculumName: province.climateCurriculumNameTr !== null,
+    hasClimateNote: province.climateNoteTr !== null,
+    hasCurriculumNoteText: province.climateCurriculumNoteTr !== null,
+  }).showSection;
+  return (
+    <>
+      {/* Neighboring Provinces Chips */}
+      {neighbors.length > 0 && (
+        <div className="pt-3 border-t border-border space-y-2.5">
+          <span className="text-xs font-semibold text-muted-foreground block">
+            Komşu İller ({neighbors.length}):
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {neighbors.map((nb) => (
+              <Link
+                key={nb.plateCode}
+                href={{
+                  pathname: "/turkiye/[slug]",
+                  params: { slug: slugForLocale(nb, locale) },
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-primary/15 hover:text-primary border border-border transition-colors group cursor-pointer"
+              >
+                <span className="font-mono text-[10px] opacity-70">#{nb.plateCode}</span>
+                <span>{nb.nameTr}</span>
+                <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Similar Climate Provinces Chips */}
+      {showSimilar && similarClimate.length > 0 && (
+        <div className="pt-3 border-t border-border space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-muted-foreground block">
+              İklimi Benzeyen İller:
+            </span>
+            <Badge
+              variant="outline"
+              className="text-[10px] bg-primary/10 text-primary border-primary/20"
+            >
+              {province.climateKoppen}
+            </Badge>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {similarClimate.map((sc) => (
+              <Link
+                key={sc.plateCode}
+                href={{
+                  pathname: "/turkiye/[slug]",
+                  params: { slug: slugForLocale(sc, locale) },
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-info/15 hover:text-info-strong border border-border transition-colors group cursor-pointer"
+              >
+                <span className="font-mono text-[10px] opacity-70">#{sc.plateCode}</span>
+                <span>{sc.nameTr}</span>
+                {sc.climateAnnualMeanTempC !== null && (
+                  <span className="font-mono text-[10px] font-semibold text-info-strong">
+                    ·{" "}
+                    {format.number(sc.climateAnnualMeanTempC, {
+                      minimumFractionDigits: 1,
+                      maximumFractionDigits: 1,
+                    })}{" "}
+                    °C
+                  </span>
+                )}
+                <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+async function ProvinceEnvironmentRow({
+  province,
+  name,
+  locale,
+  pm25Annual,
+  airHeadingName,
+}: {
+  province: ProvinceDetail;
+  name: string;
+  locale: Locale;
+  pm25Annual: ProvinceDetail["pm25Annual"];
+  airHeadingName: string;
+}) {
+  const { marineLayers, marineBlocks, showMarine } = await loadProvinceMarine(province.plateCode);
+  return (
+    <>
+      {pm25Annual && showMarine ? (
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <Card variant="panel">
+            <AirPollutionSection
+              locale={locale}
+              provinceName={name}
+              headingName={airHeadingName}
+              plateCode={province.plateCode}
+              pm25={pm25Annual}
+            />
+          </Card>
+          <Card variant="panel">
+            <ProvinceMarineSection
+              locale={locale}
+              provinceName={name}
+              blocks={marineBlocks}
+              layers={marineLayers}
+              headingId="province-marine"
+            />
+          </Card>
+        </section>
+      ) : pm25Annual ? (
+        <Card as="section" variant="panel">
+          <AirPollutionSection
+            locale={locale}
+            provinceName={name}
+            headingName={airHeadingName}
+            plateCode={province.plateCode}
+            pm25={pm25Annual}
+          />
+        </Card>
+      ) : showMarine ? (
+        <Card as="section" variant="panel">
+          <ProvinceMarineSection
+            locale={locale}
+            provinceName={name}
+            blocks={marineBlocks}
+            layers={marineLayers}
+            headingId="province-marine"
+          />
+        </Card>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * The marine safety disclaimer, beside this province's values, plus a link to the licence
+ * text — the SAME component `/deniz`, the four basin pages and the home page render
+ * (`components/marine/marine-data-notice.tsx`).
+ *
+ * ECMWF's and Copernicus Marine's required wording no longer renders here: it is published
+ * once, on `/hakkimizda`, and CC BY 4.0 §3(a)(2) lets a hyperlink carry the required
+ * information. What could NOT be centralized is `Marine.disclaimer.educationalOnly` — it is
+ * not a licence notice, and a reader looking at this province's sea temperature has to read
+ * "can güvenliği kararlarında kullanılamaz" on this page, not one click away. That sentence is
+ * this block.
+ *
+ * Still gated on the same `showMarine` signal as the values themselves, so the two cannot come
+ * apart in either direction.
+ */
+async function ProvinceMarineNotice({ plateCode }: { plateCode: string }) {
+  const { showMarine } = await loadProvinceMarine(plateCode);
+  return showMarine ? <MarineDataNotice /> : null;
+}
+
+async function ProvinceEarthquakeCard({
+  province,
+  name,
+  locale,
+}: {
+  province: ProvinceDetail;
+  name: string;
+  locale: Locale;
+}) {
+  const { provinceEarthquakes, earthquakeMeta } = await loadProvinceEarthquakes(province.plateCode);
+  if (provinceEarthquakes === null || earthquakeMeta === null) return null;
+  return (
+    <Card as="section" variant="panel" space="4">
+      <ProvinceEarthquakeSection
+        locale={locale}
+        provinceName={name}
+        plateCode={province.plateCode}
+        list={provinceEarthquakes}
+        headingId="province-earthquake"
+      />
+      {/* The disclaimer used to be repeated here as an amber callout. It now renders
+          exactly once, in `EarthquakeAttribution` at the foot of the page, alongside the
+          provider notices it belongs with — one mandated string, one render site. */}
+    </Card>
+  );
+}
+
+/**
+ * AFAD's own required notice, from the PROVINCE payload's attributions — not the global
+ * meta's — because this section shows this province's events. The disclaimer comes from the
+ * global meta, which is where it is published. Gated on the same pair the section itself is
+ * gated on.
+ */
+async function ProvinceEarthquakeCredit({
+  plateCode,
+  heading,
+}: {
+  plateCode: string;
+  heading: string;
+}) {
+  const { provinceEarthquakes, earthquakeMeta } = await loadProvinceEarthquakes(plateCode);
+  if (provinceEarthquakes === null || earthquakeMeta === null) return null;
+  return (
+    <EarthquakeAttribution
+      attributions={provinceEarthquakes.meta.attributions}
+      disclaimerTr={earthquakeMeta.disclaimerTr}
+      heading={heading}
+    />
+  );
+}
+
 export default async function V2ProvinceDetailPage({ params }: PageProps) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
@@ -217,10 +513,6 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
   if (!province) {
     notFound();
   }
-
-  const marinePointsPromise = getMarinePointsSafe();
-  const provinceEarthquakesPromise = getProvinceEarthquakesSafe(province.plateCode);
-  const earthquakeMetaPromise = getEarthquakeMetaSafe();
 
   const t = await getTranslations("ProvinceDetail");
   const tRegions = await getTranslations("Regions");
@@ -246,37 +538,9 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
   const path = `/turkiye/${slugForLocale(province, locale)}`;
 
-  let neighbors: ProvinceListItem[] = [];
-  let similarClimate: ProvinceListItem[] = [];
-  try {
-    const all = await getProvinces();
-    const byCode = byPlateCode(all);
-    neighbors = province.neighborPlateCodes
-      .map((code) => byCode.get(code))
-      .filter((p): p is ProvinceListItem => p !== undefined);
-    const ownAnnualMeanTempC = province.climate?.derived.annualMeanTempC ?? null;
-    similarClimate = selectSimilarClimateProvinces(all, province, ownAnnualMeanTempC);
-  } catch (error) {
-    console.warn(`[province:${slug}] cross-links skipped: ${String(error)}`);
-  }
-
-  const marinePoints = await marinePointsPromise;
   // Marine data is fetched only for provinces with a reference point; the "Kıyı İli" badge
   // reads the fixed coastal list instead, because Edirne has a coast but no point.
-  const provinceHasMarinePoint = hasMarinePoint(marinePoints, province.plateCode);
   const isCoastal = hasSeaCoast(province.plateCode);
-  const [marineLayers, marineConditions] = provinceHasMarinePoint
-    ? await Promise.all([
-        getMarineLayersSafe(),
-        getMarineProvinceConditionsSafe(province.plateCode),
-      ])
-    : [[], null];
-
-  const marineBlocks = provinceMarineBlocks(marineConditions);
-  const showMarine = provinceShowsMarine(marineConditions);
-
-  const provinceEarthquakes = await provinceEarthquakesPromise;
-  const earthquakeMeta = await earthquakeMetaPromise;
 
   const additionalProperty: GeoPropertyValue[] = [];
   additionalProperty.push({ name: t("plateCode"), value: province.plateCode });
@@ -349,7 +613,10 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
     isTr,
     hasClimateClass: province.climateClassTr !== null && province.climateKoppen !== null,
     hasClimateSeries: climateSeries !== null,
-    hasSimilarClimate: similarClimate.length > 0,
+    // Similar-climate chips resolve inside their own boundary and recompute this gate; here it
+    // only matters when neither a class nor a series exists, and then the section that would
+    // show is the chips themselves.
+    hasSimilarClimate: false,
     hasCurriculumName: province.climateCurriculumNameTr !== null,
     // The defense-in-depth fallback: with no caveat the class line shows neither the curriculum
     // name nor the code, so nothing MEB- or MGM-sourced is on the page (PR #51 review I4).
@@ -360,6 +627,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
 
   const sectionHeading = (slot: keyof typeof PROVINCE_HEADING_CASE): string =>
     headingName(locale, name, PROVINCE_HEADING_CASE[slot]);
+  const airHeadingName = sectionHeading("airPollution");
 
   return (
     <>
@@ -703,73 +971,16 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                 </Link>
               </div>
 
-              {/* Neighboring Provinces Chips */}
-              {neighbors.length > 0 && (
-                <div className="pt-3 border-t border-border space-y-2.5">
-                  <span className="text-xs font-semibold text-muted-foreground block">
-                    Komşu İller ({neighbors.length}):
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {neighbors.map((nb) => (
-                      <Link
-                        key={nb.plateCode}
-                        href={{
-                          pathname: "/turkiye/[slug]",
-                          params: { slug: slugForLocale(nb, locale) },
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-primary/15 hover:text-primary border border-border transition-colors group cursor-pointer"
-                      >
-                        <span className="font-mono text-[10px] opacity-70">#{nb.plateCode}</span>
-                        <span>{nb.nameTr}</span>
-                        <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Similar Climate Provinces Chips */}
-              {climate.showSection && similarClimate.length > 0 && (
-                <div className="pt-3 border-t border-border space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground block">
-                      İklimi Benzeyen İller:
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] bg-primary/10 text-primary border-primary/20"
-                    >
-                      {province.climateKoppen}
-                    </Badge>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {similarClimate.map((sc) => (
-                      <Link
-                        key={sc.plateCode}
-                        href={{
-                          pathname: "/turkiye/[slug]",
-                          params: { slug: slugForLocale(sc, locale) },
-                        }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-muted hover:bg-info/15 hover:text-info-strong border border-border transition-colors group cursor-pointer"
-                      >
-                        <span className="font-mono text-[10px] opacity-70">#{sc.plateCode}</span>
-                        <span>{sc.nameTr}</span>
-                        {sc.climateAnnualMeanTempC !== null && (
-                          <span className="font-mono text-[10px] font-semibold text-info-strong">
-                            ·{" "}
-                            {format.number(sc.climateAnnualMeanTempC, {
-                              minimumFractionDigits: 1,
-                              maximumFractionDigits: 1,
-                            })}{" "}
-                            °C
-                          </span>
-                        )}
-                        <ArrowUpRight className="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {/* Neighboring Provinces & Similar Climate Chips */}
+              <Suspense fallback={<ProseSkeleton lines={2} heading={false} />}>
+                <ProvinceLinkChips
+                  province={province}
+                  slug={slug}
+                  locale={locale}
+                  isTr={isTr}
+                  format={format}
+                />
+              </Suspense>
             </div>
           </div>
         </section>
@@ -843,64 +1054,20 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
         )}
 
         {/* AIR QUALITY & MARINE ENVIRONMENT ROW */}
-        {pm25Annual && showMarine ? (
-          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card variant="panel">
-              <AirPollutionSection
-                locale={locale}
-                provinceName={name}
-                headingName={sectionHeading("airPollution")}
-                plateCode={province.plateCode}
-                pm25={pm25Annual}
-              />
-            </Card>
-            <Card variant="panel">
-              <ProvinceMarineSection
-                locale={locale}
-                provinceName={name}
-                blocks={marineBlocks}
-                layers={marineLayers}
-                headingId="province-marine"
-              />
-            </Card>
-          </section>
-        ) : pm25Annual ? (
-          <Card as="section" variant="panel">
-            <AirPollutionSection
-              locale={locale}
-              provinceName={name}
-              headingName={sectionHeading("airPollution")}
-              plateCode={province.plateCode}
-              pm25={pm25Annual}
-            />
-          </Card>
-        ) : showMarine ? (
-          <Card as="section" variant="panel">
-            <ProvinceMarineSection
-              locale={locale}
-              provinceName={name}
-              blocks={marineBlocks}
-              layers={marineLayers}
-              headingId="province-marine"
-            />
-          </Card>
-        ) : null}
+        <Suspense fallback={<ProseSkeleton lines={6} />}>
+          <ProvinceEnvironmentRow
+            province={province}
+            name={name}
+            locale={locale}
+            pm25Annual={pm25Annual}
+            airHeadingName={airHeadingName}
+          />
+        </Suspense>
 
         {/* EARTHQUAKE MONITORING SECTION */}
-        {provinceEarthquakes !== null && earthquakeMeta !== null && (
-          <Card as="section" variant="panel" space="4">
-            <ProvinceEarthquakeSection
-              locale={locale}
-              provinceName={name}
-              plateCode={province.plateCode}
-              list={provinceEarthquakes}
-              headingId="province-earthquake"
-            />
-            {/* The disclaimer used to be repeated here as an amber callout. It now renders
-                exactly once, in `EarthquakeAttribution` at the foot of the page, alongside the
-                provider notices it belongs with — one mandated string, one render site. */}
-          </Card>
-        )}
+        <Suspense fallback={<ProseSkeleton lines={4} />}>
+          <ProvinceEarthquakeCard province={province} name={name} locale={locale} />
+        </Suspense>
 
         {/* BOTTOM NAVIGATION ACTIONS */}
         <div className="flex items-center justify-between pt-2">
@@ -916,32 +1083,16 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
           </Link>
         </div>
 
-        {/* The marine safety disclaimer, beside this province's values, plus a link to the
-            licence text — the SAME component `/deniz`, the four basin pages and the home page
-            render (`components/marine/marine-data-notice.tsx`).
+        <Suspense fallback={null}>
+          <ProvinceMarineNotice plateCode={province.plateCode} />
+        </Suspense>
 
-            ECMWF's and Copernicus Marine's required wording no longer renders here: it is
-            published once, on `/hakkimizda`, and CC BY 4.0 §3(a)(2) lets a hyperlink carry the
-            required information. What could NOT be centralized is
-            `Marine.disclaimer.educationalOnly` — it is not a licence notice, and a reader
-            looking at this province's sea temperature has to read "can güvenliği kararlarında
-            kullanılamaz" on this page, not one click away. That sentence is this block.
-
-            Still gated on the same `showMarine` signal as the values themselves, so the two
-            cannot come apart in either direction. */}
-        {showMarine && <MarineDataNotice />}
-
-        {/* AFAD's own required notice, from the PROVINCE payload's attributions — not the
-            global meta's — because this section shows this province's events. The disclaimer
-            comes from the global meta, which is where it is published. Gated on the same pair
-            the section itself is gated on. */}
-        {provinceEarthquakes !== null && earthquakeMeta !== null && (
-          <EarthquakeAttribution
-            attributions={provinceEarthquakes.meta.attributions}
-            disclaimerTr={earthquakeMeta.disclaimerTr}
+        <Suspense fallback={<ProseSkeleton lines={2} heading={false} />}>
+          <ProvinceEarthquakeCredit
+            plateCode={province.plateCode}
             heading={t("earthquakeSourcesHeading")}
           />
-        )}
+        </Suspense>
       </PageContainer>
     </>
   );

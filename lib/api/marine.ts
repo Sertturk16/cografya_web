@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createWarnLimiter } from "@/lib/marine/warn-limiter";
 import { apiGet } from "./client";
 import { isProductionBuild } from "./provinces";
@@ -133,8 +134,10 @@ export async function getMarineLayersResilient(): Promise<MarineLayer[]> {
  *
  * The 27 coastal province pages and the homepage all read this on every regeneration, so its
  * warnings go through the shared limiter (see `lib/marine/warn-limiter.ts`).
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getMarinePointsSafe(): Promise<MarinePointListItem[]> {
+export const getMarinePointsSafe = cache(async (): Promise<MarinePointListItem[]> => {
   try {
     const points = await getMarinePoints();
     pointsWarnLimiter.reset();
@@ -146,7 +149,7 @@ export async function getMarinePointsSafe(): Promise<MarinePointListItem[]> {
     if (line !== null) console.warn(line);
     return [];
   }
-}
+});
 
 /**
  * FAIL-SOFT layer catalogue, for the PROVINCE surface only — same split, same reasoning as
@@ -157,8 +160,10 @@ export async function getMarinePointsSafe(): Promise<MarinePointListItem[]> {
  * `calmThreshold` no calm claim may be made, and with no ingested cycle the ECMWF copyright
  * LINE is omitted while the mandatory notice still renders. Every one of those is the same
  * answer the code already gives when the api genuinely publishes nothing.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getMarineLayersSafe(): Promise<MarineLayer[]> {
+export const getMarineLayersSafe = cache(async (): Promise<MarineLayer[]> => {
   try {
     const layers = await getMarineLayers();
     layersWarnLimiter.reset();
@@ -170,7 +175,7 @@ export async function getMarineLayersSafe(): Promise<MarineLayer[]> {
     if (line !== null) console.warn(line);
     return [];
   }
-}
+});
 
 /** The value band's payload: 30 blocks of five values each, plus the publish gate. */
 export async function getMarineOverview(): Promise<MarineOverview> {
@@ -214,8 +219,10 @@ export async function getMarineProvinceConditions(
  * `null` is therefore "no band this render", never "no values exist" — the caller renders
  * the section in its value-less shape (see `components/marine/reference-points.tsx`), which
  * keeps all 30 internal province links whatever the api is doing.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getMarineOverviewSafe(): Promise<MarineOverview | null> {
+export const getMarineOverviewSafe = cache(async (): Promise<MarineOverview | null> => {
   try {
     return await getMarineOverview();
   } catch (error) {
@@ -224,7 +231,7 @@ export async function getMarineOverviewSafe(): Promise<MarineOverview | null> {
     );
     return null;
   }
-}
+});
 
 /**
  * FAIL-SOFT province conditions read — `null` means "no marine section this render", never

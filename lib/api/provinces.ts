@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import { ApiError, apiGet } from "./client";
 import type { ProvinceDetail, ProvinceListItem, ProvinceMapSummary } from "./types";
@@ -10,10 +11,14 @@ import type { ProvinceDetail, ProvinceListItem, ProvinceMapSummary } from "./typ
  * (CONVENTIONS §4/§6; nothing is invented client-side).
  */
 
-/** All provinces, ordered by plaka kodu (as the api returns them). Throws on failure. */
-export async function getProvinces(): Promise<ProvinceListItem[]> {
+/**
+ * All provinces, ordered by plaka kodu (as the api returns them). Throws on failure.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
+ */
+export const getProvinces = cache(async (): Promise<ProvinceListItem[]> => {
   return apiGet<ProvinceListItem[]>("/api/provinces");
-}
+});
 
 /**
  * Bulk hover-card summary for the homepage SVG map (identity + population/area/
@@ -21,10 +26,12 @@ export async function getProvinces(): Promise<ProvinceListItem[]> {
  * build-time embedded (SPEC §5.1). Returns only seeded provinces (same set as the
  * list); the numeric fields are null until a province is fact-checked. Throws on
  * failure — the caller degrades the map (best-effort enhancement).
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getMapSummary(): Promise<ProvinceMapSummary[]> {
+export const getMapSummary = cache(async (): Promise<ProvinceMapSummary[]> => {
   return apiGet<ProvinceMapSummary[]>("/api/provinces/map-summary");
-}
+});
 
 /**
  * One province by its TR or EN slug (the api resolves both). Returns `null` on a
@@ -64,8 +71,10 @@ export function isProductionBuild(): boolean {
  * - At RUNTIME (ISR regeneration): it re-throws, so a transient api blip makes
  *   Next keep serving the last good static page/sitemap rather than caching an
  *   empty hub — the SEO surface never silently loses its provinces.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getProvincesResilient(): Promise<ProvinceListItem[]> {
+export const getProvincesResilient = cache(async (): Promise<ProvinceListItem[]> => {
   try {
     return await getProvinces();
   } catch (error) {
@@ -77,7 +86,7 @@ export async function getProvincesResilient(): Promise<ProvinceListItem[]> {
     }
     throw error;
   }
-}
+});
 
 /**
  * Build-safe map summary — the same build-vs-runtime split as
@@ -91,8 +100,10 @@ export async function getProvincesResilient(): Promise<ProvinceListItem[]> {
  *   full revalidate window. Swallowing here is only safe when a SIBLING call already
  *   re-throws at runtime (the `/turkiye` case, where `getProvincesResilient` guards the
  *   page); a page whose sole api read is this one must use this wrapper.
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
-export async function getMapSummaryResilient(): Promise<ProvinceMapSummary[]> {
+export const getMapSummaryResilient = cache(async (): Promise<ProvinceMapSummary[]> => {
   try {
     return await getMapSummary();
   } catch (error) {
@@ -104,7 +115,7 @@ export async function getMapSummaryResilient(): Promise<ProvinceMapSummary[]> {
     }
     throw error;
   }
-}
+});
 
 /**
  * Index any plaka-kodu-bearing payload by its `plateCode` (neighbour cross-links,

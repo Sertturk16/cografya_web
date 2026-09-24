@@ -185,8 +185,11 @@ describe("the notice is rendered on every surface that shows derived values", ()
      * the single derivation both must trace back to.
      */
     // The signal itself is derived once, from the shared decision module — not recomputed
-    // inline where either consumer could drift from the other.
-    expect(province).toMatch(/const showMarine = provinceShowsMarine\(/);
+    // inline where either consumer could drift from the other. T-037 task 7: the derivation
+    // moved into `loadProvinceMarine`, a `cache()`-wrapped composite both `ProvinceMarineNotice`
+    // and `ProvinceEnvironmentRow` `await` and destructure `showMarine` from — still the single
+    // choke point, now shared across their two `<Suspense>` boundaries instead of inline.
+    expect(province).toMatch(/showMarine: provinceShowsMarine\(/);
 
     // Anti-vacuity: no render site means no gate to check, which would pass silently. The probe
     // itself is tested in `lib/testing/jsx-gate.test.ts`, including that it can say NO.

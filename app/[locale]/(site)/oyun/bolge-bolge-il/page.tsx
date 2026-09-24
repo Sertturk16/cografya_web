@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -6,6 +7,7 @@ import { getMapSummaryResilient } from "@/lib/api/provinces";
 import { buildGameShapes } from "@/lib/game/map-shapes";
 import { getRegionLabels } from "@/components/game/region-labels";
 import { PageContainer } from "@/components/patterns/page-container";
+import { CardGridSkeleton } from "@/components/patterns/page-skeleton";
 import { REGION_KEYS, regionSlug } from "@/lib/game/region-slug";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -40,12 +42,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-export default async function V2RegionPickerPage({ params }: PageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
+async function RegionPickerGrid({
+  locale,
+  regionLabels,
+}: {
+  locale: Locale;
+  regionLabels: Awaited<ReturnType<typeof getRegionLabels>>;
+}) {
   const summaries = await getMapSummaryResilient();
-  const regionLabels = await getRegionLabels(locale);
   const allShapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
 
   const regionCards = REGION_KEYS.map((regionKey) => {
@@ -68,11 +72,63 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
 
   return (
     <>
-      {/* Live Telemetry Ticker */}
-      <V2LiveTicker />
-
       {/* SVG Defs for mini-thumbnails */}
       {hasThumbs ? <V2RegionThumbDefs shapes={allShapes} /> : null}
+
+      {/* 7 REGION GRID CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {regionCards.map((region) => (
+          <div
+            key={region.id}
+            className="group rounded-3xl border border-border bg-card p-5 hover:border-primary/50 hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4"
+          >
+            {/* Region Vector Mini Thumbnail */}
+            {hasThumbs ? <V2RegionThumb region={region.id} members={region.members} /> : null}
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-primary transition-colors">
+                  {region.name}
+                </h3>
+              </div>
+              {/* NO COUNT ON THE CARD, neither as a badge nor in a sentence under the name.
+                  "11 il" is the badge the owner removed from the mode cards one level up
+                  (DEC 2026-07-30q) and then from these cards too (DEC 2026-08-05g md.3); the
+                  V2 rewrite reintroduced it in both places. No sentence under the name
+                  either: the same line on all seven cards told the reader nothing. */}
+            </div>
+
+            <Link
+              href={{
+                pathname: "/oyun/bolge-bolge-il/[bolge]",
+                params: { bolge: region.slug },
+              }}
+            >
+              <Button
+                variant="primary"
+                className="w-full justify-between"
+                rightIcon={<ArrowRight className="size-4" />}
+              >
+                <span>Başla</span>
+              </Button>
+            </Link>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+export default async function V2RegionPickerPage({ params }: PageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
+  const regionLabels = await getRegionLabels(locale);
+
+  return (
+    <>
+      {/* Live Telemetry Ticker */}
+      <V2LiveTicker />
 
       <PageContainer space="tight">
         {/* Top Navigation & Breadcrumbs */}
@@ -110,46 +166,9 @@ export default async function V2RegionPickerPage({ params }: PageProps) {
           </p>
         </div>
 
-        {/* 7 REGION GRID CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {regionCards.map((region) => (
-            <div
-              key={region.id}
-              className="group rounded-3xl border border-border bg-card p-5 hover:border-primary/50 hover:shadow-xl transition-all duration-300 flex flex-col justify-between space-y-4"
-            >
-              {/* Region Vector Mini Thumbnail */}
-              {hasThumbs ? <V2RegionThumb region={region.id} members={region.members} /> : null}
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-xl font-bold text-foreground group-hover:text-primary transition-colors">
-                    {region.name}
-                  </h3>
-                </div>
-                {/* NO COUNT ON THE CARD, neither as a badge nor in a sentence under the name.
-                    "11 il" is the badge the owner removed from the mode cards one level up
-                    (DEC 2026-07-30q) and then from these cards too (DEC 2026-08-05g md.3); the
-                    V2 rewrite reintroduced it in both places. No sentence under the name
-                    either: the same line on all seven cards told the reader nothing. */}
-              </div>
-
-              <Link
-                href={{
-                  pathname: "/oyun/bolge-bolge-il/[bolge]",
-                  params: { bolge: region.slug },
-                }}
-              >
-                <Button
-                  variant="primary"
-                  className="w-full justify-between"
-                  rightIcon={<ArrowRight className="size-4" />}
-                >
-                  <span>Başla</span>
-                </Button>
-              </Link>
-            </div>
-          ))}
-        </div>
+        <Suspense fallback={<CardGridSkeleton columns="2-4" count={7} />}>
+          <RegionPickerGrid locale={locale} regionLabels={regionLabels} />
+        </Suspense>
 
         {/* ONE credit for the whole thumbnail grid, not one per card. `V2RegionThumb` draws
             OSM-derived province polygons (`PROVINCE_SHAPES`) in seven `aria-hidden` thumbnails

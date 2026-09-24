@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { getProvincesResilient } from "@/lib/api/provinces";
@@ -12,6 +13,7 @@ import { V2ToolWorkbench } from "@/components/v2/v2-tool-workbench";
 import { V2ToolEducationalContent } from "@/components/v2/v2-tool-educational-content";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
+import { PlateSkeleton } from "@/components/patterns/page-skeleton";
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { Badge } from "@/components/ui/badge";
@@ -41,10 +43,7 @@ export async function generateMetadata({ params }: V2CoordinatesPageProps): Prom
   });
 }
 
-export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-
+async function CoordinatesWorkbench({ locale }: { locale: Locale }) {
   const provinces = await getProvincesResilient();
   const provincePoints = buildProvincePoints(provinces);
 
@@ -53,6 +52,21 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
     name: province.nameTr,
     slug: locale === "en" ? province.slugEn : province.slugTr,
   }));
+
+  return (
+    <V2ToolWorkbench
+      initialMode="coordinates"
+      lockMode={true}
+      provincePoints={provincePoints}
+      provinceAreas={provinceAreas}
+      downloadName="cografya-koordinat"
+    />
+  );
+}
+
+export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
 
   return (
     <>
@@ -118,13 +132,9 @@ export default async function V2CoordinatesToolPage({ params }: V2CoordinatesPag
         </div>
 
         {/* SECTION 1: STANDALONE COORDINATE WORKBENCH */}
-        <V2ToolWorkbench
-          initialMode="coordinates"
-          lockMode={true}
-          provincePoints={provincePoints}
-          provinceAreas={provinceAreas}
-          downloadName="cografya-koordinat"
-        />
+        <Suspense fallback={<PlateSkeleton aspect="map" />}>
+          <CoordinatesWorkbench locale={locale} />
+        </Suspense>
 
         {/* SECTION 2: PEDAGOGICAL EDUCATIONAL & CBS GUIDE */}
         <V2ToolEducationalContent mode="coordinates" />

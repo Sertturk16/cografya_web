@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Home } from "lucide-react";
 import { getPathname } from "@/i18n/navigation";
@@ -7,7 +8,9 @@ import type { Locale } from "@/i18n/routing";
 import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { readProfileForPage } from "@/lib/profile/profile.server";
 import { getProvincesResilient } from "@/lib/api/provinces";
+import type { Profile } from "@/lib/api/types";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
+import { CardGridSkeleton } from "@/components/patterns/page-skeleton";
 import { PageContainer } from "@/components/patterns/page-container";
 import { H1 } from "@/components/patterns/typography";
 import { V2AccountSettings } from "@/components/v2/v2-account-settings";
@@ -31,6 +34,12 @@ export async function generateMetadata({ params }: AccountSettingsPageProps): Pr
   });
 }
 
+async function AccountSettings({ locale, profile }: { locale: Locale; profile: Profile }) {
+  const rawProvinces = await getProvincesResilient();
+  const provinces = rawProvinces.map((p) => ({ plateCode: p.plateCode, nameTr: p.nameTr }));
+  return <V2AccountSettings locale={locale} profile={profile} provinces={provinces} />;
+}
+
 export default async function AccountSettingsPage({ params }: AccountSettingsPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -47,9 +56,6 @@ export default async function AccountSettingsPage({ params }: AccountSettingsPag
     { label: t("breadcrumbAccount"), href: "/hesabim", path: "/hesabim" },
     { label: t("breadcrumbCurrent"), path: "/hesabim/ayarlar" },
   ];
-
-  const rawProvinces = await getProvincesResilient();
-  const provinces = rawProvinces.map((p) => ({ plateCode: p.plateCode, nameTr: p.nameTr }));
 
   return (
     <PageContainer space="tight">
@@ -75,7 +81,9 @@ export default async function AccountSettingsPage({ params }: AccountSettingsPag
           <p className="text-xs text-muted-foreground">{t("loadErrorHint")}</p>
         </div>
       ) : (
-        <V2AccountSettings locale={locale} profile={result.profile} provinces={provinces} />
+        <Suspense fallback={<CardGridSkeleton columns="2" count={4} />}>
+          <AccountSettings locale={locale} profile={result.profile} />
+        </Suspense>
       )}
     </PageContainer>
   );

@@ -438,6 +438,18 @@ const OUTSIDE_THE_BODY: ReadonlyArray<readonly [string, string, RegExp, string]>
     /<main className="max-w-7xl mx-auto/,
     "The (play) fullscreen shell. It owns the width wrapper for all three game screens itself.",
   ],
+  [
+    "V2Header",
+    "components/v2/v2-header.tsx",
+    /<nav className="sticky top-0 z-40 w-full/,
+    "Site chrome. Full-bleed sticky nav, rendered directly by the three (play) pages now that V2GameScreen no longer renders it itself (T-037 Task 13).",
+  ],
+  [
+    "PlaySuspense",
+    "components/patterns/page-skeleton.tsx",
+    /<Suspense fallback={<PageSkeleton shape="play" \/>}>/,
+    'The (play) Suspense boundary (T-037 Task 13). Both branches — the play skeleton fallback and the V2GameScreen it awaits — own their own max-w-7xl wrapper, exactly as V2GameScreen already does; a bare <Suspense> from "react" can never resolve through this table (importBindingsOf drops package specifiers), so the boundary is a named local component instead.',
+  ],
 ];
 
 /**

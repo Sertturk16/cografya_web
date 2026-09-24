@@ -9,6 +9,9 @@ import { SLUG_PLACEHOLDER } from "@/lib/game/province-url";
 import { buildGameRoundModeTag } from "@/lib/game/round-mode-tag";
 import { MAP_VIEWBOX, PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { PlaySuspense } from "@/components/patterns/page-skeleton";
+import { V2Header } from "@/components/v2/v2-header";
+import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2GameScreen } from "@/components/v2/v2-game-screen";
 
 interface PageProps {
@@ -29,34 +32,51 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
 }
 
-export default async function V2RegionModePage({ params }: PageProps) {
-  const { locale } = await params;
-  setRequestLocale(locale);
-  const t = await getTranslations("Game");
-
+async function RegionGame({
+  locale,
+  modeName,
+  regionLabels,
+}: {
+  locale: Locale;
+  modeName: string;
+  regionLabels: Awaited<ReturnType<typeof getRegionLabels>>;
+}) {
   const summaries = await getMapSummaryResilient();
-  const regionLabels = await getRegionLabels(locale);
   const allShapes = buildGameShapes(PROVINCE_SHAPES, summaries, locale);
   const targetEntries = toTargetEntries(allShapes);
-
-  const provinceUrlTemplate = getPathname({
-    locale,
-    href: { pathname: "/turkiye/[slug]", params: { slug: SLUG_PLACEHOLDER } },
-  });
-  const submitModeTag = buildGameRoundModeTag("regions", null);
 
   return (
     <V2GameScreen
       mode="regions"
-      modeName={t("mode1Name")}
+      modeName={modeName}
       shapes={allShapes}
       targetEntries={targetEntries}
       regionLabels={regionLabels}
       allowEarlyFinish={false}
-      provinceUrlTemplate={provinceUrlTemplate}
-      submitModeTag={submitModeTag}
+      provinceUrlTemplate={getPathname({
+        locale,
+        href: { pathname: "/turkiye/[slug]", params: { slug: SLUG_PLACEHOLDER } },
+      })}
+      submitModeTag={buildGameRoundModeTag("regions", null)}
       viewBox={MAP_VIEWBOX}
       currentPath="/oyun/bolge-bulma"
     />
+  );
+}
+
+export default async function V2RegionModePage({ params }: PageProps) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("Game");
+  const regionLabels = await getRegionLabels(locale);
+
+  return (
+    <>
+      <V2Header />
+      <V2LiveTicker />
+      <PlaySuspense>
+        <RegionGame locale={locale} modeName={t("mode1Name")} regionLabels={regionLabels} />
+      </PlaySuspense>
+    </>
   );
 }

@@ -51,7 +51,7 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
     slug: "geri-bildirim",
     title: "Geri Bildirim",
     blurb: "Sistem durumu, geçici yükleme ve ipuçları.",
-    components: ["alert", "sonner", "tooltip", "skeleton"],
+    components: ["alert", "sonner", "tooltip", "skeleton", "page-skeleton"],
   },
   {
     slug: "duzen",

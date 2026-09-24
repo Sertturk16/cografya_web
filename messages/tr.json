@@ -4,6 +4,7 @@
     "localeSwitcherLabel": "Dil seçimi",
     "localeName": "Türkçe",
     "enWorkInProgress": "Bu sayfanın ayrıntılı bölümleri şimdilik Türkçe.",
+    "loading": "Yükleniyor…",
     "unsavedChanges": {
       "title": "Kaydedilmemiş Değişikliklerin Var",
       "body": "Bu sayfadan ayrılırsan yaptığın değişiklikler kaydedilmez.",
