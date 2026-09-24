@@ -69,8 +69,8 @@ export function walkPages(): string[] {
  * page with a real `<h1>`, so a counter named `PAGES_WITHOUT_H1` that cannot see those two files
  * would claim more than it measures. `app/[locale]/(site)/error.tsx` and
  * `app/[locale]/(site)/not-found.tsx` are the only two in the tree today; there is no `(play)`
- * equivalent and no `template.tsx` anywhere; the three `loading.tsx` files (T-037) are walked by
- * `walkLoadingFiles()` and are deliberately not render roots.
+ * equivalent and no `template.tsx` anywhere; the one `loading.tsx` file (T-037, `/kayit`) is walked
+ * by `walkLoadingFiles()` and is deliberately not a render root.
  *
  * NOT WIDENED PAST `PAGE_ROOTS`. `app/global-error.tsx` and `app/not-found.tsx` are app-ROOT
  * special files that sit ABOVE `app/[locale]`, outside both roots — the same placement
@@ -104,9 +104,14 @@ export function walkRenderRoots(): string[] {
 }
 
 /**
- * Every `loading.tsx` under `PAGE_ROOTS`. NOT a render root (`RENDER_ROOT_FILENAMES` is not
- * widened): a loading file renders a skeleton, never a heading or a breadcrumb, so folding it into
- * the heading and container counters would give them ten files that legitimately have none.
+ * Every `loading.tsx` under `PAGE_ROOTS` — today, the one `loading.tsx` (T-037, `/kayit`): a
+ * `loading.tsx` wraps its segment's `page.tsx` AND every child route below it in a Suspense
+ * boundary, so it may only live in a leaf segment (no descendant `page.tsx`). `/turkiye` and
+ * `/dunya` each used to carry one and both were removed — Task 15's production build showed the
+ * four `[slug]` families they parented building fully dynamic and soft-404ing (200 instead of
+ * 404) on an unknown slug. NOT a render root (`RENDER_ROOT_FILENAMES` is not widened): a loading
+ * file renders a skeleton, never a heading or a breadcrumb, so folding it into the heading and
+ * container counters would give them files that legitimately have none.
  * `components/v2/page-composition-loading.test.ts` owns this walk.
  */
 export function walkLoadingFiles(): string[] {

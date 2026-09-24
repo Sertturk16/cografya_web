@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   label,
@@ -11,21 +11,28 @@ import {
 } from "@/lib/test-support/composition-scan";
 
 /**
- * T-037's three pins. `sourceOf` strips comments, so a docblock quoting `await getX(` or
+ * T-037's pins. `sourceOf` strips comments, so a docblock quoting `await getX(` or
  * `animate-pulse` cannot answer for the code.
  *
  * Ruling A (task-14-addendum.md): a rendered `loading.tsx` commits the response to 200 the moment
  * it renders, so a route whose page decides `notFound()` or `redirect()` before its first return
  * must never carry one — a later 404/307 would only ever reach the reader as a `<meta>` tag. Only
  * `force-dynamic` routes that commit no such status are owed a loading file.
+ *
+ * Ruling B (Task 15's finding, amending Ruling A): a `loading.tsx` wraps its segment's `page.tsx`
+ * AND every child route below it in a Suspense boundary (Next's own `loading.js` docs). Task 15's
+ * production build proved what that means for a NON-leaf segment: `app/[locale]/(site)/turkiye/
+ * loading.tsx` and `.../dunya/loading.tsx` sat above `turkiye/[slug]`, `turkiye/bolge/[slug]`,
+ * `dunya/[slug]` and `dunya/kita/[slug]` — four `[slug]` families with real `generateStaticParams`
+ * data — and all four built fully dynamic (zero prerendered params) and answered HTTP 200 for an
+ * unknown slug (soft 404) on the standalone production build, even though each page's own
+ * `notFound()` fired and rendered the right body. A `loading.tsx` may therefore live only in a
+ * LEAF segment — a directory with no descendant `page.tsx`. `/kayit` is a leaf; `/turkiye` and
+ * `/dunya` are not, because they parent the `[slug]` detail routes.
  */
 
-/** Routes that are `force-dynamic` and decide neither `notFound()` nor `redirect()`. */
-const ROUTES_OWED_A_LOADING_FILE = [
-  "app/[locale]/(site)/turkiye/page.tsx",
-  "app/[locale]/(site)/dunya/page.tsx",
-  "app/[locale]/(site)/kayit/page.tsx",
-] as const;
+/** Routes that are `force-dynamic`, decide neither `notFound()` nor `redirect()`, AND are leaves. */
+const ROUTES_OWED_A_LOADING_FILE = ["app/[locale]/(site)/kayit/page.tsx"] as const;
 
 function defaultExportBody(source: string): string {
   const start = source.indexOf("export default async function");
@@ -34,18 +41,38 @@ function defaultExportBody(source: string): string {
   return match === null ? source.slice(start) : source.slice(start, start + match.index);
 }
 
-/** force-dynamic, AND the default export neither calls notFound() nor redirect() before its first return. */
+/**
+ * True when `page`'s own directory contains any OTHER `page.tsx` at depth >= 1 below it — i.e.
+ * `page`'s segment is not a leaf. `turkiye/page.tsx` has descendants (`turkiye/[slug]/page.tsx`,
+ * `turkiye/bolge/page.tsx`, …); `kayit/page.tsx` has none.
+ */
+function hasDescendantPage(page: string): boolean {
+  const dir = dirname(page);
+  return walkPages().some(
+    (candidate) =>
+      candidate !== page && dirname(candidate) !== dir && candidate.startsWith(dir + sep),
+  );
+}
+
+/**
+ * force-dynamic, AND the default export neither calls notFound() nor redirect() before its first
+ * return, AND the segment is a leaf (no descendant page.tsx — Ruling B).
+ */
 function isOwedALoadingFile(page: string): boolean {
   const source = sourceOf(page);
   if (!/export const dynamic = "force-dynamic"/.test(source)) return false;
   const body = defaultExportBody(source);
-  return !/\bnotFound\(\)/.test(body) && !/\bredirect\(/.test(body);
+  if (/\bnotFound\(\)/.test(body) || /\bredirect\(/.test(body)) return false;
+  return !hasDescendantPage(page);
 }
 
-/** A route whose page commits a status before its first return must NOT carry a loading.tsx. */
+/**
+ * A route must NOT carry a loading.tsx when its page commits a status before its first return, OR
+ * when its segment is not a leaf (Ruling B — a loading.tsx there wraps the child routes too).
+ */
 function mustNotHaveLoadingFile(page: string): boolean {
   const body = defaultExportBody(sourceOf(page));
-  return /\bnotFound\(\)/.test(body) || /\bredirect\(/.test(body);
+  return /\bnotFound\(\)/.test(body) || /\bredirect\(/.test(body) || hasDescendantPage(page);
 }
 
 describe("loading.tsx coverage", () => {
@@ -78,13 +105,21 @@ describe("loading.tsx coverage", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("the predicate sees a real force-dynamic route and a real 404/redirect hazard — anti-vacuity", () => {
-    expect(isOwedALoadingFile(join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx"))).toBe(true);
+  it("the predicate sees a real 404/redirect hazard — anti-vacuity", () => {
     // force-dynamic, but redirects an unauthenticated reader before its first return.
     expect(isOwedALoadingFile(join(repoRoot, "app/[locale]/(site)/hesabim/page.tsx"))).toBe(false);
     expect(
       mustNotHaveLoadingFile(join(repoRoot, "app/[locale]/(site)/turkiye/[slug]/page.tsx")),
     ).toBe(true);
+  });
+
+  it("hasDescendantPage sees a real non-leaf and a real leaf — anti-vacuity", () => {
+    expect(hasDescendantPage(join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx"))).toBe(true);
+    expect(hasDescendantPage(join(repoRoot, "app/[locale]/(site)/kayit/page.tsx"))).toBe(false);
+  });
+
+  it("turkiye/page.tsx is force-dynamic but not a leaf segment, so it is not owed a loading.tsx", () => {
+    expect(isOwedALoadingFile(join(repoRoot, "app/[locale]/(site)/turkiye/page.tsx"))).toBe(false);
   });
 });
 
