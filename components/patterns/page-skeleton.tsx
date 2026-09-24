@@ -24,14 +24,29 @@ import { StatGrid } from "./stat-grid";
  */
 
 const PLATE_ASPECT = {
-  /** `V2EarthquakeExplorer`, `V2MarineMapExplorer`, `V2TurkeyMapExplorer`, `V2ToolWorkbench`,
-   *  `V2ProvinceLocatorMap`, `V2RegionLocatorMap`. */
+  /** `V2EarthquakeExplorer`, `V2MarineMapExplorer`, `V2ToolWorkbench`, `V2ProvinceLocatorMap`,
+   *  `V2RegionLocatorMap`. */
   map: "aspect-[1270/580]",
   /** `V2ContinentLocatorMap`. */
   continent: "aspect-[1000/521]",
   /** `V2GameScreen`'s figure plate. */
   game: "aspect-[2.33/1] min-h-[380px] sm:min-h-[480px]",
+  /** `V2TurkeyMapExplorer` — a square on a phone, the shared 1270/580 plate from `sm`. */
+  turkey: "aspect-square sm:aspect-[1270/580] sm:min-h-[420px]",
+  /** `V2WorldMapExplorer`. */
+  world: "aspect-[1008/520]",
 } as const;
+
+/** The plate's corner radius, mirroring its source. Every plate is `rounded-2xl` except the
+ * world map, which is edge-to-edge on a phone (`rounded-none`) and gains the radius back from
+ * `sm`. */
+const PLATE_RADIUS: Record<keyof typeof PLATE_ASPECT, string> = {
+  map: "rounded-2xl",
+  continent: "rounded-2xl",
+  game: "rounded-2xl",
+  turkey: "rounded-2xl",
+  world: "rounded-none sm:rounded-2xl",
+};
 
 export type PlateAspect = keyof typeof PLATE_ASPECT;
 export type PageSkeletonShape = "hub" | "detail" | "account" | "auth" | "play";
@@ -67,7 +82,7 @@ function Bar({ className }: { className: string }) {
   return <Skeleton aria-hidden="true" className={className} />;
 }
 
-export function BreadcrumbsSkeleton(_props: { readonly className?: never }) {
+export function BreadcrumbsSkeleton({}: { readonly className?: never }) {
   return (
     <div className="flex items-center gap-2 text-xs" aria-hidden="true">
       <Bar className="h-3 w-16" />
@@ -129,7 +144,7 @@ export function PlateSkeleton({
 }: Announce & { readonly aspect: PlateAspect }) {
   return (
     <Status announce={announce}>
-      <Bar className={cn("w-full rounded-2xl", PLATE_ASPECT[aspect])} />
+      <Bar className={cn("w-full", PLATE_RADIUS[aspect], PLATE_ASPECT[aspect])} />
     </Status>
   );
 }
@@ -199,14 +214,14 @@ export function InlineSkeleton({
   );
 }
 
-function HubShape() {
+function HubShape({ plate }: { readonly plate: PlateAspect }) {
   return (
     <PageContainer>
       <div className="space-y-4">
         <BreadcrumbsSkeleton />
         <HeroSkeleton tier="hub" tiles={4} announce={false} />
       </div>
-      <PlateSkeleton aspect="map" announce={false} />
+      <PlateSkeleton aspect={plate} announce={false} />
     </PageContainer>
   );
 }
@@ -288,8 +303,7 @@ function PlayShape() {
   );
 }
 
-const SHAPES: Record<PageSkeletonShape, () => ReactNode> = {
-  hub: HubShape,
+const OTHER_SHAPES: Record<Exclude<PageSkeletonShape, "hub">, () => ReactNode> = {
   detail: DetailShape,
   account: AccountShape,
   auth: AuthShape,
@@ -298,14 +312,14 @@ const SHAPES: Record<PageSkeletonShape, () => ReactNode> = {
 
 export function PageSkeleton({
   shape,
+  plate = "map",
 }: {
   readonly shape: PageSkeletonShape;
+  /** The hub shape's explorer plate; ignored by every other shape. */
+  readonly plate?: PlateAspect;
   readonly className?: never;
 }) {
-  const Shape = SHAPES[shape];
   return (
-    <Status announce>
-      <Shape />
-    </Status>
+    <Status announce>{shape === "hub" ? <HubShape plate={plate} /> : OTHER_SHAPES[shape]()}</Status>
   );
 }

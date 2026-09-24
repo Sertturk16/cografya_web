@@ -79,29 +79,45 @@ describe("PageSkeleton", () => {
   });
 
   it("mirrors the live plates byte for byte", () => {
-    const explorer = stripComments(
-      readFileSync(
-        fileURLToPath(new URL("../v2/v2-earthquake-explorer.tsx", import.meta.url)),
-        "utf8",
-      ),
-    );
-    const game = stripComments(
-      readFileSync(fileURLToPath(new URL("../v2/v2-game-screen.tsx", import.meta.url)), "utf8"),
-    );
-    const continent = stripComments(
-      readFileSync(
-        fileURLToPath(new URL("../v2/v2-continent-locator-map.tsx", import.meta.url)),
-        "utf8",
-      ),
-    );
-    expect(explorer).toContain("aspect-[1270/580]");
-    expect(game).toContain("aspect-[2.33/1] min-h-[380px] sm:min-h-[480px]");
+    const readSource = (name: string) =>
+      stripComments(readFileSync(fileURLToPath(new URL(`../v2/${name}`, import.meta.url)), "utf8"));
+
+    const earthquake = readSource("v2-earthquake-explorer.tsx");
+    const marine = readSource("v2-marine-map-explorer.tsx");
+    const toolWorkbench = readSource("v2-tool-workbench.tsx");
+    const province = readSource("v2-province-locator-map.tsx");
+    const turkey = readSource("v2-turkey-map-explorer.tsx");
+    const world = readSource("v2-world-map-explorer.tsx");
+    const continent = readSource("v2-continent-locator-map.tsx");
+    const game = readSource("v2-game-screen.tsx");
+
+    expect(earthquake).toContain("aspect-[1270/580]");
+    expect(marine).toContain("aspect-[1270/580]");
+    expect(toolWorkbench).toContain("aspect-[1270/580]");
+    expect(province).toContain("aspect-[1270/580]");
+    expect(turkey).toContain("aspect-square sm:aspect-[1270/580] sm:min-h-[420px]");
+    expect(world).toContain("aspect-[1008/520]");
     expect(continent).toContain("aspect-[1000/521]");
+    expect(game).toContain("aspect-[2.33/1] min-h-[380px] sm:min-h-[480px]");
+
     expect(render(<PlateSkeleton aspect="map" />)).toContain("aspect-[1270/580]");
+    expect(render(<PlateSkeleton aspect="turkey" />)).toContain(
+      "aspect-square sm:aspect-[1270/580] sm:min-h-[420px]",
+    );
+    expect(render(<PlateSkeleton aspect="world" />)).toContain("aspect-[1008/520]");
+    expect(render(<PlateSkeleton aspect="continent" />)).toContain("aspect-[1000/521]");
     expect(render(<PlateSkeleton aspect="game" />)).toContain(
       "aspect-[2.33/1] min-h-[380px] sm:min-h-[480px]",
     );
-    expect(render(<PlateSkeleton aspect="continent" />)).toContain("aspect-[1000/521]");
+  });
+
+  it("the hub shape's plate defaults to map, and can be swapped for the turkey explorer's", () => {
+    const defaultHtml = render(<PageSkeleton shape="hub" />);
+    expect(defaultHtml).toContain("aspect-[1270/580]");
+    expect(defaultHtml).not.toContain("aspect-square");
+
+    const turkeyHtml = render(<PageSkeleton shape="hub" plate="turkey" />);
+    expect(turkeyHtml).toContain("aspect-square sm:aspect-[1270/580]");
   });
 
   it("pieces can be silenced so a page announces once", () => {
