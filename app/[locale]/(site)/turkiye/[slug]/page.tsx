@@ -58,6 +58,7 @@ import {
 } from "lucide-react";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
 import { Card } from "@/components/ui/card";
+import { tr } from "@/lib/text/format-number";
 
 export const revalidate = 120;
 
@@ -523,8 +524,8 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                 <MapPin className="size-4 text-primary" />
               </div>
               <div className="font-mono font-bold text-sm sm:text-base text-foreground pt-1">
-                {province.latitude ? `${province.latitude.toFixed(2)}°K` : "—"},{" "}
-                {province.longitude ? `${province.longitude.toFixed(2)}°D` : "—"}
+                {province.latitude ? `${tr(province.latitude, 2)}°K` : "—"},{" "}
+                {province.longitude ? `${tr(province.longitude, 2)}°D` : "—"}
               </div>
               <div className="text-[11px] text-muted-foreground flex items-center justify-between">
                 <span>Plaka Kodu:</span>
@@ -628,7 +629,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                       <div className="p-3.5 rounded-2xl bg-muted/50 space-y-1">
                         <span className="text-muted-foreground block">Şehirleşme Oranı</span>
                         <span className="font-heading font-bold text-lg text-foreground">
-                          %{province.urbanizationRate.toFixed(1)}
+                          %{tr(province.urbanizationRate, 1)}
                         </span>
                       </div>
                     )}
@@ -636,7 +637,7 @@ export default async function V2ProvinceDetailPage({ params }: PageProps) {
                       <div className="p-3.5 rounded-2xl bg-muted/50 space-y-1">
                         <span className="text-muted-foreground block">Net Göç Hızı</span>
                         <span className="font-heading font-bold text-lg text-primary">
-                          ‰{province.netMigrationRate.toFixed(2)}
+                          ‰{tr(province.netMigrationRate, 2)}
                         </span>
                       </div>
                     )}

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Flame, Waves, MapPin, Layers } from "lucide-react";
+import { tr } from "@/lib/text/format-number";
 
 export interface EarthquakeTickerData {
   readonly magnitude: number;
@@ -62,8 +63,8 @@ export function extractMarineTickerData(
   );
   if (marmaraPt && typeof marmaraPt.seaSurfaceTemperature?.value === "number") {
     marmara = {
-      sst: Number(marmaraPt.seaSurfaceTemperature.value.toFixed(1)),
-      wave: Number((marmaraPt.waveHeight?.value ?? 0).toFixed(1)),
+      sst: marmaraPt.seaSurfaceTemperature.value,
+      wave: marmaraPt.waveHeight?.value ?? 0,
     };
   }
 
@@ -75,12 +76,26 @@ export function extractMarineTickerData(
   );
   if (akdenizPt && typeof akdenizPt.seaSurfaceTemperature?.value === "number") {
     akdeniz = {
-      sst: Number(akdenizPt.seaSurfaceTemperature.value.toFixed(1)),
-      wave: Number((akdenizPt.waveHeight?.value ?? 0).toFixed(1)),
+      sst: akdenizPt.seaSurfaceTemperature.value,
+      wave: akdenizPt.waveHeight?.value ?? 0,
     };
   }
 
   return { marmara, akdeniz };
+}
+
+/*
+ * The ticker's figures, as the reader sees them. The strip is Turkish chrome on every route
+ * (its labels are hard-written Turkish), so the figures take the Turkish decimal comma: `M 2,9`,
+ * `21,5 °C`. Rounding to one decimal happens here, at the point of display, not in the
+ * extractors above, so the data stays the feed's own number.
+ */
+export function earthquakeTickerText(eq: EarthquakeTickerData): string {
+  return `M ${tr(eq.magnitude, 1)} ${eq.location}`;
+}
+
+export function marineTickerText(sea: MarineTickerData): string {
+  return `${tr(sea.sst, 1)} °C (Dalga: ${tr(sea.wave, 1)} m)`;
 }
 
 export function V2LiveTicker() {
@@ -163,9 +178,7 @@ export function V2LiveTicker() {
               >
                 <Flame className="size-3.5 text-destructive animate-pulse" />
                 <span className="font-semibold text-foreground">Son Deprem:</span>
-                <span>
-                  M {earthquake.magnitude.toFixed(1)} {earthquake.location}
-                </span>
+                <span>{earthquakeTickerText(earthquake)}</span>
                 <span className="text-[10px] text-muted-foreground font-mono">
                   ({earthquake.timeAgo})
                 </span>
@@ -184,9 +197,7 @@ export function V2LiveTicker() {
               >
                 <Waves className="size-3.5 text-accent" />
                 <span className="font-semibold text-foreground">Marmara:</span>
-                <span>
-                  {marmara.sst} °C (Dalga: {marmara.wave}m)
-                </span>
+                <span>{marineTickerText(marmara)}</span>
               </Link>
               <span className="text-border">|</span>
             </>
@@ -200,9 +211,7 @@ export function V2LiveTicker() {
               >
                 <Waves className="size-3.5 text-accent" />
                 <span className="font-semibold text-foreground">Akdeniz:</span>
-                <span>
-                  {akdeniz.sst} °C (Dalga: {akdeniz.wave}m)
-                </span>
+                <span>{marineTickerText(akdeniz)}</span>
               </Link>
               <span className="text-border">|</span>
             </>

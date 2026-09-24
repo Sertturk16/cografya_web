@@ -28,6 +28,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { tr } from "@/lib/text/format-number";
 
 export const revalidate = 86400;
 
@@ -152,7 +153,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 {continent.areaFormattedTr}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
-                Karalardaki payı %{continent.areaSharePercent}
+                Karalardaki payı %{tr(continent.areaSharePercent)}
               </div>
             </div>
 
@@ -166,7 +167,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">
                 {continent.populationSharePercent > 0
-                  ? `Dünya nüfusundaki payı %${continent.populationSharePercent}`
+                  ? `Dünya nüfusundaki payı %${tr(continent.populationSharePercent)}`
                   : "Kalıcı yerleşim yok"}
               </div>
             </div>
@@ -193,7 +194,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 {continent.highestPoint.name}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">
-                {continent.highestPoint.elevationM} m
+                {tr(continent.highestPoint.elevationM)} m
               </div>
             </div>
 
@@ -206,7 +207,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 {continent.lowestPoint.name}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">
-                {continent.lowestPoint.elevationM} m
+                {tr(continent.lowestPoint.elevationM)} m
               </div>
             </div>
 
@@ -219,7 +220,7 @@ export default async function V2ContinentDetailPage({ params }: PageProps) {
                 {continent.longestRiver.name}
               </div>
               <div className="text-[10px] text-muted-foreground mt-0.5 font-mono">
-                {continent.longestRiver.lengthKm} km
+                {tr(continent.longestRiver.lengthKm)} km
               </div>
             </div>
           </div>

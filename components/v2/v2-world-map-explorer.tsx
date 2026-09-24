@@ -641,10 +641,10 @@ export function V2WorldMapExplorer({
                       EKVATOR (0°)
                     </text>
                     <text x="8" y="192">
-                      YENGEÇ DÖNENCESİ (23.5°K)
+                      YENGEÇ DÖNENCESİ (23,5°K)
                     </text>
                     <text x="8" y="322">
-                      OĞLAK DÖNENCESİ (23.5°G)
+                      OĞLAK DÖNENCESİ (23,5°G)
                     </text>
                     <text x="508" y="14">
                       0° MERİDYENİ

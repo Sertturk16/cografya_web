@@ -26,7 +26,7 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
     // TableRow must have tabIndex={0}, aria-selected, onKeyDown with Enter/Space, and accessible name
     expect(content).toMatch(/<TableRow[^>]*tabIndex=\{0\}[^>]*aria-selected=\{isSelected\}/);
     expect(content).toMatch(
-      /aria-label=\{`M \$\{eq\.magnitude\.toFixed\(1\)\} - \$\{eq\.placeNameTr\} depremini seç`\}/,
+      /aria-label=\{`M \$\{tr\(eq\.magnitude, 1\)\} - \$\{eq\.placeNameTr\} depremini seç`\}/,
     );
 
     // Live region for selection announcement (WCAG 4.1.3, A11Y126-I4)
