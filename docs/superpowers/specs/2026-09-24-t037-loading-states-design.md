@@ -59,15 +59,15 @@ lands in the same box. All colour through bridge tokens (`bg-muted` via `Skeleto
 hand-drawn-card counters — and the file lives in `components/patterns/`, which is outside the
 card walker's surface anyway.
 
-| Piece                 | Mirrors                                                                          | Geometry                                                                                                                                                                                                                    |
-| --------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `BreadcrumbsSkeleton` | `Breadcrumbs`                                                                    | One `text-xs` line: three short bars separated by gaps.                                                                                                                                                                     |
-| `HeroSkeleton`        | `PageHero` inside `Card variant="feature"` (hub) or the full-bleed band (detail) | Badge row (2 pills), heading bar at `H1`/`H1Display` line height, 2 lede lines, optional `tiles` (n `StatTile`-sized boxes in a `StatGrid`).                                                                                |
-| `StatTileSkeleton`    | `StatTile`                                                                       | `rounded-2xl` box, label bar + value bar at `text-2xl sm:text-3xl` height. Exported alone for pages whose hero is real and only its tiles wait.                                                                             |
-| `PlateSkeleton`       | The map plates                                                                   | `aspect` union: `map` (`aspect-[1270/580]`, the explorers and the tool workbench), `game` (`aspect-[2.33/1] min-h-[380px] sm:min-h-[480px]`), `locator` (the province/region/country locator boxes — measured in the plan). |
-| `ProseSkeleton`       | A prose section                                                                  | Heading bar + `lines` bars, last one shorter.                                                                                                                                                                               |
-| `CardGridSkeleton`    | A card grid                                                                      | `columns` union (`2`, `3`, `2-4`), `count` boxes of one height.                                                                                                                                                             |
-| `TableSkeleton`       | already exists in `components/ui/table.tsx`                                      | Reused, not duplicated.                                                                                                                                                                                                     |
+| Piece                 | Mirrors                                     | Geometry                                                                                                                                                                                                                    |
+| --------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BreadcrumbsSkeleton` | `Breadcrumbs`                               | One `text-xs` line: three short bars separated by gaps.                                                                                                                                                                     |
+| `FormCardSkeleton`    | `V2RegisterCard`'s form shell on `/kayit`   | One full-width `h-[520px] rounded-3xl` box.                                                                                                                                                                                 |
+| `StatTileSkeleton`    | `StatTile`                                  | `rounded-2xl` box, label bar + value bar at `text-2xl sm:text-3xl` height. Exported alone for pages whose hero is real and only its tiles wait.                                                                             |
+| `PlateSkeleton`       | The map plates                              | `aspect` union: `map` (`aspect-[1270/580]`, the explorers and the tool workbench), `game` (`aspect-[2.33/1] min-h-[380px] sm:min-h-[480px]`), `locator` (the province/region/country locator boxes — measured in the plan). |
+| `ProseSkeleton`       | A prose section                             | Heading bar + `lines` bars, last one shorter.                                                                                                                                                                               |
+| `CardGridSkeleton`    | A card grid                                 | `columns` union (`2`, `3`, `2-4`), `count` boxes of one height.                                                                                                                                                             |
+| `TableSkeleton`       | already exists in `components/ui/table.tsx` | Reused, not duplicated.                                                                                                                                                                                                     |
 
 ### The compositions
 
@@ -76,7 +76,7 @@ renders its content. Each shape is a measurement of the live tree, not a design:
 
 | `shape` | Composition                                                                                                                                                      | Pages                      |
 | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| `auth`  | `PageContainer` → breadcrumbs → `HeroSkeleton tier="hub"` → 12-col grid: a form card (6) + a plate (6)                                                           | `/kayit`                   |
+| `auth`  | `PageContainer` → breadcrumbs → one bare `H1`-height bar (the live page renders a bare `PageHero`, no card) → 12-col grid: `FormCardSkeleton` (6) + a plate (6)  | `/kayit`                   |
 | `play`  | `max-w-7xl` main → sr-only heading is real text (see §3) → breadcrumb row → control bar box → arena box holding a 5-tile strip and `PlateSkeleton aspect="game"` | the three `(play)` screens |
 
 The home page is its own case: `V2Hero` already renders with fallback counts when the numbers are
@@ -93,7 +93,7 @@ own — is `<div role="status" aria-busy="true">` with an `sr-only` label from a
 `Common.loading` ("Yükleniyor…" / "Loading…"). `Skeleton` bars are `aria-hidden`. The pulse
 animation already stops under `prefers-reduced-motion: reduce`, which `app/globals.css` sets
 globally; nothing re-enables it. Fallbacks nested inside a page that already announces (the member
-hub's own `role="status"` region) do not add a second live region: `HeroSkeleton` and friends take
+hub's own `role="status"` region) do not add a second live region: the pieces take
 `announce={false}` there.
 
 ### Showcase and roster

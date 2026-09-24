@@ -1000,9 +1000,9 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // T-096: 177 → **178**. `/deprem/fay-hatlari`'s `Kaynaklar` footnote (`SOURCE_NOTE`); not a card.
 // T-037: 178 → **179**. `components/patterns/page-skeleton.tsx`'s `Bar` helper reads its own
 // `className` prop back (`<Skeleton className={className} />`); not a card: `Bar` renders
-// `Skeleton`'s `bg-muted` token, never `bg-card` or `border-border`. (The final fix wave dropped
-// `HeroSkeleton`'s own computed heading class in favour of a literal, matching `/kayit`'s bare
-// heading — one fewer identifier, not a new one.)
+// `Skeleton`'s `bg-muted` token, never `bg-card` or `border-border`. (The final fix wave removed
+// the `HeroSkeleton` piece, whose computed heading class had been the 180th identifier — one fewer
+// identifier, not a new one.)
 export const COMPUTED_CARD_CLASSNAMES = 179;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter

@@ -9,7 +9,6 @@ import en from "@/messages/en.json";
 import {
   BreadcrumbsSkeleton,
   CardGridSkeleton,
-  HeroSkeleton,
   InlineSkeleton,
   PageSkeleton,
   PlateSkeleton,
@@ -124,7 +123,6 @@ describe("PageSkeleton", () => {
 
   it("pieces can be silenced so a page announces once", () => {
     for (const piece of [
-      <HeroSkeleton key="h" tier="hub" tiles={4} announce={false} />,
       <StatTileSkeleton key="s" announce={false} />,
       <PlateSkeleton key="p" aspect="map" announce={false} />,
       <ProseSkeleton key="r" lines={3} announce={false} />,
@@ -134,11 +132,5 @@ describe("PageSkeleton", () => {
       expect(count(render(piece), 'role="status"')).toBe(0);
     }
     expect(count(render(<BreadcrumbsSkeleton />), 'role="status"')).toBe(0);
-  });
-
-  it("the hub hero renders the requested tile count inside the shared grid", () => {
-    const html = render(<HeroSkeleton tier="hub" tiles={4} />);
-    expect(count(html, 'data-skeleton="stat-tile"')).toBe(4);
-    expect(html).toContain("grid-cols-2 sm:grid-cols-4");
   });
 });

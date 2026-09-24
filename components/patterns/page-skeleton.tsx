@@ -1,10 +1,8 @@
 import { Suspense, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PageContainer } from "./page-container";
-import { StatGrid } from "./stat-grid";
 
 /**
  * The loading state of a reading page, and the pieces it is made of.
@@ -99,39 +97,6 @@ export function StatTileSkeleton({ announce = true }: Announce) {
         <Bar className="h-8 w-20 sm:h-9" />
         <Bar className="mt-1.5 h-4 w-28" />
       </div>
-    </Status>
-  );
-}
-
-export function HeroSkeleton({
-  tiles = 0,
-  announce = true,
-}: Announce & { readonly tier: "hub"; readonly tiles?: 0 | 4 }) {
-  const body = (
-    <>
-      <div className="relative z-10 max-w-3xl space-y-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <Bar className="h-6 w-24 rounded-full" />
-          <Bar className="h-6 w-32 rounded-full" />
-        </div>
-        <Bar className="h-9 w-3/4 sm:h-12" />
-        <div className="space-y-2">
-          <Bar className="h-4 w-full" />
-          <Bar className="h-4 w-11/12" />
-        </div>
-      </div>
-      {tiles > 0 ? (
-        <StatGrid columns="2-4" gutter="hero">
-          {Array.from({ length: tiles }, (_, i) => (
-            <StatTileSkeleton key={i} announce={false} />
-          ))}
-        </StatGrid>
-      ) : null}
-    </>
-  );
-  return (
-    <Status announce={announce}>
-      <Card variant="feature">{body}</Card>
     </Status>
   );
 }
