@@ -182,6 +182,48 @@ describe("climateBlockGates", () => {
       ).toBe(false);
     });
   });
+
+  it("showSection is unaffected by hasSimilarClimate whenever a class or a series exists", () => {
+    const base = {
+      isTr: true,
+      hasCurriculumName: false,
+      hasClimateNote: false,
+      hasCurriculumNoteText: false,
+    };
+    expect(
+      climateBlockGates({
+        ...base,
+        hasClimateClass: true,
+        hasClimateSeries: false,
+        hasSimilarClimate: false,
+      }).showSection,
+    ).toBe(true);
+    expect(
+      climateBlockGates({
+        ...base,
+        hasClimateClass: false,
+        hasClimateSeries: true,
+        hasSimilarClimate: false,
+      }).showSection,
+    ).toBe(true);
+    // The one case the province page's chips component must recompute for itself:
+    expect(
+      climateBlockGates({
+        ...base,
+        hasClimateClass: false,
+        hasClimateSeries: false,
+        hasSimilarClimate: true,
+      }).showSection,
+    ).toBe(true);
+    expect(
+      climateBlockGates({
+        ...base,
+        hasClimateClass: false,
+        hasClimateSeries: false,
+        hasSimilarClimate: false,
+      }).showSection,
+    ).toBe(false);
+  });
 });
 
 /**
@@ -216,7 +258,12 @@ describe("the province page reads its climate gates from this module", () => {
     // `toContain` would pass on the first one and say nothing about the other three — which is
     // precisely how they came apart.
     expect(code.match(/climate\.showClass/g) ?? []).toHaveLength(3);
-    expect(code).toMatch(/climate\.showSection && similarClimate\.length/);
+    // T-037 task 7: the similar-climate chips resolve inside their own `<Suspense>` boundary
+    // (`ProvinceLinkChips`), so the page passes `hasSimilarClimate: false` into `climate` and the
+    // chips recompute the section's own gate locally as `showSimilar`, exactly as
+    // `climateBlockGates` would have evaluated it — see the comment beside `climate = ` above.
+    expect(code).toMatch(/hasSimilarClimate: false/);
+    expect(code).toMatch(/showSimilar && similarClimate\.length/);
     expect(code).toMatch(/climate\.showCurriculumNote/);
   });
 
