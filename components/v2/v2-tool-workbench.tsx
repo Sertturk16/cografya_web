@@ -82,6 +82,7 @@ import {
 } from "lucide-react";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 import { formatDay } from "@/lib/text/format-date";
+import { formatNumber } from "@/lib/text/format-number";
 
 export type ToolMode = "distance" | "coordinates" | "area";
 
@@ -720,7 +721,10 @@ export function V2ToolWorkbench({
 
     const geo = parsed.point;
     const mapPt = projectToMapPoint(geo.lon, geo.lat);
-    const label = t("manualPoint", { lat: geo.lat.toFixed(2), lon: geo.lon.toFixed(2) });
+    const label = t("manualPoint", {
+      lat: formatNumber(geo.lat, locale, 2),
+      lon: formatNumber(geo.lon, locale, 2),
+    });
     const newPoint: PointWithSvg = { svgX: mapPt.x, svgY: mapPt.y, geo, label, source: "manual" };
 
     // Smart region focus (T-015): a typed coordinate has no on-screen anchor at all until
@@ -900,7 +904,7 @@ export function V2ToolWorkbench({
   const toDms = (val: number, isLat: boolean) => {
     const parts = toDmsParts(val, isLat ? "lat" : "lon", 1);
     const dir = cardinals[parts.cardinal];
-    return `${parts.degrees}° ${parts.minutes}' ${parts.seconds}" ${dir}`;
+    return `${parts.degrees}° ${parts.minutes}' ${formatNumber(parts.seconds, locale)}" ${dir}`;
   };
 
   // Safe clipboard copy
@@ -909,23 +913,23 @@ export function V2ToolWorkbench({
     let text = "";
     if (activeTool === "distance") {
       text = t("copyDistance", {
-        km: distanceKm.toFixed(2),
-        nauticalMiles: (distanceKm / 1.852).toFixed(1),
+        km: formatNumber(distanceKm, locale, 2),
+        nauticalMiles: formatNumber(distanceKm / 1.852, locale, 1),
         count: points.length,
       });
     } else if (activeTool === "area") {
       text = t("copyArea", {
-        area: areaKm2.toFixed(1),
-        hectares: (areaKm2 * 100).toFixed(0),
-        perimeter: perimeterKm.toFixed(1),
+        area: formatNumber(areaKm2, locale, 1),
+        hectares: formatNumber(areaKm2 * 100, locale, 0),
+        perimeter: formatNumber(perimeterKm, locale, 1),
       });
     } else if (activeTool === "coordinates" && points[0]) {
       const p = points[0].geo;
       const provInfo = detectedProvince ? t("copyProvince", { name: detectedProvince.name }) : "";
       text =
         t("copyCoordinate", {
-          lat: p.lat.toFixed(4),
-          lon: p.lon.toFixed(4),
+          lat: formatNumber(p.lat, locale, 4),
+          lon: formatNumber(p.lon, locale, 4),
           latDms: toDms(p.lat, true),
           lonDms: toDms(p.lon, false),
         }) + provInfo;
@@ -1023,7 +1027,10 @@ export function V2ToolWorkbench({
         svgX: pt.x,
         svgY: pt.y,
         geo: { lon: p.lon, lat: p.lat },
-        label: t("latLonCompact", { lat: p.lat.toFixed(2), lon: p.lon.toFixed(2) }),
+        label: t("latLonCompact", {
+          lat: formatNumber(p.lat, locale, 2),
+          lon: formatNumber(p.lon, locale, 2),
+        }),
         source: "preset" as const,
       };
     });
@@ -1262,8 +1269,8 @@ export function V2ToolWorkbench({
             {hoveredPos && (
               <span className="text-[11px] font-mono bg-muted/60 px-2.5 py-1 rounded-lg text-foreground border border-border/60">
                 {t("latLon", {
-                  lat: hoveredPos.geo.lat.toFixed(3),
-                  lon: hoveredPos.geo.lon.toFixed(3),
+                  lat: formatNumber(hoveredPos.geo.lat, locale, 3),
+                  lon: formatNumber(hoveredPos.geo.lon, locale, 3),
                 })}
               </span>
             )}
@@ -1482,11 +1489,11 @@ export function V2ToolWorkbench({
             {dynamicScaleBar && (
               <div
                 className="absolute bottom-3 left-3 z-30 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/80 shadow-md pointer-events-none flex flex-col gap-1 text-xs select-none"
-                aria-label={t("scaleBarAria", { km: String(dynamicScaleBar.km) })}
+                aria-label={t("scaleBarAria", { km: formatNumber(dynamicScaleBar.km, locale) })}
               >
                 <div className="flex items-center justify-between text-[11px] font-bold text-foreground font-mono leading-none">
                   <span>0</span>
-                  <span>{dynamicScaleBar.km} km</span>
+                  <span>{formatNumber(dynamicScaleBar.km, locale)} km</span>
                 </div>
                 <div
                   className="h-1.5 border-x-2 border-b-2 border-foreground"
@@ -1921,14 +1928,14 @@ export function V2ToolWorkbench({
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span className="font-heading text-4xl font-extrabold text-primary font-mono">
-                      {distanceKm.toFixed(1)}
+                      {formatNumber(distanceKm, locale, 1)}
                     </span>
                     <span className="text-lg font-bold text-foreground">km</span>
                   </div>
                   <span className="text-xs text-muted-foreground block font-mono">
                     {t("distanceEquivalents", {
                       meters: (distanceKm * 1000).toLocaleString(numberLocale),
-                      nauticalMiles: (distanceKm / 1.852).toFixed(1),
+                      nauticalMiles: formatNumber(distanceKm / 1.852, locale, 1),
                     })}
                   </span>
                 </div>
@@ -1953,7 +1960,7 @@ export function V2ToolWorkbench({
                       <span>{t("roadEstimate")}</span>
                     </div>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      ~{(distanceKm * 1.28).toFixed(0)} km
+                      ~{formatNumber(distanceKm * 1.28, locale, 0)} km
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
                       {t("roadFactor")}
@@ -1974,8 +1981,8 @@ export function V2ToolWorkbench({
                       </span>
                       <div className="p-3 rounded-xl bg-card border border-border font-mono font-bold text-sm text-foreground">
                         {t("latLon", {
-                          lat: points[0].geo.lat.toFixed(6),
-                          lon: points[0].geo.lon.toFixed(6),
+                          lat: formatNumber(points[0].geo.lat, locale, 6),
+                          lon: formatNumber(points[0].geo.lon, locale, 6),
                         })}
                       </div>
                     </div>
@@ -2067,7 +2074,7 @@ export function V2ToolWorkbench({
                     </span>
                     <div className="flex items-baseline gap-2">
                       <span className="font-heading text-4xl font-extrabold text-accent font-mono">
-                        {areaKm2.toFixed(1)}
+                        {formatNumber(areaKm2, locale, 1)}
                       </span>
                       <span className="text-lg font-bold text-foreground">km²</span>
                     </div>
@@ -2104,7 +2111,7 @@ export function V2ToolWorkbench({
                       {t("perimeter")}
                     </span>
                     <span className="font-heading font-bold text-sm text-foreground font-mono">
-                      {perimeterKm.toFixed(1)} km
+                      {formatNumber(perimeterKm, locale, 1)} km
                     </span>
                   </div>
                 </div>
@@ -2143,8 +2150,8 @@ export function V2ToolWorkbench({
                     </div>
                     <span className="font-mono text-[11px] text-muted-foreground">
                       {t("latLonCompact", {
-                        lat: p.geo.lat.toFixed(3),
-                        lon: p.geo.lon.toFixed(3),
+                        lat: formatNumber(p.geo.lat, locale, 3),
+                        lon: formatNumber(p.geo.lon, locale, 3),
                       })}
                     </span>
                   </div>

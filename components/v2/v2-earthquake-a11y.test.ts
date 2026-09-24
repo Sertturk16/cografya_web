@@ -26,7 +26,7 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
     // TableRow must have tabIndex={0}, aria-selected, onKeyDown with Enter/Space, and accessible name
     expect(content).toMatch(/<TableRow[^>]*tabIndex=\{0\}[^>]*aria-selected=\{isSelected\}/);
     expect(content).toMatch(
-      /aria-label=\{`M \$\{eq\.magnitude\.toFixed\(1\)\} - \$\{eq\.placeNameTr\} depremini seç`\}/,
+      /aria-label=\{`M \$\{tr\(eq\.magnitude, 1\)\} - \$\{eq\.placeNameTr\} depremini seç`\}/,
     );
 
     // Live region for selection announcement (WCAG 4.1.3, A11Y126-I4)
@@ -91,7 +91,13 @@ describe("V2 earthquake explorer a11y and copy invariants", () => {
       ),
     );
     expect(faultLines).toContain("FAULT_LINES_DATA");
-    expect(faultLines).not.toMatch(/MTA/);
+    // T-096 earned ONE citation: the DAF length (580 km) and its segment names are MTA's
+    // (Şaroğlu et al. 1992, MTA active-fault map), so the page's source footnote names MTA.
+    // That footnote is the only place it may appear; anywhere else is the old unearned claim.
+    const sourceNote = /<p className=\{SOURCE_NOTE\}>([\s\S]*?)<\/p>/.exec(faultLines);
+    expect(sourceNote, "fay-hatlari lost its source footnote").not.toBeNull();
+    expect(sourceNote![1]).toMatch(/\bMTA\b/);
+    expect(faultLines.replace(sourceNote![0], "")).not.toMatch(/MTA/);
   });
 
   it("rephrases fault line descriptions without unverified numerical figures (FU125SEO-I2)", () => {

@@ -36,6 +36,7 @@ import { Link } from "@/i18n/navigation";
 import { routing, type AppPathname, type Locale } from "@/i18n/routing";
 import { selectCountryMetaDescription } from "@/lib/seo/country-description";
 import { countryJsonLd, type GeoPropertyValue, JsonLd } from "@/lib/seo/json-ld";
+import { formatNumber } from "@/lib/text/format-number";
 import { buildMetadata } from "@/lib/seo/metadata";
 import {
   COUNTRY_HEADING_CASE,
@@ -494,7 +495,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                 <span>{t("kpiCoordinatesLabel")}</span>
                 <span className="font-mono font-semibold text-foreground">
                   {country.capitalLatitude !== null && country.capitalLongitude !== null
-                    ? `${Math.abs(country.capitalLatitude).toFixed(1)}°${t(country.capitalLatitude >= 0 ? "coordinateNorth" : "coordinateSouth")}, ${Math.abs(country.capitalLongitude).toFixed(1)}°${t(country.capitalLongitude >= 0 ? "coordinateEast" : "coordinateWest")}`
+                    ? `${formatNumber(Math.abs(country.capitalLatitude), locale, 1)}°${t(country.capitalLatitude >= 0 ? "coordinateNorth" : "coordinateSouth")}, ${formatNumber(Math.abs(country.capitalLongitude), locale, 1)}°${t(country.capitalLongitude >= 0 ? "coordinateEast" : "coordinateWest")}`
                     : "—"}
                 </span>
               </div>
@@ -612,7 +613,7 @@ export default async function V2CountryDetailPage({ params }: PageProps) {
                     </span>
                     <span className="font-mono font-semibold text-sm text-foreground block">
                       {country.capitalLatitude !== null && country.capitalLongitude !== null
-                        ? `${Math.abs(country.capitalLatitude).toFixed(2)}°${t(country.capitalLatitude >= 0 ? "coordinateNorth" : "coordinateSouth")}, ${Math.abs(country.capitalLongitude).toFixed(2)}°${t(country.capitalLongitude >= 0 ? "coordinateEast" : "coordinateWest")}`
+                        ? `${formatNumber(Math.abs(country.capitalLatitude), locale, 2)}°${t(country.capitalLatitude >= 0 ? "coordinateNorth" : "coordinateSouth")}, ${formatNumber(Math.abs(country.capitalLongitude), locale, 2)}°${t(country.capitalLongitude >= 0 ? "coordinateEast" : "coordinateWest")}`
                         : t("quickFactNotSpecified")}
                     </span>
                   </div>

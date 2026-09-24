@@ -42,6 +42,7 @@ import { MapAttribution } from "@/components/patterns/map-attribution";
 import { marinePointAnchorId } from "@/lib/marine/anchors";
 import { basinIdentityOf } from "@/lib/theme/basin-identity";
 import { sstBandStyleOf, SST_BAND_MIN_C } from "@/lib/theme/sst-band";
+import { tr } from "@/lib/text/format-number";
 
 export interface MarinePointData {
   slugTr: string;
@@ -481,7 +482,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                       transform={`translate(${pt.x}, ${pt.y})`}
                       role="button"
                       tabIndex={0}
-                      aria-label={`${point.nameTr}, su sıcaklığı: ${point.sst ? point.sst.toFixed(1) + " °C" : "değer yok"}`}
+                      aria-label={`${point.nameTr}, su sıcaklığı: ${point.sst ? tr(point.sst, 1) + " °C" : "değer yok"}`}
                       onClick={() => handleSelectPoint(point.slugTr)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
@@ -539,7 +540,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                             fontWeight="bold"
                             fontFamily="monospace"
                           >
-                            {point.sst.toFixed(1)}°
+                            {tr(point.sst, 1)}°
                           </text>
                         </g>
                       )}
@@ -579,7 +580,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         <Thermometer className="size-3 text-primary" /> Su Sıcaklığı:
                       </span>
                       <span className="font-mono font-bold text-primary text-xs">
-                        {hoveredPoint.sst.toFixed(1)} °C
+                        {tr(hoveredPoint.sst, 1)} °C
                       </span>
                     </div>
                   )}
@@ -590,7 +591,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         <Waves className="size-3 text-muted-foreground" /> Dalga Yüksekliği:
                       </span>
                       <span className="font-mono font-medium text-foreground flex items-center gap-1">
-                        {hoveredPoint.waveHeight.toFixed(2)} m
+                        {tr(hoveredPoint.waveHeight, 2)} m
                         {hoveredPoint.waveDirection && (
                           <DirectionArrow
                             deg={hoveredPoint.waveDirection}
@@ -608,7 +609,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                           <Wind className="size-3 text-muted-foreground" /> 10 m&apos;de Rüzgâr:
                         </span>
                         <span className="font-mono font-medium text-foreground flex items-center gap-1">
-                          {hoveredPoint.windSpeed10m.toFixed(1)} m/s
+                          {tr(hoveredPoint.windSpeed10m, 1)} m/s
                           {hoveredPoint.windDirection10m && (
                             <DirectionArrow
                               deg={hoveredPoint.windDirection10m}
@@ -622,7 +623,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   <div className="flex items-center justify-between text-muted-foreground text-[10px]">
                     <span>Konum:</span>
                     <span className="font-mono">
-                      {hoveredPoint.latitude.toFixed(2)}°K, {hoveredPoint.longitude.toFixed(2)}°D
+                      {tr(hoveredPoint.latitude, 2)}°K, {tr(hoveredPoint.longitude, 2)}°D
                     </span>
                   </div>
                 </div>
@@ -685,7 +686,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                     <Thermometer className="size-3.5 text-primary" /> Su Sıcaklığı
                   </span>
                   <div className="font-mono font-bold text-base text-primary">
-                    {selectedPoint.sst ? `${selectedPoint.sst.toFixed(1)} °C` : "—"}
+                    {selectedPoint.sst ? `${tr(selectedPoint.sst, 1)} °C` : "—"}
                   </div>
                 </div>
 
@@ -695,7 +696,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   </span>
                   <div className="font-mono font-bold text-base text-foreground flex items-center gap-1.5">
                     <span>
-                      {selectedPoint.waveHeight ? `${selectedPoint.waveHeight.toFixed(2)} m` : "—"}
+                      {selectedPoint.waveHeight ? `${tr(selectedPoint.waveHeight, 2)} m` : "—"}
                     </span>
                     {selectedPoint.waveDirection && (
                       <DirectionArrow
@@ -713,7 +714,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   <div className="font-mono font-bold text-xs text-foreground flex items-center gap-1">
                     <span>
                       {selectedPoint.windSpeed10m
-                        ? `${selectedPoint.windSpeed10m.toFixed(1)} m/s`
+                        ? `${tr(selectedPoint.windSpeed10m, 1)} m/s`
                         : "—"}
                     </span>
                     {selectedPoint.windDirection10m && (
@@ -725,7 +726,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   </div>
                   {selectedPoint.windSpeedKmh && (
                     <span className="text-[10px] text-muted-foreground block">
-                      ~{selectedPoint.windSpeedKmh.toFixed(0)} km/h •{" "}
+                      ~{tr(selectedPoint.windSpeedKmh, 0)} km/h •{" "}
                       {getDirectionLabel(selectedPoint.windDirection10m)}
                     </span>
                   )}
@@ -747,7 +748,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                   </div>
                   {selectedPoint.gridDistanceKm && (
                     <span className="text-[10px] text-muted-foreground block">
-                      En yakın model verisi &le; {selectedPoint.gridDistanceKm.toFixed(1)} km
+                      En yakın model verisi &le; {tr(selectedPoint.gridDistanceKm, 1)} km
                     </span>
                   )}
                 </div>
@@ -1026,7 +1027,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                             className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-mono font-bold border ${tempBadgeClass}`}
                           >
                             <Thermometer className="size-3" />
-                            {sst.toFixed(1)} °C
+                            {tr(sst, 1)} °C
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground font-mono">—</span>
@@ -1036,7 +1037,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         {point.waveHeight !== undefined && point.waveHeight !== null ? (
                           <div className="inline-flex items-center gap-1.5 justify-end">
                             <Waves className="size-3.5 text-muted-foreground" />
-                            <span>{point.waveHeight.toFixed(2)} m</span>
+                            <span>{tr(point.waveHeight, 2)} m</span>
                             {point.waveDirection !== undefined && point.waveDirection !== null && (
                               <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                                 <DirectionArrow
@@ -1055,7 +1056,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                         {point.windSpeed10m !== undefined && point.windSpeed10m !== null ? (
                           <div className="inline-flex items-center gap-1.5 justify-end">
                             <Wind className="size-3.5 text-muted-foreground" />
-                            <span>{point.windSpeed10m.toFixed(1)} m/s</span>
+                            <span>{tr(point.windSpeed10m, 1)} m/s</span>
                             {point.windDirection10m !== undefined &&
                               point.windDirection10m !== null && (
                                 <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -1078,7 +1079,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                           <span>{point.validAt ?? "—"}</span>
                           {point.gridDistanceKm !== undefined && point.gridDistanceKm !== null && (
                             <span className="block text-[10px] text-muted-foreground/80">
-                              &le; {point.gridDistanceKm.toFixed(1)} km
+                              &le; {tr(point.gridDistanceKm, 1)} km
                             </span>
                           )}
                         </div>
