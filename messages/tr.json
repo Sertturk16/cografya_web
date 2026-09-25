@@ -1213,7 +1213,13 @@
       "groupSecondary": "Eğitim bilgileri",
       "groupHigherEd": "Eğitim bilgileri",
       "groupSecondaryAnnounce": "Eğitim bilgileri eklendi: sınıf ve alan.",
-      "groupHigherEdAnnounce": "Eğitim bilgileri eklendi: üniversite ve bölüm."
+      "groupHigherEdAnnounce": "Eğitim bilgileri eklendi: üniversite ve bölüm.",
+      "accountRole": "Hesap türü",
+      "childGrade": "Çocuğun kaçıncı sınıfta?",
+      "childStream": "Hangi alana hazırlanıyor?",
+      "groupChild": "Çocuğunun bilgileri",
+      "teacherSubject": "Branşın",
+      "institutionType": "Çalıştığın kurum"
     },
     "hints": {
       "newPassword": "En az 6 karakter; bir küçük harf, bir büyük harf ve bir rakam."

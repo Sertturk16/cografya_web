@@ -1196,7 +1196,13 @@
       "groupSecondary": "Education details",
       "groupHigherEd": "Education details",
       "groupSecondaryAnnounce": "Education details added: grade and stream.",
-      "groupHigherEdAnnounce": "Education details added: university and department."
+      "groupHigherEdAnnounce": "Education details added: university and department.",
+      "accountRole": "Account type",
+      "childGrade": "Your child's grade",
+      "childStream": "Their track",
+      "groupChild": "Your child's details",
+      "teacherSubject": "Your subject",
+      "institutionType": "Where you teach"
     },
     "hints": {
       "newPassword": "At least 6 characters, with one lowercase letter, one uppercase letter and one digit."
