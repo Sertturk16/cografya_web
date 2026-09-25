@@ -130,11 +130,18 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
 
     it("sends account management to /hesabim/ayarlar, and nowhere else", () => {
       expect(hubSource).toContain('href="/hesabim/ayarlar"');
-      // The completion prompt deep-links into the education section of the same page.
+      // The completion prompt deep-links into the account-type section of the same page.
       expect(hubSource).toContain('pathname: "/hesabim/ayarlar"');
       // The three doors are one. `/profil` is a redirect now; a link to it here would send a
       // member through an extra hop for no reason.
       expect(hubSource).not.toContain('href="/profil"');
+    });
+
+    it("labels every role and prompts any incomplete profile toward the account-type section (T-103)", () => {
+      expect(hubSource).toContain("ACCOUNT_ROLE_LABELS[session.accountRole]");
+      expect(hubSource).toContain("profile && !profile.isComplete");
+      expect(hubSource).toContain('hash: "hesap-turu"');
+      expect(hubSource).not.toContain('session.accountRole === "STUDENT" && !profile?.isComplete');
     });
   });
 });
