@@ -5,7 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import type { Profile } from "@/lib/api/types";
 import { V2SettingsAccountCard } from "./v2-settings-account-card";
 import { V2SettingsDeleteCard } from "./v2-settings-delete-card";
-import { V2SettingsEducationCard } from "./v2-settings-education-card";
+import { V2SettingsProfileCard } from "./v2-settings-profile-card";
 import { V2SettingsPersonalCard, type ProvinceOption } from "./v2-settings-personal-card";
 import { V2SettingsPasswordCard } from "./v2-settings-password-card";
 
@@ -29,18 +29,14 @@ export interface V2AccountSettingsProps {
  * send three requests and have to explain a partial failure, or discard a member's edits in
  * one block because another block was invalid.
  *
- * The education section is absent for a `TEACHER`. That is the whole fix for the "öğretmen
- * için düzenlenecek alan yok" dead end: a teacher gets three full sections instead of one
- * page explaining that it has nothing for them.
+ * Every member gets the account-type section (T-103): it is where the role itself is changed.
  */
 export function V2AccountSettings({ locale, profile, provinces }: V2AccountSettingsProps) {
   const t = useTranslations("Settings");
 
-  const showsEducation = profile.accountRole === "STUDENT" || profile.accountRole === "PARENT";
-
   const sections = [
     { id: "profil-bilgileri", label: t("personal.title") },
-    ...(showsEducation ? [{ id: "egitim-bilgileri", label: t("education.title") }] : []),
+    { id: "hesap-turu", label: t("profile.title") },
     { id: "guvenlik", label: t("password.title") },
     { id: "hesap", label: t("account.title") },
     { id: "hesabi-sil", label: t("delete.title") },
@@ -74,7 +70,7 @@ export function V2AccountSettings({ locale, profile, provinces }: V2AccountSetti
 
         <div className="space-y-6 min-w-0">
           <V2SettingsPersonalCard profile={profile} provinces={provinces} />
-          {showsEducation && <V2SettingsEducationCard locale={locale} profile={profile} />}
+          <V2SettingsProfileCard locale={locale} profile={profile} />
           <V2SettingsPasswordCard />
           <V2SettingsAccountCard locale={locale} profile={profile} />
           {/* T-101: last, below everything a member might have come to change. */}

@@ -13,7 +13,7 @@ export interface V2SettingsAccountCardProps {
 }
 
 /**
- * "Hesap" — the three facts a member can read about their account and change nowhere (T-061).
+ * "Hesap" — the two facts a member can read about their account and change nowhere (T-061).
  *
  * The e-mail address is here rather than in the editable card above it because changing it
  * needs a proof-of-mailbox round trip to the NEW address, which is its own flow; the API's
@@ -23,13 +23,6 @@ export interface V2SettingsAccountCardProps {
  */
 export function V2SettingsAccountCard({ locale, profile }: V2SettingsAccountCardProps) {
   const t = useTranslations("Settings");
-
-  const roleLabel =
-    profile.accountRole === "TEACHER"
-      ? t("account.roleTeacher")
-      : profile.accountRole === "PARENT"
-        ? t("account.roleParent")
-        : t("account.roleStudent");
 
   // ONE zone, not the runtime's (T-064). This line formatted `createdAt` with no `timeZone`, so
   // the UTC container and the reader's Europe/Istanbul browser produced different calendar days
@@ -44,9 +37,8 @@ export function V2SettingsAccountCard({ locale, profile }: V2SettingsAccountCard
       title={t("account.title")}
       description={t("account.description")}
     >
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <SettingsReadOnlyField label={t("account.email")} value={profile.email} />
-        <SettingsReadOnlyField label={t("account.role")} value={roleLabel} />
         <SettingsReadOnlyField label={t("account.memberSince")} value={memberSince} />
       </div>
       <p className="text-[11px] text-muted-foreground leading-relaxed">

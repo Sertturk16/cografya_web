@@ -1337,11 +1337,12 @@
       "consentLabel": "Kampanya, yenilik ve duyurulardan haberdar olmak için bana e-posta ve SMS ile ticari elektronik ileti gönderilmesine onay veriyorum.",
       "consentHint": "İsteğe bağlı. İşareti kaldırıp kaydedersen onayın geri alınır."
     },
-    "education": {
-      "title": "Eğitim Bilgileri",
-      "description": "Hangi düzeyde okuduğun ve buna bağlı bilgilerin.",
+    "profile": {
+      "title": "Hesap Türü",
+      "description": "Kim olduğun ve buna bağlı bilgilerin. Hesap türünü buradan değiştirebilirsin.",
       "complete": "Tamam",
-      "incomplete": "Eksik alanlar var"
+      "incomplete": "Eksik alanlar var",
+      "roleChangeNotice": "Hesap türünü değiştirip kaydedersen önceki türe ait bilgiler silinir."
     },
     "password": {
       "title": "Güvenlik",
@@ -1366,11 +1367,7 @@
       "title": "Hesap",
       "description": "Değiştirilemeyen hesap bilgilerin.",
       "email": "E-posta",
-      "role": "Hesap türü",
       "memberSince": "Üyelik başlangıcı",
-      "roleStudent": "Öğrenci",
-      "roleTeacher": "Öğretmen",
-      "roleParent": "Veli",
       "emailNotice": "E-posta adresini şimdilik buradan değiştiremezsin; değişmesi gerekiyorsa bize ulaş."
     },
     "delete": {

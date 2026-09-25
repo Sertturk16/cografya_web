@@ -1320,11 +1320,12 @@
       "consentLabel": "I agree to receive commercial electronic messages by e-mail and SMS about campaigns, new features and announcements.",
       "consentHint": "Optional. Untick and save to withdraw your consent."
     },
-    "education": {
-      "title": "Education details",
-      "description": "The level you study at and the details that go with it.",
+    "profile": {
+      "title": "Account type",
+      "description": "Who you are and the details that go with it. You can change your account type here.",
       "complete": "Complete",
-      "incomplete": "Some fields are missing"
+      "incomplete": "Some fields are missing",
+      "roleChangeNotice": "If you change your account type and save, the previous type's details are removed."
     },
     "password": {
       "title": "Security",
@@ -1349,11 +1350,7 @@
       "title": "Account",
       "description": "Account details that cannot be changed here.",
       "email": "E-mail",
-      "role": "Account type",
       "memberSince": "Member since",
-      "roleStudent": "Student",
-      "roleTeacher": "Teacher",
-      "roleParent": "Parent",
       "emailNotice": "You cannot change your e-mail address here yet; get in touch with us if it needs to change."
     },
     "delete": {
