@@ -1,18 +1,16 @@
 # cografya_web
 
-Next.js 16 App Router, React 19, TypeScript `strict` + `noUncheckedIndexedAccess`, Tailwind v4
-(CSS-first, no config file), shadcn `base-nova` on **Base UI** (no Radix anywhere), next-intl 4,
-vitest (node env, no jsdom). Node 24, pnpm. Parent workspace rules: `../CLAUDE.md`.
+Stack traps: shadcn `base-nova` on **Base UI** (no Radix anywhere), Tailwind v4 CSS-first (no
+config file), vitest in node env (no jsdom).
 
 Read on demand, not every session:
 
-- `docs/architecture.md` — routing, V1/V2 split, API access path, SEO helpers, generated
+- `docs/architecture.md` — routing, route groups, API access path, SEO helpers, generated
   artifacts, known gaps. Read before adding a route, a fetch, or touching i18n/SEO.
 - `docs/design.md` — Terra tokens, typography, dark mode state, a11y floor, data-viz colour
   doctrine, component patterns. Read before any visible UI change.
 - `docs/conventions.md` — style, tests, commits, generated-file hygiene.
 - `docs/copy.md` — rules for any user-facing Turkish copy. Read before writing or changing it.
-- `README.md` — human onboarding (setup, scripts, layout).
 
 ## Commands
 
@@ -26,15 +24,11 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 
 ## Hard rules
 
-- **There is one tree.** T-032 deleted V1: the `/v2` prefix is gone, `i18n/routing.ts` has 39
-  entries and none of them says `v2`. Reading surfaces live in `app/[locale]/(site)/**` and share
-  that group's layout (header, footer, skip link, ONE `<main>`); the three fullscreen game screens
-  opt out by living in `(play)`. A page gets the chrome by its directory, never by importing it.
-- New UI is Tailwind + `components/ui/*`. **No `*.module.css` survives** — T-033 retired the last
-  eight, whose raw Terra tokens (`--color-slate`, `--color-ink`) were frozen at light values and
-  never redefined under `.dark`. `components/css-module-dark-safety.test.ts` walks `app/` and
-  `components/` and reds, naming the file, if one comes back. Do not add one: colour a component
-  through a bridge token, which is what `components/ui/token-binding.test.ts` enforces.
+- Reading pages live in `app/[locale]/(site)/**` and get header, footer, skip link and the ONE
+  `<main>` from that group's layout; the fullscreen game screens live in `(play)`. A page gets
+  the chrome by its directory, never by importing it.
+- New UI is Tailwind + `components/ui/*`. No `*.module.css` (raw Terra tokens in them never
+  switch to dark); colour a component through a bridge token. Two tests enforce both.
 - `Button` has no `asChild`. A link that looks like a button is
   `<Link className={cn(buttonVariants({ variant, size }))}>`. Do not add `asChild` or a Slot.
 - Href typing: never `as any`. When next-intl's typed `Link` rejects a computed href, use
@@ -48,9 +42,8 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   no `fetch` to the API from client code.
 - Types from the contract: alias `components["schemas"][...]` once in `lib/api/types.ts`,
   never reference `schema.ts` shapes at call sites.
-- Six committed generated files, never hand-edited: `lib/api/schema.ts` and
-  `lib/map/{tr-provinces,world-countries,tr-inland-water,tr-context,tr-context-tall}.generated.ts`.
-  Each has a CI drift gate. Each must be listed in BOTH `.prettierignore` and the ESLint
+- Generated files (`lib/api/schema.ts`, `lib/map/*.generated.ts`) are never hand-edited; each
+  has a `*:check` CI drift gate. A new one goes in BOTH `.prettierignore` and ESLint
   `globalIgnores`.
 - Colours: `var(--token)` from `app/globals.css` or the Tailwind theme keys (`bg-primary`,
   `text-muted-foreground`). No brand hex in components. Brand tokens never encode data on
@@ -62,15 +55,17 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   before adding a directory there (`docs/public-kitaplar.md`).
 - `import "server-only"` guards are load-bearing; never import `lib/env.server.ts` or
   `lib/api/client.ts` from a client component.
-- Tests are co-located `*.test.ts(x)` under `lib/`, `components/`, `tools/`. Vitest does
-  not run anything under `app/`.
+- Vitest does not run anything under `app/`; put tests next to code in `lib/`, `components/`,
+  `tools/`.
 - Visible UI change: run `pnpm sweep:overflow` (or `-- --filter=<route>`) against a running
   server before calling it done, and check 320, 360, 390 px and desktop, light and dark
-  (Playwright MCP). Take a screenshot when the user asked for a visual fix.
+  (Playwright MCP). Take a screenshot when the user asked for a visual fix; save screenshots
+  under `../.playwright-mcp/` (the scratchpad is outside Playwright's allowed roots).
 - `/impeccable audit|critique|polish` and the `web-design-guidelines` skill are review
-  aids; `docs/design.md` overrides them. Never `/impeccable init`.
-- Never `git worktree add` or symlink `node_modules` here (a worktree once destroyed the
-  dependency tree). Establish a baseline with `git show <sha>:<path>` or `git stash`.
+  aids; `docs/design.md` overrides them. Never `/impeccable init`, never let it create a
+  DESIGN.md/PRODUCT.md or re-theme Terra.
+- No worktrees here (root `CLAUDE.md`). Establish a baseline with `git show <sha>:<path>` or
+  `git stash`.
 
 ## Done means
 
