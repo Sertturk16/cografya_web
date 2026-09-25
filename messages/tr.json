@@ -183,7 +183,7 @@
     "metaDescription": "Coğrafya Gurmesi'nin hangi kişisel verileri, hangi amaçla ve ne kadar süre işlediği; verilerin aktarıldığı sağlayıcılar ve KVKK kapsamındaki hakların.",
     "heading": "Gizlilik ve KVKK Aydınlatma Metni",
     "lede": "Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (KVKK) 10. maddesi uyarınca, Coğrafya Gurmesi'ni kullanırken kişisel verilerinin nasıl işlendiğini anlatır.",
-    "updated": "Son güncelleme: 24 Eylül 2026",
+    "updated": "Son güncelleme: 26 Eylül 2026",
     "authoritative": "Bu metnin Türkçe sürümü bağlayıcıdır.",
     "controllerHeading": "1. Veri Sorumlusu",
     "controllerBody": "Kişisel verilerin, veri sorumlusu sıfatıyla aşağıda bilgileri yer alan Coğrafya Gurmesi tarafından işlenir. Bu bilgiler aynı zamanda 5651 sayılı Kanun kapsamındaki içerik sağlayıcı bilgileridir.",
@@ -199,7 +199,8 @@
       "Kimlik: ad ve soyad.",
       "İletişim: e-posta adresi ve cep telefonu numarası.",
       "Konum: kayıtta seçtiğin il ve ilçe. Cihazının konumu alınmaz.",
-      "Eğitim bilgileri: hesap türü (öğrenci, öğretmen, veli), eğitim düzeyi, sınıf, alan, okul, üniversite ve bölüm.",
+      "Profil bilgileri: hesap türü (öğrenci, öğretmen, veli ya da coğrafya meraklısı). Öğrenciler için eğitim düzeyi, sınıf, alan, okul, üniversite ve bölüm; veliler için çocuğunun sınıfı ve hazırlandığı alan (çocuğun adı, okulu ya da doğum tarihi sorulmaz); öğretmenler için branş ve çalışılan kurumun türü.",
+      "Bizi nereden duyduğun: kayıtta isteğe bağlı olarak seçtiğin kaynak (örneğin öğretmen, arkadaş, YouTube).",
       "Kullanım bilgileri: oyun turların ve puanların, favorilerin, video izleme ilerlemen ve kaydettiğin ölçümler.",
       "Güvenlik ve işlem kayıtları: şifrenin geri döndürülemez özeti (şifrenin kendisi saklanmaz), oturum kayıtları, IP adresi ve siteye erişim kayıtları.",
       "Pazarlama tercihi: ticari elektronik ileti onayı verip vermediğin ve onay tarihi."
@@ -211,6 +212,7 @@
       "Üyeliğinin oluşturulması, e-posta adresinin doğrulanması ve hesabına girişin sağlanması.",
       "Oyunların, puanların, liderlik tablosunun, favorilerin, video ilerlemesinin ve ölçüm araçlarının sunulması.",
       "Eğitim bilgilerine göre sana uygun içeriğin gösterilmesi.",
+      "Sitenin kimlere ulaştığını ve nereden duyulduğunu anlamak için toplu kitle istatistikleri çıkarılması (hesap türü, sınıf, alan, branş, il ve kaynak dağılımı gibi). Bu istatistikler kişiyi tanımlamaz.",
       "Hesabının ve sitenin güvenliğinin sağlanması, kötüye kullanımın ve aşırı isteklerin önlenmesi.",
       "Soru, talep ve başvurularının yanıtlanması.",
       "Kanunlardan doğan yükümlülüklerin yerine getirilmesi (örneğin 5651 sayılı Kanun kapsamında erişim kayıtlarının saklanması ve yetkili mercilerin taleplerinin karşılanması).",
@@ -220,7 +222,7 @@
     "legalItems": [
       "KVKK md. 5/2-c, bir sözleşmenin kurulması veya ifasıyla doğrudan ilgili olması: üyelik, hesap ve sitenin hizmetleri.",
       "KVKK md. 5/2-ç, veri sorumlusunun hukuki yükümlülüğünü yerine getirmesi: erişim kayıtlarının saklanması ve yetkili mercilere bilgi verilmesi.",
-      "KVKK md. 5/2-f, temel hak ve özgürlüklerine zarar vermemek kaydıyla veri sorumlusunun meşru menfaati: güvenlik, kötüye kullanımın ve aşırı isteklerin önlenmesi.",
+      "KVKK md. 5/2-f, temel hak ve özgürlüklerine zarar vermemek kaydıyla veri sorumlusunun meşru menfaati: güvenlik, kötüye kullanımın ve aşırı isteklerin önlenmesi ve sitenin kitlesinin toplu istatistiklerle anlaşılması.",
       "KVKK md. 5/1, açık rıza: ticari elektronik ileti gönderimi. Bu onay isteğe bağlıdır; vermemen üyeliğini etkilemez."
     ],
     "recipientsHeading": "6. Verilerin Aktarıldığı Taraflar ve Yurt Dışına Aktarım",
