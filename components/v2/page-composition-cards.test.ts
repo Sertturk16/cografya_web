@@ -572,7 +572,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // the mailto card (the same spelling the terms page uses), `LegalControllerIdentity` is one
 // `rounded-2xl border bg-card` definition list, and `/hakkimizda`'s own mailto card left because
 // that block now renders the address.
-export const HAND_DRAWN_CARDS = 188;
+// 188 → **189** in T-103: the register wizard's step 1 gains a third `<select>`, "Bizi nereden
+// duydun?", styled identically to the İl/İlçe pair it sits beside.
+export const HAND_DRAWN_CARDS = 189;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -1458,6 +1460,7 @@ const CARD_SHAPED_PRIMITIVES: ReadonlyArray<readonly [string, string]> = [
   ["components/v2/v2-header.tsx", "SheetTrigger"],
   ["components/v2/v2-hero.tsx", "Button"],
   ["components/v2/v2-marine-map-explorer.tsx", "Input"],
+  ["components/v2/v2-register-card.tsx", "select"],
   ["components/v2/v2-register-card.tsx", "select"],
   ["components/v2/v2-register-card.tsx", "select"],
 ];

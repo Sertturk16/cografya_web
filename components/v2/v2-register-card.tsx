@@ -18,16 +18,20 @@ import {
   type RegisterFormState,
   type UserType,
 } from "@/lib/auth/form-rules";
-import { USER_TYPE_LABELS } from "@/lib/auth/profile-labels";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import type { AccountRole, ReferralSource } from "@/lib/api/types";
+import { REFERRAL_SOURCE_LABELS } from "@/lib/auth/profile-labels";
+import { AccountRolePicker } from "./account-role-picker";
 import {
-  EducationFieldset,
-  EMPTY_EDUCATION_SELECTION,
-  missingEducationFields,
-  type EducationFieldKey,
-  type EducationSelection,
-} from "./education-fieldset";
+  DeclaredProfileFields,
+  declaredFieldElementId,
+  emptyDeclaredProfile,
+  missingDeclaredFields,
+  roleHasDetails,
+  type DeclaredFieldKey,
+  type DeclaredProfileSelection,
+} from "./declared-profile-fields";
 import { Label } from "@/components/ui/label";
 import {
   User,
@@ -39,8 +43,6 @@ import {
   AlertCircle,
   CheckCircle2,
   MapPin,
-  GraduationCap,
-  Briefcase,
   Check,
   Phone,
 } from "lucide-react";
@@ -52,23 +54,6 @@ export interface V2RegisterCardProps {
   onAuthenticated?: () => void;
   onSwitchToLogin?: () => void;
 }
-
-const USER_ROLES: Array<{
-  id: UserType;
-  label: string;
-  icon: React.ReactNode;
-}> = [
-  {
-    id: "student",
-    label: USER_TYPE_LABELS.student.tr,
-    icon: <GraduationCap className="size-3.5" />,
-  },
-  {
-    id: "teacher",
-    label: USER_TYPE_LABELS.teacher.tr,
-    icon: <Briefcase className="size-3.5" />,
-  },
-];
 
 type FieldKey =
   | "firstName"
@@ -104,35 +89,77 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 /**
- * `identity` collects who the member is; `education` (students only) collects what they
- * study; `verify` is the e-mail code step that already existed.
+ * `identity` collects who the member is; `details` is the selected role's second step; the
+ * enthusiast has none. `verify` is the e-mail code step that already existed.
  */
-type RegisterStep = "identity" | "education" | "verify";
+type RegisterStep = "identity" | "details" | "verify";
 
-/**
- * The account role and the declared level together pick the `UserType`
- * `buildRegisterPayload` branches on. It already carried `secondary` /
- * `undergraduate` / `graduate` for exactly this and nothing had ever sent them — the form
- * only ever passed `student` or `teacher`, which is why every registration landed with an
- * empty education profile and a "profili tamamla" screen waiting for it.
- *
- * `student` (the bare, education-less branch) survives as the fallback for a level that is
- * somehow unset. It cannot be reached from the wizard, whose education step refuses to
- * advance without one, but the matrix has a row for it and this function stays total.
- */
-function userTypeFor(role: UserType, education: EducationSelection): UserType {
-  if (role === "teacher") return "teacher";
-  switch (education.educationLevel) {
-    case "SECONDARY":
-      return "secondary";
-    case "UNDERGRADUATE":
-      return "undergraduate";
-    case "GRADUATE":
-      return "graduate";
-    default:
-      return "student";
+/** The payload branch for the selected role; a student's also depends on their level. */
+function userTypeFor(declared: DeclaredProfileSelection): UserType {
+  switch (declared.accountRole) {
+    case "TEACHER":
+      return "teacher";
+    case "PARENT":
+      return "parent";
+    case "ENTHUSIAST":
+      return "enthusiast";
+    case "STUDENT":
+      switch (declared.education.educationLevel) {
+        case "SECONDARY":
+          return "secondary";
+        case "UNDERGRADUATE":
+          return "undergraduate";
+        case "GRADUATE":
+          return "graduate";
+        default:
+          return "student";
+      }
   }
 }
+
+/** Only the selected role's answers go into the form state (spec Review Focus 3). */
+function roleFieldsFor(
+  declared: DeclaredProfileSelection,
+): Pick<
+  RegisterFormState,
+  | "gradeLevel"
+  | "studyStream"
+  | "schoolName"
+  | "universityName"
+  | "departmentName"
+  | "teacherSubject"
+  | "institutionType"
+> {
+  switch (declared.accountRole) {
+    case "STUDENT":
+      return {
+        gradeLevel: declared.education.gradeLevel,
+        studyStream: declared.education.studyStream,
+        schoolName: declared.education.schoolName,
+        universityName: declared.education.universityName,
+        departmentName: declared.education.departmentName,
+      };
+    case "PARENT":
+      return {
+        gradeLevel: declared.childEducation.gradeLevel,
+        studyStream: declared.childEducation.studyStream,
+      };
+    case "TEACHER":
+      return {
+        teacherSubject: declared.teacher.teacherSubject,
+        institutionType: declared.teacher.institutionType,
+      };
+    case "ENTHUSIAST":
+      return {};
+  }
+}
+
+/** Step 2's subtitle, per role. The enthusiast never reaches step 2. */
+const DETAILS_SUBTITLE: Record<Exclude<AccountRole, "ENTHUSIAST">, string> = {
+  STUDENT: "Son bir adım: ne okuduğunu söyle, içerikleri ona göre gösterelim.",
+  PARENT: "Son bir adım: çocuğunun sınıfını ve hazırlandığı alanı söyle.",
+  TEACHER: "Son bir adım: branşını ve çalıştığın kurumu söyle.",
+};
 
 export function V2RegisterCard({
   locale = "tr",
@@ -152,17 +179,19 @@ export function V2RegisterCard({
    * them the flow is unchanged and the counter reads 1/1.
    */
   const [step, setStep] = React.useState<RegisterStep>("identity");
-  const [education, setEducation] = React.useState<EducationSelection>(EMPTY_EDUCATION_SELECTION);
-  const [educationErrors, setEducationErrors] = React.useState<
-    Partial<Record<EducationFieldKey, string>>
+  const [declared, setDeclared] = React.useState<DeclaredProfileSelection>(() =>
+    emptyDeclaredProfile("STUDENT"),
+  );
+  const [detailsErrors, setDetailsErrors] = React.useState<
+    Partial<Record<DeclaredFieldKey, string>>
   >({});
+  const [referralSource, setReferralSource] = React.useState<ReferralSource | "">("");
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
-  const [selectedRole, setSelectedRole] = React.useState<UserType>("student");
   const [selectedPlate, setSelectedPlate] = React.useState("");
   const [districts, setDistricts] = React.useState<Array<{ id: string; nameTr: string }>>([]);
   const [selectedDistrictId, setSelectedDistrictId] = React.useState("");
@@ -195,8 +224,8 @@ export function V2RegisterCard({
    * thing a navigation costs them is a six-digit code they can have resent. Warning there would
    * be warning about nothing, which is how a warning stops being read.
    *
-   * `selectedRole` is excluded on purpose: it has a default and is not something the member
-   * typed, so an untouched form would otherwise read as dirty the moment it mounted.
+   * The role itself is excluded: it has a default and an untouched form must not read as
+   * dirty.
    */
   useUnsavedChanges(
     step !== "verify" &&
@@ -207,7 +236,8 @@ export function V2RegisterCard({
         password !== "" ||
         selectedPlate !== "" ||
         selectedDistrictId !== "" ||
-        JSON.stringify(education) !== JSON.stringify(EMPTY_EDUCATION_SELECTION)),
+        JSON.stringify(declared) !== JSON.stringify(emptyDeclaredProfile(declared.accountRole)) ||
+        referralSource !== ""),
   );
 
   // Resend code countdown timer (SEC126-I1)
@@ -313,10 +343,9 @@ export function V2RegisterCard({
       return;
     }
 
-    // A student's account is not created yet — the education step comes first, and the API
-    // call happens once from there with the whole declaration in one body.
-    if (selectedRole !== "teacher") {
-      setStep("education");
+    // Every role but the enthusiast declares something before the account is created.
+    if (roleHasDetails(declared.accountRole)) {
+      setStep("details");
       return;
     }
 
@@ -344,20 +373,13 @@ export function V2RegisterCard({
         email: identity.cleanEmail,
         password,
         passwordConfirm: password,
-        userType: userTypeFor(selectedRole, education),
+        userType: userTypeFor(declared),
         provincePlateCode: selectedPlate,
         districtId: selectedDistrictId,
         termsAccepted,
         marketingConsent,
-        ...(selectedRole === "teacher"
-          ? {}
-          : {
-              gradeLevel: education.gradeLevel,
-              studyStream: education.studyStream,
-              schoolName: education.schoolName,
-              universityName: education.universityName,
-              departmentName: education.departmentName,
-            }),
+        referralSource,
+        ...roleFieldsFor(declared),
       };
 
       const payload = buildRegisterPayload(formState, locale);
@@ -389,31 +411,27 @@ export function V2RegisterCard({
   };
 
   /**
-   * Step 2 (students only). It re-reads the step-1 values from state rather than carrying
-   * them forward in a ref: the inputs are unmounted while this step is open, so state is the
-   * only copy, and re-deriving `cleanPhone` here keeps one canonicaliser on the path.
+   * Step 2 (every role but the enthusiast). It re-reads the step-1 values from state rather
+   * than carrying them forward in a ref: the inputs are unmounted while this step is open, so
+   * state is the only copy, and re-deriving `cleanPhone` here keeps one canonicaliser on the
+   * path.
    */
-  const handleEducationSubmit = async (e: React.FormEvent) => {
+  const handleDetailsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError(null);
 
-    const missing = missingEducationFields(education);
+    const missing = missingDeclaredFields(declared);
     if (missing.length > 0) {
-      const next: Partial<Record<EducationFieldKey, string>> = {};
+      const next: Partial<Record<DeclaredFieldKey, string>> = {};
       for (const key of missing) next[key] = "Bu alan zorunlu.";
-      setEducationErrors(next);
+      setDetailsErrors(next);
       const first = missing[0];
-      if (first) {
-        document
-          .getElementById(
-            `v2-register-education-${first.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`,
-          )
-          ?.focus();
-      }
+      if (first)
+        document.getElementById(declaredFieldElementId("v2-register-details", first))?.focus();
       return;
     }
 
-    setEducationErrors({});
+    setDetailsErrors({});
     await sendRegistration({
       cleanFirst: firstName.trim(),
       cleanLast: lastName.trim(),
@@ -521,8 +539,8 @@ export function V2RegisterCard({
           <p className="text-xs sm:text-sm text-muted-foreground">
             {step === "identity"
               ? "Oyun puanlarını kaydet, kitapların video çözümlerini izle, ölçümlerini ve favorilerini sakla."
-              : step === "education"
-                ? "Son bir adım: ne okuduğunu söyle, içerikleri ona göre gösterelim."
+              : step === "details"
+                ? DETAILS_SUBTITLE[declared.accountRole as Exclude<AccountRole, "ENTHUSIAST">]
                 : `${email} adresine gönderdiğimiz 6 haneli kodu gir.`}
           </p>
         </div>
@@ -646,51 +664,13 @@ export function V2RegisterCard({
             <FieldError id="v2-error-email" message={fieldErrors.email} />
           </div>
 
-          {/* User Role Selector */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-bold text-foreground">Kullanıcı tipi</Label>
-            <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Kullanıcı tipi">
-              {USER_ROLES.map((role, idx) => (
-                <button
-                  key={role.id}
-                  type="button"
-                  role="radio"
-                  tabIndex={selectedRole === role.id ? 0 : -1}
-                  aria-checked={selectedRole === role.id}
-                  onClick={() => setSelectedRole(role.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-                      e.preventDefault();
-                      const next = USER_ROLES[(idx + 1) % USER_ROLES.length];
-                      if (next) setSelectedRole(next.id);
-                      (
-                        e.currentTarget.parentElement?.children[
-                          (idx + 1) % USER_ROLES.length
-                        ] as HTMLElement
-                      )?.focus();
-                    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-                      e.preventDefault();
-                      const prev = USER_ROLES[(idx - 1 + USER_ROLES.length) % USER_ROLES.length];
-                      if (prev) setSelectedRole(prev.id);
-                      (
-                        e.currentTarget.parentElement?.children[
-                          (idx - 1 + USER_ROLES.length) % USER_ROLES.length
-                        ] as HTMLElement
-                      )?.focus();
-                    }
-                  }}
-                  className={`p-2 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all ${
-                    selectedRole === role.id
-                      ? "bg-primary/10 border-primary text-primary font-bold shadow-2xs"
-                      : "bg-muted/40 border-border text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {role.icon}
-                  <span className="truncate text-[11px]">{role.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          <AccountRolePicker
+            locale={locale}
+            idPrefix="v2-register-role"
+            value={declared.accountRole}
+            onChange={(accountRole) => setDeclared({ ...declared, accountRole })}
+            disabled={loading}
+          />
 
           {/* İl ve İlçe Seçimi */}
           <div className="grid grid-cols-2 gap-2">
@@ -810,6 +790,30 @@ export function V2RegisterCard({
             </div>
           </div>
 
+          {/* T-103: optional, so a "Seç..." left untouched must not block registration. */}
+          <div className="space-y-1.5">
+            <Label htmlFor="v2-register-referral" className="text-xs font-bold text-foreground">
+              Bizi nereden duydun?{" "}
+              <span className="font-normal text-muted-foreground">(isteğe bağlı)</span>
+            </Label>
+            <div className="relative">
+              <select
+                id="v2-register-referral"
+                value={referralSource}
+                onChange={(e) => setReferralSource(e.target.value as ReferralSource | "")}
+                disabled={loading}
+                className="w-full h-10 rounded-xl bg-card border border-border px-3 text-xs text-foreground appearance-none hover:border-primary/50 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/20 transition-all duration-150"
+              >
+                <option value="">Seç...</option>
+                {(Object.keys(REFERRAL_SOURCE_LABELS) as ReferralSource[]).map((key) => (
+                  <option key={key} value={key}>
+                    {REFERRAL_SOURCE_LABELS[key].tr}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           {/* T-101: consent, unbundled. The terms box is required; the privacy notice is a
               plain line of INFORMATION (KVKK asks us to inform, not to collect a second
               "accept"); the marketing box is separate, optional and unticked, so saying no
@@ -875,8 +879,9 @@ export function V2RegisterCard({
             </p>
           </div>
 
-          {/* A student has one more step to go, so this button must not promise the account
-              is being created. A teacher's flow is unchanged and the button still says so. */}
+          {/* A role with a details step has one more step to go, so this button must not
+              promise the account is being created. The enthusiast's flow is unchanged and
+              the button still says so. */}
           <Button
             type="submit"
             variant="primary"
@@ -885,7 +890,7 @@ export function V2RegisterCard({
             leftIcon={<UserPlus className="size-4" />}
             className="w-full h-11 rounded-xl shadow-md font-bold text-sm mt-3"
           >
-            {selectedRole === "teacher" ? "Ücretsiz Kayıt Ol" : "Devam Et"}
+            {roleHasDetails(declared.accountRole) ? "Devam Et" : "Ücretsiz Kayıt Ol"}
           </Button>
 
           {/* Switch to Login footer */}
@@ -910,12 +915,12 @@ export function V2RegisterCard({
         </form>
       )}
 
-      {/* STEP 2 (students only): what you study */}
-      {step === "education" && (
-        <form onSubmit={handleEducationSubmit} className="space-y-4" noValidate>
+      {/* STEP 2: the selected role's details */}
+      {step === "details" && (
+        <form onSubmit={handleDetailsSubmit} className="space-y-4" noValidate>
           <div role="status" aria-live="polite" className="sr-only">
-            {Object.keys(educationErrors).length > 0 &&
-              `Eğitim adımında ${Object.keys(educationErrors).length} adet düzeltilmesi gereken alan var.`}
+            {Object.keys(detailsErrors).length > 0 &&
+              `İkinci adımda ${Object.keys(detailsErrors).length} adet düzeltilmesi gereken alan var.`}
           </div>
 
           {generalError && (
@@ -929,16 +934,16 @@ export function V2RegisterCard({
             </div>
           )}
 
-          <EducationFieldset
+          <DeclaredProfileFields
             locale={locale}
-            value={education}
+            value={declared}
             onChange={(next) => {
-              setEducation(next);
-              setEducationErrors({});
+              setDeclared(next);
+              setDetailsErrors({});
               setGeneralError(null);
             }}
-            errors={educationErrors}
-            idPrefix="v2-register-education"
+            errors={detailsErrors}
+            idPrefix="v2-register-details"
             disabled={loading}
           />
 

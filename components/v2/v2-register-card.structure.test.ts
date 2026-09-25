@@ -23,10 +23,10 @@ function parse(relativePath: string): { source: string; ast: ts.SourceFile } {
 describe("V2RegisterCard structural contract", () => {
   const { source, ast } = parse("./v2-register-card.tsx");
 
-  it("imports canonical buildRegisterPayload, isPasswordPolicyCompliant, and USER_TYPE_LABELS", () => {
+  it("imports canonical buildRegisterPayload, isPasswordPolicyCompliant, and AccountRolePicker", () => {
     let hasBuildRegisterPayload = false;
     let hasIsPasswordPolicyCompliant = false;
-    let hasUserTypeLabels = false;
+    let hasAccountRolePicker = false;
 
     ts.forEachChild(ast, (node) => {
       if (ts.isImportDeclaration(node)) {
@@ -41,11 +41,11 @@ describe("V2RegisterCard structural contract", () => {
             }
           }
         }
-        if (moduleSpecifier === "@/lib/auth/profile-labels") {
+        if (moduleSpecifier === "./account-role-picker") {
           const namedBindings = node.importClause?.namedBindings;
           if (namedBindings && ts.isNamedImports(namedBindings)) {
             for (const specifier of namedBindings.elements) {
-              if (specifier.name.text === "USER_TYPE_LABELS") hasUserTypeLabels = true;
+              if (specifier.name.text === "AccountRolePicker") hasAccountRolePicker = true;
             }
           }
         }
@@ -54,17 +54,13 @@ describe("V2RegisterCard structural contract", () => {
 
     expect(hasBuildRegisterPayload).toBe(true);
     expect(hasIsPasswordPolicyCompliant).toBe(true);
-    expect(hasUserTypeLabels).toBe(true);
+    expect(hasAccountRolePicker).toBe(true);
   });
 
-  it("derives role labels from canonical USER_TYPE_LABELS (CODE125-I3, VAL126R2SEC-I3)", () => {
-    expect(source).toContain("USER_TYPE_LABELS.student.tr");
-    expect(source).toContain("USER_TYPE_LABELS.teacher.tr");
-    // DEC 2026-09-03a md.1 / VAL126R2SEC-I3: V2 registration collects accountRole only; the three
-    // education-level options moved to the post-registration profile step.
-    expect(source).not.toContain("USER_TYPE_LABELS.secondary.tr");
-    expect(source).not.toContain("USER_TYPE_LABELS.undergraduate.tr");
-    expect(source).not.toContain("USER_TYPE_LABELS.graduate.tr");
+  it("draws the four account types through the shared picker, not a local list (T-103)", () => {
+    expect(source).toContain("<AccountRolePicker");
+    expect(source).not.toContain("USER_TYPE_LABELS");
+    expect(source).not.toContain("USER_ROLES");
   });
 
   /**
@@ -81,8 +77,8 @@ describe("V2RegisterCard structural contract", () => {
    * no test, so what it pins now is the shape that replaced it.
    */
   it("asks a student for their education in step 2, through the shared fieldset (T-061)", () => {
-    expect(source).toContain('from "./education-fieldset"');
-    expect(source).toContain('idPrefix="v2-register-education"');
+    expect(source).toContain('from "./declared-profile-fields"');
+    expect(source).toContain('idPrefix="v2-register-details"');
     // The fields are not re-spelled here — the settings page renders the same component.
     expect(source).not.toContain("UNIVERSITY_GROUP_LABELS");
     expect(source).not.toContain("/api/reference/universities");
@@ -93,12 +89,20 @@ describe("V2RegisterCard structural contract", () => {
     expect(source).not.toContain('"KPSS"');
   });
 
-  it("never shows the education step to a teacher, and never sends them an education field", () => {
-    // The API's profile matrix rejects a TEACHER carrying any education field, so the step
-    // is skipped AND the payload branch is empty — two separate guarantees, both pinned.
-    expect(source).toContain('if (selectedRole !== "teacher") {\n      setStep("education");');
-    expect(source).toContain('...(selectedRole === "teacher"\n          ? {}');
-    expect(source).toContain('if (role === "teacher") return "teacher";');
+  it("opens the details step for every role that has one, and skips it only for the enthusiast", () => {
+    expect(source).toContain(
+      'if (roleHasDetails(declared.accountRole)) {\n      setStep("details");',
+    );
+    // Only the selected role's selection reaches the payload.
+    expect(source).toContain("userType: userTypeFor(declared)");
+    expect(source).toContain("...roleFieldsFor(declared)");
+  });
+
+  it("asks where the member heard of us, optionally, in step 1 (T-103)", () => {
+    expect(source).toContain('id="v2-register-referral"');
+    expect(source).toContain("REFERRAL_SOURCE_LABELS");
+    expect(source).toContain("isteğe bağlı");
+    expect(source).toContain("referralSource,");
   });
 
   it("registers from ONE call site, so both steps build the payload the same way", () => {
