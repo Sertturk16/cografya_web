@@ -43,6 +43,7 @@ import {
   AlertCircle,
   CheckCircle2,
   MapPin,
+  ChevronDown,
   Check,
   Phone,
 } from "lucide-react";
@@ -811,6 +812,7 @@ export function V2RegisterCard({
                   </option>
                 ))}
               </select>
+              <ChevronDown className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 

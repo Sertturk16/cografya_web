@@ -105,6 +105,12 @@ describe("V2RegisterCard structural contract", () => {
     expect(source).toContain("referralSource,");
   });
 
+  it("gives the referral select the same dropdown indicator its İl/İlçe siblings render (T-103)", () => {
+    expect(source).toContain(
+      '<ChevronDown className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />',
+    );
+  });
+
   it("registers from ONE call site, so both steps build the payload the same way", () => {
     // A second `submitAuth("register", …)` is a second chance for one path to send a shape
     // the profile matrix refuses.
