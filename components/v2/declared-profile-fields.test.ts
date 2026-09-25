@@ -7,6 +7,7 @@ import {
   missingDeclaredFields,
   roleHasDetails,
 } from "./declared-profile-fields";
+import { missingTeacherFields } from "./teacher-fieldset";
 
 const PROFILE_BASE = {
   educationLevel: null,
@@ -38,6 +39,23 @@ describe("declared profile rules (T-103)", () => {
       "institutionType",
     ]);
     expect(missingDeclaredFields(emptyDeclaredProfile("ENTHUSIAST"))).toEqual([]);
+  });
+
+  it("a teacher with only one of branch/institution is missing the other, not both (Review Focus 4)", () => {
+    expect(
+      missingTeacherFields({ teacherSubject: "COGRAFYA", institutionType: "" }),
+    ).toEqual(["institutionType"]);
+    expect(
+      missingTeacherFields({ teacherSubject: "", institutionType: "DERSHANE_KURS" }),
+    ).toEqual(["teacherSubject"]);
+
+    const partial = emptyDeclaredProfile("TEACHER");
+    expect(
+      missingDeclaredFields({
+        ...partial,
+        teacher: { teacherSubject: "", institutionType: "DERSHANE_KURS" },
+      }),
+    ).toEqual(["teacherSubject"]);
   });
 
   it("a parent's stored education becomes the child selection, not the student one", () => {
