@@ -180,7 +180,7 @@ export type AuthResult = components["schemas"]["AuthResultDto"];
  *  `accountRole`. The BFF's own body to the browser (`lib/auth/transport.server.ts`) drops
  *  `id`; only `lib/auth/session.ts`'s server-side `getSession()` returns the full shape. */
 export type Session = components["schemas"]["SessionDto"];
-/** The two declared account roles (contract enum values) — a self-declared role, not a
+/** The four declared account roles (T-103) (contract enum values) — a self-declared role, not a
  *  permission (`GLOSSARY.md` §7.1). */
 export type AccountRole = Session["accountRole"];
 /** The api's uniform error envelope. `message` carries one of the api's ten published error
@@ -303,6 +303,11 @@ export type Department = components["schemas"]["DepartmentDto"];
 export type GradeLevel = NonNullable<RegisterRequest["gradeLevel"]>;
 export type StudyStream = NonNullable<RegisterRequest["studyStream"]>;
 export type EducationLevel = NonNullable<RegisterRequest["educationLevel"]>;
+/** A teacher's branch, where a teacher works, and "bizi nereden duydun" — the three
+ *  T-103 enums `RegisterRequestDto` carries alongside the axis above. */
+export type TeacherSubject = NonNullable<RegisterRequest["teacherSubject"]>;
+export type InstitutionType = NonNullable<RegisterRequest["institutionType"]>;
+export type ReferralSource = NonNullable<RegisterRequest["referralSource"]>;
 
 // ---- Geographic Regions (Yedi coğrafi bölge sayfaları — /v2/turkiye/bolge/[slug]) ----
 /** Summary item for region listing: identity + aggregated figures (nüfus, alan, il sayısı). */

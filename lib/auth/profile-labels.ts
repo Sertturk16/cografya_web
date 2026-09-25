@@ -1,6 +1,14 @@
 import type { Locale } from "@/i18n/routing";
-import type { EducationLevel, GradeLevel, StudyStream, UniversityType } from "@/lib/api/types";
-import type { UserType } from "./form-rules";
+import type {
+  AccountRole,
+  EducationLevel,
+  GradeLevel,
+  InstitutionType,
+  ReferralSource,
+  StudyStream,
+  TeacherSubject,
+  UniversityType,
+} from "@/lib/api/types";
 
 /**
  * Label tables for the four closed sets the registration screen renders (plan §4.3.4,
@@ -34,28 +42,45 @@ export function renderLabel(locale: Locale, label: ProfileLabel): RenderedLabel 
   return { text: label.tr };
 }
 
-/**
- * The "Kullanıcı tipi" control's five options — carrying `en` on purpose, unlike the two
- * tables below: `GLOSSARY.md` §7.1 fixes both `accountRole` (öğrenci/öğretmen →
- * student/teacher) and `educationLevel` (ortaöğretim/lisans/lisansüstü →
- * secondary/undergraduate/graduate) with EN forms that are NOT under the §4.4 `[TEYİT GEREK]`
- * umbrella (§7.1's own text: "Ürün terimi oldukları için §4'ün kurum-yayını şartı burada
- * uygulanmıyor; bu bir hüküm, bir eksiklik değil").
- *
- * `student` / `teacher` are V2's minimal registration pair — §7.1's `accountRole` table
- * verbatim (`Öğrenci` → `STUDENT`, `Öğretmen` → `TEACHER`), `DEC 2026-09-03a` md.1.
- *
- * `secondary` / `undergraduate` / `graduate` are V1's education-level options
- * (`DEC 2026-08-20g` md.1 #7, four values with `teacher`). Their TR labels disambiguate the
- * ruling's original "Öğrenci" (plan §4.3.3's copy deviation): three of V1's four options
- * describe a student, so each names its own education level instead.
- */
-export const USER_TYPE_LABELS: Record<UserType, ProfileLabel> = {
-  student: { tr: "Öğrenci", en: "Student" },
-  secondary: { tr: "Ortaöğretim öğrencisi", en: "Secondary-school student" },
-  undergraduate: { tr: "Lisans öğrencisi", en: "Undergraduate student" },
-  graduate: { tr: "Lisansüstü öğrencisi", en: "Graduate student" },
-  teacher: { tr: "Öğretmen", en: "Teacher" },
+/** The four declared account types, in the order the picker shows them (T-103). */
+export const ACCOUNT_ROLE_ORDER: readonly AccountRole[] = [
+  "STUDENT",
+  "TEACHER",
+  "PARENT",
+  "ENTHUSIAST",
+];
+
+export const ACCOUNT_ROLE_LABELS: Record<AccountRole, ProfileLabel> = {
+  STUDENT: { tr: "Öğrenci", en: "Student" },
+  TEACHER: { tr: "Öğretmen", en: "Teacher" },
+  PARENT: { tr: "Veli", en: "Parent" },
+  ENTHUSIAST: { tr: "Coğrafya meraklısı", en: "Geography enthusiast" },
+};
+
+/** A teacher's branch (T-103). Key order is display order. */
+export const TEACHER_SUBJECT_LABELS: Record<TeacherSubject, ProfileLabel> = {
+  COGRAFYA: { tr: "Coğrafya", en: "Geography" },
+  SOSYAL_BILGILER: { tr: "Sosyal bilgiler", en: "Social studies" },
+  DIGER: { tr: "Diğer", en: "Other" },
+};
+
+/** Where a teacher works (T-103). Key order is display order. */
+export const INSTITUTION_TYPE_LABELS: Record<InstitutionType, ProfileLabel> = {
+  DEVLET_OKULU: { tr: "Devlet okulu", en: "State school" },
+  OZEL_OKUL: { tr: "Özel okul", en: "Private school" },
+  DERSHANE_KURS: { tr: "Dershane / kurs", en: "Tutoring centre" },
+  DIGER: { tr: "Diğer", en: "Other" },
+};
+
+/** "Bizi nereden duydun?" (T-103). Key order is display order. */
+export const REFERRAL_SOURCE_LABELS: Record<ReferralSource, ProfileLabel> = {
+  OGRETMEN: { tr: "Öğretmenim", en: "My teacher" },
+  ARKADAS: { tr: "Arkadaşım", en: "A friend" },
+  YOUTUBE: { tr: "YouTube", en: "YouTube" },
+  INSTAGRAM: { tr: "Instagram", en: "Instagram" },
+  GOOGLE: { tr: "Google", en: "Google" },
+  KITAP: { tr: "Kitap", en: "A book" },
+  DIGER: { tr: "Diğer", en: "Other" },
 };
 
 /**
@@ -112,15 +137,12 @@ export const UNIVERSITY_GROUP_LABELS: Record<UniversityType, ProfileLabel> = {
 /**
  * `educationLevel` — the three values `GLOSSARY.md` §7.1's own table fixes
  * (Ortaöğretim → SECONDARY, Lisans → UNDERGRADUATE, Lisansüstü → GRADUATE). CARRIES `en`,
- * for the same reason `USER_TYPE_LABELS` above does and unlike `GRADE_LEVEL_LABELS` /
+ * for the same reason `ACCOUNT_ROLE_LABELS` above does and unlike `GRADE_LEVEL_LABELS` /
  * `STUDY_STREAM_LABELS`: §7.1's own text rules these EN forms usable — "Ürün terimi
  * oldukları için §4'ün kurum-yayını şartı burada uygulanmıyor; bu bir hüküm, bir eksiklik
  * değil" — so they are NOT under §4.4's `[TEYİT GEREK]` umbrella.
  *
- * DELIBERATELY NOT a reuse of `USER_TYPE_LABELS`' `secondary`/`undergraduate`/`graduate`
- * rows: those are USER-TYPE labels ("Ortaöğretim öğrencisi") answering "who are you", and
- * this control answers "what is your education level" of a reader who has already declared
- * Öğrenci. Two questions, two label sets.
+ * Answers "what is your education level" for a member who declared Öğrenci.
  */
 export const EDUCATION_LEVEL_LABELS: Record<EducationLevel, ProfileLabel> = {
   SECONDARY: { tr: "Ortaöğretim", en: "Secondary" },

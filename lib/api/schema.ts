@@ -3353,9 +3353,9 @@ export interface components {
              * @example STUDENT
              * @enum {string}
              */
-            accountRole: "STUDENT" | "TEACHER" | "PARENT";
+            accountRole: "STUDENT" | "TEACHER" | "PARENT" | "ENTHUSIAST";
             /**
-             * @description Yalnız accountRole=STUDENT|PARENT gönderir; TEACHER bu alanı hiç göndermez (profil matrisi, §6.4).
+             * @description Yalnız STUDENT ve PARENT gönderir. PARENT için yalnız SECONDARY: alanlar çocuğun sınıfını ve alanını anlatır (T-103).
              * @example SECONDARY
              * @enum {string}
              */
@@ -3373,7 +3373,7 @@ export interface components {
              */
             studyStream?: "SAYISAL" | "SOZEL" | "ESIT_AGIRLIK" | "TYT" | "DIL" | "LGS" | "MSU" | "ARA_SINIF" | "KPSS" | "DIGER";
             /**
-             * @description Okul adı — yalnız educationLevel=SECONDARY dalında anlamlıdır (öğrenci veya veli); isteğe bağlıdır, kapalı küme değildir, serbest metindir (`GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`).
+             * @description Okul adı — yalnız educationLevel=SECONDARY dalında anlamlıdır (yalnız öğrenci); isteğe bağlıdır, kapalı küme değildir, serbest metindir (`GLOSSARY.md` §7.1 `schoolName` alt bloğu, `DEC 2026-09-11g`).
              * @example Synthetic Lisesi
              */
             schoolName?: string;
@@ -3387,6 +3387,24 @@ export interface components {
              * @example Coğrafya Öğretmenliği
              */
             departmentName?: string;
+            /**
+             * @description Öğretmenin branşı. Yalnız TEACHER gönderir, institutionType ile birlikte (T-103).
+             * @example COGRAFYA
+             * @enum {string}
+             */
+            teacherSubject?: "COGRAFYA" | "SOSYAL_BILGILER" | "DIGER";
+            /**
+             * @description Öğretmenin çalıştığı kurum türü. Yalnız TEACHER gönderir, teacherSubject ile birlikte (T-103).
+             * @example DEVLET_OKULU
+             * @enum {string}
+             */
+            institutionType?: "DEVLET_OKULU" | "OZEL_OKUL" | "DERSHANE_KURS" | "DIGER";
+            /**
+             * @description "Bizi nereden duydun?" İsteğe bağlı, her rol için. Yalnız kayıtta alınır, hiçbir yanıtta dönmez (T-103).
+             * @example YOUTUBE
+             * @enum {string}
+             */
+            referralSource?: "OGRETMEN" | "ARKADAS" | "YOUTUBE" | "INSTAGRAM" | "GOOGLE" | "KITAP" | "DIGER";
             /**
              * Format: uuid
              * @description `GET /api/reference/districts?plateCode=…`'ün döndürdüğü id. Var olduğu ve provincePlateCode ile ait olduğu RegistrationService tarafından tek sorguyla doğrulanır (D15).
@@ -3513,7 +3531,7 @@ export interface components {
              * @example STUDENT
              * @enum {string}
              */
-            accountRole: "STUDENT" | "TEACHER" | "PARENT";
+            accountRole: "STUDENT" | "TEACHER" | "PARENT" | "ENTHUSIAST";
         };
         ProfileDto: {
             /**
@@ -3568,7 +3586,7 @@ export interface components {
              * @example STUDENT
              * @enum {string}
              */
-            accountRole: "STUDENT" | "TEACHER" | "PARENT";
+            accountRole: "STUDENT" | "TEACHER" | "PARENT" | "ENTHUSIAST";
             /**
              * @description Eğitim düzeyi — null: henüz beyan edilmedi veya öğretmen hesabı.
              * @example SECONDARY
@@ -3603,7 +3621,19 @@ export interface components {
              */
             departmentName: string | null;
             /**
-             * @description Profilin tamamlanma durumu — TEACHER için true, STUDENT için educationLevel !== null.
+             * @description Öğretmenin branşı — yalnız TEACHER için, aksi halde null (T-103).
+             * @example COGRAFYA
+             * @enum {string|null}
+             */
+            teacherSubject: "COGRAFYA" | "SOSYAL_BILGILER" | "DIGER" | null;
+            /**
+             * @description Öğretmenin kurum türü — yalnız TEACHER için, aksi halde null (T-103).
+             * @example DEVLET_OKULU
+             * @enum {string|null}
+             */
+            institutionType: "DEVLET_OKULU" | "OZEL_OKUL" | "DERSHANE_KURS" | "DIGER" | null;
+            /**
+             * @description Profilin tamamlanma durumu — STUDENT/PARENT: educationLevel !== null; TEACHER: branş ve kurum dolu; ENTHUSIAST: her zaman true (T-103).
              * @example true
              */
             isComplete: boolean;
@@ -3614,6 +3644,21 @@ export interface components {
             marketingConsent: boolean;
         };
         UpdateProfileRequestDto: {
+            /**
+             * @description Beyan edilen hesap türü; bu uçla değiştirilebilir. Yetki değildir (T-103).
+             * @enum {string}
+             */
+            accountRole: "STUDENT" | "TEACHER" | "PARENT" | "ENTHUSIAST";
+            /**
+             * @description Öğretmenin branşı (TEACHER için). null değeri alanı temizlemek için kullanılır.
+             * @enum {string|null}
+             */
+            teacherSubject: "COGRAFYA" | "SOSYAL_BILGILER" | "DIGER" | null;
+            /**
+             * @description Öğretmenin kurum türü (TEACHER için). null değeri alanı temizlemek için kullanılır.
+             * @enum {string|null}
+             */
+            institutionType: "DEVLET_OKULU" | "OZEL_OKUL" | "DERSHANE_KURS" | "DIGER" | null;
             /**
              * @description Eğitim düzeyi. null değeri alanı temizlemek için kullanılır.
              * @enum {string|null}

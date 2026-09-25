@@ -1,9 +1,13 @@
 import type { Locale } from "@/i18n/routing";
 import type {
+  AccountRole,
   EducationLevel,
   GradeLevel,
+  InstitutionType,
+  ReferralSource,
   RegisterRequest,
   StudyStream,
+  TeacherSubject,
   UpdateProfileRequest,
 } from "@/lib/api/types";
 
@@ -179,8 +183,17 @@ export const PHONE_INPUT_MAX_LENGTH = 13;
  * It is deliberately NOT a reuse of `secondary`: that branch stamps
  * `educationLevel: "SECONDARY"` the moment a `gradeLevel` appears, so reusing it would make a
  * V2 student's stored intent a lie the first time education collection is added.
+ *
+ * `parent` and `enthusiast` are T-103's; `parent` carries the child's secondary grade and stream.
  */
-export type UserType = "student" | "secondary" | "undergraduate" | "graduate" | "teacher";
+export type UserType =
+  | "student"
+  | "secondary"
+  | "undergraduate"
+  | "graduate"
+  | "teacher"
+  | "parent"
+  | "enthusiast";
 
 /**
  * The whole register-screen state `buildRegisterPayload` reads (plan §4.3.2 part 3, the
@@ -215,6 +228,12 @@ export interface RegisterFormState {
   readonly schoolName?: string;
   readonly universityName?: string;
   readonly departmentName?: string;
+  /** T-103. The `teacher` branch's subject; absent for every other `userType`. */
+  readonly teacherSubject?: TeacherSubject | "";
+  /** T-103. The `teacher` branch's workplace; absent for every other `userType`. */
+  readonly institutionType?: InstitutionType | "";
+  /** T-103. "Bizi nereden duydun?" — optional on every branch, register-only. */
+  readonly referralSource?: ReferralSource | "";
   /**
    * T-101. Two separate decisions, never bundled: accepting the terms is REQUIRED to register;
    * commercial electronic messages are an OPTIONAL, unticked-by-default consent (KVKK md. 5/1,
@@ -252,7 +271,9 @@ export function missingRegisterConsents(
  * | secondary      | `STUDENT`      | `SECONDARY`       | `gradeLevel` + `studyStream`     | university, department      |
  * | undergraduate  | `STUDENT`      | `UNDERGRADUATE`   | `universityName` + `departmentName` | grade, stream            |
  * | graduate       | `STUDENT`      | `GRADUATE`        | `universityName`; department optional | grade, stream          |
- * | teacher        | `TEACHER`      | *absent*          | —                                | every education field       |
+ * | parent         | `PARENT`       | `SECONDARY` or absent | `gradeLevel` + `studyStream` | school, university, department, teacher fields |
+ * | teacher        | `TEACHER`      | *absent*          | `teacherSubject` + `institutionType` (or neither) | every education field |
+ * | enthusiast     | `ENTHUSIAST`   | *absent*          | —                                | everything                   |
  *
  * `student` is minimal V2 registration (Decision 2-B, `DEC 2026-09-03a` md.1): it omits the
  * education fields entirely, so `buildRegisterPayload` returns
@@ -287,6 +308,7 @@ export function buildRegisterPayload(
     locale,
     // Sent on every branch, `false` included: the API stores a consent instant only for `true`.
     marketingConsent: formState.marketingConsent,
+    ...(formState.referralSource ? { referralSource: formState.referralSource } : {}),
   };
 
   switch (formState.userType) {
@@ -337,8 +359,29 @@ export function buildRegisterPayload(
     }
     case "student":
       return { ...common, accountRole: "STUDENT" };
+    case "parent":
+      // The child's grade and stream; a school name is never sent for a parent (spec §5.2).
+      return {
+        ...common,
+        accountRole: "PARENT",
+        ...(formState.gradeLevel && formState.studyStream
+          ? {
+              educationLevel: "SECONDARY",
+              gradeLevel: formState.gradeLevel as GradeLevel,
+              studyStream: formState.studyStream as StudyStream,
+            }
+          : {}),
+      };
     case "teacher":
-      return { ...common, accountRole: "TEACHER" };
+      return {
+        ...common,
+        accountRole: "TEACHER",
+        ...(formState.teacherSubject && formState.institutionType
+          ? { teacherSubject: formState.teacherSubject, institutionType: formState.institutionType }
+          : {}),
+      };
+    case "enthusiast":
+      return { ...common, accountRole: "ENTHUSIAST" };
     default: {
       const exhaustive: never = formState.userType;
       throw new Error(`buildRegisterPayload: unreachable user type ${String(exhaustive)}`);
@@ -347,10 +390,7 @@ export function buildRegisterPayload(
 }
 
 /**
- * The education axis a post-registration profile replacement writes. `accountRole` is NOT
- * part of it: `PUT /api/auth/profile` reads the caller's role from the persisted row, and
- * `accountRole` is not a declared property of `UpdateProfileRequestDto` — sending it is a
- * 400 by name (`plan-api.md` §5.3.3/§5.3.4).
+ * The education axis as a form holds it.
  */
 export interface ProfileAxisFormState {
   readonly educationLevel: EducationLevel | "";
@@ -365,9 +405,9 @@ export interface ProfileAxisFormState {
  * Builds the COMPLETE five-field axis for a REPLACE. Always returns all five properties;
  * a field the selected branch does not use is an explicit `null`, never an omission.
  */
-export function buildProfileReplacementPayload(
+function educationAxisPayload(
   formState: ProfileAxisFormState,
-): UpdateProfileRequest {
+): Omit<UpdateProfileRequest, "accountRole" | "teacherSubject" | "institutionType"> {
   if (!formState.educationLevel) {
     return {
       educationLevel: null,
@@ -415,6 +455,75 @@ export function buildProfileReplacementPayload(
       throw new Error(
         `buildProfileReplacementPayload: unreachable education level ${String(exhaustive)}`,
       );
+    }
+  }
+}
+
+/** The teacher block as a form holds it (T-103). */
+export interface TeacherFormState {
+  readonly teacherSubject: TeacherSubject | "";
+  readonly institutionType: InstitutionType | "";
+}
+
+/**
+ * Everything the settings card and the register wizard hold about a member's declared
+ * profile (T-103). Three separate selections, so switching role back and forth never carries
+ * one role's answers into another's payload; only the selected role's selection is read.
+ */
+export interface DeclaredProfileFormState {
+  readonly accountRole: AccountRole;
+  readonly education: ProfileAxisFormState;
+  readonly childEducation: ProfileAxisFormState;
+  readonly teacher: TeacherFormState;
+}
+
+const NO_EDUCATION = {
+  educationLevel: null,
+  gradeLevel: null,
+  studyStream: null,
+  schoolName: null,
+  universityName: null,
+  departmentName: null,
+} as const;
+
+const NO_TEACHER = { teacherSubject: null, institutionType: null } as const;
+
+/**
+ * Builds the COMPLETE nine-key body for `PUT /api/auth/profile`: the role plus every field,
+ * with each field the role does not use as an explicit `null`. The nulls are what clear a
+ * previous role's data when the role changes.
+ */
+export function buildProfileReplacementPayload(
+  state: DeclaredProfileFormState,
+): UpdateProfileRequest {
+  switch (state.accountRole) {
+    case "STUDENT":
+      return { accountRole: "STUDENT", ...educationAxisPayload(state.education), ...NO_TEACHER };
+    case "PARENT": {
+      const { gradeLevel, studyStream } = state.childEducation;
+      return gradeLevel && studyStream
+        ? {
+            accountRole: "PARENT",
+            ...NO_EDUCATION,
+            educationLevel: "SECONDARY",
+            gradeLevel,
+            studyStream,
+            ...NO_TEACHER,
+          }
+        : { accountRole: "PARENT", ...NO_EDUCATION, ...NO_TEACHER };
+    }
+    case "TEACHER":
+      return {
+        accountRole: "TEACHER",
+        ...NO_EDUCATION,
+        teacherSubject: state.teacher.teacherSubject || null,
+        institutionType: state.teacher.institutionType || null,
+      };
+    case "ENTHUSIAST":
+      return { accountRole: "ENTHUSIAST", ...NO_EDUCATION, ...NO_TEACHER };
+    default: {
+      const exhaustive: never = state.accountRole;
+      throw new Error(`buildProfileReplacementPayload: unreachable role ${String(exhaustive)}`);
     }
   }
 }
