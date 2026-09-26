@@ -40,6 +40,8 @@ describe("the fullscreen target holds the map credit", () => {
       expect.arrayContaining([
         "components/v2/v2-game-screen.tsx",
         "components/v2/v2-tool-workbench.tsx",
+        "components/v2/v2-world-map-explorer.tsx",
+        "components/v2/v2-turkey-map-explorer.tsx",
       ]),
     );
   });

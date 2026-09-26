@@ -189,7 +189,8 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
   const mapBoxRef = React.useRef<HTMLDivElement | null>(null);
   /** The basin chip floating over the map's top-left corner from `sm`. */
   const modeChipRef = React.useRef<HTMLDivElement | null>(null);
-  const mapBox = useMapBoxMetrics(mapBoxRef, modeChipRef);
+  const chipOverlays = React.useMemo(() => [modeChipRef], []);
+  const mapBox = useMapBoxMetrics(mapBoxRef, chipOverlays);
   const mapScale =
     mapBox && sliceScale(mapBox.width, mapBox.height, WIDE_VIEWBOX.width, WIDE_VIEWBOX.height);
   const mapBlocked = React.useMemo(

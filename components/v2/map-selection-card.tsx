@@ -27,6 +27,7 @@ export function MapSelectionCard({
   closeLabel,
   onClose,
   className,
+  style,
 }: {
   leading?: React.ReactNode;
   title: string;
@@ -37,6 +38,8 @@ export function MapSelectionCard({
   closeLabel: string;
   onClose: () => void;
   className?: string;
+  /** Inline placement that must beat the `className` placement (fullscreen, T-118). */
+  style?: React.CSSProperties;
 }) {
   return (
     <div
@@ -47,6 +50,7 @@ export function MapSelectionCard({
         "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-2xl border border-primary/40 bg-card/95 p-2.5 shadow-xl backdrop-blur-md animate-in fade-in-50 duration-200 sm:p-3",
         className,
       )}
+      style={style}
     >
       <div className="sm:row-span-2">{leading}</div>
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">

@@ -43,6 +43,15 @@ import { usePinchZoom } from "@/lib/map/use-pinch-zoom.client";
 import { useWheelZoom } from "@/lib/map/use-wheel-zoom.client";
 import { offsetFromCentre } from "@/lib/map/wheel-zoom";
 import { MapWheelHint } from "@/components/v2/map-wheel-hint";
+import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
+import {
+  FULLSCREEN_FIGURE,
+  FULLSCREEN_MAP_BOX,
+  FULLSCREEN_STAGE,
+  MapFullscreenToggle,
+  MapRotateHint,
+  fullscreenCardStyle,
+} from "@/components/v2/map-fullscreen-controls";
 import {
   boxRectToViewBox,
   sliceScale,
@@ -160,6 +169,14 @@ const MAX_ZOOM = 3;
 const TALL_VIEWBOX_SIZE = viewBoxSize(TR_CONTEXT_TALL_VIEWBOX);
 const TALL_VIEWBOX_RECT = viewBoxRect(TR_CONTEXT_TALL_VIEWBOX);
 
+/**
+ * The map box in fullscreen (T-118): never taller than wide. The map is drawn with `slice` over a
+ * square frame, so a portrait box (a phone that did not rotate) would cut Türkiye's east and west;
+ * capped at square it is centred on the page background instead. Landscape and desktop boxes are
+ * wider than tall, so the cap does nothing there.
+ */
+const FULLSCREEN_TURKEY_BOX: React.CSSProperties = { ...FULLSCREEN_MAP_BOX, maxHeight: "100vw" };
+
 /** The neighbour countries that may carry a label; which of them do is decided per render scale. */
 const CONTEXT_LABEL_CANDIDATES = contextLabelCandidates(
   TALL_CONTEXT_SHAPES.filter(
@@ -242,6 +259,12 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
 
+  /** The figure goes fullscreen (T-118): toolbar, map, card and credit together. */
+  const figureRef = React.useRef<HTMLElement | null>(null);
+  const landscape = useLandscapeMode(figureRef);
+  // The rotate hint's height, so the card can sit above it in portrait fullscreen.
+  const [rotateHintHeight, setRotateHintHeight] = React.useState(0);
+
   const pinch = usePinchZoom({
     containerRef: mapContainerRef,
     zoom: zoomLevel,
@@ -255,7 +278,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
   const wheel = useWheelZoom({
     targetRef: mapContainerRef,
-    plainWheelZooms: false,
+    plainWheelZooms: landscape.active,
     zoomBy: (factor, clientX, clientY) => {
       const box = mapContainerRef.current;
       if (!box) return;
@@ -275,11 +298,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
   const toolbarRef = React.useRef<HTMLDivElement | null>(null);
   /**
-   * The box and the toolbar floating over its top-right corner (T-086), measured on resize.
+   * The box and the controls floating over its top corners (T-086, T-118), measured on resize.
    * `boxScale` is CSS px per viewBox unit at zoom 1 (T-082), `null` until measured, so the server
    * render and the first client render agree and draw the desktop labels.
    */
-  const boxMetrics = useMapBoxMetrics(mapContainerRef, toolbarRef);
+  /** The top-left fullscreen toggle (T-118), the labels' second overlay. */
+  const fullscreenToggleRef = React.useRef<HTMLDivElement | null>(null);
+  const labelOverlays = React.useMemo(() => [toolbarRef, fullscreenToggleRef], []);
+  const boxMetrics = useMapBoxMetrics(mapContainerRef, labelOverlays);
   const boxScale =
     boxMetrics &&
     sliceScale(
@@ -654,10 +680,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             `v2-province-locator-map.tsx` has always expressed and the other six did not, so a screen
             reader heard a figure caption on a province page and a loose paragraph on `/turkiye`.
             `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
-        <figure className="m-0 space-y-2">
+        <figure
+          ref={figureRef}
+          className={`m-0 relative ${landscape.active ? "" : "space-y-2"}`}
+          style={landscape.active ? FULLSCREEN_FIGURE : undefined}
+        >
           {/* Positioning context for the selection card, which sits under the map box on a phone
-            and floats over it from `sm`. */}
-          <div className="relative">
+            and floats over it from `sm`, and over it at every width in fullscreen (T-118). */}
+          <div className="relative" style={landscape.active ? FULLSCREEN_STAGE : undefined}>
             <div
               ref={mapContainerRef}
               onPointerDown={handlePointerDown}
@@ -675,7 +705,18 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   ? `touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`
                   : "touch-pan-y cursor-crosshair"
               }`}
+              style={landscape.active ? FULLSCREEN_TURKEY_BOX : undefined}
             >
+              {/* Top-left, inside the box, measured as a label overlay like the toolbar (T-118). */}
+              <MapFullscreenToggle
+                ref={fullscreenToggleRef}
+                active={landscape.active}
+                onToggle={landscape.toggle}
+              />
+              {landscape.showRotateHint && (
+                <MapRotateHint onDismiss={landscape.exit} onHeight={setRotateHintHeight} />
+              )}
+
               {/* Map Controls Floating Bar */}
               <div
                 ref={toolbarRef}
@@ -925,6 +966,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             {selectedPlate && activeProvince && (
               <MapSelectionCard
                 className="mt-2 sm:absolute sm:bottom-3 sm:left-3 sm:z-30 sm:mt-0 sm:max-w-sm"
+                style={landscape.active ? fullscreenCardStyle(rotateHintHeight) : undefined}
                 leading={
                   <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 font-mono text-sm font-bold text-primary">
                     {activeProvince.plateCode}
@@ -954,7 +996,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
             plate's inner `w-full h-full` box, which put it below a full-height map and inside the
             plate's `overflow-hidden` — clipped, so the credit was on no screen. */}
           <figcaption>
-            <MapAttribution inlandWater context />
+            <MapAttribution inlandWater context fullscreen={landscape.active} />
           </figcaption>
         </figure>
       </div>

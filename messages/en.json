@@ -129,7 +129,11 @@
     "explore": "Explore",
     "closeSelection": "Close selection",
     "statPopulation": "{count, plural, one {# person} other {# people}}",
-    "statArea": "{area, number} km²"
+    "statArea": "{area, number} km²",
+    "fullscreenEnter": "View fullscreen / in landscape",
+    "fullscreenExit": "Exit fullscreen",
+    "rotateHint": "Turn your phone sideways for a wider view.",
+    "rotateDismiss": "Got it"
   },
   "About": {
     "metaTitle": "About",

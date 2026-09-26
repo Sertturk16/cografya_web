@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  FALLBACK_STYLE,
   isDocumentFullscreen,
   pickExitFullscreen,
   pickFullscreenRequest,
@@ -101,5 +102,29 @@ describe("shouldShowRotateHint", () => {
     expect(shouldShowRotateHint({ active: true, isPortrait: true, isCoarsePointer: false })).toBe(
       false,
     );
+  });
+});
+
+describe("fallback layout colour", () => {
+  it("paints the fallback with the theme background, which dark mode redefines", () => {
+    // `--color-bg` is the light parchment only; `--background` is what `.dark` switches.
+    expect(FALLBACK_STYLE.background).toBe("var(--background)");
+  });
+
+  it("names every property the way `style.setProperty` reads it, so none is silently dropped", () => {
+    // `setProperty("zIndex", …)` is a no-op: it takes CSS names. The fallback sat under the
+    // page's header and the content after the map until this was `z-index` (T-118).
+    for (const prop of Object.keys(FALLBACK_STYLE)) {
+      expect(prop, prop).toMatch(/^[a-z]+(-[a-z]+)*$/);
+    }
+    expect(FALLBACK_STYLE["z-index"]).toBe("1000");
+  });
+
+  it("sizes the fallback by its insets, not by `100vh`", () => {
+    // iOS Safari's `100vh` is the toolbar-hidden height, so a `top: 0; height: 100vh` box runs
+    // under the bottom address bar, and everything anchored to the bottom goes with it.
+    expect(FALLBACK_STYLE).toMatchObject({ top: "0", right: "0", bottom: "0", left: "0" });
+    expect(FALLBACK_STYLE).not.toHaveProperty("height");
+    expect(FALLBACK_STYLE).not.toHaveProperty("width");
   });
 });

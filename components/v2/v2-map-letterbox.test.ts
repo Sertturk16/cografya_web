@@ -44,7 +44,14 @@ describe("/turkiye fills a squarer box with real geography (T-079)", () => {
     // from `lib/map/context-label-fit.ts` through the shared `MapContextLabels`, fed by a
     // ResizeObserver on the box and the zoom level; the metrics start `null` so the server
     // render is today's desktop labels.
-    expect(turkey).toMatch(/useMapBoxMetrics\(mapContainerRef, toolbarRef\)/);
+    // The labels clear both the toolbar and the fullscreen toggle (T-118).
+    expect(turkey).toMatch(/useMapBoxMetrics\(mapContainerRef, labelOverlays\)/);
+    expect(turkey).toMatch(
+      /labelOverlays = React\.useMemo\(\(\) => \[toolbarRef, fullscreenToggleRef\], \[\]\)/,
+    );
+    expect(labels).toMatch(
+      /overlayRefs: readonly React\.RefObject<HTMLElement \| null>\[\] = NO_OVERLAY_REFS/,
+    );
     expect(turkey).toMatch(/scale=\{boxScale === null \? null : boxScale \* zoomLevel\}/);
     expect(labels).toMatch(/new ResizeObserver\(/);
     expect(labels).toMatch(/useState<MapBoxMetrics \| null>\(null\)/);
@@ -109,7 +116,7 @@ describe("/deniz and /deprem draw their names through the same layout (T-085)", 
 
   it("/deniz keeps its names clear of the basin chip floating over the map", () => {
     const marine = read("v2-marine-map-explorer.tsx");
-    expect(marine).toMatch(/useMapBoxMetrics\(mapBoxRef, modeChipRef\)/);
+    expect(marine).toMatch(/useMapBoxMetrics\(mapBoxRef, chipOverlays\)/);
     expect(marine).toMatch(/blocked=\{mapBlocked\}/);
   });
 });

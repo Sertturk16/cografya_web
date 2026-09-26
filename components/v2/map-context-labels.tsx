@@ -57,32 +57,36 @@ export interface MapBoxMetrics {
   readonly overlays: readonly Rect[];
 }
 
+/** No overlays: one module-level array, so a map without any keeps the effect's deps stable. */
+const NO_OVERLAY_REFS: readonly React.RefObject<HTMLElement | null>[] = [];
+
 /**
- * Measures the map box and the overlay floating on it (a toolbar, a status chip) whenever either
- * changes size, so a hidden-below-`sm` overlay is picked up when it appears. `null` until the first
- * measurement, so the server render and first paint agree and draw the desktop labels.
+ * Measures the map box and the overlays floating on it (a toolbar, a status chip, a fullscreen
+ * toggle) whenever any changes size, so a hidden-below-`sm` overlay is picked up when it appears.
+ * `null` until the first measurement, so the server render and first paint agree and draw the
+ * desktop labels. `overlayRefs` must be stable (a module constant or `useMemo`): it is an effect
+ * dependency.
  */
 export function useMapBoxMetrics(
   boxRef: React.RefObject<HTMLElement | null>,
-  overlayRef?: React.RefObject<HTMLElement | null>,
+  overlayRefs: readonly React.RefObject<HTMLElement | null>[] = NO_OVERLAY_REFS,
 ): MapBoxMetrics | null {
   const [metrics, setMetrics] = React.useState<MapBoxMetrics | null>(null);
   React.useEffect(() => {
     const box = boxRef.current;
     if (!box || typeof ResizeObserver === "undefined") return;
-    const overlay = overlayRef?.current ?? null;
+    const elements = overlayRefs
+      .map((ref) => ref.current)
+      .filter((el): el is HTMLElement => el !== null);
     const measure = () => {
-      const overlays: Rect[] =
-        overlay && overlay.offsetWidth > 0
-          ? [
-              {
-                left: overlay.offsetLeft - OVERLAY_CLEARANCE_PX,
-                top: overlay.offsetTop - OVERLAY_CLEARANCE_PX,
-                right: overlay.offsetLeft + overlay.offsetWidth + OVERLAY_CLEARANCE_PX,
-                bottom: overlay.offsetTop + overlay.offsetHeight + OVERLAY_CLEARANCE_PX,
-              },
-            ]
-          : [];
+      const overlays: Rect[] = elements
+        .filter((el) => el.offsetWidth > 0)
+        .map((el) => ({
+          left: el.offsetLeft - OVERLAY_CLEARANCE_PX,
+          top: el.offsetTop - OVERLAY_CLEARANCE_PX,
+          right: el.offsetLeft + el.offsetWidth + OVERLAY_CLEARANCE_PX,
+          bottom: el.offsetTop + el.offsetHeight + OVERLAY_CLEARANCE_PX,
+        }));
       const next = { width: box.clientWidth, height: box.clientHeight, overlays };
       if (!(next.width > 0 && next.height > 0)) return;
       // The observer fires once on `observe` and then only on a size change; an unchanged
@@ -91,9 +95,9 @@ export function useMapBoxMetrics(
     };
     const observer = new ResizeObserver(measure);
     observer.observe(box);
-    if (overlay) observer.observe(overlay);
+    for (const el of elements) observer.observe(el);
     return () => observer.disconnect();
-  }, [boxRef, overlayRef]);
+  }, [boxRef, overlayRefs]);
   return metrics;
 }
 
