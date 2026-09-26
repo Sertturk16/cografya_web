@@ -4,7 +4,10 @@ import { setRequestLocale } from "next-intl/server";
 import { getEarthquakeListResilient, getEarthquakeMetaSafe } from "@/lib/api/earthquakes";
 import { getProvincesResilient } from "@/lib/api/provinces";
 import type { EarthquakeEvent, EarthquakeMeta } from "@/lib/api/types";
-import { EarthquakeAttribution } from "@/components/earthquake/earthquake-attribution";
+import {
+  EarthquakeAttribution,
+  EarthquakeMapCredit,
+} from "@/components/earthquake/earthquake-attribution";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { collectionPageJsonLd, JsonLd } from "@/lib/seo/json-ld";
@@ -86,13 +89,16 @@ async function loadDeprem(locale: Locale) {
 }
 
 async function DepremExplorer({ locale }: { locale: Locale }) {
-  const { initialEvents, provinceMap } = await loadDeprem(locale);
+  const { initialEvents, provinceMap, earthquakeMeta } = await loadDeprem(locale);
   return (
     <V2EarthquakeExplorer
       initialEvents={initialEvents}
       provinceMap={provinceMap}
       defaultMinMagnitude={2.5}
       defaultWindowDays={7}
+      dataCredit={
+        earthquakeMeta && <EarthquakeMapCredit attributions={earthquakeMeta.attributions} />
+      }
     />
   );
 }

@@ -39,6 +39,17 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { MapAttribution } from "@/components/patterns/map-attribution";
+import { MarineMapCredit } from "@/components/marine/marine-map-credit";
+import { MapSelectionCard } from "@/components/v2/map-selection-card";
+import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
+import {
+  FULLSCREEN_FIGURE,
+  FULLSCREEN_FITTED_STAGE,
+  MapFullscreenToggle,
+  MapRotateHint,
+  fittedMapBoxStyle,
+  fullscreenCardStyle,
+} from "@/components/v2/map-fullscreen-controls";
 import { marinePointAnchorId } from "@/lib/marine/anchors";
 import { basinIdentityOf } from "@/lib/theme/basin-identity";
 import { sstBandStyleOf, SST_BAND_MIN_C } from "@/lib/theme/sst-band";
@@ -187,9 +198,11 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
    * server render and first paint agree and draw the desktop labels.
    */
   const mapBoxRef = React.useRef<HTMLDivElement | null>(null);
-  /** The basin chip floating over the map's top-left corner from `sm`. */
+  /** The basin chip floating over the map's top-left corner from `sm`, right of the toggle. */
   const modeChipRef = React.useRef<HTMLDivElement | null>(null);
-  const chipOverlays = React.useMemo(() => [modeChipRef], []);
+  /** The fullscreen toggle in the map's top-left corner (T-119). */
+  const fullscreenToggleRef = React.useRef<HTMLDivElement | null>(null);
+  const chipOverlays = React.useMemo(() => [modeChipRef, fullscreenToggleRef], []);
   const mapBox = useMapBoxMetrics(mapBoxRef, chipOverlays);
   const mapScale =
     mapBox && sliceScale(mapBox.width, mapBox.height, WIDE_VIEWBOX.width, WIDE_VIEWBOX.height);
@@ -206,6 +219,12 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
     [mapBox, mapScale],
   );
   const [selectedSlug, setSelectedSlug] = React.useState<string | null>(null);
+
+  /** The figure goes fullscreen (T-119): map, card and credit together. */
+  const figureRef = React.useRef<HTMLElement | null>(null);
+  const landscape = useLandscapeMode(figureRef);
+  // The rotate hint's height, so the card can sit above it in portrait fullscreen.
+  const [rotateHintHeight, setRotateHintHeight] = React.useState(0);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
 
   const trCasing = React.useMemo(() => {
@@ -365,10 +384,15 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
           `v2-province-locator-map.tsx` has always expressed and the other six did not, so a
           screen reader heard a figure caption on a province page and a loose paragraph here.
           `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
-      <figure className="m-0 space-y-2">
+      <figure
+        ref={figureRef}
+        className={`m-0 relative ${landscape.active ? "" : "space-y-2"}`}
+        style={landscape.active ? FULLSCREEN_FIGURE : undefined}
+      >
         {/* Positioning context for the station card, which sits under the map box below `lg`
-          and floats over it from `lg`. */}
-        <div className="relative">
+          and floats over it from `lg`; in fullscreen it fills the screen, the map box keeps its
+          shape inside it and a compact card replaces the station card (T-119). */}
+        <div className="relative" style={landscape.active ? FULLSCREEN_FITTED_STAGE : undefined}>
           <div
             onMouseMove={handleMouseMove}
             onMouseLeave={() => {
@@ -377,11 +401,19 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             }}
             ref={mapBoxRef}
             className="relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-[1270/580] w-full cursor-default select-none shadow-xl"
+            style={landscape.active ? fittedMapBoxStyle(1270, 580) : undefined}
           >
+            {/* Top-left, inside the box, measured as a label overlay (T-119). */}
+            <MapFullscreenToggle
+              ref={fullscreenToggleRef}
+              active={landscape.active}
+              onToggle={landscape.toggle}
+            />
+
             {/* Floating Top-Left Mode Indicator */}
             <div
               ref={modeChipRef}
-              className="absolute top-4 left-4 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none"
+              className="absolute top-3 left-16 z-10 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background/85 backdrop-blur-md border border-border/80 text-xs font-medium shadow-sm pointer-events-none"
             >
               <Waves className="size-3.5 text-muted-foreground animate-pulse" />
               <span className="text-foreground font-semibold">
@@ -640,7 +672,7 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             map (a 320px card over a 326x148 phone map) and, from `sm`, be cut off by the box's
             `overflow-hidden`; over the map's top-right corner from `lg`, where it fits. Below the
             legible pin size it is also where a station's readings are read (T-087). */}
-          {selectedPoint && (
+          {selectedPoint && !landscape.active && (
             <div className="relative mt-2 w-full lg:absolute lg:top-4 lg:right-4 lg:mt-0 lg:w-96 z-20 rounded-3xl bg-card/95 backdrop-blur-xl border border-primary/40 p-5 shadow-2xl space-y-4 animate-in fade-in-50 zoom-in-95 duration-150">
               <div className="flex items-start justify-between gap-3 border-b border-border/80 pb-3">
                 <div>
@@ -781,7 +813,47 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
             </div>
           )}
 
-          {!selectedPoint && !showPinValues && (
+          {landscape.showRotateHint && (
+            <MapRotateHint onDismiss={landscape.exit} onHeight={setRotateHintHeight} />
+          )}
+
+          {/* The selected point over the map, in fullscreen only (T-119). */}
+          {selectedPoint && landscape.active && (
+            <MapSelectionCard
+              style={fullscreenCardStyle(rotateHintHeight)}
+              leading={
+                <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 font-mono text-sm font-bold text-primary">
+                  {selectedPoint.plateCode}
+                </div>
+              }
+              title={selectedPoint.nameTr}
+              badges={
+                selectedPoint.isStraits && (
+                  <Badge variant="warning" size="sm">
+                    Boğaz yakını
+                  </Badge>
+                )
+              }
+              stats={[
+                `Su ${selectedPoint.sst != null ? `${tr(selectedPoint.sst, 1)} °C` : "—"}`,
+                `Dalga ${selectedPoint.waveHeight != null ? `${tr(selectedPoint.waveHeight, 2)} m` : "—"}`,
+                `Rüzgâr ${selectedPoint.windSpeed10m != null ? `${tr(selectedPoint.windSpeed10m, 1)} m/s` : "—"}`,
+              ]}
+              href={
+                selectedPoint.provinceSlug
+                  ? {
+                      pathname: "/turkiye/[slug]",
+                      params: { slug: selectedPoint.provinceSlug },
+                    }
+                  : undefined
+              }
+              exploreLabel="İl Sayfası"
+              closeLabel="Kapat"
+              onClose={() => setSelectedSlug(null)}
+            />
+          )}
+
+          {!selectedPoint && !showPinValues && !landscape.active && (
             <p className="mt-2 text-xs text-muted-foreground">
               Sıcaklık, dalga ve rüzgâr değerleri için haritada bir noktaya dokun.
             </p>
@@ -791,7 +863,12 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
         {/* UNDER the plate. Inside it the credit flowed below a `h-full` map into the plate's own
           `overflow-hidden` and rendered to nobody. */}
         <figcaption>
-          <MapAttribution inlandWater context />
+          <MapAttribution
+            inlandWater
+            context
+            fullscreen={landscape.active}
+            dataCredit={<MarineMapCredit />}
+          />
         </figcaption>
       </figure>
 

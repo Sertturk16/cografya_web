@@ -33,7 +33,8 @@ export function MapSelectionCard({
   title: string;
   badges?: React.ReactNode;
   stats: readonly string[];
-  href: React.ComponentProps<typeof Link>["href"];
+  /** The page to explore; left out when there is none (an earthquake at sea, T-119). */
+  href?: React.ComponentProps<typeof Link>["href"];
   exploreLabel: string;
   closeLabel: string;
   onClose: () => void;
@@ -58,13 +59,15 @@ export function MapSelectionCard({
         {badges}
       </div>
       <div className="sm:row-span-2 flex items-center gap-1">
-        <Link
-          href={href}
-          className={cn(buttonVariants({ variant: "primary", size: "sm" }), "h-8 px-2 sm:px-2.5")}
-        >
-          <span className="sr-only sm:not-sr-only">{exploreLabel}</span>
-          <ArrowRight className="size-3.5" aria-hidden="true" />
-        </Link>
+        {href !== undefined && (
+          <Link
+            href={href}
+            className={cn(buttonVariants({ variant: "primary", size: "sm" }), "h-8 px-2 sm:px-2.5")}
+          >
+            <span className="sr-only sm:not-sr-only">{exploreLabel}</span>
+            <ArrowRight className="size-3.5" aria-hidden="true" />
+          </Link>
+        )}
         <button
           type="button"
           onClick={onClose}

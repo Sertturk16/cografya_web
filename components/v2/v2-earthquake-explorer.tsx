@@ -50,6 +50,16 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { MapAttribution } from "@/components/patterns/map-attribution";
+import { MapSelectionCard } from "@/components/v2/map-selection-card";
+import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
+import {
+  FULLSCREEN_FIGURE,
+  FULLSCREEN_FITTED_STAGE,
+  MapFullscreenToggle,
+  MapRotateHint,
+  fittedMapBoxStyle,
+  fullscreenCardStyle,
+} from "@/components/v2/map-fullscreen-controls";
 import { formatDayTime } from "@/lib/text/format-date";
 import { tr } from "@/lib/text/format-number";
 
@@ -80,6 +90,11 @@ interface V2EarthquakeExplorerProps {
   provinceMap?: Map<string, ProvinceMeta>;
   defaultMinMagnitude?: number;
   defaultWindowDays?: number;
+  /**
+   * The AFAD notice as a line of the map's fullscreen credit (T-119), rendered by the page from
+   * the meta payload (`EarthquakeMapCredit`). Absent when that fetch failed.
+   */
+  dataCredit?: React.ReactNode;
 }
 
 /** The wide frame's neighbours that may carry a label; which of them do is decided per render scale. */
@@ -121,6 +136,7 @@ export function V2EarthquakeExplorer({
   provinceMap = new Map(),
   defaultMinMagnitude = 2.5,
   defaultWindowDays = 7,
+  dataCredit,
 }: V2EarthquakeExplorerProps) {
   const [minMagnitude, setMinMagnitude] = React.useState<number>(defaultMinMagnitude);
   const [windowDays, setWindowDays] = React.useState<number>(defaultWindowDays);
@@ -128,6 +144,16 @@ export function V2EarthquakeExplorer({
   const [selectedEventId, setSelectedEventId] = React.useState<string | null>(
     () => initialEvents[0]?.id || null,
   );
+  /**
+   * Whether the fullscreen card shows. Separate from the selection: the first event is selected
+   * on load and the page's spotlight card always shows one, so closing the fullscreen card only
+   * hides it; picking any event opens it again.
+   */
+  const [cardOpen, setCardOpen] = React.useState(true);
+  const selectEvent = React.useCallback((id: string) => {
+    setSelectedEventId(id);
+    setCardOpen(true);
+  }, []);
   const [hoveredEventId, setHoveredEventId] = React.useState<string | null>(null);
   const [mousePos, setMousePos] = React.useState<{ x: number; y: number } | null>(null);
   /**
@@ -135,9 +161,30 @@ export function V2EarthquakeExplorer({
    * server render and first paint agree and draw the desktop labels.
    */
   const mapBoxRef = React.useRef<HTMLDivElement | null>(null);
-  const mapBox = useMapBoxMetrics(mapBoxRef);
+  /** The fullscreen toggle over the map's top-left corner (T-119), which labels must avoid. */
+  const fullscreenToggleRef = React.useRef<HTMLDivElement | null>(null);
+  const labelOverlays = React.useMemo(() => [fullscreenToggleRef], []);
+  const mapBox = useMapBoxMetrics(mapBoxRef, labelOverlays);
   const mapScale =
     mapBox && sliceScale(mapBox.width, mapBox.height, WIDE_VIEWBOX.width, WIDE_VIEWBOX.height);
+  const mapBlocked = React.useMemo(
+    () =>
+      mapBox && mapScale
+        ? mapBox.overlays.map((r) => ({
+            left: r.left / mapScale + WIDE_VIEWBOX.x,
+            top: r.top / mapScale + WIDE_VIEWBOX.y,
+            right: r.right / mapScale + WIDE_VIEWBOX.x,
+            bottom: r.bottom / mapScale + WIDE_VIEWBOX.y,
+          }))
+        : [],
+    [mapBox, mapScale],
+  );
+
+  /** The figure goes fullscreen (T-119): map, card and credit together. */
+  const figureRef = React.useRef<HTMLElement | null>(null);
+  const landscape = useLandscapeMode(figureRef);
+  // The rotate hint's height, so the card can sit above it in portrait fullscreen.
+  const [rotateHintHeight, setRotateHintHeight] = React.useState(0);
   /**
    * Whether the magnitude printed on a disc is legible (T-087). Below that it is not drawn: the
    * selected event's magnitude is the headline of the card under the map.
@@ -213,7 +260,7 @@ export function V2EarthquakeExplorer({
 
         setEvents(mapped);
         if (mapped.length > 0 && mapped[0]) {
-          setSelectedEventId(mapped[0].id);
+          selectEvent(mapped[0].id);
         } else {
           setSelectedEventId(null);
         }
@@ -224,7 +271,7 @@ export function V2EarthquakeExplorer({
         setIsLoading(false);
       }
     },
-    [provinceMap],
+    [provinceMap, selectEvent],
   );
 
   // Trigger client fetch on filter change (skip first mount as initialEvents is already rendered)
@@ -484,60 +531,75 @@ export function V2EarthquakeExplorer({
             `v2-province-locator-map.tsx` has always expressed and the other six did not, so a screen
             reader heard a figure caption on a province page and a loose paragraph on `/turkiye`.
             `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
-        <figure className="m-0 space-y-2">
-          <div
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => {
-              setHoveredEventId(null);
-              setMousePos(null);
-            }}
-            ref={mapBoxRef}
-            className="relative w-full aspect-[1270/580] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
-          >
-            <svg
-              viewBox={TR_CONTEXT_VIEWBOX}
-              className="w-full h-full block select-none"
-              aria-label="Türkiye Son Depremler Haritası"
+        <figure
+          ref={figureRef}
+          className={`m-0 relative ${landscape.active ? "" : "space-y-2"}`}
+          style={landscape.active ? FULLSCREEN_FIGURE : undefined}
+        >
+          {/* Positioning context for the fullscreen card and rotate hint (T-119); in fullscreen it
+            fills the screen and the map box keeps its shape inside it. */}
+          <div className="relative" style={landscape.active ? FULLSCREEN_FITTED_STAGE : undefined}>
+            <div
+              onMouseMove={handleMouseMove}
+              onMouseLeave={() => {
+                setHoveredEventId(null);
+                setMousePos(null);
+              }}
+              ref={mapBoxRef}
+              className="relative w-full aspect-[1270/580] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner cursor-default select-none p-0"
+              style={landscape.active ? fittedMapBoxStyle(1270, 580) : undefined}
             >
-              {/* Surrounding Context Countries */}
-              <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
-                {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
-                  <path key={country.iso} d={country.d} />
-                ))}
-              </g>
+              {/* Top-left, inside the box, measured as a label overlay (T-119). */}
+              <MapFullscreenToggle
+                ref={fullscreenToggleRef}
+                active={landscape.active}
+                onToggle={landscape.toggle}
+              />
+              <svg
+                viewBox={TR_CONTEXT_VIEWBOX}
+                className="w-full h-full block select-none"
+                aria-label="Türkiye Son Depremler Haritası"
+              >
+                {/* Surrounding Context Countries */}
+                <g className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[1] stroke-linejoin-round pointer-events-none">
+                  {CONTEXT_SHAPES.filter((c) => c.iso !== "TR").map((country) => (
+                    <path key={country.iso} d={country.d} />
+                  ))}
+                </g>
 
-              {/* Neighbour-country and sea names, legible at every box size and dropped where
+                {/* Neighbour-country and sea names, legible at every box size and dropped where
                 they do not fit (T-085). Painted here, under the provinces and the markers, in
                 the order `lib/theme/magnitude-ramp.test.ts` enumerates. */}
-              <MapContextLabels
-                candidates={CONTEXT_LABEL_CANDIDATES}
-                scale={mapScale}
-                frame={WIDE_FRAME}
-                neighboursFirst
-              />
-
-              {/* Turkey Context Casing Outline */}
-              {trCasing && (
-                <path
-                  d={trCasing.d}
-                  className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
+                <MapContextLabels
+                  candidates={CONTEXT_LABEL_CANDIDATES}
+                  scale={mapScale}
+                  frame={WIDE_FRAME}
+                  blocked={mapBlocked}
+                  neighboursFirst
                 />
-              )}
 
-              {/* 81 Turkish Provinces Base Layer */}
-              <g className="fill-card/90 stroke-border/60 stroke-[0.6]">
-                {PROVINCE_SHAPES.map((prov) => (
+                {/* Turkey Context Casing Outline */}
+                {trCasing && (
                   <path
-                    key={prov.plateCode}
-                    d={prov.d}
-                    className="hover:fill-muted/70 transition-colors"
-                  >
-                    <title>{prov.geoName}</title>
-                  </path>
-                ))}
-              </g>
+                    d={trCasing.d}
+                    className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
+                  />
+                )}
 
-              {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as it
+                {/* 81 Turkish Provinces Base Layer */}
+                <g className="fill-card/90 stroke-border/60 stroke-[0.6]">
+                  {PROVINCE_SHAPES.map((prov) => (
+                    <path
+                      key={prov.plateCode}
+                      d={prov.d}
+                      className="hover:fill-muted/70 transition-colors"
+                    >
+                      <title>{prov.geoName}</title>
+                    </path>
+                  ))}
+                </g>
+
+                {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as it
                 was originally) because SVG paints in document order and the province layer's
                 fill-card/90 is ~90% opaque: with the lakes underneath, that fill covered them
                 almost entirely in both themes, independent of colour -- the water was invisible
@@ -546,204 +608,238 @@ export function V2EarthquakeExplorer({
                 the same reason. `pointer-events-none` keeps province hover/selection working
                 through this layer, and the epicentre markers below still paint after it, so a
                 lake never covers a quake marker. */}
-              <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
-                {INLAND_WATER_SHAPES.map((water) => (
-                  <path key={water.id} d={water.d} />
-                ))}
-              </g>
+                <g className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none">
+                  {INLAND_WATER_SHAPES.map((water) => (
+                    <path key={water.id} d={water.d} />
+                  ))}
+                </g>
 
-              {/* Seismic Earthquake Epicenters (Stable Hit Targets - Zero Flickering) */}
-              {filteredEvents.map((eq, index) => {
-                const pt = projectToMapPoint(eq.longitude, eq.latitude);
-                const isSelected = selectedEventId === eq.id;
-                const isHovered = hoveredEventId === eq.id;
-                // Roving tabindex (A11Y126-I5, WAI-ARIA composite-widget pattern): the whole
-                // marker group is ONE tab stop instead of one per event (up to `pageSize: 150`).
-                // `selectedEvent` is a useMemo that falls back to `filteredEvents[0]`, so it is
-                // never null while any marker renders and always names a member of the list —
-                // exactly one marker therefore carries `tabIndex={0}` at all times. Binding this
-                // to the raw `selectedEventId` instead would leave nothing focusable when it is
-                // null.
-                const isTabStop = selectedEvent?.id === eq.id;
-                const baseRadius = Math.max(3.5, Math.min(14, (eq.magnitude - 1.2) * 3.2));
-                const radius = isSelected ? baseRadius * 1.35 : baseRadius;
-                const tone = magnitudeIdentityOf(eq.magnitude);
+                {/* Seismic Earthquake Epicenters (Stable Hit Targets - Zero Flickering) */}
+                {filteredEvents.map((eq, index) => {
+                  const pt = projectToMapPoint(eq.longitude, eq.latitude);
+                  const isSelected = selectedEventId === eq.id;
+                  const isHovered = hoveredEventId === eq.id;
+                  // Roving tabindex (A11Y126-I5, WAI-ARIA composite-widget pattern): the whole
+                  // marker group is ONE tab stop instead of one per event (up to `pageSize: 150`).
+                  // `selectedEvent` is a useMemo that falls back to `filteredEvents[0]`, so it is
+                  // never null while any marker renders and always names a member of the list —
+                  // exactly one marker therefore carries `tabIndex={0}` at all times. Binding this
+                  // to the raw `selectedEventId` instead would leave nothing focusable when it is
+                  // null.
+                  const isTabStop = selectedEvent?.id === eq.id;
+                  const baseRadius = Math.max(3.5, Math.min(14, (eq.magnitude - 1.2) * 3.2));
+                  const radius = isSelected ? baseRadius * 1.35 : baseRadius;
+                  const tone = magnitudeIdentityOf(eq.magnitude);
 
-                return (
-                  <g
-                    key={eq.id}
-                    id={`eq-marker-${eq.id}`}
-                    tabIndex={isTabStop ? 0 : -1}
-                    className="cursor-pointer outline-none select-none transition-transform duration-150 focus-visible:scale-125"
-                    role="button"
-                    aria-label={`Deprem M ${tr(eq.magnitude, 1)} - ${eq.placeNameTr}`}
-                    onPointerEnter={(e) => {
-                      // A mouse only (T-087): a tap fires the mouse events too, and pinned this
-                      // tooltip over a phone map with nothing to dismiss it.
-                      if (e.pointerType === "mouse") setHoveredEventId(eq.id);
-                    }}
-                    onPointerLeave={() => setHoveredEventId(null)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedEventId(eq.id);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setSelectedEventId(eq.id);
-                      } else if (
-                        e.key === "ArrowRight" ||
-                        e.key === "ArrowDown" ||
-                        e.key === "ArrowLeft" ||
-                        e.key === "ArrowUp" ||
-                        e.key === "Home" ||
-                        e.key === "End"
-                      ) {
-                        // Arrow/Home/End move the single tab stop within the group. Order is
-                        // `filteredEvents` order (the api's recency order, the same order the
-                        // table renders), not geographic adjacency; both ends wrap.
-                        e.preventDefault();
-                        const last = filteredEvents.length - 1;
-                        const nextIndex =
-                          e.key === "Home"
-                            ? 0
-                            : e.key === "End"
-                              ? last
-                              : e.key === "ArrowRight" || e.key === "ArrowDown"
-                                ? index === last
-                                  ? 0
-                                  : index + 1
-                                : index === 0
-                                  ? last
-                                  : index - 1;
-                        // `noUncheckedIndexedAccess`: this really can be undefined.
-                        const next = filteredEvents[nextIndex];
-                        if (next) {
-                          setSelectedEventId(next.id);
-                          document.getElementById(`eq-marker-${next.id}`)?.focus();
+                  return (
+                    <g
+                      key={eq.id}
+                      id={`eq-marker-${eq.id}`}
+                      tabIndex={isTabStop ? 0 : -1}
+                      className="cursor-pointer outline-none select-none transition-transform duration-150 focus-visible:scale-125"
+                      role="button"
+                      aria-label={`Deprem M ${tr(eq.magnitude, 1)} - ${eq.placeNameTr}`}
+                      onPointerEnter={(e) => {
+                        // A mouse only (T-087): a tap fires the mouse events too, and pinned this
+                        // tooltip over a phone map with nothing to dismiss it.
+                        if (e.pointerType === "mouse") setHoveredEventId(eq.id);
+                      }}
+                      onPointerLeave={() => setHoveredEventId(null)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        selectEvent(eq.id);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          selectEvent(eq.id);
+                        } else if (
+                          e.key === "ArrowRight" ||
+                          e.key === "ArrowDown" ||
+                          e.key === "ArrowLeft" ||
+                          e.key === "ArrowUp" ||
+                          e.key === "Home" ||
+                          e.key === "End"
+                        ) {
+                          // Arrow/Home/End move the single tab stop within the group. Order is
+                          // `filteredEvents` order (the api's recency order, the same order the
+                          // table renders), not geographic adjacency; both ends wrap.
+                          e.preventDefault();
+                          const last = filteredEvents.length - 1;
+                          const nextIndex =
+                            e.key === "Home"
+                              ? 0
+                              : e.key === "End"
+                                ? last
+                                : e.key === "ArrowRight" || e.key === "ArrowDown"
+                                  ? index === last
+                                    ? 0
+                                    : index + 1
+                                  : index === 0
+                                    ? last
+                                    : index - 1;
+                          // `noUncheckedIndexedAccess`: this really can be undefined.
+                          const next = filteredEvents[nextIndex];
+                          if (next) {
+                            selectEvent(next.id);
+                            document.getElementById(`eq-marker-${next.id}`)?.focus();
+                          }
                         }
-                      }
-                    }}
-                  >
-                    {/* Fixed invisible hit circle to prevent DOM detach/flickering; never under
+                      }}
+                    >
+                      {/* Fixed invisible hit circle to prevent DOM detach/flickering; never under
                       a 24px touch target, which at a phone's scale is ~53 units (T-087). */}
-                    <circle
-                      cx={pt.x}
-                      cy={pt.y}
-                      r={markerHitRadius(baseRadius + 9, mapScale)}
-                      className="fill-transparent"
-                      pointerEvents="all"
-                    />
-
-                    {/* Subtle native SVG ripple pulse (100% stable, zero coordinate shift) */}
-                    {(isSelected || isHovered || eq.magnitude >= 3.5) && (
                       <circle
                         cx={pt.x}
                         cy={pt.y}
-                        r={radius}
-                        /* The ripple used to carry four RAW HEXES in a `stroke` prop — the
+                        r={markerHitRadius(baseRadius + 9, mapScale)}
+                        className="fill-transparent"
+                        pointerEvents="all"
+                      />
+
+                      {/* Subtle native SVG ripple pulse (100% stable, zero coordinate shift) */}
+                      {(isSelected || isHovered || eq.magnitude >= 3.5) && (
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={radius}
+                          /* The ripple used to carry four RAW HEXES in a `stroke` prop — the
                          Tailwind v3 values of red/orange/emerald, plus amber for the selected
                          state — re-classified at three thresholds of its own. A bare hex in a
                          prop is a class to no scanner, so neither arm of the palette count
                          could see it and it was free to drift from the badges it sits under.
                          Selection is `--ring`, the token that exists for it; everything else is
                          the event's own step. */
-                        className={`fill-none pointer-events-none ${
-                          isSelected ? "stroke-ring" : tone.ripple
-                        }`}
-                        strokeWidth={isSelected ? "2" : "1.2"}
-                      >
-                        <animate
-                          attributeName="r"
-                          values={`${radius + 1.5};${radius + (isSelected ? 10 : 6)};${radius + 1.5}`}
-                          dur={isSelected ? "1.8s" : "2.5s"}
-                          repeatCount="indefinite"
-                        />
-                        <animate
-                          attributeName="opacity"
-                          values="0.8;0.05;0.8"
-                          dur={isSelected ? "1.8s" : "2.5s"}
-                          repeatCount="indefinite"
-                        />
-                      </circle>
-                    )}
+                          className={`fill-none pointer-events-none ${
+                            isSelected ? "stroke-ring" : tone.ripple
+                          }`}
+                          strokeWidth={isSelected ? "2" : "1.2"}
+                        >
+                          <animate
+                            attributeName="r"
+                            values={`${radius + 1.5};${radius + (isSelected ? 10 : 6)};${radius + 1.5}`}
+                            dur={isSelected ? "1.8s" : "2.5s"}
+                            repeatCount="indefinite"
+                          />
+                          <animate
+                            attributeName="opacity"
+                            values="0.8;0.05;0.8"
+                            dur={isSelected ? "1.8s" : "2.5s"}
+                            repeatCount="indefinite"
+                          />
+                        </circle>
+                      )}
 
-                    {/* Static Selected / High-Magnitude Accent Ring */}
-                    {(isSelected || isHovered || eq.magnitude >= 4.0) && (
-                      <circle
-                        cx={pt.x}
-                        cy={pt.y}
-                        r={radius + 3.5}
-                        className={`fill-none stroke-2 pointer-events-none ${
-                          isSelected
-                            ? "stroke-ring stroke-[2.5]"
-                            : eq.magnitude >= 4.0
-                              ? "stroke-destructive/70"
-                              : "stroke-primary/50"
-                        }`}
-                        pointerEvents="none"
-                      />
-                    )}
+                      {/* Static Selected / High-Magnitude Accent Ring */}
+                      {(isSelected || isHovered || eq.magnitude >= 4.0) && (
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={radius + 3.5}
+                          className={`fill-none stroke-2 pointer-events-none ${
+                            isSelected
+                              ? "stroke-ring stroke-[2.5]"
+                              : eq.magnitude >= 4.0
+                                ? "stroke-destructive/70"
+                                : "stroke-primary/50"
+                          }`}
+                          pointerEvents="none"
+                        />
+                      )}
 
-                    {/* Epicenter Core Circle (Pure SVG radius - zero CSS transform displacement).
+                      {/* Epicenter Core Circle (Pure SVG radius - zero CSS transform displacement).
                       Ring is MAGNITUDE_RING, not the old `stroke-white dark:stroke-black` pair
                       — see that constant's docblock in lib/theme/magnitude-identity.ts for the
                       measurement behind it (T-031d Task 13). */}
-                    <circle
-                      cx={pt.x}
-                      cy={pt.y}
-                      r={radius}
-                      className={`${tone.mark} ${MAGNITUDE_RING} stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
-                      pointerEvents="none"
-                    />
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={radius}
+                        className={`${tone.mark} ${MAGNITUDE_RING} stroke-[1.5] shadow-md pointer-events-none transition-all duration-150`}
+                        pointerEvents="none"
+                      />
 
-                    {/* Magnitude text badge on M >= 3.5. MAGNITUDE_LABEL, not the old
+                      {/* Magnitude text badge on M >= 3.5. MAGNITUDE_LABEL, not the old
                       `fill="#ffffff"` — that was an SVG presentation attribute, which a class
                       cannot shadow, so it had to be deleted rather than overridden (T-031d
                       Task 13; see MAGNITUDE_LABEL's docblock in lib/theme/magnitude-identity.ts
                       for the measurement). */}
-                    {showDiscValues && eq.magnitude >= 3.5 && (
-                      <text
-                        x={pt.x}
-                        y={pt.y + (isSelected ? 3.5 : 3)}
-                        textAnchor="middle"
-                        fontSize={isSelected ? 9.5 : DISC_VALUE_FONT_UNITS}
-                        fontWeight="bold"
-                        className={`${MAGNITUDE_LABEL} pointer-events-none select-none font-mono`}
-                      >
-                        {tr(eq.magnitude, 1)}
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-            </svg>
+                      {showDiscValues && eq.magnitude >= 3.5 && (
+                        <text
+                          x={pt.x}
+                          y={pt.y + (isSelected ? 3.5 : 3)}
+                          textAnchor="middle"
+                          fontSize={isSelected ? 9.5 : DISC_VALUE_FONT_UNITS}
+                          fontWeight="bold"
+                          className={`${MAGNITUDE_LABEL} pointer-events-none select-none font-mono`}
+                        >
+                          {tr(eq.magnitude, 1)}
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </svg>
 
-            {/* FLOATING TOOLTIP ON PIN HOVER */}
-            {hoveredEvent && mousePos && (
-              <div
-                className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3 shadow-2xl text-xs space-y-1.5 min-w-[220px] max-w-[270px]"
-                style={{
-                  top: `${Math.min(mousePos.y + 15, 340)}px`,
-                  left: `${Math.min(mousePos.x + 15, 880)}px`,
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-foreground font-mono">
-                    M {tr(hoveredEvent.magnitude, 1)} {hoveredEvent.magnitudeType}
-                  </span>
-                  <Badge variant="outline" size="sm" className="text-[9px] py-0 px-1 font-mono">
-                    {tr(hoveredEvent.depthKm, 1)} km
-                  </Badge>
+              {/* FLOATING TOOLTIP ON PIN HOVER */}
+              {hoveredEvent && mousePos && (
+                <div
+                  className="absolute z-30 pointer-events-none rounded-2xl bg-card/95 backdrop-blur-xl border border-border/90 p-3 shadow-2xl text-xs space-y-1.5 min-w-[220px] max-w-[270px]"
+                  style={{
+                    top: `${Math.min(mousePos.y + 15, 340)}px`,
+                    left: `${Math.min(mousePos.x + 15, 880)}px`,
+                  }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-foreground font-mono">
+                      M {tr(hoveredEvent.magnitude, 1)} {hoveredEvent.magnitudeType}
+                    </span>
+                    <Badge variant="outline" size="sm" className="text-[9px] py-0 px-1 font-mono">
+                      {tr(hoveredEvent.depthKm, 1)} km
+                    </Badge>
+                  </div>
+                  <div className="font-semibold text-foreground text-xs">
+                    {hoveredEvent.placeNameTr}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-1 border-t border-border/60">
+                    <span>{formatTime(hoveredEvent.occurredAtUtc)}</span>
+                    <span className="font-mono">AFAD</span>
+                  </div>
                 </div>
-                <div className="font-semibold text-foreground text-xs">
-                  {hoveredEvent.placeNameTr}
-                </div>
-                <div className="text-[10px] text-muted-foreground flex items-center justify-between pt-1 border-t border-border/60">
-                  <span>{formatTime(hoveredEvent.occurredAtUtc)}</span>
-                  <span className="font-mono">AFAD</span>
-                </div>
-              </div>
+              )}
+            </div>
+
+            {landscape.showRotateHint && (
+              <MapRotateHint onDismiss={landscape.exit} onHeight={setRotateHintHeight} />
+            )}
+
+            {/* The selected earthquake over the map, in fullscreen only (T-119): the page's
+              spotlight card below the map is off screen there. */}
+            {landscape.active && cardOpen && selectedEvent && (
+              <MapSelectionCard
+                style={fullscreenCardStyle(rotateHintHeight)}
+                leading={
+                  <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 font-mono text-sm font-bold text-primary">
+                    {tr(selectedEvent.magnitude, 1)}
+                  </div>
+                }
+                title={selectedEvent.placeNameTr}
+                stats={[
+                  `Derinlik ${tr(selectedEvent.depthKm, 1)} km`,
+                  formatTime(selectedEvent.occurredAtUtc),
+                ]}
+                href={
+                  selectedEvent.provinceSlug
+                    ? {
+                        pathname: "/turkiye/[slug]",
+                        params: { slug: selectedEvent.provinceSlug },
+                      }
+                    : undefined
+                }
+                exploreLabel="İl Sayfası"
+                closeLabel="Kartı kapat"
+                onClose={() => setCardOpen(false)}
+              />
             )}
           </div>
 
@@ -751,7 +847,12 @@ export function V2EarthquakeExplorer({
             `overflow-hidden` cut it off: on `/deprem` it sat at y=532 of a 533px box, so the
             ODbL and JRC lines this component publishes reached no reader at all. */}
           <figcaption>
-            <MapAttribution inlandWater context />
+            <MapAttribution
+              inlandWater
+              context
+              fullscreen={landscape.active}
+              dataCredit={dataCredit}
+            />
           </figcaption>
         </figure>
       </div>
@@ -904,7 +1005,7 @@ export function V2EarthquakeExplorer({
                 <button
                   key={eq.id}
                   type="button"
-                  onClick={() => setSelectedEventId(eq.id)}
+                  onClick={() => selectEvent(eq.id)}
                   className={`w-full p-2.5 rounded-xl text-left transition-all cursor-pointer flex items-center justify-between gap-3 border ${
                     isSelected
                       ? "bg-primary/10 border-primary/40 shadow-xs scale-[1.01]"
@@ -990,11 +1091,11 @@ export function V2EarthquakeExplorer({
                       tabIndex={0}
                       aria-selected={isSelected}
                       aria-label={`M ${tr(eq.magnitude, 1)} - ${eq.placeNameTr} depremini seç`}
-                      onClick={() => setSelectedEventId(eq.id)}
+                      onClick={() => selectEvent(eq.id)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          setSelectedEventId(eq.id);
+                          selectEvent(eq.id);
                         }
                       }}
                       className={`cursor-pointer transition-colors outline-none focus-visible:bg-primary/15 ${

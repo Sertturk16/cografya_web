@@ -5,9 +5,10 @@ import { useTranslations } from "next-intl";
 import { Maximize2, Minimize2, RotateCcw } from "lucide-react";
 
 /**
- * The atlas maps' fullscreen controls (T-118), shared by `/dunya` and `/turkiye`: the top-left
- * toggle, the rotate-your-phone hint, and the inline layout a surface switches to while
- * `useLandscapeMode().active`. The game and tool pages keep their own copies (T-015).
+ * The atlas maps' fullscreen controls (T-118), shared by `/dunya`, `/turkiye`, `/deprem` and
+ * `/deniz` (T-119): the top-left toggle, the rotate-your-phone hint, and the inline layout a
+ * surface switches to while `useLandscapeMode().active`. The game and tool pages keep their own
+ * copies (T-015).
  *
  * Inline styles, not conditional classes, for the reasons `v2-game-screen.tsx` gives beside its
  * `LANDSCAPE_FILL`: they beat `aspect-*` / `min-h-*` without relying on Tailwind's emit order, and
@@ -47,6 +48,34 @@ export const FULLSCREEN_MAP_BOX: React.CSSProperties = {
   borderRadius: 0,
   borderWidth: 0,
 };
+
+/**
+ * The stage for a map that must keep its shape (`/deprem`, `/deniz`; T-119): it fills the screen,
+ * is painted like the map plate so the spare bands read as more sea, and is the size container
+ * `fittedMapBoxStyle` measures against. `relative`: the card and the rotate hint sit on it.
+ */
+export const FULLSCREEN_FITTED_STAGE: React.CSSProperties = {
+  ...FULLSCREEN_STAGE,
+  position: "relative",
+  containerType: "size",
+  background: "var(--map-plate)",
+};
+
+/**
+ * A map box kept at `width`:`height` and fitted, centred, into `FULLSCREEN_FITTED_STAGE`. For maps
+ * drawn with the default `meet` whose labels are sized from the box assuming the viewBox's shape
+ * (`sliceScale`): stretched to the screen, the labels would land in the wrong place.
+ */
+export function fittedMapBoxStyle(width: number, height: number): React.CSSProperties {
+  return {
+    flex: "none",
+    width: `min(100cqw, calc(100cqh * ${width} / ${height}))`,
+    aspectRatio: `${width} / ${height}`,
+    margin: "auto",
+    borderRadius: 0,
+    borderWidth: 0,
+  };
+}
 
 /** A toolbar that sits above the map on a phone floats over its top-right corner instead. */
 export const FULLSCREEN_TOOLBAR: React.CSSProperties = {

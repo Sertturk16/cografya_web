@@ -42,8 +42,35 @@ describe("the fullscreen target holds the map credit", () => {
         "components/v2/v2-tool-workbench.tsx",
         "components/v2/v2-world-map-explorer.tsx",
         "components/v2/v2-turkey-map-explorer.tsx",
+        "components/v2/v2-earthquake-explorer.tsx",
+        "components/v2/v2-marine-map-explorer.tsx",
       ]),
     );
+  });
+
+  it.each(["v2-earthquake-explorer.tsx", "v2-marine-map-explorer.tsx"])(
+    "%s credits the data it draws in fullscreen (T-119)",
+    (file) => {
+      const path = fileURLToPath(new URL(`./${file}`, import.meta.url));
+      const credit = jsxElementsOf(path).find((el) => el.tag === "MapAttribution");
+      expect(credit?.attributes.has("dataCredit"), `${file}: no dataCredit`).toBe(true);
+    },
+  );
+
+  it("gets the AFAD line from the /deprem page, each notice marked Turkish (T-119)", () => {
+    // The explorer only forwards what the page hands it; without this the line could drop out
+    // with every check above still green. `app/` is read as source: vitest runs nothing there.
+    const page = readSource(
+      fileURLToPath(new URL("../../app/[locale]/(site)/deprem/page.tsx", import.meta.url)),
+    );
+    expect(page).toMatch(
+      /<V2EarthquakeExplorer[\s\S]*?dataCredit=\{[\s\S]*?<EarthquakeMapCredit attributions=\{earthquakeMeta\.attributions\}/,
+    );
+    const credit = readSource(
+      fileURLToPath(new URL("../earthquake/earthquake-attribution.tsx", import.meta.url)),
+    );
+    const mapCredit = credit.slice(credit.indexOf("export function EarthquakeMapCredit"));
+    expect(mapCredit).toMatch(/<span lang="tr">\s*\{attribution\.requiredNoticeTr\}/);
   });
 
   it.each(surfaces)(

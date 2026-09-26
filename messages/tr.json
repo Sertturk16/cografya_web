@@ -114,6 +114,7 @@
     "seaMediterranean": "Akdeniz",
     "attributionContextLabel": "Komşu ülke sınırları: Natural Earth (kamu malı)",
     "attributionWorldLabel": "Ülke sınırları: Natural Earth (kamu malı)",
+    "attributionMarine": "Deniz verileri: <sources>Copernicus Marine Service ve ECMWF</sources>",
     "wheelHint": "Yakınlaştırmak için {key} + tekerlek"
   },
   "MapExplorer": {

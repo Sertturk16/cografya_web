@@ -62,6 +62,12 @@ interface MapAttributionProps {
    * positioned ancestor, so the surface's `<figure>` must be `relative`.
    */
   fullscreen?: boolean;
+  /**
+   * The data drawn over the map (AFAD events, sea readings; T-119), credited in fullscreen only.
+   * The page view leaves it out because the page carries its own source block for that data, and
+   * that block is off screen once the map is fullscreen.
+   */
+  dataCredit?: ReactNode;
   className?: string;
 }
 
@@ -92,6 +98,7 @@ export function MapAttribution({
   context = false,
   world = false,
   fullscreen = false,
+  dataCredit,
   className,
 }: MapAttributionProps) {
   const t = useTranslations("Map");
@@ -147,7 +154,13 @@ export function MapAttribution({
     </>
   );
 
-  if (fullscreen) return <FullscreenCredit>{lines}</FullscreenCredit>;
+  if (fullscreen) {
+    return (
+      <FullscreenCredit>
+        {lines} {dataCredit}
+      </FullscreenCredit>
+    );
+  }
 
   return (
     <p

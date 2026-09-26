@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fullscreenCardStyle, FULLSCREEN_MAP_BOX } from "./map-fullscreen-controls";
+import {
+  fittedMapBoxStyle,
+  fullscreenCardStyle,
+  FULLSCREEN_FITTED_STAGE,
+  FULLSCREEN_MAP_BOX,
+} from "./map-fullscreen-controls";
 
 const source = readFileSync(join(__dirname, "map-fullscreen-controls.tsx"), "utf8");
 const messages = (locale: string) =>
@@ -30,6 +35,26 @@ describe("atlas fullscreen controls (T-118)", () => {
       flex: "1 1 0%",
       minHeight: 0,
       aspectRatio: "auto",
+      borderRadius: 0,
+      borderWidth: 0,
+    });
+  });
+
+  it("fits a fixed-shape map into the screen instead of stretching it (T-119)", () => {
+    // `/deprem` and `/deniz` size their labels from the box assuming it has the viewBox's shape;
+    // a stretched box would misplace them. The stage is the query container the box fits into.
+    expect(FULLSCREEN_FITTED_STAGE).toMatchObject({
+      position: "relative",
+      containerType: "size",
+      flex: "1 1 0%",
+      minHeight: 0,
+      background: "var(--map-plate)",
+    });
+    expect(fittedMapBoxStyle(1270, 580)).toMatchObject({
+      flex: "none",
+      width: "min(100cqw, calc(100cqh * 1270 / 580))",
+      aspectRatio: "1270 / 580",
+      margin: "auto",
       borderRadius: 0,
       borderWidth: 0,
     });
