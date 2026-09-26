@@ -442,12 +442,17 @@ const MIN_USABLE_BAR_KM = 0.001;
  * use. The earlier docblock also promised a "target so small it rounds away" branch that the
  * code did not have — probed at `viewWidthUnits = 1e-300` it still returned a bar. Both are
  * now the same one-metre floor on `totalKm`.
+ *
+ * `minTargetPx` raises the target on a narrow map, where `maxFraction` alone yields a bar
+ * shorter than its own "0" and "200 km" labels. It moves the target, not the bar: the bar
+ * still snaps down to a round distance, so it lands between `minTargetPx / 2.5` and the target.
  */
 export function scaleBarKm(
   viewWidthUnits: number,
   renderedWidthPx: number,
   centerLatitude: number,
   maxFraction = 0.25,
+  minTargetPx = 0,
 ): ScaleBar | null {
   if (!Number.isFinite(viewWidthUnits) || viewWidthUnits <= 0) return null;
   if (!Number.isFinite(renderedWidthPx) || renderedWidthPx <= 0) return null;
@@ -457,7 +462,7 @@ export function scaleBarKm(
   const totalKm = viewWidthUnits * kmPerMapUnitAt(centerLatitude);
   if (!(totalKm > 0)) return null;
 
-  const targetKm = totalKm * maxFraction;
+  const targetKm = totalKm * Math.max(maxFraction, minTargetPx / renderedWidthPx);
   const exponent = Math.floor(Math.log10(targetKm));
   const base = 10 ** exponent;
   let km = base;

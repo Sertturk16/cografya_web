@@ -886,7 +886,9 @@ export function V2ToolWorkbench({
     const parts = currentViewBox.split(" ").map(Number);
     const viewWidthUnits = parts[2] || 1270;
     const centerLat = 39.0;
-    return scaleBarKm(viewWidthUnits, containerWidth, centerLat, 0.22);
+    // 120 px floor on the target: on a ~300 px phone map 22 % alone gives a ~30 px bar that
+    // "0" and "200 km" cannot sit on without running together (T-123).
+    return scaleBarKm(viewWidthUnits, containerWidth, centerLat, 0.22, 120);
   }, [currentViewBox, containerWidth]);
 
   // Convert decimal to DMS (Degrees Minutes Seconds)
@@ -1313,14 +1315,14 @@ export function V2ToolWorkbench({
                 className="absolute bottom-3 left-3 z-30 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/80 shadow-md pointer-events-none flex flex-col gap-1 text-xs select-none"
                 aria-label={t("scaleBarAria", { km: formatNumber(dynamicScaleBar.km, locale) })}
               >
-                <div className="flex items-center justify-between text-[11px] font-bold text-foreground font-mono leading-none">
+                <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-foreground font-mono leading-none">
                   <span>0</span>
                   <span>{formatNumber(dynamicScaleBar.km, locale)} km</span>
                 </div>
                 <div
                   className="h-1.5 border-x-2 border-b-2 border-foreground"
                   style={{
-                    width: `${Math.max(36, Math.min(Math.round(dynamicScaleBar.px), 240))}px`,
+                    width: `${Math.min(Math.round(dynamicScaleBar.px), 240)}px`,
                   }}
                 />
               </div>
