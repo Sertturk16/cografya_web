@@ -16,6 +16,7 @@ import {
   scaleBarKm,
   toDmsParts,
   unprojectMapPoint,
+  distanceTravelEstimates,
 } from "./measure";
 import { projectToMapPoint } from "./projection";
 import { ringAreaKm2 as ringAreaFromTuples } from "./spherical-area";
@@ -913,5 +914,21 @@ describe("parseLatLon", () => {
       ok: false,
       reason: "unreadable",
     });
+  });
+});
+
+describe("distanceTravelEstimates", () => {
+  it("quotes flight minutes at 800 km/h and the road at 1.28 × the straight line", () => {
+    expect(distanceTravelEstimates(800)).toEqual({ flightMinutes: 60, roadKm: 1024 });
+  });
+
+  it("rounds the flight to whole minutes and leaves the road unrounded for the caller", () => {
+    const { flightMinutes, roadKm } = distanceTravelEstimates(1430.2);
+    expect(flightMinutes).toBe(107);
+    expect(roadKm).toBeCloseTo(1830.656, 3);
+  });
+
+  it("is zero for no distance", () => {
+    expect(distanceTravelEstimates(0)).toEqual({ flightMinutes: 0, roadKm: 0 });
   });
 });

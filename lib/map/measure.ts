@@ -139,6 +139,25 @@ export function polylineLengthKm(points: readonly GeoPoint[]): number {
   return total;
 }
 
+/** Cruise speed the distance tool's flight time assumes. */
+const FLIGHT_CRUISE_KMH = 800;
+/** How much longer than the straight line the tool's road estimate takes the road to be. */
+const ROAD_DISTANCE_FACTOR = 1.28;
+
+/**
+ * The flight time and road length the distance tool quotes beside a straight-line distance. One
+ * function so the result card and the on-map panel (T-120) cannot show different figures.
+ */
+export function distanceTravelEstimates(distanceKm: number): {
+  flightMinutes: number;
+  roadKm: number;
+} {
+  return {
+    flightMinutes: Math.round((distanceKm / FLIGHT_CRUISE_KMH) * 60),
+    roadKm: distanceKm * ROAD_DISTANCE_FACTOR,
+  };
+}
+
 /**
  * Perimeter of a ring treated as implicitly CLOSED, in kilometres — the area tool's second
  * output (SPEC §6.3).

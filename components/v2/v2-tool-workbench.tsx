@@ -10,6 +10,7 @@ import { projectToMapPoint } from "@/lib/map/projection";
 import {
   unprojectMapPoint,
   polylineLengthKm,
+  distanceTravelEstimates,
   ringPerimeterKm,
   readRingArea,
   toDmsParts,
@@ -879,6 +880,7 @@ export function V2ToolWorkbench({
     }
     return 0;
   }, [activeTool, geoPoints]);
+  const travelEstimates = distanceTravelEstimates(distanceKm);
 
   const perimeterKm = React.useMemo(() => {
     if (activeTool === "area" && geoPoints.length >= 3) {
@@ -1821,7 +1823,7 @@ export function V2ToolWorkbench({
                       <span>{t("flightTime")}</span>
                     </div>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      {t("flightMinutes", { minutes: String(Math.round((distanceKm / 800) * 60)) })}
+                      {t("flightMinutes", { minutes: String(travelEstimates.flightMinutes) })}
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
                       {t("flightCruise")}
@@ -1834,7 +1836,7 @@ export function V2ToolWorkbench({
                       <span>{t("roadEstimate")}</span>
                     </div>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      ~{formatNumber(distanceKm * 1.28, locale, 0)} km
+                      ~{formatNumber(travelEstimates.roadKm, locale, 0)} km
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
                       {t("roadFactor")}
