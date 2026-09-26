@@ -275,11 +275,14 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
   const toolbarRef = React.useRef<HTMLDivElement | null>(null);
   /**
-   * The box and the toolbar floating over its top-right corner (T-086), measured on resize.
+   * The box and the controls floating over its top corners (T-086, T-118), measured on resize.
    * `boxScale` is CSS px per viewBox unit at zoom 1 (T-082), `null` until measured, so the server
    * render and the first client render agree and draw the desktop labels.
    */
-  const boxMetrics = useMapBoxMetrics(mapContainerRef, toolbarRef);
+  /** The top-left fullscreen toggle (T-118), the labels' second overlay. */
+  const fullscreenToggleRef = React.useRef<HTMLDivElement | null>(null);
+  const labelOverlays = React.useMemo(() => [toolbarRef, fullscreenToggleRef], []);
+  const boxMetrics = useMapBoxMetrics(mapContainerRef, labelOverlays);
   const boxScale =
     boxMetrics &&
     sliceScale(
