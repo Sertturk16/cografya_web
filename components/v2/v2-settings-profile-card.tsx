@@ -135,7 +135,12 @@ export function V2SettingsProfileCard({ locale, profile }: V2SettingsProfileCard
           disabled={submitting}
         />
 
-        <p role="status" className="text-[11px] text-muted-foreground leading-relaxed empty:hidden">
+        {/* Empty, the region stays in the accessibility tree (sr-only, never display:none):
+            a live region that appears together with its text is not announced. */}
+        <p
+          role="status"
+          className="text-[11px] text-muted-foreground leading-relaxed empty:sr-only"
+        >
           {value.accountRole !== savedRole ? t("profile.roleChangeNotice") : ""}
         </p>
 
