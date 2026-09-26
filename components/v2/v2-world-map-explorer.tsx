@@ -542,16 +542,17 @@ export function V2WorldMapExplorer({
               >
                 <ZoomOut className="size-4" />
               </button>
-              {zoom > 1 && (
-                <button
-                  type="button"
-                  onClick={handleResetZoom}
-                  aria-label={t("resetView")}
-                  className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer text-xs font-mono"
-                >
-                  <RotateCcw className="size-3.5" />
-                </button>
-              )}
+              {/* Always rendered (T-114): mounting it on the first zoom widened the bar and moved
+                + and − out from under the cursor. Disabled at the untouched view instead. */}
+              <button
+                type="button"
+                onClick={handleResetZoom}
+                disabled={zoom === 1 && pan.x === 0 && pan.y === 0}
+                aria-label={t("resetView")}
+                className="size-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-40 transition-colors cursor-pointer text-xs font-mono"
+              >
+                <RotateCcw className="size-3.5" />
+              </button>
             </div>
 
             {/* No minimum height (T-079): the world has nothing beyond its poles to fill a taller
