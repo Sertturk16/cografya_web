@@ -55,6 +55,12 @@ export type SweepShape = {
   readonly locales: readonly SweepLocale[];
   /** Why this shape is in the list. Asserted non-empty. */
   readonly why: string;
+  /**
+   * The page needs a signed-in session. The script logs in once through the `/giris` form and
+   * visits these URLs in a context carrying that session; every other URL stays anonymous, so
+   * the public pages are measured with the header a visitor sees.
+   */
+  readonly session?: true;
 };
 
 export const SWEEP_SHAPES: readonly SweepShape[] = [
@@ -252,6 +258,25 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "intrinsic minimum widths that no amount of container padding can shrink.",
   },
   {
+    id: "register",
+    pathname: "/kayit",
+    locales: ["tr"],
+    why:
+      "The auth card grown into a long form: four account-role tiles two to a row, the " +
+      "role's own selects, province and district pickers and two consent rows. `/giris` is two inputs and a " +
+      "button; this is the form that has to fit tiles side by side at 320.",
+  },
+  {
+    id: "settings",
+    pathname: "/hesabim/ayarlar",
+    locales: ["tr"],
+    session: true,
+    why:
+      "The one signed-in page: a sticky section nav beside five settings cards, each a " +
+      "form with its own badge, role tiles and select pairs. Without a session it redirects " +
+      "to `/giris`, which is why the sweep logs in for it and fails if it lands elsewhere.",
+  },
+  {
     id: "design-system",
     pathname: "/design-system",
     locales: ["tr"],
@@ -395,6 +420,20 @@ export function buildSweepUrls(
     }
   }
   return urls;
+}
+
+/**
+ * Where a visit ended up, if that is not where it was sent. `null` when the landed pathname
+ * is the requested one.
+ *
+ * A redirect answers 200 and a login page has no horizontal overflow, so without this an
+ * expired session would measure `/giris` and report `/hesabim/ayarlar` green.
+ */
+export function landedElsewhere(requestedUrl: string, landedHref: string): string | null {
+  const landed = decodeURI(new URL(landedHref).pathname);
+  const requested = decodeURI(new URL(requestedUrl, landedHref).pathname);
+  const trim = (path: string) => (path.length > 1 ? path.replace(/\/$/, "") : path);
+  return trim(landed) === trim(requested) ? null : landed;
 }
 
 /**
