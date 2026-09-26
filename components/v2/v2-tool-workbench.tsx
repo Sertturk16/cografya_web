@@ -1108,15 +1108,19 @@ export function V2ToolWorkbench({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Live Mouse Coordinates */}
-            {hoveredPos && (
-              <span className="text-[11px] font-mono bg-muted/60 px-2.5 py-1 rounded-lg text-foreground border border-border/60">
-                {t("latLon", {
-                  lat: formatNumber(hoveredPos.geo.lat, locale, 3),
-                  lon: formatNumber(hoveredPos.geo.lon, locale, 3),
-                })}
-              </span>
-            )}
+            {/* Live Mouse Coordinates. Always rendered on a mouse, invisible until the first
+                hover, so appearing never re-wraps this toolbar: inserted on hover, it pushed the
+                map 48 px down under the cursor on a narrow window and the first click landed
+                off target (T-126). The placeholder reads Türkiye's centre, so it spells the same
+                number of digits as a real reading. Hidden on a touchscreen, which never hovers. */}
+            <span
+              className={`hidden pointer-fine:inline-block text-[11px] font-mono bg-muted/60 px-2.5 py-1 rounded-lg text-foreground border border-border/60 ${hoveredPos ? "" : "invisible"}`}
+            >
+              {t("latLon", {
+                lat: formatNumber(hoveredPos?.geo.lat ?? 39, locale, 3),
+                lon: formatNumber(hoveredPos?.geo.lon ?? 35, locale, 3),
+              })}
+            </span>
 
             {/* Undo / Clear */}
             <Button
