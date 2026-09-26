@@ -28,6 +28,7 @@ import {
   atScreenSize,
   clampPan,
   moveDistance,
+  zoomAtPoint,
   zoomFromPinch,
   type ViewBox,
 } from "@/lib/map/zoom-pan";
@@ -35,6 +36,8 @@ import { DIAGONAL, placePinLabels, type PinLabelSide } from "@/lib/map/pin-label
 import { placeSegmentLabels } from "@/lib/map/segment-labels";
 import { placeAreaLabel } from "@/lib/map/area-label";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
+import { useWheelZoom } from "@/lib/map/use-wheel-zoom.client";
+import { MapWheelHint } from "@/components/v2/map-wheel-hint";
 import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-presets";
 import type { MeasurementType } from "@/lib/api/types";
@@ -655,6 +658,32 @@ export function V2ToolWorkbench({
     [],
   );
 
+  /**
+   * Zoom to `targetZoom` holding the world point under the client point stationary — the
+   * anchoring shared by the touch pinch (T-015) and the wheel/trackpad zoom (T-116).
+   */
+  const zoomToolAt = (targetZoom: number, clientX: number, clientY: number) => {
+    const svg = svgRef.current;
+    if (!svg) {
+      setZoomLevel(targetZoom);
+      return;
+    }
+    const rect = svg.getBoundingClientRect();
+    const fx = rect.width > 0 ? (clientX - rect.left) / rect.width : 0.5;
+    const fy = rect.height > 0 ? (clientY - rect.top) / rect.height : 0.5;
+    const view = viewOfZoomPan(zoomLevel, panOffset, worldView);
+    const next = zoomPanOfView(zoomAtPoint(view, worldView, targetZoom, fx, fy), worldView);
+    setZoomLevel(next.zoomLevel);
+    setPanOffset(next.panOffset);
+  };
+
+  const wheel = useWheelZoom({
+    targetRef: mapContainerRef,
+    plainWheelZooms: landscape.active,
+    zoomBy: (factor, clientX, clientY) =>
+      zoomToolAt(Math.min(MAX_TOOL_ZOOM, Math.max(1, zoomLevel * factor)), clientX, clientY),
+  });
+
   // Zoom handlers
   const handleZoomIn = () => {
     setZoomLevel((prev) => Math.min(prev * 1.5, 8));
@@ -765,30 +794,7 @@ export function V2ToolWorkbench({
           MAX_TOOL_ZOOM,
           Math.max(1, zoomFromPinch(pinch.zoom, pinch.dist, dist)),
         );
-        const svg = svgRef.current;
-        const view = viewOfZoomPan(zoomLevel, panOffset, worldView);
-        if (svg) {
-          const rect = svg.getBoundingClientRect();
-          const midX = (a.x + b.x) / 2;
-          const midY = (a.y + b.y) / 2;
-          const fx = rect.width > 0 ? (midX - rect.left) / rect.width : 0.5;
-          const fy = rect.height > 0 ? (midY - rect.top) / rect.height : 0.5;
-          // World-space point under the pinch midpoint, held stationary as the view resizes
-          // around it — the same anchoring `zoomAtPoint` does for wheel/pinch on the game map.
-          const anchorX = view.x + fx * view.w;
-          const anchorY = view.y + fy * view.h;
-          const nextW = worldView.w / targetZoom;
-          const nextH = worldView.h / targetZoom;
-          const nextView = clampPan(
-            { x: anchorX - fx * nextW, y: anchorY - fy * nextH, w: nextW, h: nextH },
-            worldView,
-          );
-          const next = zoomPanOfView(nextView, worldView);
-          setZoomLevel(next.zoomLevel);
-          setPanOffset(next.panOffset);
-        } else {
-          setZoomLevel(targetZoom);
-        }
+        zoomToolAt(targetZoom, (a.x + b.x) / 2, (a.y + b.y) / 2);
       }
       setHasMovedDrag(true); // a pinch must never also register as a tap-to-add-point
       return;
@@ -1742,6 +1748,7 @@ export function V2ToolWorkbench({
                   );
                 })}
               </svg>
+              <MapWheelHint visible={wheel.hintVisible} />
             </div>
             {activeTool === "distance" ? (
               <DistanceResultPanel

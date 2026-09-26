@@ -76,15 +76,73 @@ export function pinchZoomPan(
   containerHeight: number,
 ): { zoom: number; pan: PanOffset } {
   const zoom = Math.min(maxZoom, zoomFromPinch(start.zoom, start.dist, currentDist));
-  const ratio = zoom / start.zoom;
   const pan = clampPanOffset(
-    {
-      x: currentMid.x - ratio * (start.mid.x - start.pan.x),
-      y: currentMid.y - ratio * (start.mid.y - start.pan.y),
-    },
+    zoomPanAround(start.zoom, start.pan, zoom, start.mid, currentMid),
     zoom,
     containerWidth,
     containerHeight,
   );
   return { zoom, pan };
+}
+
+/**
+ * The pan that draws the map point under `fromMid` at `toMid` after zooming from `zoom` to
+ * `nextZoom`, for a map drawn at `zoom * u + pan` (offsets from the box centre, px). Unclamped:
+ * each surface bounds it its own way.
+ */
+export function zoomPanAround(
+  zoom: number,
+  pan: PanOffset,
+  nextZoom: number,
+  fromMid: PanOffset,
+  toMid: PanOffset,
+): PanOffset {
+  const ratio = nextZoom / zoom;
+  return {
+    x: toMid.x - ratio * (fromMid.x - pan.x),
+    y: toMid.y - ratio * (fromMid.y - pan.y),
+  };
+}
+
+/**
+ * Wheel/trackpad zoom by `factor` around the cursor offset `mid` on `/dunya` and `/turkiye`
+ * (T-116): the zoom stays in [1, maxZoom] and the pan is clamped like a drag.
+ */
+export function atlasZoomAt(
+  zoom: number,
+  pan: PanOffset,
+  factor: number,
+  mid: PanOffset,
+  maxZoom: number,
+  containerWidth: number,
+  containerHeight: number,
+): { zoom: number; pan: PanOffset } {
+  const next = Math.min(maxZoom, Math.max(1, zoom * factor));
+  return {
+    zoom: next,
+    pan: clampPanOffset(
+      zoomPanAround(zoom, pan, next, mid, mid),
+      next,
+      containerWidth,
+      containerHeight,
+    ),
+  };
+}
+
+/**
+ * Wheel/trackpad zoom on the game map (T-116), whose `<svg>` is `scale(zoom) translate(pan)`:
+ * the pan sits INSIDE the scale, so a map point is drawn at `zoom * (u + pan)` and `zoom * pan`
+ * is the atlas pan. Unclamped, like the game's own drag.
+ */
+export function gameZoomAt(
+  zoom: number,
+  pan: PanOffset,
+  factor: number,
+  mid: PanOffset,
+  minZoom: number,
+  maxZoom: number,
+): { zoom: number; pan: PanOffset } {
+  const next = Math.min(maxZoom, Math.max(minZoom, zoom * factor));
+  const scaled = zoomPanAround(zoom, { x: zoom * pan.x, y: zoom * pan.y }, next, mid, mid);
+  return { zoom: next, pan: { x: scaled.x / next, y: scaled.y / next } };
 }

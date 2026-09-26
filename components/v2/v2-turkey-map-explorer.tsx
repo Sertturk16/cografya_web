@@ -38,8 +38,11 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
-import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
+import { atlasZoomAt, clampPanOffset } from "@/lib/map/v2-zoom-pan";
 import { usePinchZoom } from "@/lib/map/use-pinch-zoom.client";
+import { useWheelZoom } from "@/lib/map/use-wheel-zoom.client";
+import { offsetFromCentre } from "@/lib/map/wheel-zoom";
+import { MapWheelHint } from "@/components/v2/map-wheel-hint";
 import {
   boxRectToViewBox,
   sliceScale,
@@ -245,6 +248,26 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
     pan: panOffset,
     maxZoom: MAX_ZOOM,
     onChange: (next) => {
+      setZoomLevel(next.zoom);
+      setPanOffset(next.pan);
+    },
+  });
+
+  const wheel = useWheelZoom({
+    targetRef: mapContainerRef,
+    plainWheelZooms: false,
+    zoomBy: (factor, clientX, clientY) => {
+      const box = mapContainerRef.current;
+      if (!box) return;
+      const next = atlasZoomAt(
+        zoomLevel,
+        panOffset,
+        factor,
+        offsetFromCentre(box, clientX, clientY),
+        MAX_ZOOM,
+        box.clientWidth,
+        box.clientHeight,
+      );
       setZoomLevel(next.zoom);
       setPanOffset(next.pan);
     },
@@ -714,7 +737,10 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 style={{
                   transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
                   transformOrigin: "center center",
-                  transition: isDragging || pinch.isPinching ? "none" : "transform 0.2s ease-out",
+                  transition:
+                    isDragging || pinch.isPinching || wheel.isZooming
+                      ? "none"
+                      : "transform 0.2s ease-out",
                 }}
                 className="w-full h-full"
               >
@@ -814,6 +840,8 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                   />
                 </svg>
               </div>
+
+              <MapWheelHint visible={wheel.hintVisible} />
 
               {/* DYNAMIC FLOATING TOOLTIP */}
               {hoveredPlate && mousePos && !isDragging && (
