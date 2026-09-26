@@ -484,4 +484,19 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       expect(code).toContain("const resultPanelObstacle =");
     });
   });
+  // T-120: each leg carries its own distance, one screen size at every zoom, and pin labels keep
+  // off those labels.
+  it("labels each leg of a distance route at a constant screen size", () => {
+    const code = stripComments(source);
+    expect(code).toContain("placeSegmentLabels(");
+    expect(code).toContain("haversineKm(");
+    expect(code).toContain("kmDecimalsFor(");
+    const start = code.indexOf("{legLabels.map(");
+    expect(start).toBeGreaterThan(-1);
+    const legs = code.slice(start, code.indexOf("{points.map((p, idx) => {", start));
+    expect(legs).toContain("fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}");
+    expect(legs).toContain("strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}");
+    expect(legs).toContain("pointer-events-none");
+    expect(code).toMatch(/obstacles: \[\s*\.\.\.legLabels\.map\(legLabelBox\)/);
+  });
 });

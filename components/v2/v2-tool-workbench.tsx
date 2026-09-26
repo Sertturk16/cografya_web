@@ -11,6 +11,9 @@ import {
   unprojectMapPoint,
   polylineLengthKm,
   distanceTravelEstimates,
+  haversineKm,
+  kmPerMapUnitAt,
+  kmDecimalsFor,
   ringPerimeterKm,
   readRingArea,
   toDmsParts,
@@ -29,6 +32,7 @@ import {
   type ViewBox,
 } from "@/lib/map/zoom-pan";
 import { DIAGONAL, placePinLabels, type PinLabelSide } from "@/lib/map/pin-label-placement";
+import { placeSegmentLabels } from "@/lib/map/segment-labels";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-presets";
@@ -170,6 +174,13 @@ const PIN_LABEL_LAYOUT: Record<
   "below-left": { dx: -DIAGONAL, dy: DIAGONAL, anchor: "end", baseline: "text-before-edge" },
   "below-right": { dx: DIAGONAL, dy: DIAGONAL, anchor: "start", baseline: "text-before-edge" },
 };
+
+/** CSS px between a leg and its distance label's box (T-120). */
+const LEG_LABEL_GAP = 3;
+/** A leg label's drawn box in map units, from its centre, as `placeSegmentLabels` modelled it. */
+function legLabelBox(label: { x: number; y: number; w: number; h: number }) {
+  return { x: label.x - label.w / 2, y: label.y - label.h / 2, w: label.w, h: label.h };
+}
 
 /** The text a waypoint pin's label shows. */
 function pinLabelText(p: { mapLabel?: string; label?: string }, idx: number): string {
@@ -925,6 +936,36 @@ export function V2ToolWorkbench({
   // Every pin label's side, decided together so none covers another pin or label (T-127) and
   // each stays in the part of the view the controls leave clear (T-124). Sizes are the drawn
   // ones in map units; a label's width is estimated from its glyph count.
+  // Each leg's distance beside it (T-120), placed before the pin labels, which then keep off
+  // them. Same size rules as the pin labels (T-122); the decimals follow what a pixel can resolve
+  // at this zoom (`kmDecimalsFor`). A leg without room keeps no label; the total is in the panel.
+  const legLabels = React.useMemo(() => {
+    if (activeTool !== "distance" || points.length < 2) return [];
+    const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
+    const legs = points.slice(1).map((p, i) => {
+      const from = points[i]!;
+      const km = haversineKm(from.geo, p.geo);
+      const kmPerPixel = kmPerMapUnitAt((from.geo.lat + p.geo.lat) / 2) * unit(1);
+      const text = `${formatNumber(km, locale, kmDecimalsFor(kmPerPixel, km))} km`;
+      return {
+        text,
+        w: unit(text.length * PIN_LABEL_SIZE * 0.6),
+        h: unit(PIN_LABEL_SIZE * 1.4),
+      };
+    });
+    const centres = placeSegmentLabels(
+      points.map((p) => ({ x: p.svgX, y: p.svgY })),
+      legs.map((leg) => ({ width: leg.w, height: leg.h })),
+      {
+        view: labelView,
+        gap: unit(LEG_LABEL_GAP),
+        dotRadius: unit(PIN_RADIUS + PIN_OUTLINE),
+        obstacles: resultPanelObstacle ? [resultPanelObstacle] : [],
+      },
+    );
+    return centres.flatMap((c, i) => (c ? [{ ...c, ...legs[i]!, leg: i }] : []));
+  }, [activeTool, points, zoomLevel, pxPerUnit, locale, labelView, resultPanelObstacle]);
+
   const pinLabelSides = React.useMemo(() => {
     const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
     return placePinLabels(
@@ -938,10 +979,13 @@ export function V2ToolWorkbench({
       {
         view: labelView,
         dotRadius: unit(PIN_RADIUS + PIN_OUTLINE),
-        obstacles: resultPanelObstacle ? [resultPanelObstacle] : [],
+        obstacles: [
+          ...legLabels.map(legLabelBox),
+          ...(resultPanelObstacle ? [resultPanelObstacle] : []),
+        ],
       },
     );
-  }, [points, zoomLevel, pxPerUnit, labelView, resultPanelObstacle]);
+  }, [points, zoomLevel, pxPerUnit, labelView, legLabels, resultPanelObstacle]);
 
   const distanceKm = React.useMemo(() => {
     if (activeTool === "distance" && geoPoints.length >= 2) {
@@ -1551,6 +1595,28 @@ export function V2ToolWorkbench({
                     strokeLinejoin="round"
                   />
                 )}
+
+                {/* Each leg's distance (T-120), under the pins so a dot is never covered. Inside
+                the <svg>, so the PNG export carries them. Semibold where the pin names are bold,
+                so a name and a distance read as different things. */}
+                {legLabels.map((label) => (
+                  <text
+                    key={label.leg}
+                    data-leg-label=""
+                    x={label.x}
+                    y={label.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}
+                    fontWeight={600}
+                    strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}
+                    strokeLinejoin="round"
+                    paintOrder="stroke"
+                    className="fill-foreground stroke-card font-sans select-none pointer-events-none"
+                  >
+                    {label.text}
+                  </text>
+                ))}
 
                 {/* Placed Waypoints Pins */}
                 {points.map((p, idx) => {
