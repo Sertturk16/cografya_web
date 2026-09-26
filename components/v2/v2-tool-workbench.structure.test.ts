@@ -392,4 +392,27 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       expect(transport).toContain("title: z.string().max(MEASUREMENT_TITLE_MAX_LENGTH)");
     });
   });
+  // T-122: the viewBox narrows by `zoomLevel`, so a pin keeps its on-screen size only when
+  // every dimension is divided by `zoomLevel` itself (`atScreenSize`). `√zoom` made pins and
+  // labels grow; viewBox units without the measured box scale made them tiny on a phone.
+  it("draws waypoint pins at a constant on-screen size", () => {
+    const code = stripComments(source);
+    const start = code.indexOf("{points.map((p, idx) => {");
+    expect(start).toBeGreaterThan(-1);
+    const pins = code.slice(start, code.indexOf("</svg>", start));
+    expect(pins).not.toMatch(/sqrt/);
+    expect(pins).toContain("r={atScreenSize(PIN_RADIUS, zoomLevel, pxPerUnit)}");
+    expect(pins).toContain("strokeWidth={atScreenSize(PIN_OUTLINE, zoomLevel, pxPerUnit)}");
+    expect(pins).toContain("fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}");
+    expect(pins).toContain("strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}");
+    expect(pins).toContain(
+      "const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);",
+    );
+    expect(pins).toContain("pinLabelPlacement(pinCentres[idx]!, pinCentres)");
+    // A stroke-[n] class would override the attribute and grow with the zoom again.
+    expect(pins).not.toMatch(/stroke-\[/);
+    expect(code).toContain(
+      "setPxPerUnit(Math.min(width / WORLD_VIEWBOX.w, height / WORLD_VIEWBOX.h))",
+    );
+  });
 });

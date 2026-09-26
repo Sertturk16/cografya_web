@@ -5,6 +5,7 @@ import {
   MAX_ZOOM,
   MIN_ZOOM,
   type ViewBox,
+  atScreenSize,
   clampPan,
   clampZoom,
   fitViewToAspect,
@@ -446,5 +447,26 @@ describe("the opening frame is always a legal zoom", () => {
       expect(zoom).toBeGreaterThanOrEqual(MIN_ZOOM);
       expect(zoom).toBeLessThanOrEqual(MAX_ZOOM);
     }
+  });
+});
+
+describe("atScreenSize", () => {
+  it("divides by the zoom, so the on-screen size never changes", () => {
+    for (const zoom of [1, 2, 3.5, 8]) {
+      expect(atScreenSize(10, zoom, 1) * zoom).toBeCloseTo(10);
+    }
+  });
+
+  it("draws the same px on a phone box and a desktop box", () => {
+    for (const pxPerUnit of [0.28, 0.915]) {
+      for (const zoom of [1, 8]) {
+        expect(atScreenSize(11, zoom, pxPerUnit) * pxPerUnit * zoom).toBeCloseTo(11);
+      }
+    }
+  });
+
+  it("draws one unit per px before the box is measured", () => {
+    expect(atScreenSize(5, 1, null)).toBe(5);
+    expect(atScreenSize(5, 1, 0)).toBe(5);
   });
 });
