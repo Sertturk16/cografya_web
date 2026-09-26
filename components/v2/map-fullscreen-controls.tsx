@@ -111,6 +111,8 @@ export function MapFullscreenToggle({
 /**
  * "Rotate your phone" (T-015): shown by the caller only while `landscape.showRotateHint`. Reports
  * its height so the selection card can sit above it. `onHeight` must be stable (a state setter).
+ * As wide as its text, but never into the bottom corners (12px edge + 32px ⓘ + 8px gap a side):
+ * on iOS it stays up for the whole portrait session and would otherwise cover the credit's ⓘ.
  */
 export function MapRotateHint({
   onDismiss,
@@ -138,7 +140,7 @@ export function MapRotateHint({
       role="status"
       aria-live="polite"
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-104px)] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
     >
       <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
       <span>{t("rotateHint")}</span>

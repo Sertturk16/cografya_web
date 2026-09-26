@@ -35,6 +35,12 @@ describe("atlas fullscreen controls (T-118)", () => {
     });
   });
 
+  it("keeps the rotate hint clear of both bottom corners (the credit's ⓘ, the card)", () => {
+    // 12px edge + 32px ⓘ + 8px gap on each side. Wider, it covered the ⓘ for the whole portrait
+    // session on iOS, where the hint never goes away short of leaving fullscreen.
+    expect(source).toMatch(/w-max max-w-\[calc\(100%-104px\)\]/);
+  });
+
   it("names the toggle from the catalogue, both directions", () => {
     expect(source).toMatch(/aria-pressed=\{active\}/);
     expect(source).toMatch(/active \? t\("fullscreenExit"\) : t\("fullscreenEnter"\)/);

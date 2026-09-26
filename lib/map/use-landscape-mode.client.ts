@@ -107,6 +107,9 @@ export interface LandscapeMode {
  *
  * Keys are CSS property names, not camelCase: `style.setProperty("zIndex", …)` is a silent no-op,
  * which left this layout under the page's header and the content after the map (T-118).
+ *
+ * Sized by the four insets alone: iOS Safari's `100vh` is the toolbar-hidden height, so a
+ * `height: 100vh` box ran under the bottom address bar with everything anchored to its bottom.
  */
 export const FALLBACK_STYLE: Readonly<Record<string, string>> = {
   position: "fixed",
@@ -114,8 +117,6 @@ export const FALLBACK_STYLE: Readonly<Record<string, string>> = {
   left: "0",
   right: "0",
   bottom: "0",
-  width: "100vw",
-  height: "100vh",
   "z-index": "1000",
   background: "var(--background)",
   margin: "0",

@@ -119,4 +119,12 @@ describe("fallback layout colour", () => {
     }
     expect(FALLBACK_STYLE["z-index"]).toBe("1000");
   });
+
+  it("sizes the fallback by its insets, not by `100vh`", () => {
+    // iOS Safari's `100vh` is the toolbar-hidden height, so a `top: 0; height: 100vh` box runs
+    // under the bottom address bar, and everything anchored to the bottom goes with it.
+    expect(FALLBACK_STYLE).toMatchObject({ top: "0", right: "0", bottom: "0", left: "0" });
+    expect(FALLBACK_STYLE).not.toHaveProperty("height");
+    expect(FALLBACK_STYLE).not.toHaveProperty("width");
+  });
 });
