@@ -228,3 +228,18 @@ describe("the two attributes the privacy rulings put on this surface", () => {
     );
   });
 });
+
+describe("playback callbacks for the bench (T-128)", () => {
+  it("reports ENDED through a ref, so the pinned effect dependencies stay unchanged", () => {
+    expect(VIDEO).toMatch(/YT_PLAYER_STATE\.ENDED\) onEndedRef\.current\?\.\(\)/);
+    expect(VIDEO).toContain("}, [isActive, active?.loadToken]);");
+  });
+  it("polls the time only while playing, and stops it with the save interval", () => {
+    expect(VIDEO).toMatch(/timePoll = setInterval\(/);
+    expect(VIDEO).toMatch(/const stopTimePoll = \(\) =>/);
+    expect(VIDEO).toMatch(/stopPeriodicSave\(\); stopTimePoll\(\);/);
+  });
+  it("binds the frame to the viewport height as well as the column width", () => {
+    expect(VIDEO).toContain("max-w-[min(100%,calc((100dvh-var(--header-height)-19rem)*16/9))]");
+  });
+});

@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
  * `max-w-[560px]` with `mx-auto` is one of FOUR copies of the stage's single cap
  * (`STAGE_CAPTION`, `TIMELINE`, `PROGRESS_CONTROLS` and this box);
  * `bench.structure.test.ts` asserts the four as an EQUALITY, and pins this floor —
- * `max-w-[560px]`, `aspect-video` and `min-h-[200px]` together — because all three were
+ * the width cap, `aspect-video` and `min-h-[200px]` together — because all three were
  * `components/css-module-fixed-widths.test.ts` census entries or the geometry behind one, and
  * that census cannot read a Tailwind class in JSX. Hoisted for the reason
  * `lib/test-support/converted-floor.ts` states: the extractor reads a top-level
@@ -39,8 +39,14 @@ import { Button } from "@/components/ui/button";
  * `--background`, with `THUMB_BOX`'s `border-border` hairline drawing the edge. The frozen
  * token read 15.50:1 in dark — a parchment box on a night page, which is the defect, not a
  * design.
+ *
+ * THE WIDTH COMES FROM THE COLUMN AND THE VIEWPORT (T-128). The 560px cap is gone: the workbench
+ * column sets the width, and the second bound keeps a 16:9 box short enough to leave room for
+ * what sits beside it on one screen — 19rem is the book bar, the caption row, the marker strip's
+ * 8rem floor and the gutters on desktop.
  */
-const FRAME = "relative mx-auto aspect-video min-h-[200px] w-full max-w-[560px] bg-muted";
+const FRAME =
+  "relative mx-auto aspect-video min-h-[200px] w-full max-w-[min(100%,calc((100dvh-var(--header-height)-19rem)*16/9))] bg-muted";
 
 /**
  * NO rounded corners and NO overflow clipping, deliberately. The ledger bars any "overlay,
@@ -218,6 +224,8 @@ export function DenemeVideo({
   watchOnYoutubeLoading,
   watchLoadingLabel,
   watchLoadingAriaLabel,
+  onPlaybackTime,
+  onEnded,
 }: {
   video: BenchVideo;
   /** The store's loaded player, WHATEVER video it belongs to — or `null` when none is loaded.
@@ -266,6 +274,10 @@ export function DenemeVideo({
    *  prepared to open. */
   watchLoadingLabel: string;
   watchLoadingAriaLabel: string;
+  /** The player's position, about once a second while it plays — the bench's current marker. */
+  onPlaybackTime?: (second: number) => void;
+  /** The player reached the end — the bench's auto-next. */
+  onEnded?: () => void;
 }) {
   // `active.videoId !== null` is P2's own addition to this gate (plan §5.3): the anonymous
   // payload no longer carries the id at all, so a NEW load starts with it `null` and the iframe
@@ -317,6 +329,13 @@ export function DenemeVideo({
   useEffect(() => {
     bookVideoIdRef.current = video.bookVideoId;
   }, [video.bookVideoId]);
+  /** The bench's two playback callbacks, through refs for the same reason as above. */
+  const onPlaybackTimeRef = useRef(onPlaybackTime);
+  const onEndedRef = useRef(onEnded);
+  useEffect(() => {
+    onPlaybackTimeRef.current = onPlaybackTime;
+    onEndedRef.current = onEnded;
+  }, [onPlaybackTime, onEnded]);
 
   /**
    * THE IDENTITY FETCH (P2 plan §5.3) — the server-side gate itself. A press already passed the
@@ -379,11 +398,18 @@ export function DenemeVideo({
 
     let cancelled = false;
     let saveInterval: ReturnType<typeof setInterval> | null = null;
+    let timePoll: ReturnType<typeof setInterval> | null = null;
 
     const stopPeriodicSave = () => {
       if (saveInterval !== null) {
         clearInterval(saveInterval);
         saveInterval = null;
+      }
+    };
+    const stopTimePoll = () => {
+      if (timePoll !== null) {
+        clearInterval(timePoll);
+        timePoll = null;
       }
     };
 
@@ -417,13 +443,21 @@ export function DenemeVideo({
                 // running across a pause/resume, so a long pause never leaves a stray timer.
                 stopPeriodicSave();
                 saveInterval = setInterval(saveNow, VIDEO_PROGRESS_SAVE_INTERVAL_MS);
+                // The bench's current marker follows playback (T-128).
+                stopTimePoll();
+                timePoll = setInterval(() => {
+                  const player = playerRef.current;
+                  if (player !== null) onPlaybackTimeRef.current?.(player.getCurrentTime());
+                }, 1000);
                 return;
               }
               if (event.data === YT_PLAYER_STATE.PAUSED || event.data === YT_PLAYER_STATE.ENDED) {
                 // Trigger 2 (§5.5): on pause — bounds the worst-case loss window to the
                 // interval above even for a reader who pauses well before a tick.
                 stopPeriodicSave();
+                stopTimePoll();
                 saveNow();
+                if (event.data === YT_PLAYER_STATE.ENDED) onEndedRef.current?.();
               }
             },
           },
@@ -438,6 +472,7 @@ export function DenemeVideo({
     return () => {
       cancelled = true;
       stopPeriodicSave();
+      stopTimePoll();
       playerRef.current = null;
       pendingSeek.current = null;
     };
