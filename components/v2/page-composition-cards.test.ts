@@ -574,7 +574,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // that block now renders the address.
 // 188 → **189** in T-103: the register wizard's step 1 gains a third `<select>`, "Bizi nereden
 // duydun?", styled identically to the İl/İlçe pair it sits beside.
-export const HAND_DRAWN_CARDS = 189;
+// 189 → **190** in T-117: `MapAttribution`'s fullscreen credit panel, a `bg-card/90` chip floating
+// on the map's corner like the zoom and fullscreen clusters beside it; not a page panel.
+export const HAND_DRAWN_CARDS = 190;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -629,8 +631,9 @@ export const HAND_DRAWN_WELLS = 147;
  * 221 → **224** in T-101: the privacy notice's provider card, `LegalControllerIdentity`'s block
  * and the consent fieldset are new strings; `/gizlilik`'s mailto card and notice reuse the
  * terms page's spellings verbatim.
- * 224 → **223** in T-125: the deleted tool switcher's well was a one-off spelling. */
-export const HAND_DRAWN_CARD_SPELLINGS = 223;
+ * 224 → **223** in T-125: the deleted tool switcher's well was a one-off spelling.
+ * 223 → **224** in T-117: the fullscreen credit panel above ({@link HAND_DRAWN_CARDS}). */
+export const HAND_DRAWN_CARD_SPELLINGS = 224;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1426,7 +1429,8 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // `v2-basin-telemetry.tsx`, which now joins the surface on its own; the view stays on it
     // through its metric strip and fault-line callout. Net one more file, not one more pattern —
     // {@link HAND_DRAWN_CARDS} and {@link HAND_DRAWN_WELLS} are unchanged.
-    expect(handDrawnTotals().files).toBe(62);
+    // 63 after T-117: `map-attribution.tsx` joins with its fullscreen credit panel.
+    expect(handDrawnTotals().files).toBe(63);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
