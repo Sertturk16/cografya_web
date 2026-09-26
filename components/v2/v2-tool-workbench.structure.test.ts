@@ -515,4 +515,19 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(legs).toContain("pointer-events-none");
     expect(code).toMatch(/obstacles: \[\s*\.\.\.legLabels\.map\(legLabelBox\)/);
   });
+  // T-121: the area's km² inside its polygon, one screen size at every zoom; pin labels keep off
+  // it, and a crossing outline gets no label.
+  it("writes the area inside the polygon at a constant screen size", () => {
+    const code = stripComments(source);
+    expect(code).toContain("placeAreaLabel(");
+    expect(code).toContain('areaReading?.kind !== "area"');
+    const start = code.indexOf("{areaLabel && (");
+    expect(start).toBeGreaterThan(-1);
+    const label = code.slice(start, code.indexOf("</text>", start));
+    expect(label).toContain("fontSize={atScreenSize(AREA_LABEL_SIZE, zoomLevel, pxPerUnit)}");
+    expect(label).toContain("strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}");
+    expect(label).toContain("pointer-events-none");
+    expect(start, "drawn before the pins").toBeLessThan(code.indexOf("{points.map((p, idx) => {"));
+    expect(code).toMatch(/\.\.\.\(areaLabel \? \[legLabelBox\(areaLabel\)\] : \[\]\)/);
+  });
 });

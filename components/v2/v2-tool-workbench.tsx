@@ -33,6 +33,7 @@ import {
 } from "@/lib/map/zoom-pan";
 import { DIAGONAL, placePinLabels, type PinLabelSide } from "@/lib/map/pin-label-placement";
 import { placeSegmentLabels } from "@/lib/map/segment-labels";
+import { placeAreaLabel } from "@/lib/map/area-label";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-presets";
@@ -196,7 +197,12 @@ const PIN_LABEL_LAYOUT: Record<
 
 /** CSS px between a leg and its distance label's box (T-120). */
 const LEG_LABEL_GAP = 3;
-/** A leg label's drawn box in map units, from its centre, as `placeSegmentLabels` modelled it. */
+/** The area label (T-121): a size up from the pin names, since it names the whole shape, and
+ *  its gap from the outline's corner dots when it has to sit outside. CSS px. */
+const AREA_LABEL_SIZE = PIN_LABEL_SIZE + 2;
+const AREA_LABEL_GAP = 4;
+/** A centred label's drawn box in map units (a leg label, or the area label), from its centre, as
+ *  `placeSegmentLabels` / `placeAreaLabel` modelled it. */
 function legLabelBox(label: { x: number; y: number; w: number; h: number }) {
   return { x: label.x - label.w / 2, y: label.y - label.h / 2, w: label.w, h: label.h };
 }
@@ -1004,6 +1010,37 @@ export function V2ToolWorkbench({
     return centres.flatMap((c, i) => (c ? [{ ...c, ...legs[i]!, leg: i }] : []));
   }, [activeTool, points, zoomLevel, pxPerUnit, locale, labelView, resultPanelObstacle]);
 
+  // The area's km² inside the polygon (T-121), placed before the pin labels, which keep off it.
+  // No label for a crossing outline: it has no area (T-094). Where nothing is free it is dropped;
+  // the area is in the panel.
+  const areaLabel = React.useMemo(() => {
+    if (activeTool !== "area" || points.length < 3 || areaReading?.kind !== "area") return null;
+    const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
+    const text = `${formatNumber(areaReading.km2, locale, 1)} km²`;
+    const w = unit(text.length * AREA_LABEL_SIZE * 0.6);
+    const h = unit(AREA_LABEL_SIZE * 1.4);
+    const centre = placeAreaLabel(
+      points.map((p) => ({ x: p.svgX, y: p.svgY })),
+      { width: w, height: h },
+      {
+        view: labelView,
+        gap: unit(AREA_LABEL_GAP),
+        dotRadius: unit(PIN_RADIUS + PIN_OUTLINE),
+        obstacles: resultPanelObstacle ? [resultPanelObstacle] : [],
+      },
+    );
+    return centre ? { ...centre, w, h, text } : null;
+  }, [
+    activeTool,
+    points,
+    areaReading,
+    zoomLevel,
+    pxPerUnit,
+    locale,
+    labelView,
+    resultPanelObstacle,
+  ]);
+
   const pinLabelSides = React.useMemo(() => {
     const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
     return placePinLabels(
@@ -1019,11 +1056,12 @@ export function V2ToolWorkbench({
         dotRadius: unit(PIN_RADIUS + PIN_OUTLINE),
         obstacles: [
           ...legLabels.map(legLabelBox),
+          ...(areaLabel ? [legLabelBox(areaLabel)] : []),
           ...(resultPanelObstacle ? [resultPanelObstacle] : []),
         ],
       },
     );
-  }, [points, zoomLevel, pxPerUnit, labelView, legLabels, resultPanelObstacle]);
+  }, [points, zoomLevel, pxPerUnit, labelView, legLabels, areaLabel, resultPanelObstacle]);
 
   const distanceKm = React.useMemo(() => {
     if (activeTool === "distance" && geoPoints.length >= 2) {
@@ -1650,6 +1688,26 @@ export function V2ToolWorkbench({
                     {label.text}
                   </text>
                 ))}
+
+                {/* The area inside its polygon (T-121), under the pins so a dot is never covered.
+                Inside the <svg>, so the PNG export carries it. */}
+                {areaLabel && (
+                  <text
+                    data-area-label=""
+                    x={areaLabel.x}
+                    y={areaLabel.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={atScreenSize(AREA_LABEL_SIZE, zoomLevel, pxPerUnit)}
+                    fontWeight={700}
+                    strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}
+                    strokeLinejoin="round"
+                    paintOrder="stroke"
+                    className="fill-foreground stroke-card font-sans select-none pointer-events-none"
+                  >
+                    {areaLabel.text}
+                  </text>
+                )}
 
                 {/* Placed Waypoints Pins */}
                 {points.map((p, idx) => {
