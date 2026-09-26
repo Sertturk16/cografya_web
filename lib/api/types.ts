@@ -267,9 +267,9 @@ export type Measurement = components["schemas"]["MeasurementDto"];
 /** One point of a saved measurement's geometry — field-name-identical to
  *  `lib/map/measure.ts`'s own `GeoPoint`. */
 export type MeasurementPoint = components["schemas"]["MeasurementPointDto"];
-/** The three geometry kinds the contract's own `type` enum carries — structurally
- *  identical to (but independent of) `components/v2/v2-tool-workbench.tsx`'s own `ToolMode`;
- *  see that file's docblock for why the two are not merged into one alias. */
+/** The three geometry kinds the contract's own `type` enum carries — the same three as
+ *  `lib/tools/tool-presets.ts`'s `ToolMode` but independent of it (`"coordinate"` vs the UI's
+ *  `"coordinates"`); `v2-tool-workbench.tsx` bridges the two in `measurementType`. */
 export type MeasurementType = Measurement["type"];
 /** `POST /api/measurements`'s request body — see
  *  `lib/measurements/transport.server.ts` for the request-side zod schema mirroring

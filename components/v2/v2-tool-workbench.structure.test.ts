@@ -52,28 +52,29 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(source).toMatch(/removeMeasurement/);
   });
 
-  it("pins handleLoadSaved's coordinate → coordinates translation (VAL126R2TC-I1, FU125TC-I2)", () => {
-    let initializer: string | null = null;
-    const visit = (node: ts.Node): void => {
-      if (
-        ts.isVariableDeclaration(node) &&
-        ts.isIdentifier(node.name) &&
-        node.name.text === "handleLoadSaved" &&
-        node.initializer
-      ) {
-        initializer = node.initializer.getText();
-        return;
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(ast);
-
-    // Positive control: the declaration was actually found, so the assertion below cannot
-    // pass vacuously on `null`.
-    expect(initializer).not.toBeNull();
-    expect(initializer).toContain('record.type === "coordinate" ? "coordinates" : record.type');
+  it("lists only this tool's saved measurements, bridging ToolMode to the contract's type (VAL126R2TC-I1, T-125)", () => {
+    const code = stripComments(source);
+    expect(code).toContain(
+      'activeTool === "distance" ? "distance" : activeTool === "area" ? "area" : "coordinate";',
+    );
+    expect(code).toContain("savedList.filter((record) => record.type === measurementType)");
     // The UI side of the same bridge: renaming ToolMode's plural member must fail here too.
-    expect(source).toContain('export type ToolMode = "distance" | "coordinates" | "area";');
+    const presets = readFileSync(
+      new URL("../../lib/tools/tool-presets.ts", import.meta.url),
+      "utf8",
+    );
+    expect(presets).toContain(
+      'export const TOOL_MODES = ["distance", "coordinates", "area"] as const;',
+    );
+  });
+
+  // T-125: each tool page runs one tool. Nothing on the page (a preset, a saved measurement, a
+  // switcher card) may turn the distance page into the area tool under the distance URL.
+  it("never switches the tool from inside the page", () => {
+    const code = stripComments(source);
+    expect(code).not.toMatch(/setActiveTool|lockMode/);
+    expect(code).toContain("const activeTool = mode;");
+    expect(code).toContain("TOOL_PRESETS[mode].map(");
   });
 
   it("guards against event bubbling and scrolling in saved measurement list (A11Y124-I5)", () => {
@@ -235,8 +236,9 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
         expect(at, handler).toBeGreaterThan(-1);
         expect(code.slice(at, at + 120)).toContain("if (isSelfIntersecting) return;");
       }
+      // The result card's copy button and the toolbar's PNG export.
       expect(code.match(/disabled=\{points\.length === 0 \|\| isSelfIntersecting\}/g)).toHaveLength(
-        3,
+        2,
       );
     });
 

@@ -30,6 +30,7 @@ import {
 import { pinLabelPlacement, type PinLabelSide } from "@/lib/map/pin-label-placement";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
+import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-presets";
 import type { MeasurementType } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,8 +62,6 @@ import {
 } from "@/lib/measurements/save-error";
 import {
   Compass,
-  MapPin,
-  Layers,
   RotateCcw,
   Copy,
   Check,
@@ -86,8 +85,6 @@ import { MapAttribution } from "@/components/patterns/map-attribution";
 import { formatDay } from "@/lib/text/format-date";
 import { formatNumber } from "@/lib/text/format-number";
 
-export type ToolMode = "distance" | "coordinates" | "area";
-
 export interface PointWithSvg {
   svgX: number;
   svgY: number;
@@ -109,6 +106,13 @@ const WORLD_VIEWBOX: ViewBox = parseViewBox(TR_CONTEXT_VIEWBOX);
 /** Upper zoom bound this tool's own +/− buttons already use (`handleZoomIn`) — the touch
  *  pinch below is clamped to the SAME ceiling, not `zoom-pan.ts`'s own (higher) `MAX_ZOOM`. */
 const MAX_TOOL_ZOOM = 8;
+
+/** Each tool's example chips hover in that tool's colour, as before T-125 split them. */
+const PRESET_CHIP_HOVER: Record<ToolMode, string> = {
+  distance: "hover:bg-primary/15 hover:text-primary",
+  area: "hover:bg-accent/15 hover:text-accent",
+  coordinates: "hover:bg-secondary/15 hover:text-secondary",
+};
 
 /** Waypoint pin sizes in CSS px, the same at every zoom and box size via `atScreenSize`
  *  (T-122): dot radius, its outline, the label's font size and its gap from the dot. */
@@ -218,17 +222,16 @@ export function MeasurementErrorText({
 }
 
 interface V2ToolWorkbenchProps {
-  /** If provided, locks the workbench to this specific tool mode (e.g. on dedicated sub-pages). */
-  initialMode?: ToolMode;
-  lockMode?: boolean;
+  /** The one tool this page runs. Nothing inside the page switches it (T-125): each tool has its
+   *  own URL, so a switch would show the area tool under `/araclar/mesafe-olcme`. */
+  mode: ToolMode;
   provincePoints?: readonly ProvincePoint[];
   provinceAreas?: readonly ProvinceArea[];
   downloadName?: string;
 }
 
 export function V2ToolWorkbench({
-  initialMode = "distance",
-  lockMode = false,
+  mode,
   provincePoints = [],
   provinceAreas = [],
   downloadName = "cografya-olcum",
@@ -252,7 +255,7 @@ export function V2ToolWorkbench({
     }),
     [t],
   );
-  const [activeTool, setActiveTool] = React.useState<ToolMode>(initialMode);
+  const activeTool = mode;
   const [points, setPoints] = React.useState<PointWithSvg[]>([]);
   const [hoveredPos, setHoveredPos] = React.useState<{
     x: number;
@@ -462,7 +465,11 @@ export function V2ToolWorkbench({
     };
   }, [authState, listReloadKey]);
 
-  const activeSavedList = authState === "authenticated" ? savedList : [];
+  // Only this tool's records: loading another tool's shape here would need that tool (T-125).
+  const activeSavedList =
+    authState === "authenticated"
+      ? savedList.filter((record) => record.type === measurementType)
+      : [];
   // The last settled load failed. It stays up while a retry runs (the retry button spins), and
   // goes away when one succeeds.
   const listLoadFailed = authState === "authenticated" && listLoad !== null && !listLoad.ok;
@@ -807,91 +814,23 @@ export function V2ToolWorkbench({
     );
   };
 
-  // Quick Preset Scenarios
-  // Smart region focus (T-015): every branch ends by framing the SCENARIO'S own points —
-  // a preset is picked by name ("İstanbul - Ankara") with no map location behind it yet.
-  const loadPreset = (type: "ist-ank" | "izm-van" | "tuz-golu" | "van-golu" | "merkez") => {
-    if (type === "ist-ank") {
-      setActiveTool("distance");
-      const istGeo = { lat: 41.0082, lon: 28.9784 };
-      const ankGeo = { lat: 39.9334, lon: 32.8597 };
-      const istPt = projectToMapPoint(istGeo.lon, istGeo.lat);
-      const ankPt = projectToMapPoint(ankGeo.lon, ankGeo.lat);
-      setPoints([
-        { svgX: istPt.x, svgY: istPt.y, geo: istGeo, label: t("placeIstanbul"), source: "preset" },
-        { svgX: ankPt.x, svgY: ankPt.y, geo: ankGeo, label: t("placeAnkara"), source: "preset" },
-      ]);
-      focusOnMapPoints([istPt, ankPt]);
-    } else if (type === "izm-van") {
-      setActiveTool("distance");
-      const izmGeo = { lat: 38.4237, lon: 27.1428 };
-      const vanGeo = { lat: 38.4891, lon: 43.4089 };
-      const izmPt = projectToMapPoint(izmGeo.lon, izmGeo.lat);
-      const vanPt = projectToMapPoint(vanGeo.lon, vanGeo.lat);
-      setPoints([
-        { svgX: izmPt.x, svgY: izmPt.y, geo: izmGeo, label: t("placeIzmir"), source: "preset" },
-        { svgX: vanPt.x, svgY: vanPt.y, geo: vanGeo, label: t("placeVan"), source: "preset" },
-      ]);
-      focusOnMapPoints([izmPt, vanPt]);
-    } else if (type === "tuz-golu") {
-      setActiveTool("area");
-      const poly = [
-        { lat: 39.15, lon: 33.25 },
-        { lat: 39.05, lon: 33.65 },
-        { lat: 38.65, lon: 33.45 },
-        { lat: 38.75, lon: 33.15 },
-      ];
-      setPoints(
-        poly.map((p, idx) => {
-          const pt = projectToMapPoint(p.lon, p.lat);
-          return {
-            svgX: pt.x,
-            svgY: pt.y,
-            geo: p,
-            label: t("vertexLabel", { index: idx + 1 }),
-            source: "preset",
-          };
-        }),
-      );
-      focusOnMapPoints(poly.map((p) => projectToMapPoint(p.lon, p.lat)));
-    } else if (type === "van-golu") {
-      setActiveTool("area");
-      const poly = [
-        { lat: 38.95, lon: 43.35 },
-        { lat: 38.65, lon: 43.65 },
-        { lat: 38.35, lon: 43.15 },
-        { lat: 38.55, lon: 42.65 },
-        { lat: 38.95, lon: 42.95 },
-      ];
-      setPoints(
-        poly.map((p, idx) => {
-          const pt = projectToMapPoint(p.lon, p.lat);
-          return {
-            svgX: pt.x,
-            svgY: pt.y,
-            geo: p,
-            label: t("vertexLabel", { index: idx + 1 }),
-            source: "preset",
-          };
-        }),
-      );
-      focusOnMapPoints(poly.map((p) => projectToMapPoint(p.lon, p.lat)));
-    } else if (type === "merkez") {
-      setActiveTool("coordinates");
-      const centerGeo = { lat: 39.14, lon: 34.16 };
-      const pt = projectToMapPoint(centerGeo.lon, centerGeo.lat);
-      setPoints([
-        {
-          svgX: pt.x,
-          svgY: pt.y,
-          geo: centerGeo,
-          label: t("placeCentre"),
-          mapLabel: t("placeCentreShort"),
-          source: "preset",
-        },
-      ]);
-      focusOnMapPoints([pt]);
-    }
+  // Ready-made examples (T-125): this tool's own list only, so a preset never changes the tool.
+  // Smart region focus (T-015): each ends by framing the example's own points — it is picked by
+  // name ("İstanbul - Ankara") with no map location behind it yet.
+  const loadPreset = (preset: ToolPreset) => {
+    const loaded = preset.points.map((p, idx): PointWithSvg => {
+      const pt = projectToMapPoint(p.lon, p.lat);
+      return {
+        svgX: pt.x,
+        svgY: pt.y,
+        geo: { lat: p.lat, lon: p.lon },
+        label: p.labelKey ? t(p.labelKey) : t("vertexLabel", { index: idx + 1 }),
+        mapLabel: p.mapLabelKey ? t(p.mapLabelKey) : undefined,
+        source: "preset",
+      };
+    });
+    setPoints(loaded);
+    focusOnMapPoints(loaded.map((p) => ({ x: p.svgX, y: p.svgY })));
   };
 
   // Calculations
@@ -1070,7 +1009,6 @@ export function V2ToolWorkbench({
 
   // Restore saved measurement
   const handleLoadSaved = (record: MeasurementRecord) => {
-    setActiveTool(record.type === "coordinate" ? "coordinates" : record.type);
     const restored = record.points.map((p) => {
       const pt = projectToMapPoint(p.lon, p.lat);
       return {
@@ -1160,143 +1098,6 @@ export function V2ToolWorkbench({
 
   return (
     <div className="space-y-6">
-      {/* 1. TOOL SWITCHER (If mode is not locked to a single subpage) */}
-      {!lockMode && (
-        <div className="rounded-3xl border border-border bg-gradient-to-b from-card via-card to-muted/30 p-5 sm:p-7 shadow-lg space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
-            <div>
-              <h2 className="font-heading text-xl sm:text-2xl font-bold text-primary">
-                {t("labHeading")}
-              </h2>
-              <span className="text-xs text-muted-foreground font-medium">{t("labSubtitle")}</span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUndo}
-                disabled={points.length === 0}
-                leftIcon={<Undo2 className="size-3.5" />}
-              >
-                {t("undo")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClear}
-                disabled={points.length === 0}
-                leftIcon={<Trash2 className="size-3.5 text-destructive" />}
-              >
-                {t("clear")}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleCopy}
-                disabled={points.length === 0 || isSelfIntersecting}
-                leftIcon={copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-              >
-                {copied ? t("copied") : t("copySummary")}
-              </Button>
-            </div>
-          </div>
-
-          {/* 3 Main Tools Selector */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTool("distance");
-                setPoints([]);
-              }}
-              className={`p-4 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between cursor-pointer ${
-                activeTool === "distance"
-                  ? "border-primary bg-primary/10 shadow-md shadow-primary/5 ring-1 ring-primary/40"
-                  : "border-border bg-card/60 hover:bg-muted/50 hover:border-border/80"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="p-2 rounded-xl bg-primary/15 text-primary">
-                  <Compass className="size-5" />
-                </span>
-                <Badge variant={activeTool === "distance" ? "primary" : "outline"} size="sm">
-                  {t("modeDistanceBadge")}
-                </Badge>
-              </div>
-              <div>
-                <h3 className="font-heading font-bold text-base text-foreground">
-                  {t("modeDistanceTitle")}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {t("modeDistanceDescription")}
-                </p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTool("coordinates");
-                setPoints([]);
-              }}
-              className={`p-4 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between cursor-pointer ${
-                activeTool === "coordinates"
-                  ? "border-secondary bg-secondary/10 shadow-md shadow-secondary/5 ring-1 ring-secondary/40"
-                  : "border-border bg-card/60 hover:bg-muted/50 hover:border-border/80"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="p-2 rounded-xl bg-secondary/15 text-secondary">
-                  <MapPin className="size-5" />
-                </span>
-                <Badge variant={activeTool === "coordinates" ? "secondary" : "outline"} size="sm">
-                  {t("modeCoordinatesBadge")}
-                </Badge>
-              </div>
-              <div>
-                <h3 className="font-heading font-bold text-base text-foreground">
-                  {t("modeCoordinatesTitle")}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {t("modeCoordinatesDescription")}
-                </p>
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTool("area");
-                setPoints([]);
-              }}
-              className={`p-4 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between cursor-pointer ${
-                activeTool === "area"
-                  ? "border-accent bg-accent/10 shadow-md shadow-accent/5 ring-1 ring-accent/40"
-                  : "border-border bg-card/60 hover:bg-muted/50 hover:border-border/80"
-              }`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="p-2 rounded-xl bg-accent/15 text-accent">
-                  <Layers className="size-5" />
-                </span>
-                <Badge variant={activeTool === "area" ? "info" : "outline"} size="sm">
-                  {t("modeAreaBadge")}
-                </Badge>
-              </div>
-              <div>
-                <h3 className="font-heading font-bold text-base text-foreground">
-                  {t("modeAreaTitle")}
-                </h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {t("modeAreaDescription")}
-                </p>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* 2. FULL-WIDTH 12-COLUMN INTERACTIVE MAP CANVAS WITH INTEGRATED TOOLBAR */}
       <div className="rounded-3xl border border-border bg-card p-4 sm:p-6 shadow-xl space-y-4 relative overflow-hidden">
         {/* Map Header Toolbar */}
@@ -1325,29 +1126,25 @@ export function V2ToolWorkbench({
               </span>
             )}
 
-            {/* Undo / Clear in lockMode */}
-            {lockMode && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUndo}
-                  disabled={points.length === 0}
-                  leftIcon={<Undo2 className="size-3.5" />}
-                >
-                  {t("undo")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClear}
-                  disabled={points.length === 0}
-                  leftIcon={<Trash2 className="size-3.5 text-destructive" />}
-                >
-                  {t("clear")}
-                </Button>
-              </>
-            )}
+            {/* Undo / Clear */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleUndo}
+              disabled={points.length === 0}
+              leftIcon={<Undo2 className="size-3.5" />}
+            >
+              {t("undo")}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClear}
+              disabled={points.length === 0}
+              leftIcon={<Trash2 className="size-3.5 text-destructive" />}
+            >
+              {t("clear")}
+            </Button>
 
             {/* PNG Export Button */}
             {/* The one place in this repo a Tooltip is the right answer (T-036). The button
@@ -1382,41 +1179,16 @@ export function V2ToolWorkbench({
         {/* Quick Scenario Preset Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 text-xs">
           <span className="font-semibold text-muted-foreground shrink-0">{t("presetsLabel")}</span>
-          <button
-            type="button"
-            onClick={() => loadPreset("ist-ank")}
-            className="px-2.5 py-1 rounded-lg bg-muted/70 hover:bg-primary/15 hover:text-primary text-foreground transition-colors shrink-0 cursor-pointer"
-          >
-            {t("presetIstanbulAnkara")}
-          </button>
-          <button
-            type="button"
-            onClick={() => loadPreset("izm-van")}
-            className="px-2.5 py-1 rounded-lg bg-muted/70 hover:bg-primary/15 hover:text-primary text-foreground transition-colors shrink-0 cursor-pointer"
-          >
-            {t("presetIzmirVan")}
-          </button>
-          <button
-            type="button"
-            onClick={() => loadPreset("tuz-golu")}
-            className="px-2.5 py-1 rounded-lg bg-muted/70 hover:bg-accent/15 hover:text-accent text-foreground transition-colors shrink-0 cursor-pointer"
-          >
-            {t("presetLakeTuz")}
-          </button>
-          <button
-            type="button"
-            onClick={() => loadPreset("van-golu")}
-            className="px-2.5 py-1 rounded-lg bg-muted/70 hover:bg-accent/15 hover:text-accent text-foreground transition-colors shrink-0 cursor-pointer"
-          >
-            {t("presetLakeVan")}
-          </button>
-          <button
-            type="button"
-            onClick={() => loadPreset("merkez")}
-            className="px-2.5 py-1 rounded-lg bg-muted/70 hover:bg-secondary/15 hover:text-secondary text-foreground transition-colors shrink-0 cursor-pointer"
-          >
-            {t("presetCentre")}
-          </button>
+          {TOOL_PRESETS[mode].map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => loadPreset(preset)}
+              className={`px-2.5 py-1 rounded-lg bg-muted/70 text-foreground transition-colors shrink-0 cursor-pointer ${PRESET_CHIP_HOVER[mode]}`}
+            >
+              {t(preset.labelKey)}
+            </button>
+          ))}
         </div>
 
         {/* Interactive SVG Canvas Container with Zero Top/Bottom Gaps, and its caption.

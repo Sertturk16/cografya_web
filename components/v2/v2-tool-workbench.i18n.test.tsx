@@ -5,7 +5,8 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
-import { V2ToolWorkbench, type ToolMode } from "./v2-tool-workbench";
+import { TOOL_MODES } from "@/lib/tools/tool-presets";
+import { V2ToolWorkbench } from "./v2-tool-workbench";
 
 /**
  * T-081: the measurement workbench wrote its copy inline in Turkish, so `/en/tools/...` rendered a
@@ -179,8 +180,14 @@ describe("the ToolWorkbench catalogue", () => {
     }
   });
 
-  it("has no dead key: each one is named in the workbench source", () => {
-    const unused = Object.keys(tr).filter((key) => !source.includes(`"${key}"`));
+  it("has no dead key: each one is named in the workbench source or its preset list", () => {
+    const presets = readFileSync(
+      new URL("../../lib/tools/tool-presets.ts", import.meta.url),
+      "utf8",
+    );
+    const unused = Object.keys(tr).filter(
+      (key) => !source.includes(`"${key}"`) && !presets.includes(`"${key}"`),
+    );
     expect(unused).toEqual([]);
   });
 });
@@ -192,16 +199,10 @@ describe("the English workbench renders in English (T-081)", () => {
    */
   const PROPER_NOUNS = /Türkiye|Kırşehir|dönüm/g;
 
-  const modes: readonly ToolMode[] = ["distance", "coordinates", "area"];
-  const cases = modes.flatMap((mode) => [
-    [mode, true],
-    [mode, false],
-  ]) as [ToolMode, boolean][];
-
-  it.each(cases)("%s (locked: %s)", (mode, lockMode) => {
+  it.each(TOOL_MODES)("%s", (mode) => {
     const html = renderToStaticMarkup(
       <NextIntlClientProvider locale="en" messages={enMessages} timeZone="Europe/Istanbul">
-        <V2ToolWorkbench initialMode={mode} lockMode={lockMode} />
+        <V2ToolWorkbench mode={mode} />
       </NextIntlClientProvider>,
     );
     // Province names in the map's per-path <title> are data (the api publishes Turkish names in
