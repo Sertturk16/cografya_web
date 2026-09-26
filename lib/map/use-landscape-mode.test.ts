@@ -110,4 +110,13 @@ describe("fallback layout colour", () => {
     // `--color-bg` is the light parchment only; `--background` is what `.dark` switches.
     expect(FALLBACK_STYLE.background).toBe("var(--background)");
   });
+
+  it("names every property the way `style.setProperty` reads it, so none is silently dropped", () => {
+    // `setProperty("zIndex", …)` is a no-op: it takes CSS names. The fallback sat under the
+    // page's header and the content after the map until this was `z-index` (T-118).
+    for (const prop of Object.keys(FALLBACK_STYLE)) {
+      expect(prop, prop).toMatch(/^[a-z]+(-[a-z]+)*$/);
+    }
+    expect(FALLBACK_STYLE["z-index"]).toBe("1000");
+  });
 });

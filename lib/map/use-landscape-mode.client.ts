@@ -104,6 +104,9 @@ export interface LandscapeMode {
  * the Fullscreen API is unavailable or its request rejects. Individual properties are saved
  * and restored (not the whole `style` attribute) so this never clobbers styling the caller's
  * own render already put on the element (e.g. `game-map.tsx`'s `--game-stage-aspect`).
+ *
+ * Keys are CSS property names, not camelCase: `style.setProperty("zIndex", …)` is a silent no-op,
+ * which left this layout under the page's header and the content after the map (T-118).
  */
 export const FALLBACK_STYLE: Readonly<Record<string, string>> = {
   position: "fixed",
@@ -113,7 +116,7 @@ export const FALLBACK_STYLE: Readonly<Record<string, string>> = {
   bottom: "0",
   width: "100vw",
   height: "100vh",
-  zIndex: "1000",
+  "z-index": "1000",
   background: "var(--background)",
   margin: "0",
 };

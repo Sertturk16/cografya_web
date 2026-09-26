@@ -138,7 +138,7 @@ export function MapRotateHint({
       role="status"
       aria-live="polite"
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+      className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 w-max max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
     >
       <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
       <span>{t("rotateHint")}</span>
