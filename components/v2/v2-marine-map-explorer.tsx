@@ -835,9 +835,9 @@ export function V2MarineMapExplorer({ marinePoints }: V2MarineMapExplorerProps) 
                 )
               }
               stats={[
-                `Su ${selectedPoint.sst ? `${tr(selectedPoint.sst, 1)} °C` : "—"}`,
-                `Dalga ${selectedPoint.waveHeight ? `${tr(selectedPoint.waveHeight, 2)} m` : "—"}`,
-                `Rüzgâr ${selectedPoint.windSpeed10m ? `${tr(selectedPoint.windSpeed10m, 1)} m/s` : "—"}`,
+                `Su ${selectedPoint.sst != null ? `${tr(selectedPoint.sst, 1)} °C` : "—"}`,
+                `Dalga ${selectedPoint.waveHeight != null ? `${tr(selectedPoint.waveHeight, 2)} m` : "—"}`,
+                `Rüzgâr ${selectedPoint.windSpeed10m != null ? `${tr(selectedPoint.windSpeed10m, 1)} m/s` : "—"}`,
               ]}
               href={
                 selectedPoint.provinceSlug

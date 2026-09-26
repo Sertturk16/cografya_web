@@ -260,7 +260,7 @@ export function V2EarthquakeExplorer({
 
         setEvents(mapped);
         if (mapped.length > 0 && mapped[0]) {
-          setSelectedEventId(mapped[0].id);
+          selectEvent(mapped[0].id);
         } else {
           setSelectedEventId(null);
         }
@@ -271,7 +271,7 @@ export function V2EarthquakeExplorer({
         setIsLoading(false);
       }
     },
-    [provinceMap],
+    [provinceMap, selectEvent],
   );
 
   // Trigger client fetch on filter change (skip first mount as initialEvents is already rendered)

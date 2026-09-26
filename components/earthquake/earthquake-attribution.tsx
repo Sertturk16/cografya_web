@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { getTranslations } from "next-intl/server";
 import type { EarthquakeAttribution as EarthquakeAttributionRow } from "@/lib/api/types";
 import { SOURCE_NOTE } from "@/components/patterns/source-note";
@@ -125,10 +126,14 @@ export function EarthquakeMapCredit({
 }: {
   attributions: readonly EarthquakeAttributionRow[];
 }) {
+  // `{" "}` between rows for the reason `MapAttribution`'s own lines carry one: the panel's flex
+  // gap separates them on screen only, and `textContent` would weld two notices into one run.
   return attributions.map((attribution) => (
-    <span key={attribution.providerId} lang="tr">
-      {attribution.requiredNoticeTr}
-      {attribution.regulationReference !== "" && ` (${attribution.regulationReference})`}
-    </span>
+    <Fragment key={attribution.providerId}>
+      <span lang="tr">
+        {attribution.requiredNoticeTr}
+        {attribution.regulationReference !== "" && ` (${attribution.regulationReference})`}
+      </span>{" "}
+    </Fragment>
   ));
 }

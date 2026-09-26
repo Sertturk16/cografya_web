@@ -35,7 +35,7 @@ export function MapSelectionCard({
   stats: readonly string[];
   /** The page to explore; left out when there is none (an earthquake at sea, T-119). */
   href?: React.ComponentProps<typeof Link>["href"];
-  exploreLabel?: string;
+  exploreLabel: string;
   closeLabel: string;
   onClose: () => void;
   className?: string;

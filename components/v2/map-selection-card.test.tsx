@@ -73,6 +73,7 @@ describe("MapSelectionCard", () => {
         <MapSelectionCard
           title="Ege Denizi"
           stats={["M 4,1"]}
+          exploreLabel="İl Sayfası"
           closeLabel="Seçimi kapat"
           onClose={() => {}}
         />
