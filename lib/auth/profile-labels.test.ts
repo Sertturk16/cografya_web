@@ -3,12 +3,16 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
 import {
+  ACCOUNT_ROLE_LABELS,
+  ACCOUNT_ROLE_ORDER,
   EDUCATION_LEVEL_LABELS,
   GRADE_LEVEL_LABELS,
+  INSTITUTION_TYPE_LABELS,
+  REFERRAL_SOURCE_LABELS,
   renderLabel,
   STUDY_STREAM_LABELS,
+  TEACHER_SUBJECT_LABELS,
   UNIVERSITY_GROUP_LABELS,
-  USER_TYPE_LABELS,
 } from "./profile-labels";
 
 /**
@@ -25,20 +29,41 @@ function nonEmptyTr(table: Record<string, { readonly tr: string }>): void {
   }
 }
 
-describe("USER_TYPE_LABELS", () => {
-  it("carries all five options with a non-empty tr", () => {
-    // `student` is V2's minimal-registration value on the accountRole axis alone
-    // (DEC 2026-09-03a md.1, VAL126R2SEC-I3); the other four stay V1's education-level options.
-    expect(Object.keys(USER_TYPE_LABELS).sort()).toEqual(
-      ["graduate", "secondary", "student", "teacher", "undergraduate"].sort(),
-    );
-    nonEmptyTr(USER_TYPE_LABELS);
+describe("ACCOUNT_ROLE_LABELS (T-103)", () => {
+  it("labels the four roles in the ruled order", () => {
+    expect(ACCOUNT_ROLE_ORDER).toEqual(["STUDENT", "TEACHER", "PARENT", "ENTHUSIAST"]);
+    expect(ACCOUNT_ROLE_ORDER.map((role) => ACCOUNT_ROLE_LABELS[role].tr)).toEqual([
+      "Öğrenci",
+      "Öğretmen",
+      "Veli",
+      "Coğrafya meraklısı",
+    ]);
+    for (const label of Object.values(ACCOUNT_ROLE_LABELS)) expect(label.en).toBeTruthy();
   });
+});
 
-  it("also carries en for all five (plan §4.3.4 — this axis is exercised in both modes)", () => {
-    for (const [key, label] of Object.entries(USER_TYPE_LABELS)) {
-      expect(label.en, `${key}.en is missing`).toBeTruthy();
-    }
+describe("teacher and referral tables (T-103)", () => {
+  it("carry exactly the contract's values, in the ruled order", () => {
+    expect(Object.values(TEACHER_SUBJECT_LABELS).map((l) => l.tr)).toEqual([
+      "Coğrafya",
+      "Sosyal bilgiler",
+      "Diğer",
+    ]);
+    expect(Object.values(INSTITUTION_TYPE_LABELS).map((l) => l.tr)).toEqual([
+      "Devlet okulu",
+      "Özel okul",
+      "Dershane / kurs",
+      "Diğer",
+    ]);
+    expect(Object.values(REFERRAL_SOURCE_LABELS).map((l) => l.tr)).toEqual([
+      "Öğretmenim",
+      "Arkadaşım",
+      "YouTube",
+      "Instagram",
+      "Google",
+      "Kitap",
+      "Diğer",
+    ]);
   });
 });
 
@@ -97,7 +122,7 @@ describe('renderLabel — the lang="tr" fallback (WCAG 3.1.2)', () => {
   });
 
   it("en locale with an en value renders it, no lang override", () => {
-    expect(renderLabel("en", USER_TYPE_LABELS.teacher)).toEqual({ text: "Teacher" });
+    expect(renderLabel("en", ACCOUNT_ROLE_LABELS.TEACHER)).toEqual({ text: "Teacher" });
   });
 
   it('en locale with NO en value falls back to tr, wrapped lang="tr"', () => {

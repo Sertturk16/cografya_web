@@ -4,7 +4,9 @@ import type { Profile, UpdateAccountRequest, UpdateProfileRequest } from "@/lib/
 import {
   EDUCATION_LEVEL_LABELS,
   GRADE_LEVEL_LABELS,
+  INSTITUTION_TYPE_LABELS,
   STUDY_STREAM_LABELS,
+  TEACHER_SUBJECT_LABELS,
 } from "@/lib/auth/profile-labels";
 import type { ProfileBffBody, ProfileBffCode } from "./transport.server";
 
@@ -26,7 +28,10 @@ export function isProfileLike(value: unknown): value is Profile {
   const p = value as Record<string, unknown>;
 
   const isValidRole =
-    p.accountRole === "STUDENT" || p.accountRole === "TEACHER" || p.accountRole === "PARENT";
+    p.accountRole === "STUDENT" ||
+    p.accountRole === "TEACHER" ||
+    p.accountRole === "PARENT" ||
+    p.accountRole === "ENTHUSIAST";
   // Object.hasOwn (not `in`) — an Object.prototype property name must not satisfy this check (VAL128R3-I1).
   const isValidEducationLevel =
     p.educationLevel === null ||
@@ -41,6 +46,13 @@ export function isProfileLike(value: unknown): value is Profile {
   const isValidSchoolName = p.schoolName === null || typeof p.schoolName === "string";
   const isValidUniversityName = p.universityName === null || typeof p.universityName === "string";
   const isValidDepartmentName = p.departmentName === null || typeof p.departmentName === "string";
+  const isValidTeacherSubject =
+    p.teacherSubject === null ||
+    (typeof p.teacherSubject === "string" && Object.hasOwn(TEACHER_SUBJECT_LABELS, p.teacherSubject));
+  const isValidInstitutionType =
+    p.institutionType === null ||
+    (typeof p.institutionType === "string" &&
+      Object.hasOwn(INSTITUTION_TYPE_LABELS, p.institutionType));
 
   // The personal block (T-061) — nine required strings. Checked as a group rather than one
   // clause each: none of them is a closed set, so the only thing to assert is that the server
@@ -68,7 +80,9 @@ export function isProfileLike(value: unknown): value is Profile {
     isValidStudyStream &&
     isValidSchoolName &&
     isValidUniversityName &&
-    isValidDepartmentName
+    isValidDepartmentName &&
+    isValidTeacherSubject &&
+    isValidInstitutionType
   );
 }
 

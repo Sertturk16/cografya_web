@@ -18,7 +18,7 @@ const SESSION_REQUEST_TIMEOUT_MS = 15_000;
 const sessionSchema = z.object({
   id: z.string(),
   firstName: z.string(),
-  accountRole: z.enum(["STUDENT", "TEACHER", "PARENT"]),
+  accountRole: z.enum(["STUDENT", "TEACHER", "PARENT", "ENTHUSIAST"]),
 });
 
 type SessionShape = z.infer<typeof sessionSchema>;

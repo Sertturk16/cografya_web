@@ -183,7 +183,7 @@
     "metaDescription": "Which personal data Coğrafya Gurmesi processes, why and for how long; the providers it is shared with and your rights under Turkish data protection law (KVKK).",
     "heading": "Privacy and KVKK Notice",
     "lede": "This notice, given under Article 10 of Turkey's Personal Data Protection Law No. 6698 (KVKK), explains how your personal data is processed when you use Coğrafya Gurmesi.",
-    "updated": "Last updated: 24 September 2026",
+    "updated": "Last updated: 26 September 2026",
     "authoritative": "The Turkish version of this notice is authoritative.",
     "controllerHeading": "1. Data Controller",
     "controllerBody": "Your personal data is processed by Coğrafya Gurmesi, the data controller identified below. The same details are the content provider information required by Law No. 5651.",
@@ -199,7 +199,8 @@
       "Identity: first and last name.",
       "Contact: e-mail address and mobile phone number.",
       "Location: the province and district you choose when registering. Your device location is never collected.",
-      "Education: account type (student, teacher, parent), education level, grade, track, school, university and department.",
+      "Profile: account type (student, teacher, parent or geography enthusiast). For students: education level, grade, track, school, university and department; for parents: their child's grade and track (the child's name, school or birth date are never asked); for teachers: subject and type of institution.",
+      "How you heard of us: the source you optionally picked at sign-up (for example a teacher, a friend, YouTube).",
       "Usage: your game rounds and scores, favourites, video progress and saved measurements.",
       "Security and transaction records: an irreversible hash of your password (the password itself is not stored), session records, IP address and access logs.",
       "Marketing preference: whether you consented to commercial electronic messages, and when."
@@ -211,6 +212,7 @@
       "Creating your account, verifying your e-mail address and signing you in.",
       "Providing games, scores, the leaderboard, favourites, video progress and measurement tools.",
       "Showing content suited to your education details.",
+      "Producing aggregate audience statistics to understand who the site reaches and how they found it (distribution of account type, grade, track, subject, province and source). These statistics do not identify anyone.",
       "Keeping your account and the site secure and preventing abuse and excessive requests.",
       "Answering your questions, requests and applications.",
       "Meeting legal obligations (for example keeping access logs under Law No. 5651 and responding to authorised bodies).",
@@ -220,7 +222,7 @@
     "legalItems": [
       "KVKK Art. 5/2-c, necessity for entering into or performing a contract: membership, your account and the site's services.",
       "KVKK Art. 5/2-ç, compliance with a legal obligation: keeping access logs and informing authorised bodies.",
-      "KVKK Art. 5/2-f, legitimate interest, without harming your fundamental rights: security and preventing abuse and excessive requests.",
+      "KVKK Art. 5/2-f, the controller's legitimate interest, provided your fundamental rights and freedoms are not harmed: security, preventing abuse and excessive requests, and understanding the site's audience through aggregate statistics.",
       "KVKK Art. 5/1, explicit consent: commercial electronic messages. This consent is optional; not giving it does not affect your membership."
     ],
     "recipientsHeading": "6. Recipients and Transfers Abroad",
@@ -1196,7 +1198,13 @@
       "groupSecondary": "Education details",
       "groupHigherEd": "Education details",
       "groupSecondaryAnnounce": "Education details added: grade and stream.",
-      "groupHigherEdAnnounce": "Education details added: university and department."
+      "groupHigherEdAnnounce": "Education details added: university and department.",
+      "accountRole": "Account type",
+      "childGrade": "Your child's grade",
+      "childStream": "Their track",
+      "groupChild": "Your child's details",
+      "teacherSubject": "Your subject",
+      "institutionType": "Where you teach"
     },
     "hints": {
       "newPassword": "At least 6 characters, with one lowercase letter, one uppercase letter and one digit."
@@ -1314,11 +1322,12 @@
       "consentLabel": "I agree to receive commercial electronic messages by e-mail and SMS about campaigns, new features and announcements.",
       "consentHint": "Optional. Untick and save to withdraw your consent."
     },
-    "education": {
-      "title": "Education details",
-      "description": "The level you study at and the details that go with it.",
+    "profile": {
+      "title": "Account type",
+      "description": "Who you are and the details that go with it. You can change your account type here.",
       "complete": "Complete",
-      "incomplete": "Some fields are missing"
+      "incomplete": "Some fields are missing",
+      "roleChangeNotice": "If you change your account type and save, the previous type's details are removed."
     },
     "password": {
       "title": "Security",
@@ -1343,11 +1352,7 @@
       "title": "Account",
       "description": "Account details that cannot be changed here.",
       "email": "E-mail",
-      "role": "Account type",
       "memberSince": "Member since",
-      "roleStudent": "Student",
-      "roleTeacher": "Teacher",
-      "roleParent": "Parent",
       "emailNotice": "You cannot change your e-mail address here yet; get in touch with us if it needs to change."
     },
     "delete": {

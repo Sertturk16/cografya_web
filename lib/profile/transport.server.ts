@@ -54,7 +54,7 @@ export const profileSchema = z.object({
   provincePlateCode: z.string(),
   provinceName: z.string(),
   createdAt: z.string(),
-  accountRole: z.enum(["STUDENT", "TEACHER", "PARENT"]),
+  accountRole: z.enum(["STUDENT", "TEACHER", "PARENT", "ENTHUSIAST"]),
   educationLevel: z.enum(["SECONDARY", "UNDERGRADUATE", "GRADUATE"]).nullable(),
   gradeLevel: z
     .enum([
@@ -88,6 +88,8 @@ export const profileSchema = z.object({
   schoolName: z.string().nullable(),
   universityName: z.string().nullable(),
   departmentName: z.string().nullable(),
+  teacherSubject: z.enum(["COGRAFYA", "SOSYAL_BILGILER", "DIGER"]).nullable(),
+  institutionType: z.enum(["DEVLET_OKULU", "OZEL_OKUL", "DERSHANE_KURS", "DIGER"]).nullable(),
   isComplete: z.boolean(),
   marketingConsent: z.boolean(),
 });
@@ -103,6 +105,7 @@ void _profileShapeAgreesWithContract;
 
 const updateProfileRequestSchema = z
   .object({
+    accountRole: z.enum(["STUDENT", "TEACHER", "PARENT", "ENTHUSIAST"]),
     educationLevel: z.enum(["SECONDARY", "UNDERGRADUATE", "GRADUATE"]).nullable(),
     gradeLevel: z
       .enum([
@@ -136,6 +139,8 @@ const updateProfileRequestSchema = z
     schoolName: z.string().max(200).nullable(),
     universityName: z.string().max(200).nullable(),
     departmentName: z.string().max(200).nullable(),
+    teacherSubject: z.enum(["COGRAFYA", "SOSYAL_BILGILER", "DIGER"]).nullable(),
+    institutionType: z.enum(["DEVLET_OKULU", "OZEL_OKUL", "DERSHANE_KURS", "DIGER"]).nullable(),
   })
   .strict();
 

@@ -26,7 +26,8 @@ import {
   GAME_ROUNDS_FETCH_TIMEOUT_MS,
 } from "@/lib/game-rounds/client";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
-import {} from "@/lib/auth/profile-labels";
+import { ACCOUNT_ROLE_LABELS } from "@/lib/auth/profile-labels";
+import type { AccountRole } from "@/lib/api/types";
 import { V2GameHistoryStats } from "@/components/v2/v2-game-history-stats";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -52,8 +53,24 @@ import {
   AlertCircle,
   Calendar,
   BookOpen,
+  Users,
 } from "lucide-react";
 import { formatDay } from "@/lib/text/format-date";
+
+const ROLE_BADGE_ICONS: Record<AccountRole, React.ComponentType<{ className?: string }>> = {
+  STUDENT: User,
+  TEACHER: GraduationCap,
+  PARENT: Users,
+  ENTHUSIAST: Compass,
+};
+
+/** What an incomplete profile is missing, per role (T-103). An enthusiast is never incomplete. */
+const INCOMPLETE_PROMPTS: Record<AccountRole, string> = {
+  STUDENT: "Eğitim bilgilerini tamamla",
+  PARENT: "Çocuğunun sınıfını ekle",
+  TEACHER: "Branşını ekle",
+  ENTHUSIAST: "Profilini tamamla",
+};
 
 export interface MemberHubProvince {
   readonly plateCode: string;
@@ -310,6 +327,8 @@ export function V2MemberHub({
     0,
   );
 
+  const RoleIcon = ROLE_BADGE_ICONS[session.accountRole];
+
   return (
     <div className="space-y-8">
       {/* Live status announcements */}
@@ -336,33 +355,22 @@ export function V2MemberHub({
                   size="sm"
                   className="gap-1"
                 >
-                  {session.accountRole === "TEACHER" ? (
-                    <>
-                      <GraduationCap className="size-3.5" />
-                      Öğretmen
-                    </>
-                  ) : (
-                    <>
-                      <User className="size-3.5" />
-                      Öğrenci
-                    </>
-                  )}
+                  <RoleIcon className="size-3.5" />
+                  {ACCOUNT_ROLE_LABELS[session.accountRole].tr}
                 </Badge>
 
-                {/* Since T-061 registration collects the education fields, so a new account
-                    arrives complete and this prompt never fires for one. It stays for the
-                    accounts that predate that change, and it points at the settings section
-                    that can actually finish the job. The "%50" the badge used to claim was
-                    not a measurement of anything — it is gone rather than recomputed. */}
-                {session.accountRole === "STUDENT" && !profile?.isComplete && (
-                  <Link href={{ pathname: "/hesabim/ayarlar", hash: "egitim-bilgileri" }}>
+                {/* Registration collects each role's details, so a new account arrives
+                    complete; this prompt is for older accounts and for a teacher registered
+                    before T-103. */}
+                {profile && !profile.isComplete && (
+                  <Link href={{ pathname: "/hesabim/ayarlar", hash: "hesap-turu" }}>
                     <Badge
                       variant="warning"
                       size="sm"
                       className="hover:opacity-80 transition-opacity cursor-pointer"
                     >
                       <AlertCircle className="size-3 mr-1" />
-                      Eğitim bilgilerini tamamla
+                      {INCOMPLETE_PROMPTS[session.accountRole]}
                     </Badge>
                   </Link>
                 )}

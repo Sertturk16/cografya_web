@@ -47,6 +47,12 @@ export const EMPTY_EDUCATION_SELECTION: EducationSelection = {
   departmentName: "",
 };
 
+/** A parent's starting point: the child is always on the secondary branch (T-103). */
+export const EMPTY_CHILD_EDUCATION_SELECTION: EducationSelection = {
+  ...EMPTY_EDUCATION_SELECTION,
+  educationLevel: "SECONDARY",
+};
+
 export interface EducationFieldsetProps {
   readonly locale: Locale;
   readonly value: EducationSelection;
@@ -59,6 +65,11 @@ export interface EducationFieldsetProps {
    */
   readonly idPrefix: string;
   readonly disabled?: boolean;
+  /**
+   * `child` (T-103) is a parent describing their child: the level is fixed to SECONDARY and
+   * not shown, the labels speak about the child, and no school name is asked.
+   */
+  readonly variant?: "student" | "child";
 }
 
 /**
@@ -78,6 +89,8 @@ export interface EducationFieldsetProps {
  * Changing the level CLEARS the fields the new branch does not use. Keeping them would send
  * the API a shape it rejects outright, and the member would see a validation failure naming
  * a field the form is no longer showing them.
+ *
+ * `variant="child"` is the parent's step (T-103).
  */
 export function EducationFieldset({
   locale,
@@ -86,6 +99,7 @@ export function EducationFieldset({
   errors,
   idPrefix,
   disabled = false,
+  variant = "student",
 }: EducationFieldsetProps) {
   const t = useTranslations("Auth");
 
@@ -180,40 +194,42 @@ export function EducationFieldset({
         {groupAnnouncement}
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor={ids.educationLevel} className="text-xs font-bold text-foreground">
-          {t("fields.educationLevel")}
-        </Label>
-        <Select
-          id={ids.educationLevel}
-          value={value.educationLevel}
-          onChange={(e) => handleLevelChange(e.target.value as EducationLevel | "")}
-          disabled={disabled}
-          aria-invalid={Boolean(errors.educationLevel)}
-          aria-describedby={errors.educationLevel ? `${ids.educationLevel}-error` : undefined}
-        >
-          <option value="">{t("selectPlaceholder")}</option>
-          {(["SECONDARY", "UNDERGRADUATE", "GRADUATE"] as const).map((level) => {
-            const label = renderLabel(locale, EDUCATION_LEVEL_LABELS[level]);
-            return (
-              <option key={level} value={level} lang={label.lang}>
-                {label.text}
-              </option>
-            );
-          })}
-        </Select>
-        <FieldError id={`${ids.educationLevel}-error`} message={errors.educationLevel} />
-      </div>
+      {variant === "student" && (
+        <div className="space-y-1.5">
+          <Label htmlFor={ids.educationLevel} className="text-xs font-bold text-foreground">
+            {t("fields.educationLevel")}
+          </Label>
+          <Select
+            id={ids.educationLevel}
+            value={value.educationLevel}
+            onChange={(e) => handleLevelChange(e.target.value as EducationLevel | "")}
+            disabled={disabled}
+            aria-invalid={Boolean(errors.educationLevel)}
+            aria-describedby={errors.educationLevel ? `${ids.educationLevel}-error` : undefined}
+          >
+            <option value="">{t("selectPlaceholder")}</option>
+            {(["SECONDARY", "UNDERGRADUATE", "GRADUATE"] as const).map((level) => {
+              const label = renderLabel(locale, EDUCATION_LEVEL_LABELS[level]);
+              return (
+                <option key={level} value={level} lang={label.lang}>
+                  {label.text}
+                </option>
+              );
+            })}
+          </Select>
+          <FieldError id={`${ids.educationLevel}-error`} message={errors.educationLevel} />
+        </div>
+      )}
 
       {value.educationLevel === "SECONDARY" && (
         <fieldset className="space-y-4 pt-2 border-t border-border">
           <legend className="text-xs font-bold text-muted-foreground uppercase tracking-wider pt-2">
-            {t("fields.groupSecondary")}
+            {variant === "child" ? t("fields.groupChild") : t("fields.groupSecondary")}
           </legend>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor={ids.gradeLevel} className="text-xs font-bold text-foreground">
-                {t("fields.grade")}
+                {variant === "child" ? t("fields.childGrade") : t("fields.grade")}
               </Label>
               <Select
                 id={ids.gradeLevel}
@@ -238,7 +254,7 @@ export function EducationFieldset({
 
             <div className="space-y-1.5">
               <Label htmlFor={ids.studyStream} className="text-xs font-bold text-foreground">
-                {t("fields.stream")}
+                {variant === "child" ? t("fields.childStream") : t("fields.stream")}
               </Label>
               <Select
                 id={ids.studyStream}
@@ -262,20 +278,22 @@ export function EducationFieldset({
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor={ids.schoolName} className="text-xs font-bold text-foreground">
-              {t("fields.school")}
-            </Label>
-            <Input
-              id={ids.schoolName}
-              type="text"
-              value={value.schoolName}
-              onChange={(e) => patch({ schoolName: e.target.value })}
-              disabled={disabled}
-              maxLength={200}
-              autoComplete="organization"
-            />
-          </div>
+          {variant === "student" && (
+            <div className="space-y-1.5">
+              <Label htmlFor={ids.schoolName} className="text-xs font-bold text-foreground">
+                {t("fields.school")}
+              </Label>
+              <Input
+                id={ids.schoolName}
+                type="text"
+                value={value.schoolName}
+                onChange={(e) => patch({ schoolName: e.target.value })}
+                disabled={disabled}
+                maxLength={200}
+                autoComplete="organization"
+              />
+            </div>
+          )}
         </fieldset>
       )}
 

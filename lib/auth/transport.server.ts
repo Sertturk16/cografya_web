@@ -120,7 +120,7 @@ void _authResultShapesAgree;
 const sessionSchema = z.object({
   id: z.string(),
   firstName: z.string(),
-  accountRole: z.enum(["STUDENT", "TEACHER", "PARENT"]),
+  accountRole: z.enum(["STUDENT", "TEACHER", "PARENT", "ENTHUSIAST"]),
 });
 
 type SessionShape = z.infer<typeof sessionSchema>;

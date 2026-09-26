@@ -18,7 +18,7 @@ const read = (name: string) => stripComments(readFileSync(join(__dirname, name),
 const SHELL = read("v2-account-settings.tsx");
 const CARD = read("v2-settings-card.tsx");
 const PERSONAL = read("v2-settings-personal-card.tsx");
-const EDUCATION = read("v2-settings-education-card.tsx");
+const PROFILE = read("v2-settings-profile-card.tsx");
 const PASSWORD = read("v2-settings-password-card.tsx");
 const ACCOUNT = read("v2-settings-account-card.tsx");
 const DELETE = read("v2-settings-delete-card.tsx");
@@ -35,7 +35,7 @@ describe("the settings page's four sections", () => {
   it("renders all five for a student, in the ruled order, deletion last", () => {
     const order = [
       "V2SettingsPersonalCard",
-      "V2SettingsEducationCard",
+      "V2SettingsProfileCard",
       "V2SettingsPasswordCard",
       "V2SettingsAccountCard",
       "V2SettingsDeleteCard",
@@ -48,21 +48,39 @@ describe("the settings page's four sections", () => {
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
   });
 
-  it("shows the education section to a STUDENT and a PARENT only", () => {
-    // PARENT reuses the STUDENT branches of the API's profile matrix in full, so it gets the
-    // same fields. TEACHER carries no education column at all.
-    expect(SHELL).toContain(
-      'profile.accountRole === "STUDENT" || profile.accountRole === "PARENT"',
-    );
-    expect(SHELL).toContain("{showsEducation && <V2SettingsEducationCard");
+  it("shows the account-type section to every role (T-103)", () => {
+    expect(SHELL).toContain("<V2SettingsProfileCard");
+    expect(SHELL).not.toContain("showsEducation");
+    expect(SHELL).toContain('{ id: "hesap-turu", label: t("profile.title") }');
   });
 
-  it("gives a teacher three populated sections rather than an empty-room message", () => {
+  it("changes the role and its fields in one save, and warns before a role change", () => {
+    expect(PROFILE).toContain("<AccountRolePicker");
+    expect(PROFILE).toContain("<DeclaredProfileFields");
+    expect(PROFILE).toContain("submitProfileReplacement(buildProfileReplacementPayload(value))");
+    expect(PROFILE).toContain('t("profile.roleChangeNotice")');
+  });
+
+  it("mounts the role-change status region permanently, swapping only its text", () => {
+    // A live region inserted together with its text is often not announced. The `<p
+    // role="status">` must always be in the tree; only the text inside it toggles between the
+    // notice and "" (§ role-change notice, T-103 final review finding 6).
+    const statusIndex = PROFILE.indexOf('role="status"');
+    expect(statusIndex, 'role="status" not found').toBeGreaterThan(0);
+    const before = PROFILE.slice(Math.max(0, statusIndex - 60), statusIndex);
+    expect(before, "the status <p> is conditionally mounted").not.toContain("&&");
+    expect(PROFILE).toContain(
+      'value.accountRole !== savedRole ? t("profile.roleChangeNotice") : ""',
+    );
+  });
+
+  it("renders every section unconditionally", () => {
     // The whole defect this page replaced: `/profil` showed a TEACHER one card whose entire
     // body was "Öğretmen hesabın için ek bir profil alanı bulunmuyor." Nothing here is gated
-    // on role except the education card, so the other three always render.
+    // on role — every member gets every section.
     for (const card of [
       "V2SettingsPersonalCard",
+      "V2SettingsProfileCard",
       "V2SettingsPasswordCard",
       "V2SettingsAccountCard",
     ]) {
@@ -71,16 +89,11 @@ describe("the settings page's four sections", () => {
     }
   });
 
-  it("drops the section from the jump list when it is not rendered", () => {
-    // A nav entry pointing at an anchor that does not exist is a link to nowhere.
-    expect(SHELL).toContain('...(showsEducation ? [{ id: "egitim-bilgileri"');
-  });
-
   it("carries no sign-out control — the header owns that", () => {
     for (const [name, source] of [
       ["shell", SHELL],
       ["personal", PERSONAL],
-      ["education", EDUCATION],
+      ["profile", PROFILE],
       ["password", PASSWORD],
       ["account", ACCOUNT],
       ["delete", DELETE],
@@ -114,7 +127,7 @@ describe("one heading, and it belongs to the page", () => {
     expect(CARD).toContain("<h2 id={headingId}");
     for (const [name, source] of [
       ["personal", PERSONAL],
-      ["education", EDUCATION],
+      ["profile", PROFILE],
       ["password", PASSWORD],
       ["account", ACCOUNT],
       ["delete", DELETE],
@@ -126,9 +139,9 @@ describe("one heading, and it belongs to the page", () => {
 });
 
 describe("each section saves on its own", () => {
-  it("sends the personal block to /api/account and the education block to /api/profile", () => {
+  it("sends the personal block to /api/account and the account-type block to /api/profile", () => {
     expect(PERSONAL).toContain("submitAccountReplacement");
-    expect(EDUCATION).toContain("submitProfileReplacement");
+    expect(PROFILE).toContain("submitProfileReplacement");
   });
 
   it("changes the password through the authenticated BFF action, never the reset flow", () => {
@@ -171,6 +184,7 @@ describe("the account section is read-only, and honest about it", () => {
     expect(ACCOUNT).toContain("account.emailNotice");
     expect(ACCOUNT).not.toContain("<form");
     expect(ACCOUNT).not.toContain("<Input");
+    expect(ACCOUNT).not.toContain("account.role");
   });
 });
 

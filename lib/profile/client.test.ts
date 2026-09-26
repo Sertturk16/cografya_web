@@ -29,6 +29,8 @@ const VALID_STUDENT_PROFILE: Profile = {
   schoolName: null,
   universityName: null,
   departmentName: null,
+  teacherSubject: null,
+  institutionType: null,
   isComplete: true,
 };
 
@@ -41,6 +43,8 @@ const VALID_TEACHER_PROFILE: Profile = {
   schoolName: null,
   universityName: null,
   departmentName: null,
+  teacherSubject: null,
+  institutionType: null,
   isComplete: true,
 };
 
@@ -53,6 +57,8 @@ const VALID_MINIMAL_STUDENT_PROFILE: Profile = {
   schoolName: null,
   universityName: null,
   departmentName: null,
+  teacherSubject: null,
+  institutionType: null,
   isComplete: false,
 };
 
@@ -91,9 +97,15 @@ describe("isProfileLike (CON128-I1 runtime contract validation)", () => {
       schoolName: null,
       universityName: "İstanbul Üniversitesi",
       departmentName: "Coğrafya",
+      teacherSubject: null,
+      institutionType: null,
       isComplete: true,
     };
     expect(isProfileLike(ugProfile)).toBe(true);
+  });
+
+  it("rejects an invalid teacherSubject", () => {
+    expect(isProfileLike({ ...VALID_STUDENT_PROFILE, teacherSubject: "MATEMATIK" })).toBe(false);
   });
 
   it("rejects when accountRole is not STUDENT or TEACHER", () => {
@@ -160,12 +172,15 @@ describe("isProfileLike rejects the whole Object.prototype property-name class (
 
 describe("submitProfileReplacement", () => {
   const payload = {
+    accountRole: "STUDENT" as const,
     educationLevel: "SECONDARY" as const,
     gradeLevel: "GRADE_12" as const,
     studyStream: "SAYISAL" as const,
     schoolName: null,
     universityName: null,
     departmentName: null,
+    teacherSubject: null,
+    institutionType: null,
   };
 
   it("returns ok: true with profile when BFF returns 200 with valid Profile", async () => {
