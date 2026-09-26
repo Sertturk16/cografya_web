@@ -410,8 +410,10 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(pins).toContain(
       "const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);",
     );
-    expect(pins).toContain(
-      "pinLabelPlacement(pinCentres[idx]!, pinCentres, { view: labelView, reach })",
+    expect(pins).toContain('const label = PIN_LABEL_LAYOUT[pinLabelSides[idx] ?? "above"];');
+    // Sides are decided for all pins together, inside the controls' clear area (T-124, T-127).
+    expect(code).toMatch(
+      /placePinLabels\([\s\S]*?\{ view: labelView, dotRadius: unit\(PIN_RADIUS \+ PIN_OUTLINE\) \}/,
     );
     // A stroke-[n] class would override the attribute and grow with the zoom again.
     expect(pins).not.toMatch(/stroke-\[/);
@@ -432,7 +434,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(code).toContain("toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN)");
     expect(code).toContain("{TALL_CONTEXT_SHAPES.map((country) => (");
     expect(code).not.toContain("tr-context.generated");
-    expect(code).toMatch(/fitPointsView\(mapPoints, worldView, box, MAP_CONTROL_INSETS/);
+    expect(code).toMatch(/fitPointsView\(mapPoints, worldView, box, controlInsets/);
   });
 
   it("keeps the phone controls small and every example reachable", () => {
