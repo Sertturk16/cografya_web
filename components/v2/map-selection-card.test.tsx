@@ -65,6 +65,22 @@ describe("MapSelectionCard", () => {
   it("names the close button", () => {
     expect(html).toMatch(/<button [^>]*aria-label="Seçimi kapat"/);
   });
+
+  it("drops the explore link, and keeps the close button, when there is nowhere to go (T-119)", () => {
+    // An earthquake or sea point outside every province has no province page.
+    const bare = renderToStaticMarkup(
+      <NextIntlClientProvider locale="tr">
+        <MapSelectionCard
+          title="Ege Denizi"
+          stats={["M 4,1"]}
+          closeLabel="Seçimi kapat"
+          onClose={() => {}}
+        />
+      </NextIntlClientProvider>,
+    );
+    expect(bare).not.toContain("<a ");
+    expect(bare).toMatch(/<button [^>]*aria-label="Seçimi kapat"/);
+  });
 });
 
 /**
