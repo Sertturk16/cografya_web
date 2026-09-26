@@ -142,6 +142,18 @@ export function clampZoom(zoom: number): number {
 }
 
 /**
+ * The viewBox units that draw `px` CSS pixels at any zoom and any box size: pins, their outline
+ * and their labels (T-122). Zoom narrows the viewBox by `zoom`, so the units shrink by `zoom`
+ * itself (`√zoom` left them growing by `√zoom`); `pxPerUnit` is the rendered box's CSS px per
+ * unit at 1×, without which a phone drew the same units at a quarter of the desktop size.
+ * `null` is the unmeasured first render and draws one unit per px.
+ */
+export function atScreenSize(px: number, zoom: number, pxPerUnit: number | null): number {
+  const scale = pxPerUnit !== null && pxPerUnit > 0 ? pxPerUnit : 1;
+  return px / (scale * zoom);
+}
+
+/**
  * Current zoom of a view relative to a REFERENCE rectangle (reference.w / view.w).
  *
  * The reference is the world on every surface whose stage carries the map's own shape, and

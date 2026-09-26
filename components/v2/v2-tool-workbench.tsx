@@ -20,12 +20,14 @@ import {
 import { parseSubpaths, pointInPolygon, type ShapePoint } from "@/lib/map/shape-geometry";
 import {
   CLICK_MOVE_THRESHOLD_PX,
+  atScreenSize,
   clampPan,
   moveDistance,
   parseViewBox,
   zoomFromPinch,
   type ViewBox,
 } from "@/lib/map/zoom-pan";
+import { pinLabelPlacement, type PinLabelSide } from "@/lib/map/pin-label-placement";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-presets";
@@ -88,6 +90,8 @@ export interface PointWithSvg {
   svgY: number;
   geo: GeoPoint;
   label?: string;
+  /** Shorter name drawn on the map when `label` is too wide for a phone map (T-122). */
+  mapLabel?: string;
   source?: "map" | "dropdown" | "manual" | "preset";
 }
 
@@ -108,6 +112,31 @@ const PRESET_CHIP_HOVER: Record<ToolMode, string> = {
   distance: "hover:bg-primary/15 hover:text-primary",
   area: "hover:bg-accent/15 hover:text-accent",
   coordinates: "hover:bg-secondary/15 hover:text-secondary",
+};
+
+/** Waypoint pin sizes in CSS px, the same at every zoom and box size via `atScreenSize`
+ *  (T-122): dot radius, its outline, the label's font size and its gap from the dot. */
+const PIN_RADIUS = 5;
+const PIN_OUTLINE = 2;
+const PIN_LABEL_SIZE = 11;
+const PIN_LABEL_GAP = 4;
+/** Card-coloured outline painted under each label's glyphs, so it reads across lake shores. */
+const PIN_LABEL_HALO = 3;
+/** Where a pin's label sits for each `pinLabelPlacement` side: a unit offset from the dot
+ *  (times the dot-plus-gap distance) and the text alignment that keeps it clear of the dot. */
+const PIN_LABEL_LAYOUT: Record<
+  PinLabelSide,
+  {
+    dx: number;
+    dy: number;
+    anchor: "start" | "middle" | "end";
+    baseline: "auto" | "hanging" | "central";
+  }
+> = {
+  above: { dx: 0, dy: -1, anchor: "middle", baseline: "auto" },
+  below: { dx: 0, dy: 1, anchor: "middle", baseline: "hanging" },
+  left: { dx: -1, dy: 0, anchor: "end", baseline: "central" },
+  right: { dx: 1, dy: 0, anchor: "start", baseline: "central" },
 };
 
 /**
@@ -394,6 +423,25 @@ export function V2ToolWorkbench({
       for (const entry of entries) {
         if (entry.contentRect.width > 0) {
           setContainerWidth(entry.contentRect.width);
+        }
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // CSS px per viewBox unit at 1×, for the pins (T-122). Read from the <svg> itself, not the
+  // plate: fullscreen reshapes the svg box, and the default `meet` fit scales by the tighter axis.
+  const [pxPerUnit, setPxPerUnit] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setPxPerUnit(Math.min(width / WORLD_VIEWBOX.w, height / WORLD_VIEWBOX.h));
         }
       }
     });
@@ -777,6 +825,7 @@ export function V2ToolWorkbench({
         svgY: pt.y,
         geo: { lat: p.lat, lon: p.lon },
         label: p.labelKey ? t(p.labelKey) : t("vertexLabel", { index: idx + 1 }),
+        mapLabel: p.mapLabelKey ? t(p.mapLabelKey) : undefined,
         source: "preset",
       };
     });
@@ -786,6 +835,7 @@ export function V2ToolWorkbench({
 
   // Calculations
   const geoPoints = React.useMemo(() => points.map((p) => p.geo), [points]);
+  const pinCentres = React.useMemo(() => points.map((p) => ({ x: p.svgX, y: p.svgY })), [points]);
 
   const distanceKm = React.useMemo(() => {
     if (activeTool === "distance" && geoPoints.length >= 2) {
@@ -1378,25 +1428,32 @@ export function V2ToolWorkbench({
 
               {/* Placed Waypoints Pins */}
               {points.map((p, idx) => {
-                const radius = Math.max(5 / Math.sqrt(zoomLevel), 3);
+                const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);
+                const label =
+                  PIN_LABEL_LAYOUT[pinLabelPlacement(pinCentres[idx]!, pinCentres).side];
                 return (
                   <g key={idx} className="transition-transform">
                     <circle
                       cx={p.svgX}
                       cy={p.svgY}
-                      r={radius}
-                      className="fill-primary stroke-white dark:stroke-black stroke-[2] shadow-md"
+                      r={atScreenSize(PIN_RADIUS, zoomLevel, pxPerUnit)}
+                      strokeWidth={atScreenSize(PIN_OUTLINE, zoomLevel, pxPerUnit)}
+                      className="fill-primary stroke-white dark:stroke-black shadow-md"
                     />
                     <text
-                      x={p.svgX}
-                      y={p.svgY - (radius + 4)}
-                      textAnchor="middle"
-                      fontSize={Math.max(10 / Math.sqrt(zoomLevel), 8)}
+                      x={p.svgX + label.dx * gap}
+                      y={p.svgY + label.dy * gap}
+                      textAnchor={label.anchor}
+                      dominantBaseline={label.baseline}
+                      fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}
                       fontWeight="bold"
                       fill="currentColor"
-                      className="fill-foreground font-sans drop-shadow-sm select-none pointer-events-none"
+                      strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}
+                      strokeLinejoin="round"
+                      paintOrder="stroke"
+                      className="fill-foreground stroke-card font-sans select-none pointer-events-none"
                     >
-                      {p.label || idx + 1}
+                      {p.mapLabel || p.label || idx + 1}
                     </text>
                   </g>
                 );

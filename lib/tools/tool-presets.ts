@@ -27,6 +27,8 @@ export interface PresetPoint {
   readonly lon: number;
   /** `ToolWorkbench` message key; omitted on area corners. */
   readonly labelKey?: string;
+  /** Shorter name drawn on the map where `labelKey`'s is too wide for a phone map (T-122). */
+  readonly mapLabelKey?: string;
 }
 
 export interface ToolPreset {
@@ -146,7 +148,9 @@ export const TOOL_PRESETS: Readonly<Record<ToolMode, readonly ToolPreset[]>> = {
     {
       id: "merkez",
       labelKey: "presetCentre",
-      points: [{ lat: 39.14, lon: 34.16, labelKey: "placeCentre" }],
+      points: [
+        { lat: 39.14, lon: 34.16, labelKey: "placeCentre", mapLabelKey: "placeCentreShort" },
+      ],
     },
     {
       id: "agri-dagi",

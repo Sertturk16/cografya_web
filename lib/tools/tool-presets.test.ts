@@ -51,7 +51,12 @@ describe("TOOL_PRESETS (T-125)", () => {
     for (const [locale, catalogue] of Object.entries(catalogues)) {
       for (const mode of TOOL_MODES) {
         for (const preset of TOOL_PRESETS[mode]) {
-          const keys = [preset.labelKey, ...preset.points.flatMap((p) => p.labelKey ?? [])];
+          const keys = [
+            preset.labelKey,
+            ...preset.points.flatMap((p) =>
+              [p.labelKey, p.mapLabelKey].filter((k) => k !== undefined),
+            ),
+          ];
           for (const key of keys) {
             expect(typeof (catalogue as Record<string, unknown>)[key], `${locale}.${key}`).toBe(
               "string",
