@@ -135,11 +135,9 @@ export function V2SettingsProfileCard({ locale, profile }: V2SettingsProfileCard
           disabled={submitting}
         />
 
-        {value.accountRole !== savedRole && (
-          <p role="status" className="text-[11px] text-muted-foreground leading-relaxed">
-            {t("profile.roleChangeNotice")}
-          </p>
-        )}
+        <p role="status" className="text-[11px] text-muted-foreground leading-relaxed empty:hidden">
+          {value.accountRole !== savedRole ? t("profile.roleChangeNotice") : ""}
+        </p>
 
         <DeclaredProfileFields
           locale={locale}

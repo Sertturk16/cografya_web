@@ -61,6 +61,19 @@ describe("the settings page's four sections", () => {
     expect(PROFILE).toContain('t("profile.roleChangeNotice")');
   });
 
+  it("mounts the role-change status region permanently, swapping only its text", () => {
+    // A live region inserted together with its text is often not announced. The `<p
+    // role="status">` must always be in the tree; only the text inside it toggles between the
+    // notice and "" (§ role-change notice, T-103 final review finding 6).
+    const statusIndex = PROFILE.indexOf('role="status"');
+    expect(statusIndex, 'role="status" not found').toBeGreaterThan(0);
+    const before = PROFILE.slice(Math.max(0, statusIndex - 60), statusIndex);
+    expect(before, "the status <p> is conditionally mounted").not.toContain("&&");
+    expect(PROFILE).toContain(
+      'value.accountRole !== savedRole ? t("profile.roleChangeNotice") : ""',
+    );
+  });
+
   it("renders every section unconditionally", () => {
     // The whole defect this page replaced: `/profil` showed a TEACHER one card whose entire
     // body was "Öğretmen hesabın için ek bir profil alanı bulunmuyor." Nothing here is gated
