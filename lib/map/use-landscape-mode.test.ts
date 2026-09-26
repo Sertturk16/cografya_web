@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  FALLBACK_STYLE,
   isDocumentFullscreen,
   pickExitFullscreen,
   pickFullscreenRequest,
@@ -101,5 +102,12 @@ describe("shouldShowRotateHint", () => {
     expect(shouldShowRotateHint({ active: true, isPortrait: true, isCoarsePointer: false })).toBe(
       false,
     );
+  });
+});
+
+describe("fallback layout colour", () => {
+  it("paints the fallback with the theme background, which dark mode redefines", () => {
+    // `--color-bg` is the light parchment only; `--background` is what `.dark` switches.
+    expect(FALLBACK_STYLE.background).toBe("var(--background)");
   });
 });

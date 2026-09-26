@@ -129,7 +129,11 @@
     "explore": "İncele",
     "closeSelection": "Seçimi kapat",
     "statPopulation": "{count, number} kişi",
-    "statArea": "{area, number} km²"
+    "statArea": "{area, number} km²",
+    "fullscreenEnter": "Tam ekranda aç",
+    "fullscreenExit": "Tam ekrandan çık",
+    "rotateHint": "Daha geniş bir görünüm için telefonunu yatay çevir.",
+    "rotateDismiss": "Anladım"
   },
   "About": {
     "metaTitle": "Hakkımızda",

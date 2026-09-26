@@ -578,7 +578,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // on the map's corner like the zoom and fullscreen clusters beside it; not a page panel.
 // 190 → **191** in T-120: `MapResultPanel`, the distance tool's result on its map, the same kind
 // of on-map chip as the fullscreen credit.
-export const HAND_DRAWN_CARDS = 191;
+// 191 → **192** in T-118: `MapFullscreenToggle`, the atlas maps' top-left fullscreen cluster, the
+// same kind of on-map chip as the tool and game pages' own.
+export const HAND_DRAWN_CARDS = 192;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -635,8 +637,9 @@ export const HAND_DRAWN_WELLS = 147;
  * terms page's spellings verbatim.
  * 224 → **223** in T-125: the deleted tool switcher's well was a one-off spelling.
  * 223 → **224** in T-117: the fullscreen credit panel above ({@link HAND_DRAWN_CARDS}).
- * 224 → **225** in T-120: the map result panel above ({@link HAND_DRAWN_CARDS}). */
-export const HAND_DRAWN_CARD_SPELLINGS = 225;
+ * 224 → **225** in T-120: the map result panel above ({@link HAND_DRAWN_CARDS}).
+ * 225 → **226** in T-118: the atlas fullscreen toggle above ({@link HAND_DRAWN_CARDS}). */
+export const HAND_DRAWN_CARD_SPELLINGS = 226;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1441,7 +1444,8 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // {@link HAND_DRAWN_CARDS} and {@link HAND_DRAWN_WELLS} are unchanged.
     // 63 after T-117: `map-attribution.tsx` joins with its fullscreen credit panel.
     // 64 after T-120: `map-result-panel.tsx` joins with the result panel the tool map renders.
-    expect(handDrawnTotals().files).toBe(64);
+    // 65 after T-118: `map-fullscreen-controls.tsx` joins with the atlas fullscreen toggle.
+    expect(handDrawnTotals().files).toBe(65);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

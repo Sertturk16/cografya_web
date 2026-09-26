@@ -105,7 +105,7 @@ export interface LandscapeMode {
  * and restored (not the whole `style` attribute) so this never clobbers styling the caller's
  * own render already put on the element (e.g. `game-map.tsx`'s `--game-stage-aspect`).
  */
-const FALLBACK_STYLE: Readonly<Record<string, string>> = {
+export const FALLBACK_STYLE: Readonly<Record<string, string>> = {
   position: "fixed",
   top: "0",
   left: "0",
@@ -114,7 +114,7 @@ const FALLBACK_STYLE: Readonly<Record<string, string>> = {
   width: "100vw",
   height: "100vh",
   zIndex: "1000",
-  background: "var(--color-bg)",
+  background: "var(--background)",
   margin: "0",
 };
 
