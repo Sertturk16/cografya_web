@@ -160,9 +160,9 @@ const FIGURE = {
  */
 const FRAME = {
   province:
-    "relative block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[var(--map-artifact-sea)] aspect-[1000/429]",
+    "relative block overflow-hidden rounded-2xl border border-border bg-[var(--map-artifact-sea)] aspect-[1000/429]",
   country:
-    "relative block overflow-hidden rounded-[var(--radius-lg)] border border-border bg-[var(--map-artifact-sea)] aspect-[1000/521]",
+    "relative block overflow-hidden rounded-2xl border border-border bg-[var(--map-artifact-sea)] aspect-[1000/521]",
 } as const;
 
 /** The shared base silhouette. */

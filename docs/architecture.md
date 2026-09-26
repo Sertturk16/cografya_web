@@ -205,10 +205,8 @@ Details and the open dark-mode bugs: `docs/design.md`.
   a 307-URL sitemap all carry the real origin) because `lib/env.ts` parses `process.env` as
   an object at runtime instead of referencing `process.env.NEXT_PUBLIC_*` directly, which
   Next would inline at build. Keep it that way, or add build `ARG`s before changing it.
-- `--radius-lg` is `16px` in `:root` and `var(--radius)` (10px) in `@theme inline`.
-- `components.json` `aliases.hooks` points to a non-existent `@/hooks`.
-- `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`
-  is gitignored yet two such files are tracked.
+- `scripts/` mixes durable generators with ad-hoc Playwright audits (`audit_*`, `capture_full`,
+  `inspect_*`, `run_v2_qa_test`, `test_interactions`).
 - `pnpm build` against a live local API can fail on one province or country page (fetch abort /
   `ECONNRESET`, or `ApiError 500`) under Next's ~19 parallel prerender workers. It is load, not
   chance: it reproduces while something else is also loading the API — an open Playwright

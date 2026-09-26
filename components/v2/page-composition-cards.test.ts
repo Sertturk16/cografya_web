@@ -988,10 +988,10 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
  *
  * NO NEW HAND-DRAWN CARD, measured the same way as the four notes above. The one surface-ish
  * constant is the frame,
- * `rounded-[var(--radius-lg)] border border-border bg-[var(--map-artifact-sea)]`,
- * and it is outside {@link CARD_ROUNDING} on both counts: the radius is the retired stylesheet's
- * own `var(--radius-lg)` rather than a card radius, and the fill is the map's frozen sea rather
- * than a themed surface. A map figure is an illustration, not a panel. The `ternary` and `call`
+ * `rounded-2xl border border-border bg-[var(--map-artifact-sea)]`,
+ * and it is not a card: the radius is in {@link CARD_ROUNDING} (T-113 moved it off the retired
+ * stylesheet's 16px `var(--radius-lg)` onto the radius every other map frame uses), but the fill is
+ * the map's frozen sea rather than a themed surface. A map figure is an illustration, not a panel. The `ternary` and `call`
  * figures do not move; this conversion introduced neither.
  */
 // T-061: 198 → **192**. The direction is DOWN, and by more than this task added. The settings
