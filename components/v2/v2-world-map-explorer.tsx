@@ -33,8 +33,11 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { cn } from "@/lib/utils";
-import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
+import { atlasZoomAt, clampPanOffset } from "@/lib/map/v2-zoom-pan";
 import { usePinchZoom } from "@/lib/map/use-pinch-zoom.client";
+import { useWheelZoom } from "@/lib/map/use-wheel-zoom.client";
+import { offsetFromCentre } from "@/lib/map/wheel-zoom";
+import { MapWheelHint } from "@/components/v2/map-wheel-hint";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import type { ContinentIdentity } from "@/lib/theme/continent-identity";
 
@@ -200,6 +203,26 @@ export function V2WorldMapExplorer({
     pan,
     maxZoom: MAX_ZOOM,
     onChange: (next) => {
+      setZoom(next.zoom);
+      setPan(next.pan);
+    },
+  });
+
+  const wheel = useWheelZoom({
+    targetRef: containerRef,
+    plainWheelZooms: false,
+    zoomBy: (factor, clientX, clientY) => {
+      const box = containerRef.current;
+      if (!box) return;
+      const next = atlasZoomAt(
+        zoom,
+        pan,
+        factor,
+        offsetFromCentre(box, clientX, clientY),
+        MAX_ZOOM,
+        box.clientWidth,
+        box.clientHeight,
+      );
       setZoom(next.zoom);
       setPan(next.pan);
     },
@@ -602,7 +625,10 @@ export function V2WorldMapExplorer({
                 style={{
                   transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
                   transformOrigin: "center center",
-                  transition: isPanning || pinch.isPinching ? "none" : "transform 0.2s ease-out",
+                  transition:
+                    isPanning || pinch.isPinching || wheel.isZooming
+                      ? "none"
+                      : "transform 0.2s ease-out",
                 }}
                 className="w-full h-full"
               >
@@ -788,6 +814,8 @@ export function V2WorldMapExplorer({
                   </g>
                 </svg>
               </div>
+
+              <MapWheelHint visible={wheel.hintVisible} />
 
               {/* DYNAMIC FLOATING TOOLTIP */}
               {hoveredIso && countryMap.get(hoveredIso) && !isPanning && (

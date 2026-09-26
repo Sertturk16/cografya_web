@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { clampPanOffset, pinchZoomPan } from "./v2-zoom-pan";
+import {
+  atlasZoomAt,
+  clampPanOffset,
+  gameZoomAt,
+  pinchZoomPan,
+  zoomPanAround,
+} from "./v2-zoom-pan";
 
 describe("clampPanOffset", () => {
   const container = { width: 1000, height: 600 };
@@ -110,5 +116,65 @@ describe("pinchZoomPan", () => {
   it("holds the start zoom when the start distance cannot define a ratio", () => {
     const degenerate = { zoom: 2, pan: { x: 0, y: 0 }, dist: 0, mid: { x: 0, y: 0 } };
     expect(pinchZoomPan(degenerate, 300, degenerate.mid, 4, box.width, box.height).zoom).toBe(2);
+  });
+});
+
+describe("zoomPanAround", () => {
+  it("draws the map point under fromMid at toMid after the zoom", () => {
+    const zoom = 1.5;
+    const pan = { x: 30, y: -20 };
+    const fromMid = { x: 80, y: 40 };
+    const toMid = { x: 60, y: 10 };
+    const next = zoomPanAround(zoom, pan, 3, fromMid, toMid);
+    // Map point under fromMid: u = (fromMid - pan) / zoom; drawn at 3 * u + next.
+    expect(3 * ((fromMid.x - pan.x) / zoom) + next.x).toBeCloseTo(toMid.x);
+    expect(3 * ((fromMid.y - pan.y) / zoom) + next.y).toBeCloseTo(toMid.y);
+  });
+});
+
+describe("atlasZoomAt", () => {
+  const box = { width: 1000, height: 600 };
+  const mid = { x: 100, y: 50 };
+
+  it("zooms around the cursor offset", () => {
+    expect(atlasZoomAt(1, { x: 0, y: 0 }, 2, mid, 4, box.width, box.height)).toEqual({
+      zoom: 2,
+      pan: { x: -100, y: -50 },
+    });
+  });
+
+  it("stops at 1x and at the surface's maximum", () => {
+    expect(atlasZoomAt(3, { x: 0, y: 0 }, 10, mid, 4, box.width, box.height).zoom).toBe(4);
+    expect(atlasZoomAt(2, { x: 80, y: 0 }, 0.1, mid, 4, box.width, box.height)).toEqual({
+      zoom: 1,
+      pan: { x: 0, y: 0 },
+    });
+  });
+
+  it("clamps the pan inside the box when zooming out", () => {
+    // 3x panned to the left edge, zooming out at the right edge: the raw pan is
+    // 500 - 0.5 * (500 - 1000) = 750, but 1.5x allows only (1.5 - 1) * 1000 / 2 = 250.
+    const rightEdge = { x: 500, y: 0 };
+    expect(atlasZoomAt(3, { x: 1000, y: 0 }, 0.5, rightEdge, 4, box.width, box.height)).toEqual({
+      zoom: 1.5,
+      pan: { x: 250, y: 0 },
+    });
+  });
+});
+
+describe("gameZoomAt", () => {
+  const mid = { x: 100, y: 50 };
+
+  it("keeps the point under the cursor in place with the pan inside the scale", () => {
+    const result = gameZoomAt(1, { x: 0, y: 0 }, 2, mid, 0.8, 2.5);
+    expect(result).toEqual({ zoom: 2, pan: { x: -50, y: -25 } });
+    // Screen offset of map point u is zoom * (u + pan); u = mid at 1x with no pan.
+    expect(result.zoom * (mid.x + result.pan.x)).toBeCloseTo(mid.x);
+    expect(result.zoom * (mid.y + result.pan.y)).toBeCloseTo(mid.y);
+  });
+
+  it("stops at the game's own limits", () => {
+    expect(gameZoomAt(1, { x: 0, y: 0 }, 0.1, mid, 0.8, 2.5).zoom).toBe(0.8);
+    expect(gameZoomAt(2, { x: 0, y: 0 }, 10, mid, 0.8, 2.5).zoom).toBe(2.5);
   });
 });

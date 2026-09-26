@@ -33,6 +33,10 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { V2LeaderboardButton } from "./v2-leaderboard-modal";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
+import { useWheelZoom } from "@/lib/map/use-wheel-zoom.client";
+import { gameZoomAt } from "@/lib/map/v2-zoom-pan";
+import { offsetFromCentre } from "@/lib/map/wheel-zoom";
+import { MapWheelHint } from "@/components/v2/map-wheel-hint";
 import {
   CLICK_MOVE_THRESHOLD_PX,
   moveDistance,
@@ -179,6 +183,26 @@ export function V2GameScreen({
   // "Tam Ekran / Yatay Mod" (T-015) — fullscreen + best-effort landscape lock for the whole
   // game arena (map + HUD + question banner), so none of it is left behind on rotation.
   const landscape = useLandscapeMode(mapArenaRef);
+
+  // Trackpad pinch and Ctrl/⌘ + wheel (T-116); in fullscreen a plain wheel zooms too.
+  const wheel = useWheelZoom({
+    targetRef: mapViewportRef,
+    plainWheelZooms: landscape.active,
+    zoomBy: (factor, clientX, clientY) => {
+      const viewport = mapViewportRef.current;
+      if (!viewport) return;
+      const next = gameZoomAt(
+        zoom,
+        pan,
+        factor,
+        offsetFromCentre(viewport, clientX, clientY),
+        MIN_ZOOM,
+        MAX_ZOOM,
+      );
+      setZoom(next.zoom);
+      setPan(next.pan);
+    },
+  });
 
   // Touch pinch-zoom + one-finger pan (T-015). This map had NO pan interaction of any kind
   // before this — `pan` existed only as state the reset button zeroed — and no touch gesture
@@ -1126,7 +1150,7 @@ export function V2GameScreen({
               <svg
                 ref={svgRef}
                 viewBox={viewBox}
-                className={`w-full h-full cursor-crosshair transition-transform select-none ${
+                className={`w-full h-full cursor-crosshair select-none ${wheel.isZooming ? "" : "transition-transform"} ${
                   // Zoomed in, this element owns one-finger dragging (pan); at rest a vertical
                   // swipe over the map should still scroll the PAGE. `pan-y` also leaves the
                   // browser's own pinch-zoom suppressed either way (T-015) — our handler above
@@ -1257,6 +1281,8 @@ export function V2GameScreen({
                   />
                 ))}
               </svg>
+
+              <MapWheelHint visible={wheel.hintVisible} />
 
               {/* Not Playing Overlay */}
               {!isPlaying && !isFinished && (

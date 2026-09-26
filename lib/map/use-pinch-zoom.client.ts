@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { type PanOffset, type PinchStart, pinchZoomPan } from "./v2-zoom-pan";
+import { offsetFromCentre } from "./wheel-zoom";
 
 /**
  * How long a country/province click stays swallowed after the last finger of a pinch lifts.
@@ -40,12 +41,9 @@ export function usePinchZoom({ containerRef, zoom, pan, maxZoom, onChange }: Use
     const box = containerRef.current;
     const [a, b] = [...pointsRef.current.values()];
     if (!box || !a || !b) return null;
-    const rect = box.getBoundingClientRect();
-    const centreX = rect.left + box.clientLeft + box.clientWidth / 2;
-    const centreY = rect.top + box.clientTop + box.clientHeight / 2;
     return {
       dist: Math.hypot(a.x - b.x, a.y - b.y),
-      mid: { x: (a.x + b.x) / 2 - centreX, y: (a.y + b.y) / 2 - centreY },
+      mid: offsetFromCentre(box, (a.x + b.x) / 2, (a.y + b.y) / 2),
       width: box.clientWidth,
       height: box.clientHeight,
     };

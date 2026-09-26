@@ -113,7 +113,8 @@
     "seaAegean": "Aegean Sea",
     "seaMediterranean": "Mediterranean Sea",
     "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)",
-    "attributionWorldLabel": "Country boundaries: Natural Earth (public domain)"
+    "attributionWorldLabel": "Country boundaries: Natural Earth (public domain)",
+    "wheelHint": "Use {key} + scroll to zoom"
   },
   "MapExplorer": {
     "zoomIn": "Zoom in (+)",

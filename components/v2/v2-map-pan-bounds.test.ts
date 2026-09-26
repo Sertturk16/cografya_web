@@ -8,7 +8,9 @@ describe("V2 Map Pan & Hover Contracts", () => {
 
   describe("Turkey Map (v2-turkey-map-explorer.tsx)", () => {
     it("imports clampPanOffset from lib/map/v2-zoom-pan", () => {
-      expect(turkeyFile).toContain('import { clampPanOffset } from "@/lib/map/v2-zoom-pan"');
+      expect(turkeyFile).toMatch(
+        /import \{[^}]*\bclampPanOffset\b[^}]*\} from "@\/lib\/map\/v2-zoom-pan"/,
+      );
     });
 
     it("clamps panOffset during mouse move drag", () => {
@@ -42,7 +44,9 @@ describe("V2 Map Pan & Hover Contracts", () => {
 
   describe("World Map (v2-world-map-explorer.tsx)", () => {
     it("imports clampPanOffset from lib/map/v2-zoom-pan", () => {
-      expect(worldFile).toContain('import { clampPanOffset } from "@/lib/map/v2-zoom-pan"');
+      expect(worldFile).toMatch(
+        /import \{[^}]*\bclampPanOffset\b[^}]*\} from "@\/lib\/map\/v2-zoom-pan"/,
+      );
     });
 
     it("clamps pan during mouse move drag", () => {
