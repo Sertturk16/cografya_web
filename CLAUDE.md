@@ -60,7 +60,8 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 - Visible UI change: run `pnpm sweep:overflow` (or `-- --filter=<route>`) against a running
   server before calling it done, and check 320, 360, 390 px and desktop, light and dark
   (Playwright MCP). Take a screenshot when the user asked for a visual fix; save screenshots
-  under `../.playwright-mcp/` (the scratchpad is outside Playwright's allowed roots).
+  in the workspace root's `.playwright-mcp/`: Playwright MCP resolves a relative filename from the
+  workspace root, so pass `.playwright-mcp/<name>` (the scratchpad is outside its allowed roots).
 - `/impeccable audit|critique|polish` and the `web-design-guidelines` skill are review
   aids; `docs/design.md` overrides them. Never `/impeccable init`, never let it create a
   DESIGN.md/PRODUCT.md or re-theme Terra.
