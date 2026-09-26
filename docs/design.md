@@ -301,6 +301,8 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
 - **Source and licence notes are footnotes**: `SOURCE_NOTE` in `components/patterns/source-note.ts`
   (11px, muted, underlined links) at the end of the section, no card, no box. Still visible
   without a click; a long verbatim licence text goes to `/hakkimizda` behind an anchor link.
+  A value in site chrome (the live ticker) carries a short plain-text source label inside its
+  own link instead, and the page that link opens carries the full note.
 - **`Separator` takes `decorative`** for a rule that carries no meaning; Base UI announces
   every separator otherwise.
 
