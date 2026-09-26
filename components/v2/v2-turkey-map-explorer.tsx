@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import { foldForSearch } from "@/lib/search/normalize";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
+import { usePinchZoom } from "@/lib/map/use-pinch-zoom.client";
 import {
   boxRectToViewBox,
   sliceScale,
@@ -150,6 +151,9 @@ const WIDE_FRAME_ISOS = new Set([
  */
 const NEW_CONTEXT_LABEL_MIN_RADIUS = 30;
 
+/** The + button and pinch share this limit. */
+const MAX_ZOOM = 3;
+
 const TALL_VIEWBOX_SIZE = viewBoxSize(TR_CONTEXT_TALL_VIEWBOX);
 const TALL_VIEWBOX_RECT = viewBoxRect(TR_CONTEXT_TALL_VIEWBOX);
 
@@ -235,6 +239,17 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
 
   const mapContainerRef = React.useRef<HTMLDivElement | null>(null);
 
+  const pinch = usePinchZoom({
+    containerRef: mapContainerRef,
+    zoom: zoomLevel,
+    pan: panOffset,
+    maxZoom: MAX_ZOOM,
+    onChange: (next) => {
+      setZoomLevel(next.zoom);
+      setPanOffset(next.pan);
+    },
+  });
+
   const toolbarRef = React.useRef<HTMLDivElement | null>(null);
   /**
    * The box and the toolbar floating over its top-right corner (T-086), measured on resize.
@@ -307,6 +322,12 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
       return;
     }
     if (e.button !== 0) return;
+    if (pinch.onPointerDown(e)) {
+      // A second finger turns the gesture into a pinch; drop the one-finger drag it began as.
+      isPointerDownRef.current = false;
+      setIsDragging(false);
+      return;
+    }
 
     if (dragResetTimerRef.current) {
       clearTimeout(dragResetTimerRef.current);
@@ -319,6 +340,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (pinch.onPointerMove(e)) return;
     if (isPointerDownRef.current) {
       if (e.buttons === 0) {
         isPointerDownRef.current = false;
@@ -371,6 +393,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    pinch.onPointerUp(e);
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -388,7 +411,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
   };
 
   const handleZoomIn = () => {
-    setZoomLevel((prev) => Math.min(prev + 0.4, 3));
+    setZoomLevel((prev) => Math.min(prev + 0.4, MAX_ZOOM));
   };
 
   const handleZoomOut = () => {
@@ -627,7 +650,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
               className={`relative rounded-2xl bg-[var(--map-plate)] border border-border overflow-hidden p-0 group aspect-square sm:aspect-[1270/580] sm:min-h-[420px] w-full select-none ${
                 zoomLevel > 1
                   ? `touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`
-                  : "cursor-crosshair"
+                  : "touch-pan-y cursor-crosshair"
               }`}
             >
               {/* Map Controls Floating Bar */}
@@ -691,7 +714,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                 style={{
                   transform: `scale(${zoomLevel}) translate(${panOffset.x / zoomLevel}px, ${panOffset.y / zoomLevel}px)`,
                   transformOrigin: "center center",
-                  transition: isDragging ? "none" : "transform 0.2s ease-out",
+                  transition: isDragging || pinch.isPinching ? "none" : "transform 0.2s ease-out",
                 }}
                 className="w-full h-full"
               >
@@ -763,7 +786,7 @@ export function V2TurkeyMapExplorer({ provinces, regionsSection }: V2TurkeyMapEx
                             }
                           }}
                           onClick={() => {
-                            if (!hasDraggedRef.current) {
+                            if (!hasDraggedRef.current && !pinch.suppressClick()) {
                               setSelectedPlate(shape.plateCode);
                             }
                           }}

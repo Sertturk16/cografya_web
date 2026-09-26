@@ -34,8 +34,12 @@ import {
 import { foldForSearch } from "@/lib/search/normalize";
 import { cn } from "@/lib/utils";
 import { clampPanOffset } from "@/lib/map/v2-zoom-pan";
+import { usePinchZoom } from "@/lib/map/use-pinch-zoom.client";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import type { ContinentIdentity } from "@/lib/theme/continent-identity";
+
+/** The + button and pinch share this limit. */
+const MAX_ZOOM = 4;
 
 export interface WorldCountryItem {
   isoCode: string;
@@ -190,6 +194,17 @@ export function V2WorldMapExplorer({
   const hasDraggedRef = React.useRef<boolean>(false);
   const dragResetTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const pinch = usePinchZoom({
+    containerRef,
+    zoom,
+    pan,
+    maxZoom: MAX_ZOOM,
+    onChange: (next) => {
+      setZoom(next.zoom);
+      setPan(next.pan);
+    },
+  });
+
   const isEn = locale === "en";
   const alphabet = isEn ? ALPHABET_EN : ALPHABET_TR;
 
@@ -223,6 +238,12 @@ export function V2WorldMapExplorer({
       return;
     }
     if (e.button !== 0) return;
+    if (pinch.onPointerDown(e)) {
+      // A second finger turns the gesture into a pinch; drop the one-finger drag it began as.
+      isPointerDownRef.current = false;
+      setIsPanning(false);
+      return;
+    }
 
     if (dragResetTimerRef.current) {
       clearTimeout(dragResetTimerRef.current);
@@ -235,6 +256,7 @@ export function V2WorldMapExplorer({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (pinch.onPointerMove(e)) return;
     if (isPointerDownRef.current) {
       if (e.buttons === 0) {
         isPointerDownRef.current = false;
@@ -287,6 +309,7 @@ export function V2WorldMapExplorer({
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    pinch.onPointerUp(e);
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
       try {
         e.currentTarget.releasePointerCapture(e.pointerId);
@@ -304,7 +327,7 @@ export function V2WorldMapExplorer({
   };
 
   const handleZoomIn = () => {
-    setZoom((z) => Math.min(z + 0.4, 4));
+    setZoom((z) => Math.min(z + 0.4, MAX_ZOOM));
   };
 
   const handleZoomOut = () => {
@@ -571,7 +594,7 @@ export function V2WorldMapExplorer({
               className={`relative rounded-none border-y border-border bg-[var(--map-ocean)] overflow-hidden sm:rounded-2xl sm:border-x p-0 group aspect-[1008/520] w-full select-none ${
                 zoom > 1
                   ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
-                  : "cursor-crosshair"
+                  : "touch-pan-y cursor-crosshair"
               }`}
             >
               {/* SVG Map Canvas with Zoom & Pan Transform */}
@@ -579,7 +602,7 @@ export function V2WorldMapExplorer({
                 style={{
                   transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
                   transformOrigin: "center center",
-                  transition: isPanning ? "none" : "transform 0.2s ease-out",
+                  transition: isPanning || pinch.isPinching ? "none" : "transform 0.2s ease-out",
                 }}
                 className="w-full h-full"
               >
@@ -755,7 +778,7 @@ export function V2WorldMapExplorer({
                             }
                           }}
                           onClick={() => {
-                            if (!hasDraggedRef.current) {
+                            if (!hasDraggedRef.current && !pinch.suppressClick()) {
                               setSelectedIso(shape.iso);
                             }
                           }}
