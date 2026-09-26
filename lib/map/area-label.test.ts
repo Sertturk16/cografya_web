@@ -115,6 +115,30 @@ describe("placeAreaLabel", () => {
     for (const [a, b] of edgesOf(line)) expect(segmentHitsBox(a, b, boxAt(c!))).toBe(false);
   });
 
+  it("stays inside when the result panel covers the middle of every scan line", () => {
+    // The panel covers the square's left 60 units: each line's midpoint is under it, its right
+    // end is free.
+    const panel: Box = { x: -10, y: -10, w: 70, h: 120 };
+    const c = placeAreaLabel(SQUARE, SIZE, opts({ obstacles: [panel] }));
+    expect(c).not.toBeNull();
+    expect(pointInPolygon(c!, SQUARE)).toBe(true);
+    expect(overlapArea(boxAt(c!), panel)).toBe(0);
+  });
+
+  it("scans the visible part of a large ring when zoomed in", () => {
+    const big = [
+      { x: 0, y: 0 },
+      { x: 1000, y: 0 },
+      { x: 1000, y: 1000 },
+      { x: 0, y: 1000 },
+    ];
+    const view: Box = { x: 400, y: 400, w: 40, h: 40 };
+    const c = placeAreaLabel(big, SIZE, opts({ view }));
+    expect(c).not.toBeNull();
+    const box = boxAt(c!);
+    expect(box.w * box.h - overlapArea(box, view)).toBeLessThan(1e-9);
+  });
+
   it("has nothing to label below three points", () => {
     expect(placeAreaLabel(TINY.slice(0, 2), SIZE, opts())).toBeNull();
   });

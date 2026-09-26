@@ -45,6 +45,15 @@ Today (measured on `dev` @ `1d64d8d`):
   hint lift, the fixed 320 px width on the map — then applies to the two tools unchanged.
 - Page below `lg`: in flow under the plate, full width, as T-120.
 
+### 2.2a Button labels
+
+`MapResultAction` shows its text by the panel's own width, not the viewport's: a container query
+on the panel (`@container`, text from `@sm`, 24rem). On the map the panel is 320 px at every
+viewport, and text buttons there left the summary ~100 px, less than "135.476,1 km²", a long
+province name or a five-digit route total; so on the map all three tools show icon-only buttons
+(names kept for assistive tech), and the wide panel under the map shows icon and text. This
+replaces T-120 §2.4's "from `sm` icon plus text".
+
 ### 2.3 Toolbar
 
 The `activeTool !== "distance"` Undo/Clear block is removed. The toolbar keeps PNG export (and
@@ -141,8 +150,10 @@ All in map units, like `placeSegmentLabels`. Obstacles are the pin dots (from `r
 
 ### 4.2 Rules
 
-1. **Inside first.** Scan the ring's bounding box with horizontal lines (a fixed count, e.g. 24);
-   each inside interval of each line gives a candidate at its midpoint, and one at the midpoint of the part of it inside `view` (a shape partly panned out of sight). A candidate fits when
+1. **Inside first.** Scan the part of the ring's bounding box inside `view` with horizontal lines
+   (a fixed count, e.g. 24); each inside interval of each line gives a candidate at its midpoint,
+   and at the middle and both ends (kept `gap` off the outline) of the part of it inside `view`,
+   so a shape partly panned out of sight or partly under the panel still finds room. A candidate fits when
    the label box lies wholly inside the ring (its corners are inside and no ring edge crosses it,
    `segmentHitsBox`), inside `view`, and off every obstacle. Of the fitting candidates the one
    closest to the ring's area centroid wins.

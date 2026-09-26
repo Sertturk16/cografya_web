@@ -5,9 +5,9 @@ import { pointInPolygon } from "@/lib/map/shape-geometry";
 /**
  * Where the area tool writes its km² (T-121).
  *
- * Inside first: horizontal scan lines across the ring's box give candidates per inside interval
- * (its midpoint, and the midpoint of the part of it inside `view`, for a shape partly panned out
- * of sight), plus the ring's area centroid itself. A candidate fits when its centre
+ * Inside first: horizontal scan lines across the part of the ring's box inside `view` give
+ * candidates per inside interval (its midpoint, and the middle and both ends of the part of it
+ * inside `view`), plus the ring's area centroid itself. A candidate fits when its centre
  * is inside the ring and no ring edge touches its box (then the whole box is inside), and the box
  * stays in `view`, off every vertex dot and off `obstacles` (the result panel). The fitting
  * candidate closest to the centroid wins, so a convex shape gets its label in the middle and a
@@ -92,8 +92,12 @@ export function placeAreaLabel(
   const target = centroid(ring);
 
   const candidates: Point[] = [target];
-  for (let k = 0; k < SCAN_LINES; k++) {
-    const y = minY + ((k + 0.5) * (maxY - minY)) / SCAN_LINES;
+  // Only the rows in view can hold a label: zoomed into a large ring, lines spread over its
+  // whole box would leave one or none on screen.
+  const scanTop = Math.max(minY, view.y);
+  const scanBottom = Math.min(maxY, view.y + view.h);
+  for (let k = 0; scanBottom > scanTop && k < SCAN_LINES; k++) {
+    const y = scanTop + ((k + 0.5) * (scanBottom - scanTop)) / SCAN_LINES;
     const xs: number[] = [];
     for (const [a, b] of edges) {
       if (a.y > y === b.y > y) continue;
@@ -104,10 +108,18 @@ export function placeAreaLabel(
       const left = xs[i]!;
       const right = xs[i + 1]!;
       candidates.push({ x: (left + right) / 2, y });
-      // The part of the interval inside the view, for a shape partly panned out of sight.
+      // The part of the interval inside the view, for a shape partly panned out of sight: its
+      // middle, and each end kept `gap` off the outline, for when the result panel covers the
+      // middle.
       const seenLeft = Math.max(left, view.x);
       const seenRight = Math.min(right, view.x + view.w);
-      if (seenRight > seenLeft) candidates.push({ x: (seenLeft + seenRight) / 2, y });
+      if (seenRight > seenLeft) {
+        candidates.push(
+          { x: (seenLeft + seenRight) / 2, y },
+          { x: seenLeft + gap + w / 2, y },
+          { x: seenRight - gap - w / 2, y },
+        );
+      }
     }
   }
   let best: Point | null = null;
