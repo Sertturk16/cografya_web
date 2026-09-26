@@ -250,7 +250,10 @@ Details and the open dark-mode bugs: `docs/design.md`.
 - `components.json` `aliases.hooks` points to a non-existent `@/hooks`.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`
   is gitignored yet two such files are tracked.
-- Prod is plain HTTP on a bare IP; the internal token rides every web→api call in clear.
+- ~~Prod is plain HTTP on a bare IP; the internal token rides every web→api call in clear.~~
+  CLOSED by T-019: the site is served on its domain over HTTPS (plain HTTP answers 301), and
+  web→api calls stay on the host's Docker network (`http://api:3001`; the API binds only
+  `127.0.0.1`), so the internal token never leaves the machine.
 - `pnpm build` against a live local API can fail on one province or country page (fetch abort /
   `ECONNRESET`, or `ApiError 500`) under Next's ~19 parallel prerender workers. It is load, not
   chance: it reproduces while something else is also loading the API — an open Playwright
