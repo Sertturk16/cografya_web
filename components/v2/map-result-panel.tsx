@@ -63,7 +63,7 @@ export function MapResultPanel({
       <div className="col-start-2 row-start-1 flex items-center gap-1">{actions}</div>
       <div
         aria-hidden={hidden || undefined}
-        className={cn("col-span-2 row-start-2 min-w-0", hidden && "invisible")}
+        className={cn("col-start-1 col-span-2 row-start-2 min-w-0", hidden && "invisible")}
       >
         {details}
       </div>

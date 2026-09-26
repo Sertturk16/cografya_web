@@ -69,6 +69,13 @@ describe("DistanceResultPanel", () => {
 });
 
 describe("MapResultPanel", () => {
+  it("starts the details row at the first column, not after the hint's cell", () => {
+    // The hint holds column 1 of both rows. Auto-placed, a two-column details row found no free
+    // span in row 2 and fell into an implicit third column, right of the buttons (T-120).
+    const html = render(2, 100);
+    expect(html).toMatch(/<div class="col-start-1 col-span-2 row-start-2 min-w-0">/);
+  });
+
   it("keeps a press on the panel from starting a pan on the map under it", () => {
     const code = stripComments(
       readFileSync(new URL("./map-result-panel.tsx", import.meta.url), "utf8"),
