@@ -17,7 +17,8 @@ const stopPropagation = (e: React.SyntheticEvent) => e.stopPropagation();
  * grid, `invisible`, so the panel is as tall with a hint as with a result. Adding the first point
  * never moves the map (the T-126 rule), and the workbench's fit and label insets, which read the
  * panel's size, do not jump. The caller keeps the summary's row filled (a dash) for the same
- * reason, and gives the panel a fixed width.
+ * reason, and gives the panel a fixed width. `hintTone: "warning"` colours the hint as a warning
+ * (the area tool's crossing edges, T-121).
  *
  * Screen readers get `status`, one always-mounted `role="status"` line holding the whole result
  * or the hint; the visible cells are hidden from them. A region that turns live in the same
@@ -32,6 +33,7 @@ export function MapResultPanel({
   details,
   actions,
   hint,
+  hintTone = "muted",
   status,
   className,
   style,
@@ -42,6 +44,7 @@ export function MapResultPanel({
   details: React.ReactNode;
   actions: React.ReactNode;
   hint?: string;
+  hintTone?: "muted" | "warning";
   status: string;
   className?: string;
   style?: React.CSSProperties;
@@ -57,7 +60,7 @@ export function MapResultPanel({
       onMouseDown={stopPropagation}
       style={style}
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-2xl border border-primary/40 bg-card/95 p-2.5 shadow-xl backdrop-blur-md",
+        "@container grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 rounded-2xl border border-primary/40 bg-card/95 p-2.5 shadow-xl backdrop-blur-md",
         className,
       )}
     >
@@ -75,7 +78,10 @@ export function MapResultPanel({
       {hinted && (
         <p
           data-result-hint=""
-          className="col-start-1 col-span-2 row-start-2 m-0 self-center text-[11px] leading-4 text-muted-foreground"
+          className={cn(
+            "col-start-1 col-span-2 row-start-2 m-0 self-center text-[11px] leading-4",
+            hintTone === "warning" ? "text-warning-strong" : "text-muted-foreground",
+          )}
           aria-hidden="true"
         >
           {hint}
@@ -88,8 +94,10 @@ export function MapResultPanel({
   );
 }
 
-/** A panel button: icon only below `sm` (its label stays for assistive tech), icon and text from
- *  `sm`, the pattern `MapSelectionCard` uses for its explore action. 32 px tall.
+/** A panel button: icon only while the panel is narrower than `@sm` (24rem; its label stays for
+ *  assistive tech), icon and text from there. Keyed to the panel's own width, not the viewport's:
+ *  on the map the panel is 320 px at every viewport, and text buttons there left the summary
+ *  ~100 px, less than "135.476,1 km²" (T-121). 32 px tall.
  *
  *  `aria-disabled`, never `disabled`: Undo down to no points and Clear both switch off the button
  *  that was just pressed, and a disabled button drops keyboard focus to `<body>`. */
@@ -111,9 +119,9 @@ export function MapResultAction({
       onClick={disabled ? undefined : onClick}
       aria-disabled={disabled || undefined}
       leftIcon={icon}
-      className="min-w-8 px-2 sm:px-3 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
+      className="min-w-8 px-2 @sm:px-3 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
     >
-      <span className="sr-only sm:not-sr-only">{label}</span>
+      <span className="sr-only @sm:not-sr-only">{label}</span>
     </Button>
   );
 }
