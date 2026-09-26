@@ -53,8 +53,7 @@ async function AreaWorkbench({ locale }: { locale: Locale }) {
   }));
   return (
     <V2ToolWorkbench
-      initialMode="area"
-      lockMode={true}
+      mode="area"
       provincePoints={provincePoints}
       provinceAreas={provinceAreas}
       downloadName="cografya-alan"

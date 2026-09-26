@@ -53,8 +53,7 @@ async function DistanceWorkbench({ locale }: { locale: Locale }) {
   }));
   return (
     <V2ToolWorkbench
-      initialMode="distance"
-      lockMode={true}
+      mode="distance"
       provincePoints={provincePoints}
       provinceAreas={provinceAreas}
       downloadName="cografya-mesafe"

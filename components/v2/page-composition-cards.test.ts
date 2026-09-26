@@ -603,7 +603,9 @@ export const HAND_DRAWN_CARDS = 189;
 // 150 → **146** in T-095: the four link wells of the duplicate "Başka bir araca geç" row.
 // 146 → **148** in T-101: `/gizlilik`'s English-reader notice (the terms page's spelling) and
 // the settings personal card's consent `<fieldset>`, a bordered group and not a panel.
-export const HAND_DRAWN_WELLS = 148;
+// 148 → **147** in T-125: the tool workbench's in-page tool switcher, a gradient well no page
+// rendered (every tool page locked its mode), deleted with the switch it offered.
+export const HAND_DRAWN_WELLS = 147;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -626,8 +628,9 @@ export const HAND_DRAWN_WELLS = 148;
  * five one-off spellings (each link carried its own hover hue).
  * 221 → **224** in T-101: the privacy notice's provider card, `LegalControllerIdentity`'s block
  * and the consent fieldset are new strings; `/gizlilik`'s mailto card and notice reuse the
- * terms page's spellings verbatim. */
-export const HAND_DRAWN_CARD_SPELLINGS = 224;
+ * terms page's spellings verbatim.
+ * 224 → **223** in T-125: the deleted tool switcher's well was a one-off spelling. */
+export const HAND_DRAWN_CARD_SPELLINGS = 223;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.

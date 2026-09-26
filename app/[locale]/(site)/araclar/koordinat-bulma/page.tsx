@@ -55,8 +55,7 @@ async function CoordinatesWorkbench({ locale }: { locale: Locale }) {
 
   return (
     <V2ToolWorkbench
-      initialMode="coordinates"
-      lockMode={true}
+      mode="coordinates"
       provincePoints={provincePoints}
       provinceAreas={provinceAreas}
       downloadName="cografya-koordinat"
