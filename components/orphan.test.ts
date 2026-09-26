@@ -263,6 +263,7 @@ const KNOWN_SHOWCASE_ONLY: string[] = [];
 const KNOWN_UNREACHABLE: readonly string[] = [
   // T-121 in progress: the workbench renders it from the wiring task on, which empties this list.
   "components/v2/area-result-panel.tsx",
+  "components/v2/coordinate-result-panel.tsx",
 ];
 
 describe("the import closure itself", () => {

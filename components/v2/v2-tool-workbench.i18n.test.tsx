@@ -185,6 +185,7 @@ describe("the ToolWorkbench catalogue", () => {
       "../../lib/tools/tool-presets.ts",
       "./distance-result-panel.tsx",
       "./area-result-panel.tsx",
+      "./coordinate-result-panel.tsx",
     ].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
     const unused = Object.keys(tr).filter(
       (key) => ![source, ...others].some((file) => file.includes(`"${key}"`)),

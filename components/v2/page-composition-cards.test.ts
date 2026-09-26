@@ -1017,8 +1017,9 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // T-120: 179 → **180**. `DistanceResultPanel` hands its caller's placement to `MapResultPanel`
 // (`className={className}`); not a card of its own, the panel is counted once in its own file.
 // T-121: 180 → **181**. `AreaResultPanel` hands its caller's placement to `MapResultPanel`
-// (`className={className}`); not a card of its own.
-export const COMPUTED_CARD_CLASSNAMES = 181;
+// (`className={className}`); not a card of its own. 181 → **182**: `CoordinateResultPanel`, the
+// same pass-through.
+export const COMPUTED_CARD_CLASSNAMES = 182;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -1040,9 +1041,9 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   // unmounted `default` branch. 176 → 177 in T-100: the province page's `SOURCE_NOTE`
   // footnote. 177 → 178 in T-096: the fault-line page's `SOURCE_NOTE` footnote. 178 → 179 in
   // T-037: `page-skeleton.tsx`'s `Bar`. 179 → 180 in T-120: `DistanceResultPanel`'s placement
-  // pass-through. 180 → 181 in T-121: `AreaResultPanel`'s placement pass-through. See
-  // {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 181],
+  // pass-through. 180 → 182 in T-121: `AreaResultPanel`'s and `CoordinateResultPanel`'s
+  // placement pass-throughs. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 182],
   // 9 → 8 in T-090: `/dunya/kita` dropped the continent-name chip that repeated each card's title.
   ["member", 8],
   ["ternary", 2],
