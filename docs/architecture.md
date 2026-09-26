@@ -229,28 +229,10 @@ Details and the open dark-mode bugs: `docs/design.md`.
   a 307-URL sitemap all carry the real origin) because `lib/env.ts` parses `process.env` as
   an object at runtime instead of referencing `process.env.NEXT_PUBLIC_*` directly, which
   Next would inline at build. Keep it that way, or add build `ARG`s before changing it.
-- ~~`/v2/**` is `noindex` but `/v2/dunya/kita/*` is emitted into the sitemap.~~ CLOSED by
-  T-032 PR3 — and it was the smaller half of the problem. Moving V2 onto the canonical URLs
-  carried the `/v2` layout's blanket `noindex` with it, so twelve routes `app/sitemap.ts`
-  publishes were advertising themselves as de-indexed (SEO-POLICY §B6 6.8). Each is back on the
-  surface its V1 counterpart had; `lib/seo/sitemap-surface-symmetry.test.ts` now fails if a
-  statically-listed sitemap row and its page disagree, and all 307 sitemap URLs were verified
-  200-and-indexable against a production build.
 - `--radius-lg` is `16px` in `:root` and `var(--radius)` (10px) in `@theme inline`.
-- ~~Dark users get a light-theme flash (no blocking theme script); `.dark` overrides only
-  shadcn greys, no Terra token.~~ CLOSED (T-016 / T-018). `next-themes` ships the blocking
-  script, and `.dark` redefines the bridge tokens with a measured contrast table beside it in
-  `app/globals.css`. What is still true, and is the trap: the RAW Terra tokens
-  (`--color-slate`, `--color-ink`, …) are frozen at their light values and never redefine, so
-  anything reading one directly is a dark-mode defect waiting to be found — that is how a mandated
-  licence notice shipped at 2.34:1 (T-032 PR3), and why one province page measured 111 text
-  elements below 3:1 before T-033. The CSS Modules that did the reading are gone; the tokens are
-  still frozen, so the rule outlives them. Bridge tokens (`text-foreground`,
-  `text-muted-foreground`, `border-border`) redefine per theme; prefer them.
 - `components.json` `aliases.hooks` points to a non-existent `@/hooks`.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits; `scripts/verify_*.mjs`
   is gitignored yet two such files are tracked.
-- Prod is plain HTTP on a bare IP; the internal token rides every web→api call in clear.
 - `pnpm build` against a live local API can fail on one province or country page (fetch abort /
   `ECONNRESET`, or `ApiError 500`) under Next's ~19 parallel prerender workers. It is load, not
   chance: it reproduces while something else is also loading the API — an open Playwright
