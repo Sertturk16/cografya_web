@@ -75,7 +75,6 @@ import {
   ZoomIn,
   ZoomOut,
   Trash2,
-  Undo2,
   Download,
   Bookmark,
   BookmarkCheck,
@@ -88,6 +87,11 @@ import {
 } from "lucide-react";
 import { MapAttribution } from "@/components/patterns/map-attribution";
 import { DistanceResultPanel } from "@/components/v2/distance-result-panel";
+import { AreaResultPanel } from "@/components/v2/area-result-panel";
+import {
+  CoordinateResultPanel,
+  type CoordinateReading,
+} from "@/components/v2/coordinate-result-panel";
 import { formatDay } from "@/lib/text/format-date";
 import { formatNumber } from "@/lib/text/format-number";
 
@@ -114,7 +118,7 @@ const MAP_CONTROL_INSETS: Record<"phone" | "wide", BoxInsets> = {
   wide: { top: 60, right: 56, bottom: 52, left: 12 },
 };
 /**
- * Where the distance result panel sits when it is on the map (T-120): 12 px in from the left
+ * Where the result panel sits when it is on the map (T-120, T-121): 12 px in from the left
  * edge, its bottom on top of the scale bar's band (`MAP_CONTROL_INSETS.bottom`, the
  * `lg:bottom-13` class), and 8 px between it and whatever is under it.
  */
@@ -123,6 +127,8 @@ const RESULT_PANEL_LEFT = 12;
 const RESULT_PANEL_WIDTH = 320;
 const RESULT_PANEL_BOTTOM = 52;
 const RESULT_PANEL_GAP = 8;
+/** Below `lg` the panel is in flow under the plate; from `lg` it is on it, above the scale bar. */
+const RESULT_PANEL_CLASS = "mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80";
 /** Tailwind's `sm`, the width at which the zoom buttons turn from a row into a column. */
 const SM_UP_QUERY = "(min-width: 40rem)";
 const subscribeSmUp = (onChange: () => void) => {
@@ -133,7 +139,7 @@ const subscribeSmUp = (onChange: () => void) => {
 const readSmUp = () => window.matchMedia(SM_UP_QUERY).matches;
 const readSmUpOnServer = () => true;
 /**
- * Tailwind's `lg`, from which the page puts the distance result panel on the map (T-120). Below it
+ * Tailwind's `lg`, from which the page puts the result panel on the map (T-120). Below it
  * the plate is at most ~430 px tall; at 640 px a panel on it left a fit 47 px of height.
  */
 const LG_UP_QUERY = "(min-width: 64rem)";
@@ -452,7 +458,7 @@ export function V2ToolWorkbench({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [activeTool]);
   // The rotate hint's height, so the panel can sit above it in portrait fullscreen.
   const [rotateHintHeight, setRotateHintHeight] = React.useState(0);
   const rotateHintRef = React.useCallback((el: HTMLDivElement | null) => {
@@ -550,8 +556,8 @@ export function V2ToolWorkbench({
     };
   }, [visibleView, zoomLevel, pxPerUnit, controlInsets]);
   // On the page below `lg` the panel is under the plate; from `lg`, and in fullscreen at every
-  // width, it is on it (T-120).
-  const resultPanelOnMap = activeTool === "distance" && (landscape.active || lgUp);
+  // width, it is on it (T-120; every tool since T-121).
+  const resultPanelOnMap = landscape.active || lgUp;
   const resultPanelBottom = landscape.showRotateHint
     ? Math.max(RESULT_PANEL_BOTTOM, 12 + rotateHintHeight + RESULT_PANEL_GAP)
     : RESULT_PANEL_BOTTOM;
@@ -579,6 +585,24 @@ export function V2ToolWorkbench({
       h: unit(resultPanelSize.h),
     };
   }, [resultPanelOnMap, resultPanelSize, resultPanelBottom, visibleView, zoomLevel, pxPerUnit]);
+  // One placement for whichever tool's panel is rendered, so the three cannot drift apart.
+  // Fullscreen puts the panel on the map at every width, so the inline style has to beat the
+  // `lg:` classes; see `LANDSCAPE_FILL` for why fullscreen is inline.
+  const resultPanelPlacement = {
+    ref: resultPanelRef,
+    className: RESULT_PANEL_CLASS,
+    style: landscape.active
+      ? ({
+          position: "absolute",
+          left: RESULT_PANEL_LEFT,
+          bottom: resultPanelBottom,
+          marginTop: 0,
+          zIndex: 30,
+          width: RESULT_PANEL_WIDTH,
+          maxWidth: `calc(100% - ${RESULT_PANEL_LEFT * 2}px)`,
+        } satisfies React.CSSProperties)
+      : undefined,
+  };
 
   /**
    * "Smart region focus" (T-015): pan/zoom the canvas to frame the point(s) just named by
@@ -1015,6 +1039,13 @@ export function V2ToolWorkbench({
     }
     return 0;
   }, [activeTool, geoPoints]);
+  // The card and the panel show the same figures from one computation (T-121).
+  const areaHectares = t("hectaresValue", {
+    value: (areaKm2 * 100).toLocaleString(numberLocale, { maximumFractionDigits: 0 }),
+  });
+  const areaDecares = t("decaresValue", {
+    value: (areaKm2 * 1000).toLocaleString(numberLocale, { maximumFractionDigits: 0 }),
+  });
 
   // Point-in-province detection (Reverse Geocoding)
   const detectedProvince = (() => {
@@ -1062,6 +1093,19 @@ export function V2ToolWorkbench({
     const dir = cardinals[parts.cardinal];
     return `${parts.degrees}° ${parts.minutes}' ${formatNumber(parts.seconds, locale)}" ${dir}`;
   };
+
+  // The coordinate tool's one point as its panel shows it: decimal per axis in the card's
+  // `latLon` format, DMS from `toDms`, and the province it falls in (T-121).
+  const coordinatePoint = activeTool === "coordinates" ? points[0] : undefined;
+  const coordinateReading: CoordinateReading | null = coordinatePoint
+    ? {
+        latDecimal: `${formatNumber(coordinatePoint.geo.lat, locale, 6)}° ${cardinals.north}`,
+        lonDecimal: `${formatNumber(coordinatePoint.geo.lon, locale, 6)}° ${cardinals.east}`,
+        latDms: toDms(coordinatePoint.geo.lat, true),
+        lonDms: toDms(coordinatePoint.geo.lon, false),
+        province: detectedProvince?.name ?? null,
+      }
+    : null;
 
   // Safe clipboard copy
   const handleCopy = async () => {
@@ -1296,31 +1340,6 @@ export function V2ToolWorkbench({
                 lon: formatNumber(hoveredPos?.geo.lon ?? 35, locale, 3),
               })}
             </span>
-
-            {/* Undo / Clear. The distance tool has them on its result panel (T-120); the area
-                and coordinate tools keep them here until T-121. */}
-            {activeTool !== "distance" && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleUndo}
-                  disabled={points.length === 0}
-                  leftIcon={<Undo2 className="size-3.5" />}
-                >
-                  {t("undo")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleClear}
-                  disabled={points.length === 0}
-                  leftIcon={<Trash2 className="size-3.5 text-destructive" />}
-                >
-                  {t("clear")}
-                </Button>
-              </>
-            )}
 
             {/* PNG Export Button */}
             {/* The one place in this repo a Tooltip is the right answer (T-036). The button
@@ -1666,29 +1685,33 @@ export function V2ToolWorkbench({
                 })}
               </svg>
             </div>
-            {activeTool === "distance" && (
+            {activeTool === "distance" ? (
               <DistanceResultPanel
-                ref={resultPanelRef}
+                {...resultPanelPlacement}
                 pointCount={points.length}
                 distanceKm={distanceKm}
                 onUndo={handleUndo}
                 onClear={handleClear}
-                className="mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80"
-                // Fullscreen puts the panel on the map at every width, so the inline style has
-                // to beat the `lg:` classes; see `LANDSCAPE_FILL` for why fullscreen is inline.
-                style={
-                  landscape.active
-                    ? {
-                        position: "absolute",
-                        left: RESULT_PANEL_LEFT,
-                        bottom: resultPanelBottom,
-                        marginTop: 0,
-                        zIndex: 30,
-                        width: RESULT_PANEL_WIDTH,
-                        maxWidth: `calc(100% - ${RESULT_PANEL_LEFT * 2}px)`,
-                      }
-                    : undefined
-                }
+              />
+            ) : activeTool === "area" ? (
+              <AreaResultPanel
+                {...resultPanelPlacement}
+                pointCount={points.length}
+                isSelfIntersecting={isSelfIntersecting}
+                area={formatNumber(areaKm2, locale, 1)}
+                hectares={areaHectares}
+                decares={areaDecares}
+                perimeter={formatNumber(perimeterKm, locale, 1)}
+                onUndo={handleUndo}
+                onClear={handleClear}
+              />
+            ) : (
+              <CoordinateResultPanel
+                {...resultPanelPlacement}
+                reading={coordinateReading}
+                copied={copied}
+                onCopy={handleCopy}
+                onClear={handleClear}
               />
             )}
           </div>
@@ -2146,25 +2169,13 @@ export function V2ToolWorkbench({
                   <div className="p-3 rounded-2xl bg-card border border-border">
                     <span className="text-muted-foreground block text-[11px]">{t("hectares")}</span>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      {isSelfIntersecting
-                        ? "—"
-                        : t("hectaresValue", {
-                            value: (areaKm2 * 100).toLocaleString(numberLocale, {
-                              maximumFractionDigits: 0,
-                            }),
-                          })}
+                      {isSelfIntersecting ? "—" : areaHectares}
                     </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border">
                     <span className="text-muted-foreground block text-[11px]">{t("decares")}</span>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      {isSelfIntersecting
-                        ? "—"
-                        : t("decaresValue", {
-                            value: (areaKm2 * 1000).toLocaleString(numberLocale, {
-                              maximumFractionDigits: 0,
-                            }),
-                          })}
+                      {isSelfIntersecting ? "—" : areaDecares}
                     </span>
                   </div>
                   <div className="p-3 rounded-2xl bg-card border border-border col-span-2">

@@ -260,11 +260,7 @@ const KNOWN_SHOWCASE_ONLY: string[] = [];
  * So the list is empty, and an equality against an empty list is the strictest form this pin can
  * take: the NEXT file to arrive here fails immediately, with no precedent to be filed under.
  */
-const KNOWN_UNREACHABLE: readonly string[] = [
-  // T-121 in progress: the workbench renders it from the wiring task on, which empties this list.
-  "components/v2/area-result-panel.tsx",
-  "components/v2/coordinate-result-panel.tsx",
-];
+const KNOWN_UNREACHABLE: readonly string[] = [];
 
 describe("the import closure itself", () => {
   // ANTI-VACUITY. Every assertion below is "X is in this set"; a set built from a broken

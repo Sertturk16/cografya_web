@@ -453,40 +453,51 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       /className=\{`hidden pointer-fine:inline-block[^`]*\$\{hoveredPos \? "" : "invisible"\}`\}/,
     );
   });
-  // T-120: the distance result sits on the map, inside the fullscreen target, with Undo/Clear.
-  describe("distance result panel (T-120)", () => {
+  // T-120 (distance) and T-121 (area, coordinates): the result sits on the map, inside the
+  // fullscreen target, with the tool's actions; Undo and Clear are no longer in the toolbar.
+  describe("result panel (T-120, T-121)", () => {
     const code = stripComments(source);
 
-    it("renders one panel, after the plate and inside the fullscreen box", () => {
-      expect(code.match(/<DistanceResultPanel\b/g)).toHaveLength(1);
-      const box = code.indexOf("ref={landscapeBoxRef}");
-      const plate = code.indexOf("ref={mapContainerRef}", box);
-      const panel = code.indexOf("<DistanceResultPanel", plate);
-      const caption = code.indexOf("<figcaption>", panel);
-      expect(box).toBeGreaterThan(-1);
-      expect(plate).toBeGreaterThan(box);
-      expect(panel).toBeGreaterThan(plate);
-      expect(caption, "the credit stays last in the figure").toBeGreaterThan(panel);
-    });
+    it.each(["DistanceResultPanel", "AreaResultPanel", "CoordinateResultPanel"])(
+      "renders one %s, after the plate and inside the fullscreen box",
+      (tag) => {
+        expect(code.match(new RegExp(`<${tag}\\b`, "g"))).toHaveLength(1);
+        const box = code.indexOf("ref={landscapeBoxRef}");
+        const plate = code.indexOf("ref={mapContainerRef}", box);
+        const panel = code.indexOf(`<${tag}`, plate);
+        const caption = code.indexOf("<figcaption>", panel);
+        expect(box).toBeGreaterThan(-1);
+        expect(plate).toBeGreaterThan(box);
+        expect(panel).toBeGreaterThan(plate);
+        expect(caption, "the credit stays last in the figure").toBeGreaterThan(panel);
+        expect(code.slice(panel, panel + 80)).toContain("{...resultPanelPlacement}");
+      },
+    );
 
-    it("sits under the plate on a page below lg and over it from lg, at one width", () => {
+    it("sits under the plate on a page below lg and over it from lg, at one width, for every tool", () => {
       // From sm to lg the plate is 239–430 px tall; a panel on it left a fit 47 px at 640 px.
       expect(code).toContain(
-        'className="mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80"',
+        'const RESULT_PANEL_CLASS = "mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80";',
       );
-      expect(code).toContain(
-        'const resultPanelOnMap = activeTool === "distance" && (landscape.active || lgUp);',
-      );
+      expect(code).toContain("const resultPanelOnMap = landscape.active || lgUp;");
       expect(code).toMatch(/width: RESULT_PANEL_WIDTH,/);
     });
 
-    it("moves Undo and Clear off the toolbar for the distance tool only", () => {
-      expect(code).toMatch(/\{activeTool !== "distance" && \(\s*<>\s*<Button[\s\S]*?handleUndo/);
+    it("keeps Undo and Clear off the toolbar for every tool", () => {
+      expect(code).not.toContain('activeTool !== "distance" &&');
+      expect(code).not.toContain("onClick={handleUndo}");
     });
 
     it("frames named points above the panel and keeps labels off it", () => {
       expect(code).toContain("const fitInsets =");
       expect(code).toContain("const resultPanelObstacle =");
+    });
+
+    it("computes the area's hectares and decares once, for the card and the panel", () => {
+      expect(code.match(/t\("hectaresValue"/g)).toHaveLength(1);
+      expect(code.match(/t\("decaresValue"/g)).toHaveLength(1);
+      expect(code).toContain("hectares={areaHectares}");
+      expect(code).toContain("decares={areaDecares}");
     });
   });
   // T-120: each leg carries its own distance, one screen size at every zoom, and pin labels keep
