@@ -27,7 +27,7 @@ import {
   zoomFromPinch,
   type ViewBox,
 } from "@/lib/map/zoom-pan";
-import { pinLabelPlacement, type PinLabelSide } from "@/lib/map/pin-label-placement";
+import { DIAGONAL, placePinLabels, type PinLabelSide } from "@/lib/map/pin-label-placement";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-presets";
@@ -97,10 +97,25 @@ export interface PointWithSvg {
 
 /**
  * CSS px the map's own controls cover along each edge of the plate, which a fit to named points
- * must leave clear (T-124): the fullscreen and zoom buttons along the top, the scale bar along the
- * bottom, and on the right the desktop zoom column and the fullscreen credit's ⓘ.
+ * and the pin labels must leave clear (T-124, T-127): the fullscreen and zoom buttons along the
+ * top, the scale bar and the fullscreen credit's ⓘ along the bottom. From `sm` the zoom buttons
+ * are a column down the right edge, so that edge takes a band too; below `sm` they are a row in
+ * the top band and the right edge is free (a 56 px band there held every pin near Türkiye's
+ * eastern border, and so every label beside it, inside a control area).
  */
-const MAP_CONTROL_INSETS: BoxInsets = { top: 60, right: 56, bottom: 52, left: 12 };
+const MAP_CONTROL_INSETS: Record<"phone" | "wide", BoxInsets> = {
+  phone: { top: 60, right: 12, bottom: 52, left: 12 },
+  wide: { top: 60, right: 56, bottom: 52, left: 12 },
+};
+/** Tailwind's `sm`, the width at which the zoom buttons turn from a row into a column. */
+const SM_UP_QUERY = "(min-width: 40rem)";
+const subscribeSmUp = (onChange: () => void) => {
+  const query = window.matchMedia(SM_UP_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
+const readSmUp = () => window.matchMedia(SM_UP_QUERY).matches;
+const readSmUpOnServer = () => true;
 /** Upper zoom bound this tool's own +/− buttons already use (`handleZoomIn`) — the touch
  *  pinch below is clamped to the SAME ceiling, not `zoom-pan.ts`'s own (higher) `MAX_ZOOM`. */
 const MAX_TOOL_ZOOM = 8;
@@ -120,7 +135,7 @@ const PIN_LABEL_SIZE = 11;
 const PIN_LABEL_GAP = 4;
 /** Card-coloured outline painted under each label's glyphs, so it reads across lake shores. */
 const PIN_LABEL_HALO = 3;
-/** Where a pin's label sits for each `pinLabelPlacement` side: a unit offset from the dot
+/** Where a pin's label sits for each `placePinLabels` side: a unit offset from the dot
  *  (times the dot-plus-gap distance) and the text alignment that keeps it clear of the dot. */
 const PIN_LABEL_LAYOUT: Record<
   PinLabelSide,
@@ -128,14 +143,28 @@ const PIN_LABEL_LAYOUT: Record<
     dx: number;
     dy: number;
     anchor: "start" | "middle" | "end";
-    baseline: "auto" | "hanging" | "central";
+    baseline: "text-after-edge" | "text-before-edge" | "central";
   }
 > = {
-  above: { dx: 0, dy: -1, anchor: "middle", baseline: "auto" },
-  below: { dx: 0, dy: 1, anchor: "middle", baseline: "hanging" },
+  // Edge baselines, not `auto`/`hanging`: the label's whole em box, descenders and the dot of
+  // "İ" included, ends at the gap. That is the box `placePinLabels` keeps off other pins; with
+  // `auto` a "Trabzon" above its pin hung its descenders onto Rize's dot (T-127).
+  above: { dx: 0, dy: -1, anchor: "middle", baseline: "text-after-edge" },
+  below: { dx: 0, dy: 1, anchor: "middle", baseline: "text-before-edge" },
   left: { dx: -1, dy: 0, anchor: "end", baseline: "central" },
   right: { dx: 1, dy: 0, anchor: "start", baseline: "central" },
+  // Corners, for pins packed too tight for the four sides (T-127): `DIAGONAL` of the gap along
+  // each axis, the label's near corner at that point, as `labelBox` models it.
+  "above-left": { dx: -DIAGONAL, dy: -DIAGONAL, anchor: "end", baseline: "text-after-edge" },
+  "above-right": { dx: DIAGONAL, dy: -DIAGONAL, anchor: "start", baseline: "text-after-edge" },
+  "below-left": { dx: -DIAGONAL, dy: DIAGONAL, anchor: "end", baseline: "text-before-edge" },
+  "below-right": { dx: DIAGONAL, dy: DIAGONAL, anchor: "start", baseline: "text-before-edge" },
 };
+
+/** The text a waypoint pin's label shows. */
+function pinLabelText(p: { mapLabel?: string; label?: string }, idx: number): string {
+  return p.mapLabel || p.label || String(idx + 1);
+}
 
 /**
  * Landscape/fullscreen overrides for the map box and the box that pairs it with its credit.
@@ -375,6 +404,8 @@ export function V2ToolWorkbench({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+  const smUp = React.useSyncExternalStore(subscribeSmUp, readSmUp, readSmUpOnServer);
+  const controlInsets = MAP_CONTROL_INSETS[smUp ? "wide" : "phone"];
   const worldView = React.useMemo(
     () => toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN),
     [svgBox],
@@ -400,14 +431,14 @@ export function V2ToolWorkbench({
       if (mapPoints.length === 0) return;
       // Before the plate is measured, fit as the desktop box would; the next resize keeps it.
       const box = svgBox ?? { w: worldView.w, h: worldView.h };
-      const view = fitPointsView(mapPoints, worldView, box, MAP_CONTROL_INSETS, {
+      const view = fitPointsView(mapPoints, worldView, box, controlInsets, {
         maxZoom: MAX_TOOL_ZOOM,
       });
       const next = zoomPanOfView(view, worldView);
       setZoomLevel(next.zoomLevel);
       setPanOffset(next.panOffset);
     },
-    [svgBox, worldView],
+    [svgBox, worldView, controlInsets],
   );
 
   // Background context shape
@@ -478,14 +509,14 @@ export function V2ToolWorkbench({
   // The part of the view the map's controls leave clear, where a pin label must stay (T-124).
   const labelView = React.useMemo(() => {
     const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
-    const { top, right, bottom, left } = MAP_CONTROL_INSETS;
+    const { top, right, bottom, left } = controlInsets;
     return {
       x: visibleView.x + unit(left),
       y: visibleView.y + unit(top),
       w: visibleView.w - unit(left + right),
       h: visibleView.h - unit(top + bottom),
     };
-  }, [visibleView, zoomLevel, pxPerUnit]);
+  }, [visibleView, zoomLevel, pxPerUnit, controlInsets]);
 
   // Convert mouse screen client coordinates to SVG map coordinate space
   const screenToMap = React.useCallback(
@@ -825,7 +856,22 @@ export function V2ToolWorkbench({
 
   // Calculations
   const geoPoints = React.useMemo(() => points.map((p) => p.geo), [points]);
-  const pinCentres = React.useMemo(() => points.map((p) => ({ x: p.svgX, y: p.svgY })), [points]);
+  // Every pin label's side, decided together so none covers another pin or label (T-127) and
+  // each stays in the part of the view the controls leave clear (T-124). Sizes are the drawn
+  // ones in map units; a label's width is estimated from its glyph count.
+  const pinLabelSides = React.useMemo(() => {
+    const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
+    return placePinLabels(
+      points.map((p, idx) => ({
+        x: p.svgX,
+        y: p.svgY,
+        gap: unit(PIN_RADIUS + PIN_LABEL_GAP),
+        width: unit(pinLabelText(p, idx).length * PIN_LABEL_SIZE * 0.6),
+        height: unit(PIN_LABEL_SIZE * 1.4),
+      })),
+      { view: labelView, dotRadius: unit(PIN_RADIUS + PIN_OUTLINE) },
+    );
+  }, [points, zoomLevel, pxPerUnit, labelView]);
 
   const distanceKm = React.useMemo(() => {
     if (activeTool === "distance" && geoPoints.length >= 2) {
@@ -1424,26 +1470,8 @@ export function V2ToolWorkbench({
               {/* Placed Waypoints Pins */}
               {points.map((p, idx) => {
                 const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);
-                const text = p.mapLabel || p.label || String(idx + 1);
-                // How far the label reaches from the dot, so one that would leave the view or
-                // run under a control turns back into the clear area (T-124). Width is
-                // estimated from the glyph count.
-                const reach = {
-                  x: atScreenSize(
-                    PIN_RADIUS + PIN_LABEL_GAP + text.length * PIN_LABEL_SIZE * 0.6,
-                    zoomLevel,
-                    pxPerUnit,
-                  ),
-                  y: atScreenSize(
-                    PIN_RADIUS + PIN_LABEL_GAP + PIN_LABEL_SIZE,
-                    zoomLevel,
-                    pxPerUnit,
-                  ),
-                };
-                const label =
-                  PIN_LABEL_LAYOUT[
-                    pinLabelPlacement(pinCentres[idx]!, pinCentres, { view: labelView, reach }).side
-                  ];
+                const text = pinLabelText(p, idx);
+                const label = PIN_LABEL_LAYOUT[pinLabelSides[idx] ?? "above"];
                 return (
                   <g key={idx} className="transition-transform">
                     <circle
