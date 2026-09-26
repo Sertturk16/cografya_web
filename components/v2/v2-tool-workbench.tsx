@@ -1202,7 +1202,7 @@ export function V2ToolWorkbench({
             screen reader heard a figure caption on a province page and a loose paragraph here.
             `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
         <figure
-          className="m-0 space-y-2"
+          className={`m-0 relative ${landscape.active ? "" : "space-y-2"}`}
           ref={landscapeBoxRef}
           style={landscape.active ? LANDSCAPE_FILL : undefined}
         >
@@ -1239,7 +1239,7 @@ export function V2ToolWorkbench({
               <div
                 role="status"
                 aria-live="polite"
-                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
               >
                 <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
                 <span>{t("rotateHint")}</span>
@@ -1468,7 +1468,7 @@ export function V2ToolWorkbench({
               map needs — 517px of 1166 on this surface, measured. See
               `v2-map-credit-placement.test.ts`, which reads the tree rather than source order. */}
           <figcaption>
-            <MapAttribution inlandWater context />
+            <MapAttribution inlandWater context fullscreen={landscape.active} />
           </figcaption>
         </figure>
       </div>

@@ -858,7 +858,7 @@ export function V2GameScreen({
             <div
               role="status"
               aria-live="polite"
-              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
             >
               <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
               <span>Harita daha büyük görünsün diye telefonunu yan çevir.</span>
@@ -1081,7 +1081,10 @@ export function V2GameScreen({
               `v2-province-locator-map.tsx` has always expressed and the other six did not, so a
               screen reader heard a figure caption on a province page and a loose paragraph here.
               `m-0` because a `<figure>` carries a UA margin a `<div>` does not. */}
-          <figure className="m-0 space-y-2" style={landscape.active ? LANDSCAPE_FILL : undefined}>
+          <figure
+            className={`m-0 relative ${landscape.active ? "" : "space-y-2"}`}
+            style={landscape.active ? LANDSCAPE_FILL : undefined}
+          >
             <div
               ref={mapViewportRef}
               className="relative w-full aspect-[2.33/1] min-h-[380px] sm:min-h-[480px] bg-[var(--map-plate)] rounded-2xl border border-border/80 overflow-hidden shadow-inner flex items-center justify-center"
@@ -1486,7 +1489,7 @@ export function V2GameScreen({
                 map drew at 647. `v2-map-credit-placement.test.ts` reads the JSX tree for this
                 now; the source-order check it used to make was satisfied by the broken shape. */}
             <figcaption>
-              <MapAttribution inlandWater context />
+              <MapAttribution inlandWater context fullscreen={landscape.active} />
             </figcaption>
           </figure>
         </div>
