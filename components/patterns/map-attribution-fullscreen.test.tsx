@@ -47,6 +47,37 @@ describe("MapAttribution outside fullscreen", () => {
   });
 });
 
+/**
+ * T-119. `/deprem` and `/deniz` draw AFAD events and sea readings over the map. The page credits
+ * them in its own source blocks, which are off screen in fullscreen, so the data credit joins the
+ * map credit there, and only there.
+ */
+describe("MapAttribution's data credit", () => {
+  const renderWithData = (fullscreen: boolean) =>
+    renderToStaticMarkup(
+      <NextIntlClientProvider locale="tr" messages={trMessages}>
+        <MapAttribution
+          inlandWater
+          context
+          fullscreen={fullscreen}
+          dataCredit={<span>VERI-ATFI</span>}
+        />
+      </NextIntlClientProvider>,
+    );
+
+  it("rides in the fullscreen panel, behind the same ⓘ", () => {
+    const html = renderWithData(true);
+    const controls = html.match(/aria-controls="([^"]+)"/)?.[1];
+    expect(html).toMatch(
+      new RegExp(`<p[^>]*id="${controls}"[^>]*>[\\s\\S]*VERI-ATFI[\\s\\S]*</p>`),
+    );
+  });
+
+  it("stays out of the page view, where the page credits the data itself", () => {
+    expect(renderWithData(false)).not.toContain("VERI-ATFI");
+  });
+});
+
 describe("collapsesCredit", () => {
   it("collapses on a press, wheel or key anywhere on the map", () => {
     expect(collapsesCredit({ type: "pointerdown", insideCredit: false })).toBe(true);

@@ -114,6 +114,7 @@
     "seaMediterranean": "Mediterranean Sea",
     "attributionContextLabel": "Neighbouring-country boundaries: Natural Earth (public domain)",
     "attributionWorldLabel": "Country boundaries: Natural Earth (public domain)",
+    "attributionMarine": "Sea data: <sources>Copernicus Marine Service and ECMWF</sources>",
     "wheelHint": "Use {key} + scroll to zoom"
   },
   "MapExplorer": {

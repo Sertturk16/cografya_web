@@ -113,3 +113,22 @@ export async function EarthquakeAttribution({
     </aside>
   );
 }
+
+/**
+ * The same AFAD notice as a line of the map's fullscreen credit (T-119): in fullscreen the block
+ * above is off screen, so the map credit carries it (`MapAttribution`'s `dataCredit`). Beside
+ * `EarthquakeAttribution` so the notice's format has one home; strings verbatim from the payload.
+ * Sync and hook-free, so the server page renders it and hands the result to the client explorer.
+ */
+export function EarthquakeMapCredit({
+  attributions,
+}: {
+  attributions: readonly EarthquakeAttributionRow[];
+}) {
+  return attributions.map((attribution) => (
+    <span key={attribution.providerId} lang="tr">
+      {attribution.requiredNoticeTr}
+      {attribution.regulationReference !== "" && ` (${attribution.regulationReference})`}
+    </span>
+  ));
+}
