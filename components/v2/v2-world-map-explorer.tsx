@@ -38,6 +38,16 @@ import { usePinchZoom } from "@/lib/map/use-pinch-zoom.client";
 import { useWheelZoom } from "@/lib/map/use-wheel-zoom.client";
 import { offsetFromCentre } from "@/lib/map/wheel-zoom";
 import { MapWheelHint } from "@/components/v2/map-wheel-hint";
+import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
+import {
+  FULLSCREEN_FIGURE,
+  FULLSCREEN_MAP_BOX,
+  FULLSCREEN_STAGE,
+  FULLSCREEN_TOOLBAR,
+  MapFullscreenToggle,
+  MapRotateHint,
+  fullscreenCardStyle,
+} from "@/components/v2/map-fullscreen-controls";
 import { CONTINENT_META } from "@/lib/map/continent-theme";
 import type { ContinentIdentity } from "@/lib/theme/continent-identity";
 
@@ -154,6 +164,14 @@ export function V2WorldMapExplorer({
    */
   const t = useTranslations("MapExplorer");
   const containerRef = React.useRef<HTMLDivElement>(null);
+  /**
+   * The figure is what goes fullscreen (T-118): toolbar, map, card and credit together, so none of
+   * them is left behind on the page once only the target's subtree is on screen.
+   */
+  const figureRef = React.useRef<HTMLElement | null>(null);
+  const landscape = useLandscapeMode(figureRef);
+  // The rotate hint's height, so the card can sit above it in portrait fullscreen.
+  const [rotateHintHeight, setRotateHintHeight] = React.useState(0);
 
   const [selectedContinent, setSelectedContinent] = React.useState<string>("ALL");
   const [searchQuery, setSearchQuery] = React.useState<string>("");
@@ -210,7 +228,7 @@ export function V2WorldMapExplorer({
 
   const wheel = useWheelZoom({
     targetRef: containerRef,
-    plainWheelZooms: false,
+    plainWheelZooms: landscape.active,
     zoomBy: (factor, clientX, clientY) => {
       const box = containerRef.current;
       if (!box) return;
@@ -558,15 +576,21 @@ export function V2WorldMapExplorer({
             figure breaks out of the panel's `p-5` (`-mx-5`, +40px of map on a 360px phone,
             T-092) and the map box drops its side border and corners, which would otherwise sit
             against the panel's own edge; the toolbar, selection card and caption put the 20px
-            back so only the map runs edge to edge. */}
-        <figure className="-mx-5 my-0 space-y-2 sm:mx-0">
+            back so only the map runs edge to edge. The figure is also the fullscreen target
+            (T-118), which is why toolbar, card and caption all live inside it. */}
+        <figure
+          ref={figureRef}
+          className={`-mx-5 my-0 relative sm:mx-0 ${landscape.active ? "" : "space-y-2"}`}
+          style={landscape.active ? FULLSCREEN_FIGURE : undefined}
+        >
           {/* Positioning context for the toolbar and card, which sit outside the map box on a
-            phone and float over it from `sm`. */}
-          <div className="relative">
+            phone and float over it from `sm`, and over it at every width in fullscreen. */}
+          <div className="relative" style={landscape.active ? FULLSCREEN_STAGE : undefined}>
             {/* Map Controls. A row above the map on a phone, where the box is only as tall as the map
               (T-079) and a floating bar would cover it; floating over the map from `sm`. */}
             <div
               data-map-toolbar
+              style={landscape.active ? FULLSCREEN_TOOLBAR : undefined}
               onPointerDown={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
               className="mb-2 mr-5 ml-auto flex w-fit items-center gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg sm:absolute sm:top-3 sm:right-3 sm:z-30 sm:mr-0 sm:mb-0"
@@ -619,7 +643,14 @@ export function V2WorldMapExplorer({
                   ? `touch-none ${isPanning ? "cursor-grabbing" : "cursor-grab"}`
                   : "touch-pan-y cursor-crosshair"
               }`}
+              style={landscape.active ? FULLSCREEN_MAP_BOX : undefined}
             >
+              {/* Top-left, inside the box: on screen in fullscreen at every width (T-118). */}
+              <MapFullscreenToggle active={landscape.active} onToggle={landscape.toggle} />
+              {landscape.showRotateHint && (
+                <MapRotateHint onDismiss={landscape.exit} onHeight={setRotateHintHeight} />
+              )}
+
               {/* SVG Map Canvas with Zoom & Pan Transform */}
               <div
                 style={{
@@ -894,10 +925,12 @@ export function V2WorldMapExplorer({
                 </div>
               )}
             </div>
-            {/* Active Selected Country Card: under the map on a phone, over it from `sm` (T-079). */}
+            {/* Active Selected Country Card: under the map on a phone, over it from `sm` (T-079);
+              over it at every width in fullscreen (T-118). */}
             {selectedIso && activeCountry && (
               <MapSelectionCard
                 className="mx-5 mt-2 sm:absolute sm:bottom-3 sm:left-3 sm:z-30 sm:mx-0 sm:mt-0 sm:max-w-sm"
+                style={landscape.active ? fullscreenCardStyle(rotateHintHeight) : undefined}
                 leading={
                   activeCountry.hasFlag ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
@@ -938,7 +971,7 @@ export function V2WorldMapExplorer({
             same thing as a caption. `boundaries={false}` because this surface draws no OSM
             geometry — the province layer is a different map. */}
           <figcaption className="px-5 sm:px-0">
-            <MapAttribution boundaries={false} world />
+            <MapAttribution boundaries={false} world fullscreen={landscape.active} />
           </figcaption>
         </figure>
       </div>
