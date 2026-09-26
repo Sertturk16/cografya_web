@@ -116,9 +116,11 @@ const MAP_CONTROL_INSETS: Record<"phone" | "wide", BoxInsets> = {
 /**
  * Where the distance result panel sits when it is on the map (T-120): 12 px in from the left
  * edge, its bottom on top of the scale bar's band (`MAP_CONTROL_INSETS.bottom`, the
- * `sm:bottom-13` class), and 8 px between it and whatever is under it.
+ * `lg:bottom-13` class), and 8 px between it and whatever is under it.
  */
 const RESULT_PANEL_LEFT = 12;
+/** One width in every state, so the hint never widens it over the map (Tailwind `w-80`). */
+const RESULT_PANEL_WIDTH = 320;
 const RESULT_PANEL_BOTTOM = 52;
 const RESULT_PANEL_GAP = 8;
 /** Tailwind's `sm`, the width at which the zoom buttons turn from a row into a column. */
@@ -130,6 +132,17 @@ const subscribeSmUp = (onChange: () => void) => {
 };
 const readSmUp = () => window.matchMedia(SM_UP_QUERY).matches;
 const readSmUpOnServer = () => true;
+/**
+ * Tailwind's `lg`, from which the page puts the distance result panel on the map (T-120). Below it
+ * the plate is at most ~430 px tall; at 640 px a panel on it left a fit 47 px of height.
+ */
+const LG_UP_QUERY = "(min-width: 64rem)";
+const subscribeLgUp = (onChange: () => void) => {
+  const query = window.matchMedia(LG_UP_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
+const readLgUp = () => window.matchMedia(LG_UP_QUERY).matches;
 /** Upper zoom bound this tool's own +/− buttons already use (`handleZoomIn`) — the touch
  *  pinch below is clamped to the SAME ceiling, not `zoom-pan.ts`'s own (higher) `MAX_ZOOM`. */
 const MAX_TOOL_ZOOM = 8;
@@ -452,6 +465,7 @@ export function V2ToolWorkbench({
     };
   }, []);
   const smUp = React.useSyncExternalStore(subscribeSmUp, readSmUp, readSmUpOnServer);
+  const lgUp = React.useSyncExternalStore(subscribeLgUp, readLgUp, readSmUpOnServer);
   const controlInsets = MAP_CONTROL_INSETS[smUp ? "wide" : "phone"];
   const worldView = React.useMemo(
     () => toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN),
@@ -535,9 +549,9 @@ export function V2ToolWorkbench({
       h: visibleView.h - unit(top + bottom),
     };
   }, [visibleView, zoomLevel, pxPerUnit, controlInsets]);
-  // On the page below `sm` the panel is under the plate; from `sm`, and in fullscreen at every
+  // On the page below `lg` the panel is under the plate; from `lg`, and in fullscreen at every
   // width, it is on it (T-120).
-  const resultPanelOnMap = activeTool === "distance" && (landscape.active || smUp);
+  const resultPanelOnMap = activeTool === "distance" && (landscape.active || lgUp);
   const resultPanelBottom = landscape.showRotateHint
     ? Math.max(RESULT_PANEL_BOTTOM, 12 + rotateHintHeight + RESULT_PANEL_GAP)
     : RESULT_PANEL_BOTTOM;
@@ -1369,7 +1383,7 @@ export function V2ToolWorkbench({
           style={landscape.active ? LANDSCAPE_FILL : undefined}
         >
           {/* The plate and the result panel (T-120): one box, so the panel is rendered once,
-              sits in flow under the plate on a phone page and over it from `sm`, and goes
+              sits in flow under the plate on a page below `lg` and over it from `lg`, and goes
               fullscreen with the map. In fullscreen it flexes like the plate. */}
           <div className="relative" style={landscape.active ? LANDSCAPE_FILL : undefined}>
             <div
@@ -1659,9 +1673,9 @@ export function V2ToolWorkbench({
                 distanceKm={distanceKm}
                 onUndo={handleUndo}
                 onClear={handleClear}
-                className="mt-2 sm:absolute sm:bottom-13 sm:left-3 sm:z-30 sm:mt-0 sm:max-w-sm"
+                className="mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80"
                 // Fullscreen puts the panel on the map at every width, so the inline style has
-                // to beat the `sm:` classes; see `LANDSCAPE_FILL` for why fullscreen is inline.
+                // to beat the `lg:` classes; see `LANDSCAPE_FILL` for why fullscreen is inline.
                 style={
                   landscape.active
                     ? {
@@ -1670,7 +1684,8 @@ export function V2ToolWorkbench({
                         bottom: resultPanelBottom,
                         marginTop: 0,
                         zIndex: 30,
-                        maxWidth: `min(24rem, calc(100% - ${RESULT_PANEL_LEFT * 2}px))`,
+                        width: RESULT_PANEL_WIDTH,
+                        maxWidth: `calc(100% - ${RESULT_PANEL_LEFT * 2}px)`,
                       }
                     : undefined
                 }

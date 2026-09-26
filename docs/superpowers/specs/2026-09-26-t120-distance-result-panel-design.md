@@ -42,16 +42,20 @@ Today (measured on `dev` @ `beddf74`):
 
 | State      | Content                                                                              |
 | ---------- | ------------------------------------------------------------------------------------ |
-| 0 points   | "Ölçmek için haritada bir yere tıkla." Undo and Clear shown, disabled.               |
-| 1 point    | "Mesafe için bir nokta daha ekle." Undo and Clear enabled. No "0 km" anywhere.       |
+| 0 points   | "— km", then "Ölçmek için haritada bir yere tıkla." Undo and Clear `aria-disabled`.  |
+| 1 point    | "— km", then "Mesafe için bir nokta daha ekle." Undo and Clear enabled. No "0 km".   |
 | ≥ 2 points | Total straight-line km (large), then ✈ flight time and 🚗 road estimate on one line. |
 
 - The total uses the same `formatNumber(distanceKm, locale, 1)` as the result card.
 - The flight and road figures render exactly as the card does: `flightMinutes` for the
-  minutes, and `~` + `formatNumber(roadKm, locale, 0)` + ` km` for the road estimate. The icons are `aria-hidden`; each figure carries a visually hidden
-  label from the existing `flightTime` / `roadEstimate` keys.
-- The panel is `aria-live="polite"` on its result region only, so a screen reader hears the
-  new total after each point without the buttons being re-announced.
+  minutes, and `~` + `formatNumber(roadKm, locale, 0)` + ` km` for the road estimate.
+- The hint sits in the details row; the details stay there `invisible` for sizing.
+- Screen readers get one always-mounted `role="status"` line (`aria-atomic`) holding the hint
+  or the whole result, labelled with the existing `distanceTotal` / `flightTime` /
+  `roadEstimate` keys; the visible cells are `aria-hidden`. (Final review: a region that turns
+  live in the same update as its text is not announced.)
+- Undo and Clear use `aria-disabled`, not `disabled`: a disabled button drops keyboard focus to
+  `<body>` when Clear or the last Undo switches it off.
 - New message keys (TR approved by the owner 2026-09-26, EN alongside):
   - `resultPanelEmptyDistance`: "Ölçmek için haritada bir yere tıkla." / "Click the map to
     start measuring."
@@ -77,8 +81,8 @@ panel both call it; the inline arithmetic in the card is removed. Tested in `mea
 
 ### 2.5 Constant height
 
-At a given width the panel has the same height in all three states (the hint text sits in the
-space the figures take). Adding the first or second point never moves the map or the page
+At a given width the panel has the same width and height in all three states (the hint takes
+the details row, the total shows "—"). Adding the first or second point never moves the map or the page
 (the T-126 rule), and the fit/label insets (§3.3) do not jump between states.
 
 ## 3. Placement
@@ -103,14 +107,16 @@ fullscreen target. In fullscreen the wrapper flexes like the plate does today
 
 | Layout                | Position                                                                          |
 | --------------------- | --------------------------------------------------------------------------------- |
-| Page, below `sm`      | In flow under the plate (`mt-2`), full width, above the credit.                   |
-| Page, `sm` and up     | `absolute`, bottom-left, directly above the scale bar (bottom 52 px, left 12 px). |
-| Fullscreen, any width | `absolute`, bottom-left above the scale bar, as on `sm`.                          |
+| Page, below `lg`      | In flow under the plate (`mt-2`), full width, above the credit.                   |
+| Page, `lg` and up     | `absolute`, bottom-left, directly above the scale bar (bottom 52 px, left 12 px). |
+| Fullscreen, any width | `absolute`, bottom-left above the scale bar, as on `lg`.                          |
 
-- Page below `sm`: the square plate is 279 px at 360 px; a ~70 px panel inside it would cover a
+- Page below `lg`: the square plate is 279 px at 360 px; a ~70 px panel inside it would cover a
   quarter of the map. Under it, map plus panel (~350 px) fit one screen. The same choice
-  `/turkiye` and `/dunya` made for `MapSelectionCard` (T-079).
-- `sm` and up: the left edge carries map information (scale bar, result), the right edge the
+  `/turkiye` and `/dunya` made for `MapSelectionCard` (T-079). The first version switched at
+  `sm`; the final review measured the 640 px plate at 525×239, where a panel on the map left a
+  fit 47 px of height and covered south-west Türkiye, so the switch moved to `lg`.
+- `lg` and up: the left edge carries map information (scale bar, result), the right edge the
   controls (zoom, fullscreen credit ⓘ).
 - Fullscreen, including portrait phones. This departs from the earlier board note ("below the
   map on a portrait phone"): in fullscreen the ⓘ credit is `absolute` in the `<figure>`'s
@@ -123,13 +129,12 @@ fullscreen target. In fullscreen the wrapper flexes like the plate does today
 - The fullscreen credit starts open for up to 5 s (T-117) and may cover the panel's lower edge
   at phone widths until it collapses on the first interaction. Accepted: the credit must be
   visible on entry, and it is transient.
-- Panel width: `sm` and up it sizes to its content, capped at `max-w-sm` (24 rem; the longest
-  content, "1.430,2 km" plus two labelled buttons, is ~300 px). Fullscreen below `sm`: the full
-  width minus the 12 px side gutters.
+- Panel width: on the map a fixed 320 px (`w-80`, capped at the width minus the 12 px gutters in
+  fullscreen), so the hint never widens it; under the map the full width.
 
 ### 3.3 The panel as a map obstacle
 
-When the panel is over the plate (`sm` and up, or fullscreen) the workbench measures its
+When the panel is over the plate (`lg` and up, or fullscreen) the workbench measures its
 height with a `ResizeObserver` and:
 
 - **Fit (`fitPointsView`)**: the bottom inset becomes `52 + panelHeight + 8`. Presets, dropdown

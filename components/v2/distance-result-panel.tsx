@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { distanceTravelEstimates } from "@/lib/map/measure";
 import { formatNumber } from "@/lib/text/format-number";
+import { cn } from "@/lib/utils";
 import { MapResultAction, MapResultPanel } from "@/components/v2/map-result-panel";
 
 /**
@@ -40,19 +41,30 @@ export function DistanceResultPanel({
       : pointCount === 1
         ? t("resultPanelOnePointDistance")
         : undefined;
+  const total = formatNumber(distanceKm, locale, 1);
+  const flight = t("flightMinutes", { minutes: String(flightMinutes) });
+  const road = `~${formatNumber(roadKm, locale, 0)} km`;
 
   return (
     <MapResultPanel
       ref={ref}
       label={t("resultPanelLabel")}
       hint={hint}
+      status={
+        hint ??
+        `${t("distanceTotal")}: ${total} km. ${t("flightTime")}: ${flight}. ${t("roadEstimate")}: ${road}.`
+      }
       className={className}
       style={style}
       summary={
         <p className="m-0 flex items-baseline gap-1 leading-7">
-          <span className="sr-only">{t("distanceTotal")}: </span>
-          <span className="font-heading font-mono text-lg font-extrabold text-primary">
-            {formatNumber(distanceKm, locale, 1)}
+          <span
+            className={cn(
+              "font-heading font-mono text-lg font-extrabold",
+              hint ? "text-muted-foreground" : "text-primary",
+            )}
+          >
+            {hint ? "—" : total}
           </span>
           <span className="text-sm font-bold text-foreground">km</span>
         </p>
@@ -61,13 +73,11 @@ export function DistanceResultPanel({
         <p className="m-0 flex flex-wrap gap-x-3 font-mono text-[11px] leading-4 text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Plane className="size-3 text-primary" aria-hidden="true" />
-            <span className="sr-only">{t("flightTime")}: </span>
-            {t("flightMinutes", { minutes: String(flightMinutes) })}
+            {flight}
           </span>
           <span className="inline-flex items-center gap-1">
             <Car className="size-3 text-secondary" aria-hidden="true" />
-            <span className="sr-only">{t("roadEstimate")}: </span>
-            {`~${formatNumber(roadKm, locale, 0)} km`}
+            {road}
           </span>
         </p>
       }

@@ -469,10 +469,15 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       expect(caption, "the credit stays last in the figure").toBeGreaterThan(panel);
     });
 
-    it("sits under the plate on a phone page and over it from sm", () => {
+    it("sits under the plate on a page below lg and over it from lg, at one width", () => {
+      // From sm to lg the plate is 239–430 px tall; a panel on it left a fit 47 px at 640 px.
       expect(code).toContain(
-        'className="mt-2 sm:absolute sm:bottom-13 sm:left-3 sm:z-30 sm:mt-0 sm:max-w-sm"',
+        'className="mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80"',
       );
+      expect(code).toContain(
+        'const resultPanelOnMap = activeTool === "distance" && (landscape.active || lgUp);',
+      );
+      expect(code).toMatch(/width: RESULT_PANEL_WIDTH,/);
     });
 
     it("moves Undo and Clear off the toolbar for the distance tool only", () => {
