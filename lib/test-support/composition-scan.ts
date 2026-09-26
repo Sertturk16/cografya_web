@@ -66,10 +66,10 @@ export function walkPages(): string[] {
  *
  * Used ONLY by the heading counters in `components/v2/page-composition-headings.test.ts`, for a
  * reason specific to them: a reader who lands on a thrown error or an unknown slug sees a real
- * page with a real `<h1>`, so a counter named `PAGES_WITHOUT_H1` that cannot see those two files
- * would claim more than it measures. `app/[locale]/(site)/error.tsx` and
- * `app/[locale]/(site)/not-found.tsx` are the only two in the tree today; there is no `(play)`
- * equivalent and no `template.tsx` anywhere; the one `loading.tsx` file (T-037, `/kayit`) is walked
+ * page with a real `<h1>`, so a counter named `PAGES_WITHOUT_H1` that cannot see those files
+ * would claim more than it measures. `app/[locale]/(site)/error.tsx`,
+ * `app/[locale]/(site)/not-found.tsx` and `app/[locale]/(play)/error.tsx` (T-106) are the only
+ * three in the tree today; there is no `template.tsx` anywhere; the one `loading.tsx` file (T-037, `/kayit`) is walked
  * by `walkLoadingFiles()` and is deliberately not a render root.
  *
  * NOT WIDENED PAST `PAGE_ROOTS`. `app/global-error.tsx` and `app/not-found.tsx` are app-ROOT

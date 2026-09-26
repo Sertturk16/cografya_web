@@ -317,8 +317,9 @@ describe("(site) route files", () => {
 
     // The `(play)` boundary is asserted, not assumed. These three fullscreen game screens are
     // correctly container-free; the day one of them moves into `(site)` it must gain a
-    // container, and the day the group is emptied this line says so.
-    expect(playFiles.length, "(play) route files").toBe(3);
+    // container, and the day the group is emptied this line says so. The fourth file is the
+    // group's `error.tsx` (T-106).
+    expect(playFiles.length, "(play) route files").toBe(4);
     expect(routeFiles.some((file) => file.includes("(play)"))).toBe(false);
   });
 

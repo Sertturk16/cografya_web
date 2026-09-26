@@ -41,36 +41,50 @@ describe("V2 error boundaries", () => {
     ).toBe(false);
   });
 
-  it("the error boundary is a client component and exposes reset", () => {
-    const source = read("../../app/[locale]/(site)/error.tsx");
+  /**
+   * `(site)` and `(play)` each need their own: a group without one falls through to
+   * `app/global-error.tsx`, the unstyled last-resort shell that replaces the whole document.
+   */
+  const ERROR_BOUNDARIES = [
+    "../../app/[locale]/(site)/error.tsx",
+    "../../app/[locale]/(play)/error.tsx",
+  ];
+
+  it.each(ERROR_BOUNDARIES)("%s is a client component and exposes reset", (rel) => {
+    const source = read(rel);
     expect(source).toContain('"use client"');
     expect(source).toContain("reset");
   });
 
-  it("the error boundary moves focus to its heading", () => {
+  it.each(ERROR_BOUNDARIES)("%s moves focus to its heading", (rel) => {
     // docs/design.md a11y floor: a boundary that swaps page content in place mid-session has
     // to announce itself, and focus movement is the signal that does not depend on a live
     // region being noticed before its content settles.
-    const source = stripComments(read("../../app/[locale]/(site)/error.tsx"));
+    const source = stripComments(read(rel));
     expect(source).toContain("tabIndex={-1}");
     expect(source).toContain(".focus()");
   });
 
-  it("the error boundary never surfaces the error object", () => {
+  it.each(ERROR_BOUNDARIES)("%s never surfaces the error object", (rel) => {
     // It can carry a server stack. Next already reports server-side failures through its own
     // channel, so logging or rendering it adds nothing and can leak.
-    const source = stripComments(read("../../app/[locale]/(site)/error.tsx"));
+    const source = stripComments(read(rel));
     expect(source).not.toContain("console.error");
     expect(source).not.toContain("{error.message}");
     expect(source).not.toContain("{error.digest}");
   });
 
-  it("both boundaries take their copy from the catalogues", () => {
+  it("the (play) boundary draws the chrome its layout does not", () => {
+    // `(play)/layout.tsx` has no header and no `<main>`; each game page renders `V2Header`
+    // itself, and the boundary replaces the page, so it has to bring both back.
+    const source = stripComments(read("../../app/[locale]/(play)/error.tsx"));
+    expect(source).toContain("<V2Header");
+    expect(source).toContain("<main");
+  });
+
+  it("every boundary takes its copy from the catalogues", () => {
     // Hard-coded Turkish here would be invisible to the EN reader who triggered it.
-    for (const rel of [
-      "../../app/[locale]/(site)/not-found.tsx",
-      "../../app/[locale]/(site)/error.tsx",
-    ]) {
+    for (const rel of ["../../app/[locale]/(site)/not-found.tsx", ...ERROR_BOUNDARIES]) {
       expect(stripComments(read(rel))).toMatch(/useTranslations|getTranslations/);
     }
   });
