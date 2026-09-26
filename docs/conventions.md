@@ -98,6 +98,12 @@ comparison run by hand.
   build made two rounds earlier. Stale dev serves a false NEGATIVE (a 404 has no overflow);
   stale production serves a false POSITIVE. Check the selector against the source before you
   believe either.
+- **Signed-in pages need `SWEEP_AUTH_PASSWORD`.** `/hesabim/ayarlar` (`session: true` in
+  `routes.ts`) is visited with a session from one login through the `/giris` form as
+  `iris-audit@local.test`; provision it with `node tools/dev-fixtures/iris-audit-account.ts`
+  in `cografya_api`. A run that selects such a page without the password refuses to start,
+  and any visit that lands on a different pathname (an expired session bounced to `/giris`)
+  is a `LOAD FAILURE`, not a pass.
 - **Done means, for any task with a visible UI change:** `pnpm sweep:overflow` green, or the
   filtered run covering the routes you touched (`-- --filter=turkiye`). Never widen the
   tolerance to get there — a tolerance that hides a real overflow is worse than no sweep.

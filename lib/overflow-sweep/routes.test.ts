@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { routing } from "@/i18n/routing";
 import {
@@ -5,6 +7,7 @@ import {
   SWEEP_THEMES,
   SWEEP_VIEWPORTS,
   buildSweepUrls,
+  landedElsewhere,
   uncoveredPathnames,
 } from "@/lib/overflow-sweep/routes";
 
@@ -109,6 +112,50 @@ describe("buildSweepUrls", () => {
     expect(() => buildSweepUrls(routing.pathnames, [shape])).toThrow(
       /no value for the \[slug\] segment/,
     );
+  });
+});
+
+describe("signed-in routes (T-110)", () => {
+  const urls = buildSweepUrls(routing.pathnames);
+  const byId = new Map(urls.map((entry) => [entry.id, entry]));
+
+  it("sweeps the register form anonymously and the settings page with a session", () => {
+    expect(byId.get("register:tr")?.url).toBe("/kayit");
+    expect(byId.get("register:tr")?.shape.session).toBeUndefined();
+    expect(byId.get("settings:tr")?.url).toBe("/hesabim/ayarlar");
+    expect(byId.get("settings:tr")?.shape.session).toBe(true);
+  });
+
+  it("logs in through selectors the login form still renders", () => {
+    // The sweep drives the real `/giris` form by id. An id renamed in the card would make
+    // every signed-in check a refusal at best; pin the pair here instead.
+    const root = join(__dirname, "../..");
+    const script = readFileSync(join(root, "scripts/sweep-overflow.mjs"), "utf8");
+    const card = readFileSync(join(root, "components/v2/v2-login-card.tsx"), "utf8");
+    const ids = [...script.matchAll(/page\.fill\("#([\w-]+)"/g)].map((m) => m[1]);
+    expect(ids).toEqual(["v2-login-email", "v2-login-password"]);
+    for (const id of ids)
+      expect(card, `#${id} is gone from the login card`).toContain(`id="${id}"`);
+  });
+});
+
+describe("landedElsewhere", () => {
+  const base = "http://localhost:3000";
+
+  it("passes a visit that stayed on the requested page", () => {
+    expect(landedElsewhere("/hesabim/ayarlar", `${base}/hesabim/ayarlar`)).toBeNull();
+    expect(landedElsewhere("/hesabim/ayarlar", `${base}/hesabim/ayarlar/?tab=x#top`)).toBeNull();
+    expect(landedElsewhere("/", `${base}/`)).toBeNull();
+    expect(landedElsewhere("/en/sea/black-sea", `${base}/en/sea/black-sea`)).toBeNull();
+  });
+
+  it("names the page a redirect landed on", () => {
+    // The case it exists for: no session, `/hesabim/ayarlar` answers with the login page,
+    // which has no overflow and would otherwise read as a green settings check.
+    expect(landedElsewhere("/hesabim/ayarlar", `${base}/giris?next=%2Fhesabim%2Fayarlar`)).toBe(
+      "/giris",
+    );
+    expect(landedElsewhere("/en", `${base}/`)).toBe("/");
   });
 });
 

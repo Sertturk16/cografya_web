@@ -18,6 +18,18 @@
  *   pnpm sweep:overflow -- --base-url=http://localhost:3000
  *   pnpm sweep:overflow -- --filter=istanbul --viewport=320
  *
+ * SIGNED-IN PAGES (`session: true` in `routes.ts`, today `/hesabim/ayarlar`) need a local
+ * account. The sweep logs in ONCE through the `/giris` form and shares that session with every
+ * viewport × theme context that visits them; public pages stay anonymous. Provision the
+ * fixture account in `cografya_api` and hand the sweep its password:
+ *
+ *   node tools/dev-fixtures/iris-audit-account.ts        # in cografya_api, prints a password
+ *   SWEEP_AUTH_PASSWORD='<value>' pnpm sweep:overflow    # SWEEP_AUTH_EMAIL overrides the address
+ *
+ * Without it the run refuses to start rather than skipping those pages: a skipped check that
+ * reads as green is the failure this script exists to prevent. A run that does not select a
+ * signed-in page (`--filter=turkiye`) needs no password.
+ *
  * POINT IT AT A PRODUCTION SERVER when you can (`pnpm build` then `pnpm start`): the
  * prerendered pages mean the sweep is not holding the API open for the length of the run,
  * which is where the recorded `ECONNRESET` flake on a random province or country page
@@ -35,6 +47,7 @@ import {
   SWEEP_THEMES,
   SWEEP_VIEWPORTS,
   buildSweepUrls,
+  landedElsewhere,
   uncoveredPathnames,
 } from "../lib/overflow-sweep/routes.ts";
 
@@ -73,6 +86,10 @@ const FILTER = typeof args.filter === "string" ? args.filter : null;
 const VIEWPORT_FILTER = typeof args.viewport === "string" ? args.viewport.split(",") : null;
 const THEME_FILTER = typeof args.theme === "string" ? args.theme.split(",") : null;
 const CONCURRENCY = Math.max(1, Number(args.concurrency ?? 4) || 4);
+const AUTH_EMAIL = process.env.SWEEP_AUTH_EMAIL ?? "iris-audit@local.test";
+const AUTH_PASSWORD = process.env.SWEEP_AUTH_PASSWORD ?? null;
+/** The session cookie `lib/auth/cookies.ts` sets on a successful login. */
+const SESSION_COOKIE = "cg_access";
 
 const NAV_TIMEOUT = 60_000;
 const SETTLE_TIMEOUT = 8_000;
@@ -227,6 +244,17 @@ if (urls.length === 0) {
   process.exit(2);
 }
 
+const sessionUrls = urls.filter((u) => u.shape.session);
+if (sessionUrls.length > 0 && !AUTH_PASSWORD) {
+  console.error(
+    `${sessionUrls.map((u) => u.url).join(", ")} need a signed-in session and ` +
+      `SWEEP_AUTH_PASSWORD is not set. Provision the account in cografya_api with ` +
+      `\`node tools/dev-fixtures/iris-audit-account.ts\` and pass the password it prints ` +
+      `(SWEEP_AUTH_EMAIL overrides ${AUTH_EMAIL}).`,
+  );
+  process.exit(2);
+}
+
 console.log(`overflow sweep → ${BASE_URL}`);
 console.log(
   `${urls.length} URLs × ${viewports.length} viewports × ${themes.length} themes = ` +
@@ -242,10 +270,60 @@ const failures = [];
 const loadFailures = [];
 let retries = 0;
 
-/** One browser context: a viewport × theme pair, walking every URL in order. */
-async function runPair(browser, viewport, theme) {
+/**
+ * Log in once through the real `/giris` form and return the session as a Playwright storage
+ * state. Once, not per context: the API allows 30 logins per 15 minutes and a full run has 16
+ * viewport × theme pairs. The form rather than a raw `POST /api/auth/login`, so a change to
+ * the login request cannot leave the sweep logging in some other way than a person does.
+ */
+async function signIn(browser) {
+  const context = await browser.newContext();
+  try {
+    const page = await context.newPage();
+    await page.goto(`${BASE_URL}/giris`, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT });
+    await page.fill("#v2-login-email", AUTH_EMAIL);
+    await page.fill("#v2-login-password", /** @type {string} */ (AUTH_PASSWORD));
+    await page.click('button[type="submit"]');
+    // Success is a client-side `router.replace`, not a page load.
+    await page
+      .waitForURL((url) => !url.pathname.endsWith("/giris"), { timeout: NAV_TIMEOUT })
+      .catch(() => {});
+    const cookies = await context.cookies();
+    if (!cookies.some((cookie) => cookie.name === SESSION_COOKIE)) {
+      throw new Error(
+        `login as ${AUTH_EMAIL} produced no ${SESSION_COOKIE} cookie. The account may not ` +
+          `exist or its password was rotated by a later provisioner run; re-run ` +
+          `\`node tools/dev-fixtures/iris-audit-account.ts\` in cografya_api.`,
+      );
+    }
+    return await context.storageState();
+  } finally {
+    await context.close();
+  }
+}
+
+/**
+ * One viewport × theme pair: public URLs in an anonymous context, signed-in URLs in a context
+ * carrying `session`. Two contexts rather than one signed-in context for everything, so the
+ * public pages are measured with the header a visitor gets.
+ */
+async function runPair(browser, viewport, theme, session) {
   const lines = [`── ${viewport.width}px (${viewport.name}) · ${theme}`];
+  const publicUrls = urls.filter((u) => !u.shape.session);
+  if (publicUrls.length > 0) {
+    await walk(browser, viewport, theme, undefined, publicUrls, lines);
+  }
+  if (sessionUrls.length > 0) {
+    await walk(browser, viewport, theme, session, sessionUrls, lines);
+  }
+  // Printed as one block when the pair finishes, so concurrent pairs do not interleave.
+  console.log(lines.join("\n"));
+}
+
+/** One browser context walking `entries` in order, appending a report line per URL. */
+async function walk(browser, viewport, theme, storageState, entries, lines) {
   const context = await browser.newContext({
+    storageState,
     viewport: { width: viewport.width, height: viewport.height },
     // `colorScheme` covers the `prefers-color-scheme` half (form controls, scrollbars,
     // the UA stylesheet); the localStorage value below covers the app's own half.
@@ -270,11 +348,15 @@ async function runPair(browser, viewport, theme) {
   );
   const page = await context.newPage();
   try {
-    for (const entry of urls) {
+    for (const entry of entries) {
       const result = await visit(page, `${BASE_URL}${entry.url}`);
-      if (!result.ok) {
-        loadFailures.push({ url: entry.url, viewport: viewport.name, theme, error: result.error });
-        lines.push(`   LOAD ${entry.url} — ${result.error}`);
+      const redirected = result.ok ? landedElsewhere(entry.url, page.url()) : null;
+      const error = result.ok
+        ? redirected && `landed on ${redirected} instead`
+        : /** @type {string} */ (result.error);
+      if (error) {
+        loadFailures.push({ url: entry.url, viewport: viewport.name, theme, error });
+        lines.push(`   LOAD ${entry.url} — ${error}`);
         continue;
       }
       if (result.retried) retries += 1;
@@ -301,8 +383,6 @@ async function runPair(browser, viewport, theme) {
   } finally {
     await context.close();
   }
-  // Printed as one block when the pair finishes, so concurrent pairs do not interleave.
-  console.log(lines.join("\n"));
 }
 
 /** Every viewport × theme pair, in a stable order. */
@@ -310,6 +390,7 @@ const pairs = viewports.flatMap((viewport) => themes.map((theme) => ({ viewport,
 
 const browser = await chromium.launch();
 try {
+  const session = sessionUrls.length > 0 ? await signIn(browser) : undefined;
   // Pairs run concurrently: they share nothing but the server, and the wall-clock cost of
   // this check is what decides whether anyone runs it. Serial, the full sweep took 198s
   // against a production build; four at a time takes well under a minute. Four rather than
@@ -321,7 +402,7 @@ try {
     while (next < pairs.length) {
       const pair = pairs[next];
       next += 1;
-      await runPair(browser, pair.viewport, pair.theme);
+      await runPair(browser, pair.viewport, pair.theme, session);
     }
   };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pairs.length) }, worker));
