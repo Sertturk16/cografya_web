@@ -1041,7 +1041,7 @@
   "BookDetail": {
     "kunyeHeading": "Publication details of {title}",
     "videosHeading": "Video solutions for {title}",
-    "videoFallbackHeading": "Practice Exam {no}",
+    "videoFallbackHeading": "{kind, select, deneme {Practice Exam} soru_bankasi {Test} konu_anlatimi {Lesson} kamp {Booklet} other {Video}} {no}",
     "videoTagCount": "{count, plural, one {# question solution} other {# question solutions}}",
     "jumpHeading": "Jump to a practice exam",
     "tagLabel": "Question {no}",

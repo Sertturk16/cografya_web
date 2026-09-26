@@ -1057,7 +1057,7 @@
   "BookDetail": {
     "kunyeHeading": "{title} Künyesi",
     "videosHeading": "{title} Video Çözümleri",
-    "videoFallbackHeading": "Deneme {no}",
+    "videoFallbackHeading": "{kind, select, deneme {Deneme} soru_bankasi {Test} konu_anlatimi {Ders} kamp {Fasikül} other {Video}} {no}",
     "videoTagCount": "{count} soru çözümü",
     "jumpHeading": "Denemeye Atla",
     "tagLabel": "Soru {no}",

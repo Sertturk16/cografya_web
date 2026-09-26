@@ -92,23 +92,37 @@ describe("the book surface's fragment scheme", () => {
 });
 
 describe("videoTitle — prefers the nullable authored title over the fallback key", () => {
-  const t = (key: "videoFallbackHeading", values: { no: number }) => `${key}/${values.no}`;
+  const t = (key: "videoFallbackHeading", values: { no: number; kind: string }) =>
+    `${key}/${values.kind}/${values.no}`;
 
   it("TR locale, titleTr present: returns the authored TR title", () => {
     expect(
-      videoTitle(t, "tr" as Locale, { orderNo: 24, titleTr: "İklim Konusu", titleEn: null }),
+      videoTitle(
+        t,
+        "tr" as Locale,
+        { orderNo: 24, titleTr: "İklim Konusu", titleEn: null },
+        "konu_anlatimi",
+      ),
     ).toBe("İklim Konusu");
   });
 
-  it("TR locale, titleTr null: falls back to the translator key", () => {
-    expect(videoTitle(t, "tr" as Locale, { orderNo: 24, titleTr: null, titleEn: null })).toBe(
-      "videoFallbackHeading/24",
-    );
+  it("TR locale, titleTr null: falls back to the translator key with the book's kind", () => {
+    expect(
+      videoTitle(t, "tr" as Locale, { orderNo: 24, titleTr: null, titleEn: null }, "deneme"),
+    ).toBe("videoFallbackHeading/deneme/24");
+    expect(
+      videoTitle(t, "tr" as Locale, { orderNo: 4, titleTr: null, titleEn: null }, "soru_bankasi"),
+    ).toBe("videoFallbackHeading/soru_bankasi/4");
   });
 
   it("EN locale, titleEn present: returns the authored EN title", () => {
     expect(
-      videoTitle(t, "en" as Locale, { orderNo: 24, titleTr: null, titleEn: "Climate Topic" }),
+      videoTitle(
+        t,
+        "en" as Locale,
+        { orderNo: 24, titleTr: null, titleEn: "Climate Topic" },
+        "konu_anlatimi",
+      ),
     ).toBe("Climate Topic");
   });
 
@@ -116,7 +130,12 @@ describe("videoTitle — prefers the nullable authored title over the fallback k
     // §B14 14.2 — a field with no EN counterpart is omitted, never machine-filled from the TR
     // value. The fallback branch must not silently borrow the other locale's authored string.
     expect(
-      videoTitle(t, "en" as Locale, { orderNo: 24, titleTr: "İklim Konusu", titleEn: null }),
-    ).toBe("videoFallbackHeading/24");
+      videoTitle(
+        t,
+        "en" as Locale,
+        { orderNo: 24, titleTr: "İklim Konusu", titleEn: null },
+        "deneme",
+      ),
+    ).toBe("videoFallbackHeading/deneme/24");
   });
 });

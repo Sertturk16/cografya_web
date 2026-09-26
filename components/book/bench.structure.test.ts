@@ -199,7 +199,7 @@ describe("the stage cannot disagree with the index", () => {
     // §B5 5.7: the markup's `name` is composed from the `<h1>` and the row's `<h3>`, so both must
     // come from ONE builder. Two call sites composing "the same" string is how they stop being
     // the same string.
-    expect(FLAT_PAGE).toContain("videoTitle(t, locale, video)");
+    expect(FLAT_PAGE).toContain("videoTitle(t, locale, video, book.contentKind)");
     expect(IDENTITY).toContain("export function videoTitle");
   });
 });

@@ -278,7 +278,7 @@ export function BenchStage({
         {/* Through the shared builder, exactly as the index row and `VideoObject.name` are. The
             three strings must be one string (§B5 5.7), and this caption was the consumer outside
             the seam (→ PR #70 review `FENER70-M1` / `CODE70-M4`). */}
-        <span className={STAGE_NAME}>{videoTitle(t, locale, video)}</span>
+        <span className={STAGE_NAME}>{videoTitle(t, locale, video, "deneme")}</span>
         <span className={STAGE_FACTS}>
           <span>{t("videoTagCount", { count: video.tags.length })}</span>
           {rich !== null && (

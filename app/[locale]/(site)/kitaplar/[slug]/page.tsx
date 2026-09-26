@@ -347,7 +347,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
   const videoSchemas = videoStates.flatMap(({ video, state }) => {
     if (state.kind !== "rich") return [];
     const schema = videoObjectJsonLd({
-      name: `${title} — ${videoTitle(t, locale, video)}`,
+      name: `${title} — ${videoTitle(t, locale, video, book.contentKind)}`,
       thumbnailUrl: state.youtube.thumbnailUrl,
       uploadDate: state.youtube.publishedAtUtc,
       duration: state.youtube.durationIso,
@@ -566,7 +566,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
                     <summary className={DENEME_SUMMARY}>
                       <div className={DENEME_HEAD}>
                         <h3 id={videoFragment(video.orderNo)} className={DENEME_HEADING}>
-                          {videoTitle(t, locale, video)}
+                          {videoTitle(t, locale, video, book.contentKind)}
                         </h3>
                         <span className={DENEME_FACTS}>
                           <span>{t("videoTagCount", { count: video.tags.length })}</span>
