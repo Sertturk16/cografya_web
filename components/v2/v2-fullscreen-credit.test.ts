@@ -42,9 +42,20 @@ describe("the fullscreen target holds the map credit", () => {
         "components/v2/v2-tool-workbench.tsx",
         "components/v2/v2-world-map-explorer.tsx",
         "components/v2/v2-turkey-map-explorer.tsx",
+        "components/v2/v2-earthquake-explorer.tsx",
+        "components/v2/v2-marine-map-explorer.tsx",
       ]),
     );
   });
+
+  it.each(["v2-earthquake-explorer.tsx", "v2-marine-map-explorer.tsx"])(
+    "%s credits the data it draws in fullscreen (T-119)",
+    (file) => {
+      const path = fileURLToPath(new URL(`./${file}`, import.meta.url));
+      const credit = jsxElementsOf(path).find((el) => el.tag === "MapAttribution");
+      expect(credit?.attributes.has("dataCredit"), `${file}: no dataCredit`).toBe(true);
+    },
+  );
 
   it.each(surfaces)(
     "$name renders MapAttribution inside its fullscreen target",
