@@ -442,4 +442,15 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(code).toContain("absolute top-3 right-3 z-20 flex flex-row sm:flex-col");
     expect(code).toContain("flex flex-wrap sm:flex-nowrap items-center gap-2 sm:overflow-x-auto");
   });
+
+  // T-126: the live coordinate readout appeared on the first hover, wrapped the toolbar onto a
+  // second row and pushed the map 48 px down under the cursor, so the first click landed ~50 px
+  // off. It now holds its place from the first paint on a mouse, and takes none on a touchscreen.
+  it("reserves the coordinate readout's place instead of inserting it on hover", () => {
+    const code = stripComments(source);
+    expect(code).not.toMatch(/\{hoveredPos && \(/);
+    expect(code).toMatch(
+      /className=\{`hidden pointer-fine:inline-block[^`]*\$\{hoveredPos \? "" : "invisible"\}`\}/,
+    );
+  });
 });
