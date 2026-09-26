@@ -413,7 +413,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(pins).toContain('const label = PIN_LABEL_LAYOUT[pinLabelSides[idx] ?? "above"];');
     // Sides are decided for all pins together, inside the controls' clear area (T-124, T-127).
     expect(code).toMatch(
-      /placePinLabels\([\s\S]*?\{ view: labelView, dotRadius: unit\(PIN_RADIUS \+ PIN_OUTLINE\) \}/,
+      /placePinLabels\([\s\S]*?\{\s*view: labelView,\s*dotRadius: unit\(PIN_RADIUS \+ PIN_OUTLINE\),\s*obstacles:/,
     );
     // A stroke-[n] class would override the attribute and grow with the zoom again.
     expect(pins).not.toMatch(/stroke-\[/);
@@ -434,7 +434,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(code).toContain("toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN)");
     expect(code).toContain("{TALL_CONTEXT_SHAPES.map((country) => (");
     expect(code).not.toContain("tr-context.generated");
-    expect(code).toMatch(/fitPointsView\(mapPoints, worldView, box, controlInsets/);
+    expect(code).toMatch(/fitPointsView\(mapPoints, worldView, box, fitInsets/);
   });
 
   it("keeps the phone controls small and every example reachable", () => {
@@ -452,5 +452,36 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(code).toMatch(
       /className=\{`hidden pointer-fine:inline-block[^`]*\$\{hoveredPos \? "" : "invisible"\}`\}/,
     );
+  });
+  // T-120: the distance result sits on the map, inside the fullscreen target, with Undo/Clear.
+  describe("distance result panel (T-120)", () => {
+    const code = stripComments(source);
+
+    it("renders one panel, after the plate and inside the fullscreen box", () => {
+      expect(code.match(/<DistanceResultPanel\b/g)).toHaveLength(1);
+      const box = code.indexOf("ref={landscapeBoxRef}");
+      const plate = code.indexOf("ref={mapContainerRef}", box);
+      const panel = code.indexOf("<DistanceResultPanel", plate);
+      const caption = code.indexOf("<figcaption>", panel);
+      expect(box).toBeGreaterThan(-1);
+      expect(plate).toBeGreaterThan(box);
+      expect(panel).toBeGreaterThan(plate);
+      expect(caption, "the credit stays last in the figure").toBeGreaterThan(panel);
+    });
+
+    it("sits under the plate on a phone page and over it from sm", () => {
+      expect(code).toContain(
+        'className="mt-2 sm:absolute sm:bottom-13 sm:left-3 sm:z-30 sm:mt-0 sm:max-w-sm"',
+      );
+    });
+
+    it("moves Undo and Clear off the toolbar for the distance tool only", () => {
+      expect(code).toMatch(/\{activeTool !== "distance" && \(\s*<>\s*<Button[\s\S]*?handleUndo/);
+    });
+
+    it("frames named points above the panel and keeps labels off it", () => {
+      expect(code).toContain("const fitInsets =");
+      expect(code).toContain("const resultPanelObstacle =");
+    });
   });
 });

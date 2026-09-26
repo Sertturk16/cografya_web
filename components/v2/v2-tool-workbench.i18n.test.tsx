@@ -180,13 +180,12 @@ describe("the ToolWorkbench catalogue", () => {
     }
   });
 
-  it("has no dead key: each one is named in the workbench source or its preset list", () => {
-    const presets = readFileSync(
-      new URL("../../lib/tools/tool-presets.ts", import.meta.url),
-      "utf8",
+  it("has no dead key: each one is named in the workbench source, its preset list or its map panel", () => {
+    const others = ["../../lib/tools/tool-presets.ts", "./distance-result-panel.tsx"].map((path) =>
+      readFileSync(new URL(path, import.meta.url), "utf8"),
     );
     const unused = Object.keys(tr).filter(
-      (key) => !source.includes(`"${key}"`) && !presets.includes(`"${key}"`),
+      (key) => ![source, ...others].some((file) => file.includes(`"${key}"`)),
     );
     expect(unused).toEqual([]);
   });
