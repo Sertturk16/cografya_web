@@ -608,6 +608,24 @@ describe("scaleBarKm", () => {
     expect(narrow.px).toBeCloseTo(190.8648808850294, 9);
   });
 
+  it("keeps a narrow map's bar wide enough for its labels, without faking its length", () => {
+    // A phone map is ~290-310 px wide: the 22 % target alone gives a ~30 px bar, too short for
+    // "0" and "200 km" side by side. `minTargetPx` lifts the target, and the bar still snaps
+    // to a round distance whose width follows (never a fixed width with a wrong label).
+    for (const width of [288, 309, 340]) {
+      const plain = scaleBarKm(1270, width, 39, 0.22);
+      const bar = scaleBarKm(1270, width, 39, 0.22, 120);
+      expect(plain).not.toBeNull();
+      expect(bar).not.toBeNull();
+      if (!plain || !bar) continue;
+      expect(plain.px).toBeLessThan(48);
+      expect(bar.px).toBeGreaterThanOrEqual(48);
+      expect(bar.px).toBeLessThanOrEqual(120);
+    }
+    // A map wide enough that the fraction already clears the floor is untouched.
+    expect(scaleBarKm(1270, 1151, 39, 0.22, 120)).toEqual(scaleBarKm(1270, 1151, 39, 0.22));
+  });
+
   it("stays inside the fraction of the view it is allowed", () => {
     const bar = scaleBarKm(500, 800, 39, 0.25);
     expect(bar).not.toBeNull();
