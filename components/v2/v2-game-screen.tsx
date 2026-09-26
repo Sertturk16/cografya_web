@@ -1111,7 +1111,8 @@ export function V2GameScreen({
                     setZoom(1);
                     setPan({ x: 0, y: 0 });
                   }}
-                  className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors cursor-pointer"
+                  disabled={zoom === 1 && pan.x === 0 && pan.y === 0}
+                  className="size-7 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-40 flex items-center justify-center transition-colors cursor-pointer"
                   aria-label="Görünümü Sıfırla"
                 >
                   <Maximize2 className="size-3.5" />
