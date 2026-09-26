@@ -345,6 +345,7 @@ describe("fetchBookProgress (PR-B / UYE-P3)", () => {
                 watched: true,
                 updatedAt: "2026-08-27T10:00:00.000Z",
               },
+              videos: [{ bookVideoId: BOOK_VIDEO_ID, lastPositionSeconds: 245, watched: true }],
             },
           }),
         ),
@@ -366,6 +367,7 @@ describe("fetchBookProgress (PR-B / UYE-P3)", () => {
         watched: true,
         updatedAt: "2026-08-27T10:00:00.000Z",
       },
+      videos: [{ bookVideoId: BOOK_VIDEO_ID, lastPositionSeconds: 245, watched: true }],
     });
   });
 
@@ -397,7 +399,38 @@ describe("fetchBookProgress (PR-B / UYE-P3)", () => {
       watchedCount: 0,
       startedCount: 0,
       resume: null,
+      videos: [],
     });
+  });
+
+  it("drops a malformed per-video row and keeps the well-formed ones (T-128)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse(200, {
+            ok: true,
+            progress: {
+              bookSlugTr: SLUG,
+              videoCount: 30,
+              watchedCount: 0,
+              startedCount: 2,
+              resume: null,
+              videos: [
+                { bookVideoId: "v1", lastPositionSeconds: 30, watched: false },
+                { bookVideoId: "v2", lastPositionSeconds: 12, watched: "yes" },
+              ],
+            },
+          }),
+        ),
+      ),
+    );
+
+    const result = await fetchBookProgress(SLUG, new AbortController().signal);
+
+    expect(result?.videos).toEqual([
+      { bookVideoId: "v1", lastPositionSeconds: 30, watched: false },
+    ]);
   });
 
   it("collapses non-200 responses to null", async () => {

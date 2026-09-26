@@ -432,6 +432,7 @@ describe("handleGetBookProgress (PR-B / UYE-P3)", () => {
         watched: false,
         updatedAt: "2026-08-27T10:00:00.000Z",
       },
+      videos: [],
     };
   }
 
@@ -478,6 +479,7 @@ describe("handleGetBookProgress (PR-B / UYE-P3)", () => {
       watchedCount: 0,
       startedCount: 0,
       resume: null,
+      videos: [],
     };
     fetchMock().mockResolvedValue(jsonResponse(200, payload));
 

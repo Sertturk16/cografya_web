@@ -51,6 +51,7 @@ export const BOOK_LIST_PAGE_1: BookList = {
       titleTr: "Fixture Book One",
       publisherName: "Fixture Publisher",
       examTrack: "AYT",
+      contentKind: "deneme",
       coverImagePath: "/kitaplar/fixture-book-one.webp",
       displayOrder: 1,
       updatedAt: "2026-01-02T03:04:05.000Z",
@@ -62,6 +63,7 @@ export const BOOK_LIST_PAGE_1: BookList = {
       titleTr: "Fixture Book Two",
       publisherName: "Fixture Publisher",
       examTrack: "TYT",
+      contentKind: "deneme",
       // `null` is a contract state, not a gap: a book with no cover renders no image.
       coverImagePath: null,
       displayOrder: 2,
@@ -83,6 +85,7 @@ export const BOOK_LIST_PAGE_2: BookList = {
       titleTr: "Fixture Book Three",
       publisherName: "Fixture Publisher",
       examTrack: "KPSS",
+      contentKind: "deneme",
       coverImagePath: "/kitaplar/fixture-book-three.webp",
       displayOrder: 3,
       updatedAt: "2026-01-04T03:04:05.000Z",
@@ -105,6 +108,7 @@ export const BOOK_DETAIL: BookDetail = {
   titleEn: null,
   publisherName: "Fixture Publisher",
   examTrack: "AYT",
+  contentKind: "deneme",
   coverImagePath: "/kitaplar/fixture-book-one.webp",
   displayOrder: 1,
   // Required since the api opened its read side; it feeds the sitemap's `lastmod` and
@@ -128,6 +132,8 @@ export const BOOK_DETAIL: BookDetail = {
       // i18n + orderNo (P0 generic-catalogue cut-over) — matches every seeded row today.
       titleTr: null,
       titleEn: null,
+      groupTitleTr: null,
+      groupTitleEn: null,
       tags: [
         // `startSecond: 0` is an ordinary value, never a sentinel (contract note).
         { orderNo: 1, startSecond: 0, nameTr: null, nameEn: null },
@@ -152,6 +158,8 @@ export const BOOK_DETAIL: BookDetail = {
       orderNo: 3,
       titleTr: null,
       titleEn: null,
+      groupTitleTr: null,
+      groupTitleEn: null,
       tags: [
         { orderNo: 1, startSecond: 11, nameTr: null, nameEn: null },
         { orderNo: 2, startSecond: 205, nameTr: null, nameEn: null },

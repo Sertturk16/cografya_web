@@ -80,12 +80,19 @@ export const bookProgressResumeSchema = z.object({
   updatedAt: z.string(),
 });
 
+export const bookProgressVideoSchema = z.object({
+  bookVideoId: z.string(),
+  lastPositionSeconds: z.number(),
+  watched: z.boolean(),
+});
+
 export const bookProgressSchema = z.object({
   bookSlugTr: z.string(),
   videoCount: z.number(),
   watchedCount: z.number(),
   startedCount: z.number(),
   resume: bookProgressResumeSchema.nullable(),
+  videos: z.array(bookProgressVideoSchema),
 });
 
 export type BookProgressShape = z.infer<typeof bookProgressSchema>;
