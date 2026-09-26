@@ -142,7 +142,7 @@ All in map units, like `placeSegmentLabels`. Obstacles are the pin dots (from `r
 ### 4.2 Rules
 
 1. **Inside first.** Scan the ring's bounding box with horizontal lines (a fixed count, e.g. 24);
-   each inside interval of each line gives a candidate at its midpoint. A candidate fits when
+   each inside interval of each line gives a candidate at its midpoint, and one at the midpoint of the part of it inside `view` (a shape partly panned out of sight). A candidate fits when
    the label box lies wholly inside the ring (its corners are inside and no ring edge crosses it,
    `segmentHitsBox`), inside `view`, and off every obstacle. Of the fitting candidates the one
    closest to the ring's area centroid wins.
