@@ -3,7 +3,8 @@
 import * as React from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { PROVINCE_SHAPES } from "@/lib/map/tr-provinces.generated";
-import { CONTEXT_SHAPES, TR_CONTEXT_VIEWBOX } from "@/lib/map/tr-context.generated";
+import { TALL_CONTEXT_SHAPES } from "@/lib/map/tr-context-tall.generated";
+import { fitPointsView, toolBaseView, type BoxInsets } from "@/lib/map/tool-view";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { projectToMapPoint } from "@/lib/map/projection";
 import {
@@ -23,7 +24,6 @@ import {
   atScreenSize,
   clampPan,
   moveDistance,
-  parseViewBox,
   zoomFromPinch,
   type ViewBox,
 } from "@/lib/map/zoom-pan";
@@ -96,13 +96,11 @@ export interface PointWithSvg {
 }
 
 /**
- * The CBS canvas's world rect, parsed once with the shared zoom/pan module's own parser
- * (T-015) rather than the ad hoc `.split(" ").map(Number)` `currentViewBox` still does below —
- * that inline parse stays untouched (it is exercised, working code); this constant is only for
- * the NEW touch-gesture and smart-focus math, which reuses `lib/map/zoom-pan.ts`'s pure
- * geometry (`zoomFromPinch`, `clampPan`) instead of re-deriving pinch/pan arithmetic by hand.
+ * CSS px the map's own controls cover along each edge of the plate, which a fit to named points
+ * must leave clear (T-124): the fullscreen and zoom buttons along the top, the scale bar along the
+ * bottom, and on the right the desktop zoom column and the fullscreen credit's ⓘ.
  */
-const WORLD_VIEWBOX: ViewBox = parseViewBox(TR_CONTEXT_VIEWBOX);
+const MAP_CONTROL_INSETS: BoxInsets = { top: 60, right: 56, bottom: 52, left: 12 };
 /** Upper zoom bound this tool's own +/− buttons already use (`handleZoomIn`) — the touch
  *  pinch below is clamped to the SAME ceiling, not `zoom-pan.ts`'s own (higher) `MAX_ZOOM`. */
 const MAX_TOOL_ZOOM = 8;
@@ -361,6 +359,28 @@ export function V2ToolWorkbench({
   const touchStartPosRef = React.useRef<{ x: number; y: number } | null>(null);
   const touchMaxMoveRef = React.useRef(0);
 
+  // The <svg>'s own box, not the plate's: fullscreen reshapes it. Its aspect picks the 1× frame
+  // (T-124), and with it the CSS px per viewBox unit the pins are sized by (T-122).
+  const [svgBox, setSvgBox] = React.useState<{ w: number; h: number } | null>(null);
+
+  React.useEffect(() => {
+    const el = svgRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) setSvgBox({ w: width, h: height });
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const worldView = React.useMemo(
+    () => toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN),
+    [svgBox],
+  );
+  const pxPerUnit = svgBox ? Math.min(svgBox.w / worldView.w, svgBox.h / worldView.h) : null;
+
   /**
    * "Smart region focus" (T-015): pan/zoom the canvas to frame the point(s) just named by
    * VALUE rather than by screen location — an 81-il dropdown pick, a typed coordinate, a
@@ -370,36 +390,28 @@ export function V2ToolWorkbench({
    * they just did instead of helping it.
    *
    * Reuses this file's own `currentViewBox` convention (zoomLevel/panOffset around
-   * `WORLD_VIEWBOX`) rather than `zoom-pan.ts`'s `viewToIncludeShape` — that helper only ever
+   * `worldView`) rather than `zoom-pan.ts`'s `viewToIncludeShape` — that helper only ever
    * grows the view to include something already close to visible; here the map is very often
    * still at its 1× national extent and needs an actual zoom-IN, which is exactly what a
    * "fit these points, with padding" computation gives.
    */
-  const focusOnMapPoints = React.useCallback((mapPoints: readonly { x: number; y: number }[]) => {
-    if (mapPoints.length === 0) return;
-    const xs = mapPoints.map((p) => p.x);
-    const ys = mapPoints.map((p) => p.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    // A single point (or a tight cluster) has zero span — floor it to a fraction of the
-    // world so "fit the bounds" still produces a sensible close-in zoom instead of infinity.
-    const spanX = Math.max(maxX - minX, WORLD_VIEWBOX.w * 0.06);
-    const spanY = Math.max(maxY - minY, WORLD_VIEWBOX.h * 0.06);
-    const PAD = 1.7; // headroom so the point(s) never sit edge-to-edge against the frame
-    const zoomForWidth = WORLD_VIEWBOX.w / (spanX * PAD);
-    const zoomForHeight = WORLD_VIEWBOX.h / (spanY * PAD);
-    const nextZoom = Math.min(MAX_TOOL_ZOOM, Math.max(1, Math.min(zoomForWidth, zoomForHeight)));
-    setZoomLevel(nextZoom);
-    setPanOffset({
-      x: (minX + maxX) / 2 - (WORLD_VIEWBOX.x + WORLD_VIEWBOX.w / 2),
-      y: (minY + maxY) / 2 - (WORLD_VIEWBOX.y + WORLD_VIEWBOX.h / 2),
-    });
-  }, []);
+  const focusOnMapPoints = React.useCallback(
+    (mapPoints: readonly { x: number; y: number }[]) => {
+      if (mapPoints.length === 0) return;
+      // Before the plate is measured, fit as the desktop box would; the next resize keeps it.
+      const box = svgBox ?? { w: worldView.w, h: worldView.h };
+      const view = fitPointsView(mapPoints, worldView, box, MAP_CONTROL_INSETS, {
+        maxZoom: MAX_TOOL_ZOOM,
+      });
+      const next = zoomPanOfView(view, worldView);
+      setZoomLevel(next.zoomLevel);
+      setPanOffset(next.panOffset);
+    },
+    [svgBox, worldView],
+  );
 
   // Background context shape
-  const trCasing = React.useMemo(() => CONTEXT_SHAPES.find((c) => c.iso === "TR"), []);
+  const trCasing = React.useMemo(() => TALL_CONTEXT_SHAPES.find((c) => c.iso === "TR"), []);
 
   // Pre-parsed province shapes for reverse geocoding
   const provinceShapePolys = React.useMemo(() => {
@@ -423,25 +435,6 @@ export function V2ToolWorkbench({
       for (const entry of entries) {
         if (entry.contentRect.width > 0) {
           setContainerWidth(entry.contentRect.width);
-        }
-      }
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // CSS px per viewBox unit at 1×, for the pins (T-122). Read from the <svg> itself, not the
-  // plate: fullscreen reshapes the svg box, and the default `meet` fit scales by the tighter axis.
-  const [pxPerUnit, setPxPerUnit] = React.useState<number | null>(null);
-
-  React.useEffect(() => {
-    const el = svgRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        if (width > 0 && height > 0) {
-          setPxPerUnit(Math.min(width / WORLD_VIEWBOX.w, height / WORLD_VIEWBOX.h));
         }
       }
     });
@@ -477,25 +470,22 @@ export function V2ToolWorkbench({
   const handleRetryList = () => setListReloadKey((key) => key + 1);
 
   // Calculate live viewBox string based on zoom and pan
-  const currentViewBox = React.useMemo(() => {
-    const parts = TR_CONTEXT_VIEWBOX.split(" ").map(Number);
-    const baseMinX = parts[0] || -150;
-    const baseMinY = parts[1] || -60;
-    const baseWidth = parts[2] || 1270;
-    const baseHeight = parts[3] || 580;
-
-    const zoomedWidth = baseWidth / zoomLevel;
-    const zoomedHeight = baseHeight / zoomLevel;
-
-    // Center zoom on current pan
-    const centerX = baseMinX + baseWidth / 2 + panOffset.x;
-    const centerY = baseMinY + baseHeight / 2 + panOffset.y;
-
-    const curMinX = centerX - zoomedWidth / 2;
-    const curMinY = centerY - zoomedHeight / 2;
-
-    return `${curMinX} ${curMinY} ${zoomedWidth} ${zoomedHeight}`;
-  }, [zoomLevel, panOffset]);
+  const visibleView = React.useMemo(
+    () => viewOfZoomPan(zoomLevel, panOffset, worldView),
+    [zoomLevel, panOffset, worldView],
+  );
+  const currentViewBox = `${visibleView.x} ${visibleView.y} ${visibleView.w} ${visibleView.h}`;
+  // The part of the view the map's controls leave clear, where a pin label must stay (T-124).
+  const labelView = React.useMemo(() => {
+    const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
+    const { top, right, bottom, left } = MAP_CONTROL_INSETS;
+    return {
+      x: visibleView.x + unit(left),
+      y: visibleView.y + unit(top),
+      w: visibleView.w - unit(left + right),
+      h: visibleView.h - unit(top + bottom),
+    };
+  }, [visibleView, zoomLevel, pxPerUnit]);
 
   // Convert mouse screen client coordinates to SVG map coordinate space
   const screenToMap = React.useCallback(
@@ -624,7 +614,7 @@ export function V2ToolWorkbench({
           Math.max(1, zoomFromPinch(pinch.zoom, pinch.dist, dist)),
         );
         const svg = svgRef.current;
-        const view = viewOfZoomPan(zoomLevel, panOffset, WORLD_VIEWBOX);
+        const view = viewOfZoomPan(zoomLevel, panOffset, worldView);
         if (svg) {
           const rect = svg.getBoundingClientRect();
           const midX = (a.x + b.x) / 2;
@@ -635,13 +625,13 @@ export function V2ToolWorkbench({
           // around it — the same anchoring `zoomAtPoint` does for wheel/pinch on the game map.
           const anchorX = view.x + fx * view.w;
           const anchorY = view.y + fy * view.h;
-          const nextW = WORLD_VIEWBOX.w / targetZoom;
-          const nextH = WORLD_VIEWBOX.h / targetZoom;
+          const nextW = worldView.w / targetZoom;
+          const nextH = worldView.h / targetZoom;
           const nextView = clampPan(
             { x: anchorX - fx * nextW, y: anchorY - fy * nextH, w: nextW, h: nextH },
-            WORLD_VIEWBOX,
+            worldView,
           );
-          const next = zoomPanOfView(nextView, WORLD_VIEWBOX);
+          const next = zoomPanOfView(nextView, worldView);
           setZoomLevel(next.zoomLevel);
           setPanOffset(next.panOffset);
         } else {
@@ -664,14 +654,14 @@ export function V2ToolWorkbench({
     if (rect.width <= 0 || rect.height <= 0) return;
     const dxClient = e.clientX - last.x;
     const dyClient = e.clientY - last.y;
-    const view = viewOfZoomPan(zoomLevel, panOffset, WORLD_VIEWBOX);
+    const view = viewOfZoomPan(zoomLevel, panOffset, worldView);
     const worldPerPxX = view.w / rect.width;
     const worldPerPxY = view.h / rect.height;
     const nextView = clampPan(
       { ...view, x: view.x - dxClient * worldPerPxX, y: view.y - dyClient * worldPerPxY },
-      WORLD_VIEWBOX,
+      worldView,
     );
-    setPanOffset(zoomPanOfView(nextView, WORLD_VIEWBOX).panOffset);
+    setPanOffset(zoomPanOfView(nextView, worldView).panOffset);
     touchPanLastRef.current = { x: e.clientX, y: e.clientY };
   };
 
@@ -1179,7 +1169,9 @@ export function V2ToolWorkbench({
         </div>
 
         {/* Quick Scenario Preset Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 text-xs">
+        {/* Wrapping on a phone, where a sideways-scrolling row hid the last examples behind a
+            scrollbar (T-124); one scrolling row from `sm`, as before. */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:overflow-x-auto pb-1 pt-1 text-xs">
           <span className="font-semibold text-muted-foreground shrink-0">{t("presetsLabel")}</span>
           {TOOL_PRESETS[mode].map((preset) => (
             <button
@@ -1208,7 +1200,7 @@ export function V2ToolWorkbench({
         >
           <div
             ref={mapContainerRef}
-            className="relative w-full aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none"
+            className="relative w-full aspect-square sm:aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none"
             style={landscape.active ? LANDSCAPE_PLATE : undefined}
           >
             {/* Fullscreen / landscape toggle — ONE control for both directions, kept INSIDE
@@ -1278,8 +1270,9 @@ export function V2ToolWorkbench({
               </div>
             )}
 
-            {/* Zoom & Pan Overlay Controls */}
-            <div className="absolute top-3 right-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+            {/* Zoom & Pan Overlay Controls. A row on a phone, where a column of three stood a
+                third as tall as the map (T-124); a column from `sm` as before. */}
+            <div className="absolute top-3 right-3 z-20 flex flex-row sm:flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
               <button
                 type="button"
                 onClick={handleZoomIn}
@@ -1357,7 +1350,7 @@ export function V2ToolWorkbench({
                 hairline moves with the fill to `--map-context-line` (3.28:1 / 3.18:1 on that
                 neighbour land, 3.05:1 / 3.54:1 on the `--map-plate` it also borders), leaving
                 `--province-stroke` to Türkiye's own coast. */}
-              {CONTEXT_SHAPES.map((country) => (
+              {TALL_CONTEXT_SHAPES.map((country) => (
                 <path
                   key={country.iso}
                   d={country.d}
@@ -1431,8 +1424,26 @@ export function V2ToolWorkbench({
               {/* Placed Waypoints Pins */}
               {points.map((p, idx) => {
                 const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);
+                const text = p.mapLabel || p.label || String(idx + 1);
+                // How far the label reaches from the dot, so one that would leave the view or
+                // run under a control turns back into the clear area (T-124). Width is
+                // estimated from the glyph count.
+                const reach = {
+                  x: atScreenSize(
+                    PIN_RADIUS + PIN_LABEL_GAP + text.length * PIN_LABEL_SIZE * 0.6,
+                    zoomLevel,
+                    pxPerUnit,
+                  ),
+                  y: atScreenSize(
+                    PIN_RADIUS + PIN_LABEL_GAP + PIN_LABEL_SIZE,
+                    zoomLevel,
+                    pxPerUnit,
+                  ),
+                };
                 const label =
-                  PIN_LABEL_LAYOUT[pinLabelPlacement(pinCentres[idx]!, pinCentres).side];
+                  PIN_LABEL_LAYOUT[
+                    pinLabelPlacement(pinCentres[idx]!, pinCentres, { view: labelView, reach }).side
+                  ];
                 return (
                   <g key={idx} className="transition-transform">
                     <circle
@@ -1455,7 +1466,7 @@ export function V2ToolWorkbench({
                       paintOrder="stroke"
                       className="fill-foreground stroke-card font-sans select-none pointer-events-none"
                     >
-                      {p.mapLabel || p.label || idx + 1}
+                      {text}
                     </text>
                   </g>
                 );

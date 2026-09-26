@@ -410,11 +410,34 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(pins).toContain(
       "const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);",
     );
-    expect(pins).toContain("pinLabelPlacement(pinCentres[idx]!, pinCentres)");
+    expect(pins).toContain(
+      "pinLabelPlacement(pinCentres[idx]!, pinCentres, { view: labelView, reach })",
+    );
     // A stroke-[n] class would override the attribute and grow with the zoom again.
     expect(pins).not.toMatch(/stroke-\[/);
+    // The pins' scale comes from the same 1× frame the viewBox is built from (T-124 made that
+    // frame depend on the box), measured on the <svg> itself.
     expect(code).toContain(
-      "setPxPerUnit(Math.min(width / WORLD_VIEWBOX.w, height / WORLD_VIEWBOX.h))",
+      "const pxPerUnit = svgBox ? Math.min(svgBox.w / worldView.w, svgBox.h / worldView.h) : null;",
     );
+    expect(code).toContain("() => viewOfZoomPan(zoomLevel, panOffset, worldView),");
+  });
+
+  // T-124: on a portrait phone the map box is square rather than a 140 px strip, the 1× frame is
+  // sized to that box (`toolBaseView`), and the tall context artifact fills the rows it gains.
+  // What the frame shows at each aspect is `lib/map/tool-view.test.ts`; these pin the wiring.
+  it("sizes the map box and its frame for a portrait phone", () => {
+    const code = stripComments(source);
+    expect(code).toContain("aspect-square sm:aspect-[1270/580]");
+    expect(code).toContain("toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN)");
+    expect(code).toContain("{TALL_CONTEXT_SHAPES.map((country) => (");
+    expect(code).not.toContain("tr-context.generated");
+    expect(code).toMatch(/fitPointsView\(mapPoints, worldView, box, MAP_CONTROL_INSETS/);
+  });
+
+  it("keeps the phone controls small and every example reachable", () => {
+    const code = stripComments(source);
+    expect(code).toContain("absolute top-3 right-3 z-20 flex flex-row sm:flex-col");
+    expect(code).toContain("flex flex-wrap sm:flex-nowrap items-center gap-2 sm:overflow-x-auto");
   });
 });

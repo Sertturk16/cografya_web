@@ -38,4 +38,34 @@ describe("pinLabelPlacement", () => {
     expect(pinLabelPlacement(pts[0]!, pts).side).toBe("left");
     expect(pinLabelPlacement(pts[1]!, pts).side).toBe("right");
   });
+
+  describe("inside a view (T-124)", () => {
+    // Edirne–Iğdır at 1× on a phone: the two pins sit a few px from the plate's sides.
+    const view = { x: -55, y: -310, w: 1080, h: 1080 };
+    const pts = [
+      { x: 15, y: 110 },
+      { x: 990, y: 190 },
+    ];
+    const reach = { x: 150, y: 40 };
+
+    it("moves a sideways label that would leave the view above or below the pin", () => {
+      expect(pinLabelPlacement(pts[0]!, pts, { view, reach }).side).toBe("above");
+      expect(pinLabelPlacement(pts[1]!, pts, { view, reach }).side).toBe("below");
+    });
+
+    it("keeps the sideways label where it fits", () => {
+      const wide = { x: -400, y: -310, w: 1800, h: 1080 };
+      expect(pinLabelPlacement(pts[0]!, pts, { view: wide, reach }).side).toBe("left");
+    });
+
+    it("turns a label at the top or bottom edge back into the view", () => {
+      const top = { x: 500, y: -300 };
+      const bottom = { x: 520, y: 760 };
+      const pair = [top, bottom];
+      expect(pinLabelPlacement(top, pair, { view, reach: { x: 150, y: 40 } }).side).toBe("below");
+      expect(pinLabelPlacement(bottom, pair, { view, reach: { x: 150, y: 40 } }).side).toBe(
+        "above",
+      );
+    });
+  });
 });
