@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { labelBox, pinLabelPlacement, placePinLabels, type PinLabel } from "./pin-label-placement";
+import {
+  labelBox,
+  overlapArea,
+  pinLabelPlacement,
+  placePinLabels,
+  type PinLabel,
+} from "./pin-label-placement";
 
 describe("pinLabelPlacement", () => {
   it("puts a lone pin's label above it", () => {
@@ -143,5 +149,18 @@ describe("placePinLabels", () => {
         expect(overlap(boxes[i]!, boxes[j]!), `labels ${i + 1} and ${j + 1}`).toBe(false);
       }
     }
+  });
+});
+
+describe("placePinLabels obstacles", () => {
+  it("keeps a label off an obstacle, as it keeps off another pin's dot", () => {
+    const pin: PinLabel = { x: 50, y: 50, gap: 5, width: 20, height: 8 };
+    const view = { x: 0, y: 0, w: 200, h: 200 };
+    // Covers the preferred "above" box (x 40–60, y 37–45).
+    const obstacle = { x: 30, y: 30, w: 40, h: 20 };
+    expect(placePinLabels([pin], { view, dotRadius: 1 })).toEqual(["above"]);
+    const [side] = placePinLabels([pin], { view, dotRadius: 1, obstacles: [obstacle] });
+    expect(side).toBe("below");
+    expect(overlapArea(labelBox(pin, side!), obstacle)).toBe(0);
   });
 });
