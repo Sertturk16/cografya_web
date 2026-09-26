@@ -82,8 +82,8 @@ describe("DistanceResultPanel", () => {
   it("names the region and both actions, even where the button text is visually hidden", () => {
     const html = render(2, 100);
     expect(html).toMatch(/role="group" aria-label="Ölçüm sonucu"/);
-    expect(html).toMatch(/<span class="sr-only sm:not-sr-only">Geri Al<\/span>/);
-    expect(html).toMatch(/<span class="sr-only sm:not-sr-only">Temizle<\/span>/);
+    expect(html).toMatch(/<span class="sr-only @sm:not-sr-only">Geri Al<\/span>/);
+    expect(html).toMatch(/<span class="sr-only @sm:not-sr-only">Temizle<\/span>/);
   });
 });
 

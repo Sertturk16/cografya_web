@@ -74,7 +74,7 @@ describe("AreaResultPanel", () => {
 
   it("names Undo and Clear even where the button text is visually hidden", () => {
     const html = render(3);
-    expect(html).toMatch(/<span class="sr-only sm:not-sr-only">Geri Al<\/span>/);
-    expect(html).toMatch(/<span class="sr-only sm:not-sr-only">Temizle<\/span>/);
+    expect(html).toMatch(/<span class="sr-only @sm:not-sr-only">Geri Al<\/span>/);
+    expect(html).toMatch(/<span class="sr-only @sm:not-sr-only">Temizle<\/span>/);
   });
 });

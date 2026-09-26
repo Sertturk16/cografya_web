@@ -63,15 +63,15 @@ describe("CoordinateResultPanel", () => {
   });
 
   it("switches the Copy button to its done state", () => {
-    expect(render(ANKARA)).toMatch(/<span class="sr-only sm:not-sr-only">Kopyala<\/span>/);
+    expect(render(ANKARA)).toMatch(/<span class="sr-only @sm:not-sr-only">Kopyala<\/span>/);
     expect(render(ANKARA, true)).toMatch(
-      /<span class="sr-only sm:not-sr-only">Kopyalandı!<\/span>/,
+      /<span class="sr-only @sm:not-sr-only">Kopyalandı!<\/span>/,
     );
   });
 
   it("names Clear, and offers no Undo on a one-point tool", () => {
     const html = render(ANKARA);
-    expect(html).toMatch(/<span class="sr-only sm:not-sr-only">Temizle<\/span>/);
+    expect(html).toMatch(/<span class="sr-only @sm:not-sr-only">Temizle<\/span>/);
     expect(html).not.toContain("Geri Al");
   });
 
