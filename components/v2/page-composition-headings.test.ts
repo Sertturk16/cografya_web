@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
 import { resolveSpecifier, runtimeImportsOf } from "@/lib/test-support/import-closure";
@@ -958,7 +958,9 @@ export const H1_SPELLINGS = 12;
 // T-061: 17 → **15**. `/profil`'s own `<h1>` and `v2-profile-form.tsx`'s both went with the
 // files. `/hesabim/ayarlar` adds no element either — it renders `typography.tsx`'s `H1`, an
 // element 16 other roots already reach.
-export const H1_ELEMENTS = 15;
+// T-106: 15 → **16**. `(play)/error.tsx` writes its own, in the shells' spelling (row 3 below),
+// so the spelling count does not move.
+export const H1_ELEMENTS = 16;
 
 /**
  * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over
@@ -1095,8 +1097,8 @@ describe("the heading scanner itself", () => {
     // Anti-vacuity for the property itself: it would also pass if NO root wrote any component.
     // 39 → 40 in T-073: `/kullanim-sartlari` is the 38th `(site)` page, and the two
     // special files (`error.tsx`, `not-found.tsx`) still sit on top of the count.
-    // 40 → 41 in T-101: `/gizlilik` is the 39th.
-    expect(resolution).toHaveLength(41);
+    // 40 → 41 in T-101: `/gizlilik` is the 39th. 41 → 42 in T-106: `(play)/error.tsx`.
+    expect(resolution).toHaveLength(42);
     expect(resolution.filter(({ names }) => names.length > 0).length).toBeGreaterThan(30);
   }, 20000);
 
@@ -1120,10 +1122,11 @@ describe("the heading scanner itself", () => {
     ).toHaveLength(H1_ELEMENTS);
   });
 
-  it("walkRenderRoots() adds the two special files and nothing else", () => {
+  it("walkRenderRoots() adds the three special files and nothing else", () => {
     const roots = walkRenderRoots().map(label);
-    expect(roots).toHaveLength(41);
+    expect(roots).toHaveLength(42);
     expect(roots).toContain("app/[locale]/(site)/error.tsx");
+    expect(roots).toContain("app/[locale]/(play)/error.tsx");
     expect(roots).toContain("app/[locale]/(site)/not-found.tsx");
     // Never reaches the app-ROOT shells above `app/[locale]` — see its docblock for the cost.
     expect(roots).not.toContain("app/not-found.tsx");
@@ -1936,7 +1939,14 @@ function unbrokenFrom(from: number, levels: readonly number[]): number[] {
   return Array.from({ length: top - from + 1 }, (_, i) => from + i);
 }
 
-const playRoots = () => walkRenderRoots().filter((root) => label(root).includes("/(play)/"));
+/**
+ * The three game screens. `(play)/error.tsx` is a render root in the group too, but it is a
+ * last-resort shell with one `<h1>`, not a game screen, and `PLAY_OUTLINE` pins the game's outline.
+ */
+const playRoots = () =>
+  walkRenderRoots().filter(
+    (root) => label(root).includes("/(play)/") && basename(root) === "page.tsx",
+  );
 
 describe("the (play) outline steps one level at a time", () => {
   it("covers exactly the three game screens — anti-vacuity", () => {

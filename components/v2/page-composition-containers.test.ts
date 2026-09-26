@@ -485,6 +485,12 @@ const NOT_BODY_CONTENT: ReadonlyArray<readonly [string, string, string, string]>
     "max-w-2xl mx-auto px-4",
     "Same narrow message column as error.tsx, for the same reason.",
   ],
+  [
+    "app/[locale]/(play)/error.tsx",
+    "main",
+    "max-w-2xl mx-auto px-4",
+    "The (play) sibling of error.tsx (T-106). Same narrow message column; it is a <main> because the (play) layout has none.",
+  ],
 ];
 
 function isOutsideTheBody(file: string, node: RenderTreeNode): boolean {
@@ -721,7 +727,8 @@ describe("every render root's body sits inside a PageContainer", () => {
     const roots = walkRenderRoots();
     // 39 → 40 in T-073: `/kullanim-sartlari`, the 38th `(site)` page, plus the two special
     // render roots this walk adds on top of the page list. 40 → 41 in T-101: `/gizlilik`.
-    expect(roots.length).toBe(41);
+    // 41 → 42 in T-106: `(play)/error.tsx`.
+    expect(roots.length).toBe(42);
     const empty = roots.filter((file) => topLevelRenderNodes(file).length === 0).map(label);
     expect(
       empty,
