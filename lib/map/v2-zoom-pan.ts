@@ -3,6 +3,8 @@
  * `v2-world-map-explorer`).
  */
 
+import { zoomFromPinch } from "./zoom-pan";
+
 export interface PanOffset {
   x: number;
   y: number;
@@ -45,4 +47,44 @@ export function clampPanOffset(
     x: round2(clampedX),
     y: round2(clampedY),
   };
+}
+
+/** The state a pinch gesture started from; `mid` is relative to the box centre, in px. */
+export interface PinchStart {
+  zoom: number;
+  pan: PanOffset;
+  dist: number;
+  mid: PanOffset;
+}
+
+/**
+ * One step of a two-finger pinch on a map zoomed with `scale(zoom) translate(pan / zoom)`
+ * around the box centre, where a map point `u` (px from the centre at 1x) is drawn at
+ * `zoom * u + pan`.
+ *
+ * The map point under the fingers' midpoint at pinch start stays under their CURRENT
+ * midpoint, so spreading zooms around the fingers and moving both fingers pans. The zoom
+ * ratio comes from `zoomFromPinch`, capped at the surface's own `maxZoom` (its + button
+ * limit); the pan is clamped exactly like a drag, which also zeroes it at 1x.
+ */
+export function pinchZoomPan(
+  start: PinchStart,
+  currentDist: number,
+  currentMid: PanOffset,
+  maxZoom: number,
+  containerWidth: number,
+  containerHeight: number,
+): { zoom: number; pan: PanOffset } {
+  const zoom = Math.min(maxZoom, zoomFromPinch(start.zoom, start.dist, currentDist));
+  const ratio = zoom / start.zoom;
+  const pan = clampPanOffset(
+    {
+      x: currentMid.x - ratio * (start.mid.x - start.pan.x),
+      y: currentMid.y - ratio * (start.mid.y - start.pan.y),
+    },
+    zoom,
+    containerWidth,
+    containerHeight,
+  );
+  return { zoom, pan };
 }
