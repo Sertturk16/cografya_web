@@ -200,30 +200,6 @@ Details and the open dark-mode bugs: `docs/design.md`.
   container; purge that path (not `/app/.next/cache`) to see a Suspense fallback with the API
   paused.
 
-- **`V2LiveTicker` publishes AFAD and CMEMS/ECMWF values on 33 pages with no attribution.**
-  It fetches `/api/earthquakes` and `/api/marine/overview` itself and renders a magnitude with
-  a place name plus per-basin SST and wave height. Its only provenance is a
-  `Copernicus & AFAD Aktif` badge — a status chip, not a credit: no verbatim CMEMS notice, no
-  AFAD `disclaimerTr`. The rule everywhere else in this repo (see
-  `components/marine/marine-attribution.tsx`) is that the notice is visible without a click on
-  the page carrying the values, so under that reading all 33 pages owe it.
-  **This is left open because every fix is a product decision, not a repair.** The three
-  candidates, with what is actually wrong with each:
-  1. _A licence block under the ticker._ Correct and absurd — two stacked licence blocks in the
-     chrome of 33 pages, above the content, on a login form included.
-  2. _A compact in-line credit in the ticker._ Works for Copernicus Marine, whose required
-     notice is one short sentence that would fit. It does NOT work for ECMWF, whose notice is a
-     paragraph and whose terms allow no "or similar" wording — and the wave field falls back to
-     ECMWF where the regional model has no coverage. So this option only closes if the ticker
-     also stops publishing wave height, which is option 3 by another name.
-  3. _The ticker stops publishing values and becomes navigational._ Discharges the obligation
-     completely and costs the feature.
-     Recommendation: 3 for the marine half (the values are one click away on `/deniz`, which
-     carries the full notice) and 2 for the earthquake half (AFAD's `disclaimerTr` — "not an early
-     warning system" — is short, and it matters more beside a live magnitude than in a footer).
-     Both change what 33 pages show. The exclusion is PINNED by an assertion in
-     `components/marine/marine-attribution-coverage.test.ts`, so it cannot quietly outlive the
-     question.
 - `NEXT_PUBLIC_SITE_URL` and `API_BASE_URL` reach the container only at runtime, not in the
   Docker build stage. This works today (verified on prod 2026-09-15: canonicals, hreflang and
   a 307-URL sitemap all carry the real origin) because `lib/env.ts` parses `process.env` as

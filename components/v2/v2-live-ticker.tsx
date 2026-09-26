@@ -98,6 +98,21 @@ export function marineTickerText(sea: MarineTickerData): string {
   return `${tr(sea.sst, 1)} °C (Dalga: ${tr(sea.wave, 1)} m)`;
 }
 
+/*
+ * Each value carries its source beside it, inside its own link: AFAD for the earthquake,
+ * Copernicus Marine and ECMWF for the sea values (the wave field falls back to ECMWF where the
+ * regional model has no coverage). `docs/design.md`: source notes are footnotes, visible without
+ * a click. The full notice, disclaimer and licence link are on the page each value links to
+ * (`/deprem`, `/deniz`), and the licence text itself is on `/hakkimizda`. Plain text, never a
+ * link: the whole item is already one.
+ */
+export const EARTHQUAKE_TICKER_SOURCE = "AFAD";
+export const MARINE_TICKER_SOURCE = "Copernicus, ECMWF";
+
+function TickerSource({ children }: { readonly children: string }) {
+  return <span className="text-[10px] text-muted-foreground">· {children}</span>;
+}
+
 export function V2LiveTicker() {
   const [earthquake, setEarthquake] = React.useState<EarthquakeTickerData | null>(null);
   const [marmara, setMarmara] = React.useState<MarineTickerData | null>(null);
@@ -182,8 +197,7 @@ export function V2LiveTicker() {
                 <span className="text-[10px] text-muted-foreground font-mono">
                   ({earthquake.timeAgo})
                 </span>
-                {/* The value is AFAD's; the full notice and disclaimer are on /deprem. */}
-                <span className="text-[10px] text-muted-foreground">· AFAD</span>
+                <TickerSource>{EARTHQUAKE_TICKER_SOURCE}</TickerSource>
               </Link>
               <span className="text-border">|</span>
             </>
@@ -198,6 +212,7 @@ export function V2LiveTicker() {
                 <Waves className="size-3.5 text-accent" />
                 <span className="font-semibold text-foreground">Marmara:</span>
                 <span>{marineTickerText(marmara)}</span>
+                <TickerSource>{MARINE_TICKER_SOURCE}</TickerSource>
               </Link>
               <span className="text-border">|</span>
             </>
@@ -212,6 +227,7 @@ export function V2LiveTicker() {
                 <Waves className="size-3.5 text-accent" />
                 <span className="font-semibold text-foreground">Akdeniz:</span>
                 <span>{marineTickerText(akdeniz)}</span>
+                <TickerSource>{MARINE_TICKER_SOURCE}</TickerSource>
               </Link>
               <span className="text-border">|</span>
             </>

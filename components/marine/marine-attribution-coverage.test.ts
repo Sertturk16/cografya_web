@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { join, dirname, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
+import { MARINE_TICKER_SOURCE } from "@/components/v2/v2-live-ticker";
 
 /**
  * BINDING GUARD: every page that publishes a CMEMS/ECMWF-derived value carries the notice, and
@@ -50,15 +51,14 @@ import { MARINE_SOURCES_FRAGMENT } from "@/lib/marine/attribution-anchor";
  *
  * Structural only (`CONVENTIONS.md` §2): imports and element names, never copy.
  *
- * ## The one exception, and why it is pinned rather than silent
+ * ## The one exception: the ticker credits in-line instead
  *
- * `V2LiveTicker` publishes SST and wave height in site chrome that appears on 33 pages. Every
- * available fix — a notice under the ticker on all 33, a compact in-line credit, or the ticker
- * ceasing to publish values — changes what those 33 pages show, which is the owner's call and
- * not a repair. It is therefore excluded from the graph below AND pinned by its own assertion,
- * so the exception cannot quietly outlive the question: the day the ticker stops publishing
- * values, or starts carrying the notice, that assertion goes red and whoever made the change
- * deletes the exception instead of inheriting it.
+ * `V2LiveTicker` publishes SST and wave height in site chrome that appears on 33 pages. It does
+ * not render `<MarineDataNotice>`: a notice block in the chrome of every page, a login form
+ * included, is the wrong shape. Decided in T-111: each marine value carries a short
+ * "Copernicus, ECMWF" source label beside it, inside the link to `/deniz`, which renders the
+ * notice and the licence link. So the ticker is excluded from the graph below, and its own
+ * assertion requires the label on every `/deniz` item instead.
  */
 
 const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
@@ -71,7 +71,7 @@ const componentsDir = join(repoRoot, "components");
  */
 const MARINE_VALUE_FIELDS = /\b(seaSurfaceTemperature|waveHeight)\b/;
 
-/** See the docblock: an owner-facing product question, not a defect this test may hide. */
+/** See the docblock: credits in-line, asserted by its own test below. */
 const TICKER = join(componentsDir, "v2", "v2-live-ticker.tsx");
 
 const walkTsx = (dir: string): string[] =>
@@ -232,18 +232,21 @@ describe("the licence text has exactly one home, and the link reaches it", () =>
     ).toContain('{t("disclaimer.educationalOnly")}');
   });
 
-  it("keeps the ticker's uncredited values a PINNED open question, not a silent exemption", () => {
+  it("credits every ticker marine value in-line, since the ticker is excluded above", () => {
     const ticker = read(TICKER);
-    // Still publishing — so the exception above is still describing something real.
+    // Still publishing, so the exclusion still describes something real.
     expect(ticker, "the ticker no longer publishes marine values").toMatch(MARINE_VALUE_FIELDS);
-    // Still uncredited. When someone gives it the notice, this goes red and the exclusion in
-    // `renderClosure` must be deleted in the same change.
-    expect(ticker, "the ticker now carries the notice — drop the TICKER exclusion").not.toContain(
-      "<MarineDataNotice",
+    // Every item that links to /deniz is a marine value, and carries the source label inside
+    // the same link.
+    const seaItems = [...ticker.matchAll(/<Link\s+href="\/deniz"[\s\S]*?<\/Link>/g)].map(
+      (match) => match[0],
     );
-    expect(
-      ticker,
-      "the ticker now carries the licence block — drop the TICKER exclusion",
-    ).not.toContain("<MarineAttribution");
+    expect(seaItems.length, "ticker items linking to /deniz").toBeGreaterThan(0);
+    for (const item of seaItems) {
+      expect(item, "a ticker sea value without its source label").toContain(
+        "<TickerSource>{MARINE_TICKER_SOURCE}</TickerSource>",
+      );
+    }
+    expect(MARINE_TICKER_SOURCE).toBe("Copernicus, ECMWF");
   });
 });
