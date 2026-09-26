@@ -576,7 +576,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // duydun?", styled identically to the İl/İlçe pair it sits beside.
 // 189 → **190** in T-117: `MapAttribution`'s fullscreen credit panel, a `bg-card/90` chip floating
 // on the map's corner like the zoom and fullscreen clusters beside it; not a page panel.
-export const HAND_DRAWN_CARDS = 190;
+// 190 → **191** in T-120: `MapResultPanel`, the distance tool's result on its map, the same kind
+// of on-map chip as the fullscreen credit.
+export const HAND_DRAWN_CARDS = 191;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -632,8 +634,9 @@ export const HAND_DRAWN_WELLS = 147;
  * and the consent fieldset are new strings; `/gizlilik`'s mailto card and notice reuse the
  * terms page's spellings verbatim.
  * 224 → **223** in T-125: the deleted tool switcher's well was a one-off spelling.
- * 223 → **224** in T-117: the fullscreen credit panel above ({@link HAND_DRAWN_CARDS}). */
-export const HAND_DRAWN_CARD_SPELLINGS = 224;
+ * 223 → **224** in T-117: the fullscreen credit panel above ({@link HAND_DRAWN_CARDS}).
+ * 224 → **225** in T-120: the map result panel above ({@link HAND_DRAWN_CARDS}). */
+export const HAND_DRAWN_CARD_SPELLINGS = 225;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1011,7 +1014,9 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // `Skeleton`'s `bg-muted` token, never `bg-card` or `border-border`. (The final fix wave removed
 // the `HeroSkeleton` piece, whose computed heading class had been the 180th identifier — one fewer
 // identifier, not a new one.)
-export const COMPUTED_CARD_CLASSNAMES = 179;
+// T-120: 179 → **180**. `DistanceResultPanel` hands its caller's placement to `MapResultPanel`
+// (`className={className}`); not a card of its own, the panel is counted once in its own file.
+export const COMPUTED_CARD_CLASSNAMES = 180;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -1032,8 +1037,9 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   // index row's `<summary>` and its chevron. 195 → 176 in T-054: the search combobox's
   // unmounted `default` branch. 176 → 177 in T-100: the province page's `SOURCE_NOTE`
   // footnote. 177 → 178 in T-096: the fault-line page's `SOURCE_NOTE` footnote. 178 → 179 in
-  // T-037: `page-skeleton.tsx`'s `Bar`. See {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 179],
+  // T-037: `page-skeleton.tsx`'s `Bar`. 179 → 180 in T-120: `DistanceResultPanel`'s placement
+  // pass-through. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 180],
   // 9 → 8 in T-090: `/dunya/kita` dropped the continent-name chip that repeated each card's title.
   ["member", 8],
   ["ternary", 2],
@@ -1430,7 +1436,8 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // through its metric strip and fault-line callout. Net one more file, not one more pattern —
     // {@link HAND_DRAWN_CARDS} and {@link HAND_DRAWN_WELLS} are unchanged.
     // 63 after T-117: `map-attribution.tsx` joins with its fullscreen credit panel.
-    expect(handDrawnTotals().files).toBe(63);
+    // 64 after T-120: `map-result-panel.tsx` joins with the result panel the tool map renders.
+    expect(handDrawnTotals().files).toBe(64);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {

@@ -10,6 +10,10 @@ import { projectToMapPoint } from "@/lib/map/projection";
 import {
   unprojectMapPoint,
   polylineLengthKm,
+  distanceTravelEstimates,
+  haversineKm,
+  kmPerMapUnitAt,
+  kmDecimalsFor,
   ringPerimeterKm,
   readRingArea,
   toDmsParts,
@@ -28,6 +32,7 @@ import {
   type ViewBox,
 } from "@/lib/map/zoom-pan";
 import { DIAGONAL, placePinLabels, type PinLabelSide } from "@/lib/map/pin-label-placement";
+import { placeSegmentLabels } from "@/lib/map/segment-labels";
 import { useLandscapeMode } from "@/lib/map/use-landscape-mode.client";
 import type { ProvincePoint, ProvinceArea } from "@/lib/tools/province-points";
 import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-presets";
@@ -82,6 +87,7 @@ import {
   Minimize2,
 } from "lucide-react";
 import { MapAttribution } from "@/components/patterns/map-attribution";
+import { DistanceResultPanel } from "@/components/v2/distance-result-panel";
 import { formatDay } from "@/lib/text/format-date";
 import { formatNumber } from "@/lib/text/format-number";
 
@@ -107,6 +113,16 @@ const MAP_CONTROL_INSETS: Record<"phone" | "wide", BoxInsets> = {
   phone: { top: 60, right: 12, bottom: 52, left: 12 },
   wide: { top: 60, right: 56, bottom: 52, left: 12 },
 };
+/**
+ * Where the distance result panel sits when it is on the map (T-120): 12 px in from the left
+ * edge, its bottom on top of the scale bar's band (`MAP_CONTROL_INSETS.bottom`, the
+ * `lg:bottom-13` class), and 8 px between it and whatever is under it.
+ */
+const RESULT_PANEL_LEFT = 12;
+/** One width in every state, so the hint never widens it over the map (Tailwind `w-80`). */
+const RESULT_PANEL_WIDTH = 320;
+const RESULT_PANEL_BOTTOM = 52;
+const RESULT_PANEL_GAP = 8;
 /** Tailwind's `sm`, the width at which the zoom buttons turn from a row into a column. */
 const SM_UP_QUERY = "(min-width: 40rem)";
 const subscribeSmUp = (onChange: () => void) => {
@@ -116,6 +132,17 @@ const subscribeSmUp = (onChange: () => void) => {
 };
 const readSmUp = () => window.matchMedia(SM_UP_QUERY).matches;
 const readSmUpOnServer = () => true;
+/**
+ * Tailwind's `lg`, from which the page puts the distance result panel on the map (T-120). Below it
+ * the plate is at most ~430 px tall; at 640 px a panel on it left a fit 47 px of height.
+ */
+const LG_UP_QUERY = "(min-width: 64rem)";
+const subscribeLgUp = (onChange: () => void) => {
+  const query = window.matchMedia(LG_UP_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+};
+const readLgUp = () => window.matchMedia(LG_UP_QUERY).matches;
 /** Upper zoom bound this tool's own +/− buttons already use (`handleZoomIn`) — the touch
  *  pinch below is clamped to the SAME ceiling, not `zoom-pan.ts`'s own (higher) `MAX_ZOOM`. */
 const MAX_TOOL_ZOOM = 8;
@@ -160,6 +187,13 @@ const PIN_LABEL_LAYOUT: Record<
   "below-left": { dx: -DIAGONAL, dy: DIAGONAL, anchor: "end", baseline: "text-before-edge" },
   "below-right": { dx: DIAGONAL, dy: DIAGONAL, anchor: "start", baseline: "text-before-edge" },
 };
+
+/** CSS px between a leg and its distance label's box (T-120). */
+const LEG_LABEL_GAP = 3;
+/** A leg label's drawn box in map units, from its centre, as `placeSegmentLabels` modelled it. */
+function legLabelBox(label: { x: number; y: number; w: number; h: number }) {
+  return { x: label.x - label.w / 2, y: label.y - label.h / 2, w: label.w, h: label.h };
+}
 
 /** The text a waypoint pin's label shows. */
 function pinLabelText(p: { mapLabel?: string; label?: string }, idx: number): string {
@@ -404,42 +438,40 @@ export function V2ToolWorkbench({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+  // The result panel's border box, which the fit and the labels keep clear of when it is on the
+  // map (T-120). `offset*`, not `contentRect`: the padding and border cover the map too.
+  const resultPanelRef = React.useRef<HTMLDivElement | null>(null);
+  const [resultPanelSize, setResultPanelSize] = React.useState<{ w: number; h: number } | null>(
+    null,
+  );
+  React.useEffect(() => {
+    const el = resultPanelRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() =>
+      setResultPanelSize({ w: el.offsetWidth, h: el.offsetHeight }),
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  // The rotate hint's height, so the panel can sit above it in portrait fullscreen.
+  const [rotateHintHeight, setRotateHintHeight] = React.useState(0);
+  const rotateHintRef = React.useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const observer = new ResizeObserver(() => setRotateHintHeight(el.offsetHeight));
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      setRotateHintHeight(0);
+    };
+  }, []);
   const smUp = React.useSyncExternalStore(subscribeSmUp, readSmUp, readSmUpOnServer);
+  const lgUp = React.useSyncExternalStore(subscribeLgUp, readLgUp, readSmUpOnServer);
   const controlInsets = MAP_CONTROL_INSETS[smUp ? "wide" : "phone"];
   const worldView = React.useMemo(
     () => toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN),
     [svgBox],
   );
   const pxPerUnit = svgBox ? Math.min(svgBox.w / worldView.w, svgBox.h / worldView.h) : null;
-
-  /**
-   * "Smart region focus" (T-015): pan/zoom the canvas to frame the point(s) just named by
-   * VALUE rather than by screen location — an 81-il dropdown pick, a typed coordinate, a
-   * quick-scenario preset, or a restored saved measurement. A point placed by CLICKING the
-   * map is deliberately excluded (`handleMapClick` never calls this): the player already
-   * navigated there themselves, so re-framing under their finger would fight the pan/zoom
-   * they just did instead of helping it.
-   *
-   * Reuses this file's own `currentViewBox` convention (zoomLevel/panOffset around
-   * `worldView`) rather than `zoom-pan.ts`'s `viewToIncludeShape` — that helper only ever
-   * grows the view to include something already close to visible; here the map is very often
-   * still at its 1× national extent and needs an actual zoom-IN, which is exactly what a
-   * "fit these points, with padding" computation gives.
-   */
-  const focusOnMapPoints = React.useCallback(
-    (mapPoints: readonly { x: number; y: number }[]) => {
-      if (mapPoints.length === 0) return;
-      // Before the plate is measured, fit as the desktop box would; the next resize keeps it.
-      const box = svgBox ?? { w: worldView.w, h: worldView.h };
-      const view = fitPointsView(mapPoints, worldView, box, controlInsets, {
-        maxZoom: MAX_TOOL_ZOOM,
-      });
-      const next = zoomPanOfView(view, worldView);
-      setZoomLevel(next.zoomLevel);
-      setPanOffset(next.panOffset);
-    },
-    [svgBox, worldView, controlInsets],
-  );
 
   // Background context shape
   const trCasing = React.useMemo(() => TALL_CONTEXT_SHAPES.find((c) => c.iso === "TR"), []);
@@ -517,6 +549,65 @@ export function V2ToolWorkbench({
       h: visibleView.h - unit(top + bottom),
     };
   }, [visibleView, zoomLevel, pxPerUnit, controlInsets]);
+  // On the page below `lg` the panel is under the plate; from `lg`, and in fullscreen at every
+  // width, it is on it (T-120).
+  const resultPanelOnMap = activeTool === "distance" && (landscape.active || lgUp);
+  const resultPanelBottom = landscape.showRotateHint
+    ? Math.max(RESULT_PANEL_BOTTOM, 12 + rotateHintHeight + RESULT_PANEL_GAP)
+    : RESULT_PANEL_BOTTOM;
+  // A fit frames named points above the panel: one rectangle to fit into, so the bottom band
+  // grows by the panel. Labels instead treat the panel as the rectangle it is (below), so a pin
+  // in the bottom-right keeps its label there.
+  const fitInsets = React.useMemo(
+    () =>
+      resultPanelOnMap && resultPanelSize
+        ? {
+            ...controlInsets,
+            bottom: resultPanelBottom + resultPanelSize.h + RESULT_PANEL_GAP,
+          }
+        : controlInsets,
+    [controlInsets, resultPanelOnMap, resultPanelSize, resultPanelBottom],
+  );
+  // The panel in map units, as `labelView` converts the control bands.
+  const resultPanelObstacle = React.useMemo(() => {
+    if (!resultPanelOnMap || !resultPanelSize) return null;
+    const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
+    return {
+      x: visibleView.x + unit(RESULT_PANEL_LEFT),
+      y: visibleView.y + visibleView.h - unit(resultPanelBottom + resultPanelSize.h),
+      w: unit(resultPanelSize.w),
+      h: unit(resultPanelSize.h),
+    };
+  }, [resultPanelOnMap, resultPanelSize, resultPanelBottom, visibleView, zoomLevel, pxPerUnit]);
+
+  /**
+   * "Smart region focus" (T-015): pan/zoom the canvas to frame the point(s) just named by
+   * VALUE rather than by screen location — an 81-il dropdown pick, a typed coordinate, a
+   * quick-scenario preset, or a restored saved measurement. A point placed by CLICKING the
+   * map is deliberately excluded (`handleMapClick` never calls this): the player already
+   * navigated there themselves, so re-framing under their finger would fight the pan/zoom
+   * they just did instead of helping it.
+   *
+   * Reuses this file's own `currentViewBox` convention (zoomLevel/panOffset around
+   * `worldView`) rather than `zoom-pan.ts`'s `viewToIncludeShape` — that helper only ever
+   * grows the view to include something already close to visible; here the map is very often
+   * still at its 1× national extent and needs an actual zoom-IN, which is exactly what a
+   * "fit these points, with padding" computation gives.
+   */
+  const focusOnMapPoints = React.useCallback(
+    (mapPoints: readonly { x: number; y: number }[]) => {
+      if (mapPoints.length === 0) return;
+      // Before the plate is measured, fit as the desktop box would; the next resize keeps it.
+      const box = svgBox ?? { w: worldView.w, h: worldView.h };
+      const view = fitPointsView(mapPoints, worldView, box, fitInsets, {
+        maxZoom: MAX_TOOL_ZOOM,
+      });
+      const next = zoomPanOfView(view, worldView);
+      setZoomLevel(next.zoomLevel);
+      setPanOffset(next.panOffset);
+    },
+    [svgBox, worldView, fitInsets],
+  );
 
   // Convert mouse screen client coordinates to SVG map coordinate space
   const screenToMap = React.useCallback(
@@ -859,6 +950,36 @@ export function V2ToolWorkbench({
   // Every pin label's side, decided together so none covers another pin or label (T-127) and
   // each stays in the part of the view the controls leave clear (T-124). Sizes are the drawn
   // ones in map units; a label's width is estimated from its glyph count.
+  // Each leg's distance beside it (T-120), placed before the pin labels, which then keep off
+  // them. Same size rules as the pin labels (T-122); the decimals follow what a pixel can resolve
+  // at this zoom (`kmDecimalsFor`). A leg without room keeps no label; the total is in the panel.
+  const legLabels = React.useMemo(() => {
+    if (activeTool !== "distance" || points.length < 2) return [];
+    const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
+    const legs = points.slice(1).map((p, i) => {
+      const from = points[i]!;
+      const km = haversineKm(from.geo, p.geo);
+      const kmPerPixel = kmPerMapUnitAt((from.geo.lat + p.geo.lat) / 2) * unit(1);
+      const text = `${formatNumber(km, locale, kmDecimalsFor(kmPerPixel, km))} km`;
+      return {
+        text,
+        w: unit(text.length * PIN_LABEL_SIZE * 0.6),
+        h: unit(PIN_LABEL_SIZE * 1.4),
+      };
+    });
+    const centres = placeSegmentLabels(
+      points.map((p) => ({ x: p.svgX, y: p.svgY })),
+      legs.map((leg) => ({ width: leg.w, height: leg.h })),
+      {
+        view: labelView,
+        gap: unit(LEG_LABEL_GAP),
+        dotRadius: unit(PIN_RADIUS + PIN_OUTLINE),
+        obstacles: resultPanelObstacle ? [resultPanelObstacle] : [],
+      },
+    );
+    return centres.flatMap((c, i) => (c ? [{ ...c, ...legs[i]!, leg: i }] : []));
+  }, [activeTool, points, zoomLevel, pxPerUnit, locale, labelView, resultPanelObstacle]);
+
   const pinLabelSides = React.useMemo(() => {
     const unit = (px: number) => atScreenSize(px, zoomLevel, pxPerUnit);
     return placePinLabels(
@@ -869,9 +990,16 @@ export function V2ToolWorkbench({
         width: unit(pinLabelText(p, idx).length * PIN_LABEL_SIZE * 0.6),
         height: unit(PIN_LABEL_SIZE * 1.4),
       })),
-      { view: labelView, dotRadius: unit(PIN_RADIUS + PIN_OUTLINE) },
+      {
+        view: labelView,
+        dotRadius: unit(PIN_RADIUS + PIN_OUTLINE),
+        obstacles: [
+          ...legLabels.map(legLabelBox),
+          ...(resultPanelObstacle ? [resultPanelObstacle] : []),
+        ],
+      },
     );
-  }, [points, zoomLevel, pxPerUnit, labelView]);
+  }, [points, zoomLevel, pxPerUnit, labelView, legLabels, resultPanelObstacle]);
 
   const distanceKm = React.useMemo(() => {
     if (activeTool === "distance" && geoPoints.length >= 2) {
@@ -879,6 +1007,7 @@ export function V2ToolWorkbench({
     }
     return 0;
   }, [activeTool, geoPoints]);
+  const travelEstimates = distanceTravelEstimates(distanceKm);
 
   const perimeterKm = React.useMemo(() => {
     if (activeTool === "area" && geoPoints.length >= 3) {
@@ -1168,25 +1297,30 @@ export function V2ToolWorkbench({
               })}
             </span>
 
-            {/* Undo / Clear */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleUndo}
-              disabled={points.length === 0}
-              leftIcon={<Undo2 className="size-3.5" />}
-            >
-              {t("undo")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClear}
-              disabled={points.length === 0}
-              leftIcon={<Trash2 className="size-3.5 text-destructive" />}
-            >
-              {t("clear")}
-            </Button>
+            {/* Undo / Clear. The distance tool has them on its result panel (T-120); the area
+                and coordinate tools keep them here until T-121. */}
+            {activeTool !== "distance" && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleUndo}
+                  disabled={points.length === 0}
+                  leftIcon={<Undo2 className="size-3.5" />}
+                >
+                  {t("undo")}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClear}
+                  disabled={points.length === 0}
+                  leftIcon={<Trash2 className="size-3.5 text-destructive" />}
+                >
+                  {t("clear")}
+                </Button>
+              </>
+            )}
 
             {/* PNG Export Button */}
             {/* The one place in this repo a Tooltip is the right answer (T-036). The button
@@ -1248,151 +1382,156 @@ export function V2ToolWorkbench({
           ref={landscapeBoxRef}
           style={landscape.active ? LANDSCAPE_FILL : undefined}
         >
-          <div
-            ref={mapContainerRef}
-            className="relative w-full aspect-square sm:aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none"
-            style={landscape.active ? LANDSCAPE_PLATE : undefined}
-          >
-            {/* Fullscreen / landscape toggle — ONE control for both directions, kept INSIDE
+          {/* The plate and the result panel (T-120): one box, so the panel is rendered once,
+              sits in flow under the plate on a page below `lg` and over it from `lg`, and goes
+              fullscreen with the map. In fullscreen it flexes like the plate. */}
+          <div className="relative" style={landscape.active ? LANDSCAPE_FILL : undefined}>
+            <div
+              ref={mapContainerRef}
+              className="relative w-full aspect-square sm:aspect-[1270/580] rounded-2xl bg-[var(--map-plate)] border border-border/80 overflow-hidden shadow-inner flex items-center justify-center select-none"
+              style={landscape.active ? LANDSCAPE_PLATE : undefined}
+            >
+              {/* Fullscreen / landscape toggle — ONE control for both directions, kept INSIDE
               this container rather than in the toolbar above: once the real Fullscreen API
               engages, only this element's own subtree stays on screen, so an "exit" control
               living in the toolbar would be unreachable (T-015). */}
-            <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
-              <button
-                type="button"
-                onClick={landscape.toggle}
-                aria-pressed={landscape.active}
-                aria-label={landscape.active ? t("fullscreenExit") : t("fullscreenEnter")}
-                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
-              >
-                {landscape.active ? (
-                  <Minimize2 className="size-4" />
-                ) : (
-                  <Maximize2 className="size-4" />
-                )}
-              </button>
-            </div>
+              <div className="absolute top-3 left-3 z-20 flex flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+                <button
+                  type="button"
+                  onClick={landscape.toggle}
+                  aria-pressed={landscape.active}
+                  aria-label={landscape.active ? t("fullscreenExit") : t("fullscreenEnter")}
+                  className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors cursor-pointer"
+                >
+                  {landscape.active ? (
+                    <Minimize2 className="size-4" />
+                  ) : (
+                    <Maximize2 className="size-4" />
+                  )}
+                </button>
+              </div>
 
-            {/* "Rotate your phone" (T-015) — only once landscape mode is on, the device is
+              {/* "Rotate your phone" (T-015) — only once landscape mode is on, the device is
               STILL portrait (no orientation-lock support, e.g. iOS Safari), and the pointer
               is coarse. Lives inside this same container for the identical reason as the
               toggle button above: it must stay visible under a real Fullscreen session. */}
-            {landscape.showRotateHint && (
-              <div
-                role="status"
-                aria-live="polite"
-                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
-              >
-                <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
-                <span>{t("rotateHint")}</span>
-                <button
-                  type="button"
-                  onClick={landscape.exit}
-                  className="shrink-0 px-2 py-1 rounded-lg border border-white/40 hover:bg-white/10 transition-colors cursor-pointer"
-                >
-                  {t("rotateDismiss")}
-                </button>
-              </div>
-            )}
-
-            {/* Absolute Floating Self-Intersection Warning Banner (Zero Layout Shift) */}
-            {isSelfIntersecting && (
-              <div
-                role="alert"
-                className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-warning text-warning-foreground px-3.5 py-1.5 rounded-2xl border border-warning-foreground/25 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
-              >
-                <div className="flex items-center gap-1.5 overflow-hidden">
-                  <AlertTriangle className="size-3.5 shrink-0" />
-                  <span className="text-[11px] truncate">
-                    {t.rich("selfIntersectBanner", {
-                      strong: (chunks) => <strong>{chunks}</strong>,
-                    })}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleSortConvexOrder}
-                  className="px-2.5 py-1 rounded-xl bg-warning-foreground text-warning text-[11px] font-bold hover:bg-warning-foreground/90 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
-                >
-                  <RefreshCw className="size-3" />
-                  <span>{t("sortOutline")}</span>
-                </button>
-              </div>
-            )}
-
-            {/* Zoom & Pan Overlay Controls. A row on a phone, where a column of three stood a
-                third as tall as the map (T-124); a column from `sm` as before. */}
-            <div className="absolute top-3 right-3 z-20 flex flex-row sm:flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
-              <button
-                type="button"
-                onClick={handleZoomIn}
-                disabled={zoomLevel >= 8}
-                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-                aria-label={t("zoomIn")}
-              >
-                <ZoomIn className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleZoomOut}
-                disabled={zoomLevel <= 1}
-                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-                aria-label={t("zoomOut")}
-              >
-                <ZoomOut className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={handleResetZoom}
-                disabled={zoomLevel === 1 && panOffset.x === 0 && panOffset.y === 0}
-                className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
-                aria-label={t("zoomReset")}
-              >
-                <RotateCcw className="size-4" />
-              </button>
-            </div>
-
-            {/* Dynamic Metric Scale Bar (Çizgi Ölçek - V1 Klasik Kartografik Standart) */}
-            {dynamicScaleBar && (
-              <div
-                className="absolute bottom-3 left-3 z-30 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/80 shadow-md pointer-events-none flex flex-col gap-1 text-xs select-none"
-                aria-label={t("scaleBarAria", { km: formatNumber(dynamicScaleBar.km, locale) })}
-              >
-                <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-foreground font-mono leading-none">
-                  <span>0</span>
-                  <span>{formatNumber(dynamicScaleBar.km, locale)} km</span>
-                </div>
+              {landscape.showRotateHint && (
                 <div
-                  className="h-1.5 border-x-2 border-b-2 border-foreground"
-                  style={{
-                    width: `${Math.min(Math.round(dynamicScaleBar.px), 240)}px`,
-                  }}
-                />
-              </div>
-            )}
+                  ref={rotateHintRef}
+                  role="status"
+                  aria-live="polite"
+                  className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 max-w-[92%] flex items-center gap-2.5 bg-ink-dark/95 text-white px-3.5 py-2 rounded-2xl shadow-2xl text-xs"
+                >
+                  <RotateCcw className="size-4 shrink-0" aria-hidden="true" />
+                  <span>{t("rotateHint")}</span>
+                  <button
+                    type="button"
+                    onClick={landscape.exit}
+                    className="shrink-0 px-2 py-1 rounded-lg border border-white/40 hover:bg-white/10 transition-colors cursor-pointer"
+                  >
+                    {t("rotateDismiss")}
+                  </button>
+                </div>
+              )}
 
-            {/* SVG Map */}
-            <svg
-              ref={svgRef}
-              viewBox={currentViewBox}
-              className={`w-full h-full object-fill ${isPanning ? "cursor-grabbing" : "cursor-crosshair"} ${
-                // Zoomed in, the map itself owns one-finger dragging (pan); at 1× a vertical
-                // swipe over the map should still scroll the PAGE, and `pan-y` is what leaves
-                // that native behaviour intact while still suppressing the browser's own
-                // pinch-zoom (T-015) — our pinch handler above replaces it.
-                zoomLevel > 1 ? "touch-none" : "touch-pan-y"
-              }`}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onClick={handleMapClick}
-              onPointerDown={handleTouchPointerDown}
-              onPointerMove={handleTouchPointerMove}
-              onPointerUp={handleTouchPointerUp}
-              onPointerCancel={handleTouchPointerUp}
-              aria-label={t("mapAria")}
-            >
-              {/* Background neighbor lands. `--map-context-land`, NOT `--map-land`: the country
+              {/* Absolute Floating Self-Intersection Warning Banner (Zero Layout Shift) */}
+              {isSelfIntersecting && (
+                <div
+                  role="alert"
+                  className="absolute top-3 left-1/2 -translate-x-1/2 z-30 max-w-[95%] sm:max-w-md bg-warning text-warning-foreground px-3.5 py-1.5 rounded-2xl border border-warning-foreground/25 shadow-2xl flex items-center justify-between gap-2.5 text-xs pointer-events-auto animate-in fade-in zoom-in-95"
+                >
+                  <div className="flex items-center gap-1.5 overflow-hidden">
+                    <AlertTriangle className="size-3.5 shrink-0" />
+                    <span className="text-[11px] truncate">
+                      {t.rich("selfIntersectBanner", {
+                        strong: (chunks) => <strong>{chunks}</strong>,
+                      })}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSortConvexOrder}
+                    className="px-2.5 py-1 rounded-xl bg-warning-foreground text-warning text-[11px] font-bold hover:bg-warning-foreground/90 transition-colors flex items-center gap-1 shrink-0 cursor-pointer shadow-xs"
+                  >
+                    <RefreshCw className="size-3" />
+                    <span>{t("sortOutline")}</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Zoom & Pan Overlay Controls. A row on a phone, where a column of three stood a
+                third as tall as the map (T-124); a column from `sm` as before. */}
+              <div className="absolute top-3 right-3 z-20 flex flex-row sm:flex-col gap-1.5 bg-card/90 backdrop-blur-md p-1.5 rounded-2xl border border-border shadow-lg">
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={zoomLevel >= 8}
+                  className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
+                  aria-label={t("zoomIn")}
+                >
+                  <ZoomIn className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={zoomLevel <= 1}
+                  className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
+                  aria-label={t("zoomOut")}
+                >
+                  <ZoomOut className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetZoom}
+                  disabled={zoomLevel === 1 && panOffset.x === 0 && panOffset.y === 0}
+                  className="p-2 rounded-xl hover:bg-muted text-foreground transition-colors disabled:opacity-40 cursor-pointer"
+                  aria-label={t("zoomReset")}
+                >
+                  <RotateCcw className="size-4" />
+                </button>
+              </div>
+
+              {/* Dynamic Metric Scale Bar (Çizgi Ölçek - V1 Klasik Kartografik Standart) */}
+              {dynamicScaleBar && (
+                <div
+                  className="absolute bottom-3 left-3 z-30 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-border/80 shadow-md pointer-events-none flex flex-col gap-1 text-xs select-none"
+                  aria-label={t("scaleBarAria", { km: formatNumber(dynamicScaleBar.km, locale) })}
+                >
+                  <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-foreground font-mono leading-none">
+                    <span>0</span>
+                    <span>{formatNumber(dynamicScaleBar.km, locale)} km</span>
+                  </div>
+                  <div
+                    className="h-1.5 border-x-2 border-b-2 border-foreground"
+                    style={{
+                      width: `${Math.min(Math.round(dynamicScaleBar.px), 240)}px`,
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* SVG Map */}
+              <svg
+                ref={svgRef}
+                viewBox={currentViewBox}
+                className={`w-full h-full object-fill ${isPanning ? "cursor-grabbing" : "cursor-crosshair"} ${
+                  // Zoomed in, the map itself owns one-finger dragging (pan); at 1× a vertical
+                  // swipe over the map should still scroll the PAGE, and `pan-y` is what leaves
+                  // that native behaviour intact while still suppressing the browser's own
+                  // pinch-zoom (T-015) — our pinch handler above replaces it.
+                  zoomLevel > 1 ? "touch-none" : "touch-pan-y"
+                }`}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onClick={handleMapClick}
+                onPointerDown={handleTouchPointerDown}
+                onPointerMove={handleTouchPointerMove}
+                onPointerUp={handleTouchPointerUp}
+                onPointerCancel={handleTouchPointerUp}
+                aria-label={t("mapAria")}
+              >
+                {/* Background neighbor lands. `--map-context-land`, NOT `--map-land`: the country
                 fill here is `fill-card/90` over `--map-plate`, and `--map-land` against that
                 blend measures 1.02:1 light / 1.01:1 dark -- Türkiye and its neighbours were
                 one tone, while the other five Türkiye maps kept the warm/white split this
@@ -1400,34 +1539,34 @@ export function V2ToolWorkbench({
                 hairline moves with the fill to `--map-context-line` (3.28:1 / 3.18:1 on that
                 neighbour land, 3.05:1 / 3.54:1 on the `--map-plate` it also borders), leaving
                 `--province-stroke` to Türkiye's own coast. */}
-              {TALL_CONTEXT_SHAPES.map((country) => (
-                <path
-                  key={country.iso}
-                  d={country.d}
-                  className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
-                />
-              ))}
+                {TALL_CONTEXT_SHAPES.map((country) => (
+                  <path
+                    key={country.iso}
+                    d={country.d}
+                    className="fill-[var(--map-context-land)] stroke-[var(--map-context-line)] stroke-[0.8]"
+                  />
+                ))}
 
-              {/* Turkey Context Casing Outline */}
-              {trCasing && (
-                <path
-                  d={trCasing.d}
-                  className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
-                />
-              )}
+                {/* Turkey Context Casing Outline */}
+                {trCasing && (
+                  <path
+                    d={trCasing.d}
+                    className="fill-none stroke-border/70 stroke-[2] pointer-events-none"
+                  />
+                )}
 
-              {/* 81 Turkish Provinces Base Layer (Hover highlight removed per feedback) */}
-              {PROVINCE_SHAPES.map((prov) => (
-                <path
-                  key={prov.plateCode}
-                  d={prov.d}
-                  className="fill-card/90 stroke-border/60 stroke-[0.6]"
-                >
-                  <title>{prov.geoName}</title>
-                </path>
-              ))}
+                {/* 81 Turkish Provinces Base Layer (Hover highlight removed per feedback) */}
+                {PROVINCE_SHAPES.map((prov) => (
+                  <path
+                    key={prov.plateCode}
+                    d={prov.d}
+                    className="fill-card/90 stroke-border/60 stroke-[0.6]"
+                  >
+                    <title>{prov.geoName}</title>
+                  </path>
+                ))}
 
-              {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as
+                {/* Inland Lakes & Waters. Painted AFTER the province layer above (not before, as
                 it was originally) because SVG paints in document order and the province
                 layer's fill-card/90 is ~90% opaque: with the lakes underneath, that fill
                 covered them almost entirely in both themes, independent of colour -- the same
@@ -1441,69 +1580,117 @@ export function V2ToolWorkbench({
                 exactly this (see `v2-game-screen.tsx`), and
                 `components/v2/inland-water-hit-testing.test.ts` now holds it on every render
                 site in the tree. */}
-              {INLAND_WATER_SHAPES.map((water) => (
-                <path
-                  key={water.id}
-                  d={water.d}
-                  className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
-                />
-              ))}
+                {INLAND_WATER_SHAPES.map((water) => (
+                  <path
+                    key={water.id}
+                    d={water.d}
+                    className="fill-[var(--map-sea)] stroke-[var(--map-water-line)] stroke-[0.5] pointer-events-none"
+                  />
+                ))}
 
-              {/* Drawn Area Polygon */}
-              {activeTool === "area" && points.length >= 3 && (
-                <polygon
-                  points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
-                  className="fill-accent/25 stroke-accent"
-                  strokeWidth={2.5 / zoomLevel}
-                  strokeDasharray="4 2"
-                />
-              )}
+                {/* Drawn Area Polygon */}
+                {activeTool === "area" && points.length >= 3 && (
+                  <polygon
+                    points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
+                    className="fill-accent/25 stroke-accent"
+                    strokeWidth={2.5 / zoomLevel}
+                    strokeDasharray="4 2"
+                  />
+                )}
 
-              {/* Drawn Distance Polyline */}
-              {activeTool === "distance" && points.length >= 2 && (
-                <polyline
-                  points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
-                  fill="none"
-                  stroke="var(--color-primary, #b0522e)"
-                  strokeWidth={3 / zoomLevel}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              )}
+                {/* Drawn Distance Polyline */}
+                {activeTool === "distance" && points.length >= 2 && (
+                  <polyline
+                    points={points.map((p) => `${p.svgX},${p.svgY}`).join(" ")}
+                    fill="none"
+                    stroke="var(--color-primary, #b0522e)"
+                    strokeWidth={3 / zoomLevel}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
 
-              {/* Placed Waypoints Pins */}
-              {points.map((p, idx) => {
-                const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);
-                const text = pinLabelText(p, idx);
-                const label = PIN_LABEL_LAYOUT[pinLabelSides[idx] ?? "above"];
-                return (
-                  <g key={idx} className="transition-transform">
-                    <circle
-                      cx={p.svgX}
-                      cy={p.svgY}
-                      r={atScreenSize(PIN_RADIUS, zoomLevel, pxPerUnit)}
-                      strokeWidth={atScreenSize(PIN_OUTLINE, zoomLevel, pxPerUnit)}
-                      className="fill-primary stroke-white dark:stroke-black shadow-md"
-                    />
-                    <text
-                      x={p.svgX + label.dx * gap}
-                      y={p.svgY + label.dy * gap}
-                      textAnchor={label.anchor}
-                      dominantBaseline={label.baseline}
-                      fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}
-                      fontWeight="bold"
-                      fill="currentColor"
-                      strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}
-                      strokeLinejoin="round"
-                      paintOrder="stroke"
-                      className="fill-foreground stroke-card font-sans select-none pointer-events-none"
-                    >
-                      {text}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
+                {/* Each leg's distance (T-120), under the pins so a dot is never covered. Inside
+                the <svg>, so the PNG export carries them. Semibold where the pin names are bold,
+                so a name and a distance read as different things. */}
+                {legLabels.map((label) => (
+                  <text
+                    key={label.leg}
+                    data-leg-label=""
+                    x={label.x}
+                    y={label.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}
+                    fontWeight={600}
+                    strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}
+                    strokeLinejoin="round"
+                    paintOrder="stroke"
+                    className="fill-foreground stroke-card font-sans select-none pointer-events-none"
+                  >
+                    {label.text}
+                  </text>
+                ))}
+
+                {/* Placed Waypoints Pins */}
+                {points.map((p, idx) => {
+                  const gap = atScreenSize(PIN_RADIUS + PIN_LABEL_GAP, zoomLevel, pxPerUnit);
+                  const text = pinLabelText(p, idx);
+                  const label = PIN_LABEL_LAYOUT[pinLabelSides[idx] ?? "above"];
+                  return (
+                    <g key={idx} className="transition-transform">
+                      <circle
+                        cx={p.svgX}
+                        cy={p.svgY}
+                        r={atScreenSize(PIN_RADIUS, zoomLevel, pxPerUnit)}
+                        strokeWidth={atScreenSize(PIN_OUTLINE, zoomLevel, pxPerUnit)}
+                        className="fill-primary stroke-white dark:stroke-black shadow-md"
+                      />
+                      <text
+                        x={p.svgX + label.dx * gap}
+                        y={p.svgY + label.dy * gap}
+                        textAnchor={label.anchor}
+                        dominantBaseline={label.baseline}
+                        fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}
+                        fontWeight="bold"
+                        fill="currentColor"
+                        strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}
+                        strokeLinejoin="round"
+                        paintOrder="stroke"
+                        className="fill-foreground stroke-card font-sans select-none pointer-events-none"
+                      >
+                        {text}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+            {activeTool === "distance" && (
+              <DistanceResultPanel
+                ref={resultPanelRef}
+                pointCount={points.length}
+                distanceKm={distanceKm}
+                onUndo={handleUndo}
+                onClear={handleClear}
+                className="mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80"
+                // Fullscreen puts the panel on the map at every width, so the inline style has
+                // to beat the `lg:` classes; see `LANDSCAPE_FILL` for why fullscreen is inline.
+                style={
+                  landscape.active
+                    ? {
+                        position: "absolute",
+                        left: RESULT_PANEL_LEFT,
+                        bottom: resultPanelBottom,
+                        marginTop: 0,
+                        zIndex: 30,
+                        width: RESULT_PANEL_WIDTH,
+                        maxWidth: `calc(100% - ${RESULT_PANEL_LEFT * 2}px)`,
+                      }
+                    : undefined
+                }
+              />
+            )}
           </div>
 
           {/* UNDER the plate, not in it: the plate is `flex items-center justify-center`, so a
@@ -1821,7 +2008,7 @@ export function V2ToolWorkbench({
                       <span>{t("flightTime")}</span>
                     </div>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      {t("flightMinutes", { minutes: String(Math.round((distanceKm / 800) * 60)) })}
+                      {t("flightMinutes", { minutes: String(travelEstimates.flightMinutes) })}
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
                       {t("flightCruise")}
@@ -1834,7 +2021,7 @@ export function V2ToolWorkbench({
                       <span>{t("roadEstimate")}</span>
                     </div>
                     <span className="font-heading font-bold text-sm text-foreground">
-                      ~{formatNumber(distanceKm * 1.28, locale, 0)} km
+                      ~{formatNumber(travelEstimates.roadKm, locale, 0)} km
                     </span>
                     <span className="text-[10px] text-muted-foreground block">
                       {t("roadFactor")}

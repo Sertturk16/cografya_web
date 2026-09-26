@@ -45,7 +45,7 @@ export interface PinLabel extends Point {
   height: number;
 }
 
-interface Box {
+export interface Box {
   x: number;
   y: number;
   w: number;
@@ -77,7 +77,7 @@ export function labelBox(pin: PinLabel, side: PinLabelSide): Box {
 }
 
 /** Area two boxes share. */
-function overlapArea(a: Box, b: Box): number {
+export function overlapArea(a: Box, b: Box): number {
   const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
   const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
   return w > 0 && h > 0 ? w * h : 0;
@@ -90,7 +90,8 @@ function overlapArea(a: Box, b: Box): number {
  * vertical away from the centre, the other vertical, the two sideways sides, then the four
  * corners. It takes the
  * first side whose box stays inside `view` (T-124: the plate minus the controls' bands), covers
- * no other pin's dot and overlaps no label already placed. When no side is free it takes the one
+ * no other pin's dot, no `obstacles` box (the distance labels and the result panel, T-120) and
+ * overlaps no label already placed. When no side is free it takes the one
  * that sticks out of the view and covers the least, never simply the preferred one: that ran
  * "Iğdır" off the plate when its pin sat inside a control band.
  *
@@ -105,7 +106,7 @@ function overlapArea(a: Box, b: Box): number {
  */
 export function placePinLabels(
   pins: readonly PinLabel[],
-  { view, dotRadius }: { view: Box; dotRadius: number },
+  { view, dotRadius, obstacles = [] }: { view: Box; dotRadius: number; obstacles?: readonly Box[] },
 ): PinLabelSide[] {
   const dots = pins.map((p) => ({
     x: p.x - dotRadius,
@@ -144,6 +145,7 @@ export function placePinLabels(
     dots.forEach((dot, j) => {
       if (j !== index) total += overlapArea(box, dot);
     });
+    for (const obstacle of obstacles) total += overlapArea(box, obstacle);
     sides.forEach((other, j) => {
       if (j !== index && other) total += overlapArea(box, labelBox(pins[j]!, other));
     });

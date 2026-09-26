@@ -413,7 +413,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(pins).toContain('const label = PIN_LABEL_LAYOUT[pinLabelSides[idx] ?? "above"];');
     // Sides are decided for all pins together, inside the controls' clear area (T-124, T-127).
     expect(code).toMatch(
-      /placePinLabels\([\s\S]*?\{ view: labelView, dotRadius: unit\(PIN_RADIUS \+ PIN_OUTLINE\) \}/,
+      /placePinLabels\([\s\S]*?\{\s*view: labelView,\s*dotRadius: unit\(PIN_RADIUS \+ PIN_OUTLINE\),\s*obstacles:/,
     );
     // A stroke-[n] class would override the attribute and grow with the zoom again.
     expect(pins).not.toMatch(/stroke-\[/);
@@ -434,7 +434,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(code).toContain("toolBaseView(svgBox ? svgBox.w / svgBox.h : Number.NaN)");
     expect(code).toContain("{TALL_CONTEXT_SHAPES.map((country) => (");
     expect(code).not.toContain("tr-context.generated");
-    expect(code).toMatch(/fitPointsView\(mapPoints, worldView, box, controlInsets/);
+    expect(code).toMatch(/fitPointsView\(mapPoints, worldView, box, fitInsets/);
   });
 
   it("keeps the phone controls small and every example reachable", () => {
@@ -452,5 +452,56 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     expect(code).toMatch(
       /className=\{`hidden pointer-fine:inline-block[^`]*\$\{hoveredPos \? "" : "invisible"\}`\}/,
     );
+  });
+  // T-120: the distance result sits on the map, inside the fullscreen target, with Undo/Clear.
+  describe("distance result panel (T-120)", () => {
+    const code = stripComments(source);
+
+    it("renders one panel, after the plate and inside the fullscreen box", () => {
+      expect(code.match(/<DistanceResultPanel\b/g)).toHaveLength(1);
+      const box = code.indexOf("ref={landscapeBoxRef}");
+      const plate = code.indexOf("ref={mapContainerRef}", box);
+      const panel = code.indexOf("<DistanceResultPanel", plate);
+      const caption = code.indexOf("<figcaption>", panel);
+      expect(box).toBeGreaterThan(-1);
+      expect(plate).toBeGreaterThan(box);
+      expect(panel).toBeGreaterThan(plate);
+      expect(caption, "the credit stays last in the figure").toBeGreaterThan(panel);
+    });
+
+    it("sits under the plate on a page below lg and over it from lg, at one width", () => {
+      // From sm to lg the plate is 239–430 px tall; a panel on it left a fit 47 px at 640 px.
+      expect(code).toContain(
+        'className="mt-2 lg:absolute lg:bottom-13 lg:left-3 lg:z-30 lg:mt-0 lg:w-80"',
+      );
+      expect(code).toContain(
+        'const resultPanelOnMap = activeTool === "distance" && (landscape.active || lgUp);',
+      );
+      expect(code).toMatch(/width: RESULT_PANEL_WIDTH,/);
+    });
+
+    it("moves Undo and Clear off the toolbar for the distance tool only", () => {
+      expect(code).toMatch(/\{activeTool !== "distance" && \(\s*<>\s*<Button[\s\S]*?handleUndo/);
+    });
+
+    it("frames named points above the panel and keeps labels off it", () => {
+      expect(code).toContain("const fitInsets =");
+      expect(code).toContain("const resultPanelObstacle =");
+    });
+  });
+  // T-120: each leg carries its own distance, one screen size at every zoom, and pin labels keep
+  // off those labels.
+  it("labels each leg of a distance route at a constant screen size", () => {
+    const code = stripComments(source);
+    expect(code).toContain("placeSegmentLabels(");
+    expect(code).toContain("haversineKm(");
+    expect(code).toContain("kmDecimalsFor(");
+    const start = code.indexOf("{legLabels.map(");
+    expect(start).toBeGreaterThan(-1);
+    const legs = code.slice(start, code.indexOf("{points.map((p, idx) => {", start));
+    expect(legs).toContain("fontSize={atScreenSize(PIN_LABEL_SIZE, zoomLevel, pxPerUnit)}");
+    expect(legs).toContain("strokeWidth={atScreenSize(PIN_LABEL_HALO, zoomLevel, pxPerUnit)}");
+    expect(legs).toContain("pointer-events-none");
+    expect(code).toMatch(/obstacles: \[\s*\.\.\.legLabels\.map\(legLabelBox\)/);
   });
 });
