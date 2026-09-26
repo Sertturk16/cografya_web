@@ -1,6 +1,6 @@
 # Distance tool: result panel and segment labels on the map — design (T-120)
 
-Status: design approved by the owner 2026-09-26; written spec awaiting owner review.
+Status: approved by the owner 2026-09-26, ready for implementation planning.
 
 Scope: `cografya_web` only, `/araclar/mesafe-olcme` (`components/v2/v2-tool-workbench.tsx` in
 `mode="distance"`). T-121 reuses the panel for the area and coordinate tools; that wiring is not
