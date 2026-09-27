@@ -1,8 +1,8 @@
 /**
  * How this surface prints a video's publication date — ONE style, one place.
  *
- * The date is printed twice on the book page: on every index row (`deneme-meta.tsx`) and on the
- * stage caption, which takes the string pre-formatted from `page.tsx` because `i18n/request.ts`
+ * The date is printed on the book page's stage, under the current video's heading, which takes the
+ * string pre-formatted from `page.tsx` because `i18n/request.ts`
  * pins `timeZone: "UTC"` for the whole project and a browser-side format would make that
  * guarantee depend on the provider inheriting the request config into the client.
  *

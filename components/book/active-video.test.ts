@@ -248,4 +248,14 @@ describe("the detached exports the components actually call", () => {
     expect(() => open(12, 94)).not.toThrow();
     expect(() => reset()).not.toThrow();
   });
+
+  it("closes the player but keeps the selection (T-128: leaving the watch step)", () => {
+    const store = createActiveVideoStore();
+    store.open(4, 30);
+    store.close();
+    expect(store.getSnapshot()).toEqual({ selected: 4, active: null });
+    const before = store.getSnapshot();
+    store.close();
+    expect(store.getSnapshot()).toBe(before);
+  });
 });

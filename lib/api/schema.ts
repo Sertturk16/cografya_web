@@ -2732,6 +2732,12 @@ export interface components {
              */
             examTrack: "AYT" | "TYT" | "YKS" | "KPSS" | "LGS";
             /**
+             * @description How the book organises its videos — drives the reader-facing nouns (deneme, test, ders, fasikül, video). A closed set: adding a member is a breaking contract change.
+             * @example deneme
+             * @enum {string}
+             */
+            contentKind: "deneme" | "soru_bankasi" | "konu_anlatimi" | "kamp" | "tek_video";
+            /**
              * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
              * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
              */
@@ -2845,6 +2851,16 @@ export interface components {
              * @example null
              */
             titleEn: string | null;
+            /**
+             * @description Group heading this video sits under ("1. Ünite · Doğal Sistemler", "1. GÜN"). Consecutive videos sharing a value form one group; null is an untitled group. Null for a deneme book.
+             * @example null
+             */
+            groupTitleTr: string | null;
+            /**
+             * @description EN counterpart of groupTitleTr; null when there is no counterpart.
+             * @example null
+             */
+            groupTitleEn: string | null;
             /** @description The etiket index for this video, ascending by orderNo and by startSecond. It must be readable and clickable WITHOUT JavaScript: SEO-POLICY §12.2.b treats a page whose body exists to send the visitor elsewhere as a BLOCKER, and this index is what keeps the page on the right side of that line. Renamed from `questions` (P0 PR-3, `DEC 2026-09-10b` md.1). */
             tags: components["schemas"]["BookVideoTagDto"][];
             /** @description Provider-sourced enrichment, or NULL — and null is a normal state, not an error: the sync may never have run, the data may have aged past its serve threshold, or the video may have stopped being returned. When it is null, do NOT emit VideoObject and fall back to a typographic facade; the rest of this object is unaffected. */
@@ -2892,6 +2908,12 @@ export interface components {
              * @enum {string}
              */
             examTrack: "AYT" | "TYT" | "YKS" | "KPSS" | "LGS";
+            /**
+             * @description How the book organises its videos — drives the reader-facing nouns (deneme, test, ders, fasikül, video). A closed set: adding a member is a breaking contract change.
+             * @example deneme
+             * @enum {string}
+             */
+            contentKind: "deneme" | "soru_bankasi" | "konu_anlatimi" | "kamp" | "tek_video";
             /**
              * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
              * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
@@ -3745,6 +3767,20 @@ export interface components {
              */
             updatedAt: string;
         };
+        BookProgressVideoDto: {
+            /**
+             * Format: uuid
+             * @description book_videos.id this progress row belongs to.
+             */
+            bookVideoId: string;
+            /**
+             * @description Last playback position on this video, in seconds.
+             * @example 245
+             */
+            lastPositionSeconds: number;
+            /** @description The caller's declared watched signal on this video. */
+            watched: boolean;
+        };
         BookProgressDto: {
             /**
              * @description The resolved book's canonical TR slug (`books.slug_tr`), regardless of which locale slug the request named.
@@ -3768,6 +3804,8 @@ export interface components {
             startedCount: number;
             /** @description The caller's most-recently-updated progress row among this book's videos, or null when the caller has none. */
             resume: components["schemas"]["BookProgressResumeDto"] | null;
+            /** @description The caller's progress rows among this book's videos, ordered by the video's orderNo — one per started video; empty when the caller has none. Feeds per-video status on the book page. */
+            videos: components["schemas"]["BookProgressVideoDto"][];
         };
         VideoProgressDto: {
             /**

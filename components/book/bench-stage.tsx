@@ -1,141 +1,51 @@
 "use client";
 
-import { useLocale, useTranslations } from "next-intl";
-import type { Locale } from "@/i18n/routing";
+import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import type { BookContentKind } from "@/lib/api/types";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { formatDuration } from "@/lib/book/duration";
-import { videoTitle } from "@/lib/book/video-identity";
+import { isNamed, neighbours } from "@/lib/book/workbench-model";
+import { cn } from "@/lib/utils";
 import type { VideoProgressValue } from "@/lib/video-progress/client";
 import { useBenchState } from "./active-video";
-import { BenchTimeline } from "./bench-timeline";
 import { DenemeVideo } from "./deneme-video";
 import { VideoProgressControls } from "./video-progress-controls";
 
 /**
- * THE STAGE COLUMN — `book-video.module.css`'s `.stage`, in bridge tokens (T-033 task 7).
- *
- * `min-w-0` IS NOT BOILERPLATE: it fixes a measured 56px horizontal overflow at the two
- * mandatory narrow viewports. A grid item's default `min-width: auto` refuses to shrink below
- * its content's min-content width, and `FRAME` (`deneme-video.tsx`) combines `aspect-video`
- * with `min-h-[200px]`, which gives it an intrinsic minimum WIDTH of 200 x 16/9 ~= 355.6px. At
- * a 320px viewport the column is 280px, so the stage pushed `document.scrollWidth` to 356 and
- * the page scrolled sideways (WCAG 1.4.10 Reflow).
- *
- * THE STAGE STICKS ONLY WHERE THERE IS A SECOND COLUMN TO STICK BESIDE. Below `lg` (64rem, the
- * media query the stylesheet wrote) it sits above the index in one column and scrolls away
- * normally: a sticky player there would take 200px+ off a 568px viewport and the reader would
- * be studying through a slot.
- *
- * `lg:top-[calc(var(--header-height)+1rem)]` IS THE SAME EXPRESSION `PLAYER`'s
- * `scroll-mt-[…]` uses, and the pairing is the point rather than a coincidence: it keeps the
- * player clear of the sticky site header, and it makes `deneme-video.tsx`'s corrective scroll a
- * no-op in the stuck state — that effect compares the box's measured `top` against its own
- * scroll margin and only scrolls when the box is above its mark. Change one and the other has
- * to change with it; `bench.structure.test.ts` asserts the two expressions are one string.
- * `--header-height` is a LAYOUT token, not a colour one, so it stays a `var()` read.
- */
-const STAGE = "min-w-0 lg:sticky lg:top-[calc(var(--header-height)+1rem)]";
-
-/**
- * THE CAPTION'S HEIGHT IS RESERVED, and it is the second half of "selecting a video moves
- * nothing but the stage". The heading's width varies with the deneme number and the fact
- * strip's with the duration, so the line count can tip between videos at a given viewport;
- * without a floor the timeline below — and, in the one-column layout, the entire index — would
- * step up and down as the reader moves through the book. `min-h-[3.1rem]` is the two-line
- * height measured at 320px, the widest the strip ever wraps in either locale.
- *
- * IT CARRIES `FRAME`'s CAP TOO. `max-w-[560px]` is one of FOUR copies of one cap — `FRAME`,
- * this caption, `TIMELINE` and `PROGRESS_CONTROLS` — and `bench.structure.test.ts` asserts the
- * four as an EQUALITY, because between 564 and 1023px an uncapped caption started 84px to the
- * left of the player it names (PR #70 review `CODE70-M2`).
- *
- * `mb-0` IS LOAD-BEARING AND IS NOT DECORATION. This is a `<p>`, and `app/globals.css`'s base
- * rule gives every `<p>` `margin: 0 0 1rem`. The stylesheet's `margin: 10px auto 0` cancelled
- * that bottom margin; `mt-2.5 mx-auto` alone would let 16px back in under the caption and push
- * the timeline card — and with it the whole index — down. Measured before/after rather than
- * reasoned.
- */
-const STAGE_CAPTION =
-  "mx-auto mt-2.5 mb-0 flex max-w-[560px] flex-wrap items-baseline gap-x-[10px] gap-y-1 min-h-[3.1rem]";
-
-/**
- * SMALLER THAN A REAL HEADING, deliberately, and the direction was reversed after review. At
- * 1.15rem/600 in the heading face this `<p>`'s name out-weighed the thirty `<h3>` index rows it
- * sits above (1.05rem), so the visual outline and the document outline disagreed about what the
- * most important line in the section was — WCAG 1.3.1's F2 shape (PR #70 review `A11Y70-M5`).
- * Marking it up AS a heading is worse: the caption follows client state, so the outline would
- * gain a heading whose text changes when the reader presses a question.
- *
- * `text-[1rem]` rather than `text-base`: `text-base` carries a 1.5 line-height token, and this
- * span inherits 1.6 from `body` — 25.6px, not 24px. `text-primary-strong` is
- * `--color-primary-dark`'s bridge: **7.89:1 light / 8.99:1 dark** on the page's `--background`,
- * which is what the stage sits on. The retired raw token measured **2.23:1** in dark.
- */
-const STAGE_NAME = "font-heading text-[1rem] font-semibold text-primary-strong";
-
-/** The künye strip beside the name. `text-[0.85rem]` for the same line-height reason;
- *  `text-muted-foreground` is `--color-slate`'s bridge — **7.48:1 light / 8.53:1 dark** on
- *  `--background`, against the frozen token's 2.36:1 in dark. */
-const STAGE_FACTS = "flex flex-wrap items-baseline gap-1.5 text-[0.85rem] text-muted-foreground";
-
-/** THE SAME SPELLING `deneme-meta.tsx`'s separator carries — asserted equal in
- *  `bench.structure.test.ts`, because the two dots sit on ONE line inside one fact strip and a
- *  drift in either file would split that line into two colours. */
-const META_SEPARATOR = "text-muted-foreground";
-
-/**
- * One video's presentational payload, as the stage needs it.
- *
- * ## What is in here, and what is deliberately NOT
+ * One video's presentational payload, as the stage and the server lists need it.
  *
  * The stage is a client component and this array is its props, so every field is bytes in the
- * RSC payload. Three rules kept it small enough to be worth the swap it buys:
+ * RSC payload. `label` is the one piece of copy that travels: it is composed once on the server
+ * through `videoTitle` (the same builder the JSON-LD `VideoObject.name` uses), so the row, the
+ * stage heading and the structured data cannot disagree. `publishedText` is pre-formatted on the
+ * server for the timezone reason `i18n/request.ts` records.
  *
- * · **No copy.** Every string a reader sees on the stage — the heading, the question count, the
- *   İzle label, the accessible names — is resolved from the message catalogue in this component
- *   with `useTranslations`, not shipped thirty times over. The catalogue is where those strings
- *   are authored and `messages.test.ts` discovers this consumer through the same
- *   `useTranslations("BookDetail")` binding it already scans for.
- * · **One exception, and it is the reason the rule is written down.** `publishedText` IS
- *   pre-formatted on the server. `i18n/request.ts` pins `timeZone: "UTC"` for the whole project
- *   because "the same build prints a different DAY depending on which machine rendered it", and
- *   a `useFormatter` call here would make that guarantee depend on the provider inheriting the
- *   request config into the browser. Formatting the date once, on the server, removes the
- *   question instead of answering it — and the machine-readable instant travels beside it, so
- *   `<time dateTime>` is still exact.
- * · **No derived values.** `formatDuration` is a pure function over an integer the contract
- *   already publishes, so the duration text is computed here rather than carried.
- *
- * `rich === null` covers BOTH non-rich states — the discriminated union stays server-side in
- * `lib/book/video-state.ts`, which remains the single place that decides them, and what crosses
- * to the client is the answer rather than the inputs. `playable === false` is the `external`
- * state (the provider refuses to embed) and is what tells the stage to offer an outbound link
- * instead of a player.
+ * `rich === null` covers both non-rich states — `lib/book/video-state.ts` decides them
+ * server-side. `playable === false` is the `external` state (the provider refuses to embed): no
+ * player, an outbound link instead.
  */
 export interface BenchVideo {
   readonly orderNo: number;
-  /** `book_videos.id` — the identifier the video-progress AND video-identity endpoints key on
-   *  (UYELIK-06 plan §5.2, P2 plan §5.3). Populated from the api's own `BookVideoDto.bookVideoId`,
-   *  never derived here. **No `videoId` field here any more** (P2): the anonymous payload never
-   *  carries the YouTube video id at all, so it cannot ship in this props array either — a
-   *  signed-in reader's own click resolves it through the guarded
-   *  `lib/video-identity/client.ts` fetch, and `active-video.ts`'s store is what holds the
-   *  resolved answer once one exists. */
+  /** `book_videos.id` — the progress endpoints' key and the identity fetch's key. The anonymous
+   *  payload never carries the YouTube id; a signed-in reader's click resolves it. */
   readonly bookVideoId: string;
-  /** The generic contract's per-video display title, both nullable (`FU-BOOK-GENERIC-CONTRACT`
-   *  — the trigger `videoTitle`'s own docblock names). `null` for every seeded row today: the
-   *  reader-facing "Deneme N" label is still composed in the web layer from i18n + `orderNo`. */
   readonly titleTr: string | null;
   readonly titleEn: string | null;
-  /** False for a video the provider refuses to embed — no player, an outbound link instead. */
+  /** The group heading this video sits under ("1. Ünite", "1. GÜN"), or null. */
+  readonly groupTitleTr: string | null;
+  /** "Deneme 12", "Test 4" or the authored title — composed on the server. */
+  readonly label: string;
+  readonly markerCount: number;
+  /** From the provider snapshot when there is one; the list's duration and the status ring. */
+  readonly durationSeconds: number | null;
   readonly playable: boolean;
   readonly tags: readonly {
     readonly orderNo: number;
     readonly second: number;
-    /** Reachable only once a seeded etiket carries a non-null name (`FU-BOOK-GENERIC-CONTRACT`)
-     *  — kept on this shape even though nothing renders it today, because `BenchTimeline`'s
-     *  ticks compute the SAME fragment the server-rendered index row assigned, and that
-     *  computation needs it (`lib/book/video-identity.ts`'s `tagFragment`). */
+    /** Named markers (konu anlatımı, tek video) render as a list and get a named fragment. */
     readonly nameTr: string | null;
   }[];
   readonly rich: {
@@ -151,174 +61,216 @@ export interface BenchVideo {
 }
 
 /**
- * The stage: the page's one player, its künye line, and the timeline that places the questions
- * inside the video.
+ * The stage (T-128 spec §4.2/§4.3): the page's one player, the current video's heading and
+ * controls, the marker strip (server markup handed in as `markers`) and, on a phone, the
+ * back-to-list line and the previous/next bar.
  *
- * ## Why the stage exists at all, in one sentence
- *
- * Before this, each of the thirty index rows could grow its own player; a reader working through
- * a book therefore lost the video every time they moved to another one. The stage is the
- * single place a video lives, so moving between videos moves the picture rather than the page.
- *
- * ## The default selection comes from the server, and the sentinel is what keeps hydration honest
- *
- * `defaultOrderNo` is the first video that actually rendered (page.tsx derives it from the
- * rendered blocks, never from a declared count — the same discipline `FENER66-M2` asked for on
- * the jump strip, and `SEO-POLICY.md` §B8 8.9's BLOCKER for a link with no target). The store's
- * `selected` starts as `null` meaning "the server's choice", so this component resolves
- * `selected ?? defaultOrderNo` and the server's HTML and the client's first frame cannot disagree
- * about which video is on the stage.
- *
- * ## The box is reserved in EVERY state, and that inverts an earlier decision on purpose
- *
- * The cover used to reserve no box for the non-rich states (the retired `.plainControl` rule),
- * with a stated reason: thirty empty 16:9 rectangles would be a page of grey holes. There is ONE
- * box now, so that reason does not transfer — and the opposite property matters here. A stage whose height changed
- * with the selected video's state would move the entire index every time the reader pressed a
- * question, on a page whose whole point is that pressing a question moves nothing but the stage.
- *
- * ALL THREE OF THE STAGE'S BLOCKS HOLD THAT INVARIANT, and until PR #70's review only two did.
- * `.frame` reserves the cover box and `.stageCaption` a two-line floor, but the timeline card was
- * printed only in the `rich` state — 88px that appeared and disappeared with the SELECTION, which
- * is a client-state change reaching a shift the reader did not ask for (→ `FENER70-I1`,
- * validated). The gate now lives inside `BenchTimeline`, which drops the ticks and keeps the card.
- * Anything added to this stage later is bound by the same rule: reserve it in all three states or
- * do not put it above the index.
- *
- * ## Nothing is placed over the player
- *
- * The İzle control sits over OUR cover, and the cover is REPLACED by the iframe rather than
- * layered under it — see `deneme-video.tsx`. The provenance ledger's Required Minimum
- * Functionality rules bar any "overlay, frame or visual element in front of any part of the
- * player", and the stage adds no exception to that: the caption and the timeline are siblings
- * BELOW the box, never children of it.
+ * `selected ?? defaultOrderNo` keeps the server's HTML and the client's first frame on the same
+ * video. `data-deneme` on the root is how the island's delegated listener knows which video a
+ * press on İzle belongs to.
  */
 export function BenchStage({
   videos,
+  kind,
   defaultOrderNo,
   authState,
   progress,
   onSaveWatched,
   externalResolvingOrderNo,
+  autoNext,
+  onToggleAutoNext,
+  onGo,
+  onBack,
+  onPlaybackTime,
+  onEnded,
+  markers,
 }: {
   videos: readonly BenchVideo[];
+  kind: BookContentKind;
   defaultOrderNo: number;
-  /** The login gate's own read of the shared session hook (UYELIK-06 §5.3.2), threaded down
-   *  from `VideoBench` — never a second `useAuthSession()` call here, which would be a second
-   *  live session check racing the one the gate already owns. */
   authState: AuthSessionState;
-  /** The SELECTED video's saved progress, fetched once at the `VideoBench` level (§5.4) —
-   *  `"loading"` while the request is in flight, `null` once resolved with no saved row (or
-   *  for an anonymous/checking reader). */
   progress: VideoProgressValue | null | "loading";
-  /** Persists a watched-toggle press (§5.6); owned by `VideoBench` because it also updates the
-   *  progress state this component reads. */
   onSaveWatched: (watched: boolean) => Promise<{ readonly ok: boolean }>;
-  /** The `external`-state "watch on YouTube" control's own identity fetch, in flight for this
-   *  orderNo, or `null` (P2 plan §5.3/§10). Owned by `VideoBench`, not by `active-video.ts`'s
-   *  store: an external video never gets a player, so it has no business in that store's own
-   *  "one player, ever" shape. */
   externalResolvingOrderNo: number | null;
+  autoNext: boolean;
+  onToggleAutoNext: () => void;
+  onGo: (orderNo: number) => void;
+  onBack: () => void;
+  onPlaybackTime: (orderNo: number, second: number) => void;
+  onEnded: (orderNo: number) => void;
+  markers: ReactNode;
 }) {
   const t = useTranslations("BookDetail");
-  // `useLocale()`'s own return type is `use-intl`'s `Locale`, which resolves to plain `string`
-  // absent an `AppConfig` augmentation this repo does not declare — narrower than the app's own
-  // `Locale` (`@/i18n/routing`'s `"tr" | "en"`). The cast is safe: this component only ever
-  // renders under the `[locale]` segment, which next-intl's own routing config restricts to
-  // exactly those two values.
-  const locale = useLocale() as Locale;
   const { selected, active } = useBenchState();
 
   const orderNo = selected ?? defaultOrderNo;
-  // A selection that names no rendered video cannot happen through the island (it reads
-  // `data-deneme` off markup this same array produced), but the lookup is total anyway: the
-  // fallback keeps the stage rendering rather than blanking if a stale store survives a remount.
   const video = videos.find((candidate) => candidate.orderNo === orderNo) ?? videos[0];
   if (video === undefined) return null;
 
-  const rich = video.rich;
+  const single = videos.length === 1;
+  const orderNos = videos.map((candidate) => candidate.orderNo);
+  const { prev, next } = neighbours(orderNos, video.orderNo);
+  const prevVideo = videos.find((candidate) => candidate.orderNo === prev);
+  const nextVideo = videos.find((candidate) => candidate.orderNo === next);
   const knownWatched = progress !== null && progress !== "loading" ? progress.watched : false;
+  const label = video.label;
+  const named = isNamed(video.tags) ? "yes" : "no";
+  const position = t("position", {
+    current: orderNos.indexOf(video.orderNo) + 1,
+    total: orderNos.length,
+  });
 
   return (
-    /* `data-deneme` is the island's only way to know which video a press belongs to, and it is
-       an attribute rather than a closure because the island delegates ONE listener over both the
-       stage and the thirty index rows. The index puts the same attribute on each row's question
-       list, so `closest("[data-deneme]")` answers the question from either side. */
-    <div className={STAGE} data-deneme={video.orderNo}>
-      {/* `active` IS HANDED DOWN WHOLE, and the gate is the swap point's alone. This site used to
-          re-derive `video.playable && active?.orderNo === video.orderNo` and pass `null` when it
-          failed — the same expression `deneme-video.tsx` computes again on arrival, because that
-          component checks `playable` for itself rather than trusting a caller (→ PR #63 review
-          `CODE63-I1`). Two copies of one gate is not defence in depth when only one of them
-          decides anything: the child's is the one that reaches the iframe branch, and this one
-          could only ever agree with it (→ PR #70 review `SIMP70-M1`). */}
-      <DenemeVideo
-        video={video}
-        active={active}
-        authState={authState}
-        watched={knownWatched}
-        title={t("playerTitle", { no: video.orderNo })}
-        watchLabel={t("watch")}
-        watchAriaLabel={t("watchAria", { no: video.orderNo })}
-        watchAriaSignedOutLabel={t("watchAriaSignedOut", { no: video.orderNo })}
-        signInCtaText={t("signInCta")}
-        sessionReadyAnnounceText={t("sessionReadyAnnounce")}
-        watchOnYoutubeLabel={t("watchOnYoutube")}
-        watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { no: video.orderNo })}
-        watchOnYoutubeLoading={externalResolvingOrderNo === video.orderNo}
-        watchLoadingLabel={t("watchLoading")}
-        watchLoadingAriaLabel={t("watchLoadingAria", { no: video.orderNo })}
-      />
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col" data-deneme={video.orderNo}>
+      {!single && (
+        <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-2 lg:hidden">
+          <button
+            type="button"
+            onClick={onBack}
+            className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "-ml-2 min-h-11")}
+          >
+            <ArrowLeft className="size-4" aria-hidden="true" />
+            {t("backToList", { kind })}
+          </button>
+          <span className="text-sm tabular-nums text-muted-foreground">{position}</span>
+        </div>
+      )}
 
-      {/* THE STAGE CAPTION — which video is on the stage, and its two visible facts.
-          The same two facts also stand on every one of the thirty index rows, which is what
-          satisfies `SEO-POLICY.md` §B5 5.7 for all thirty `VideoObject` blocks; this copy is a
-          convenience for the reader whose eyes are on the player, not the compliance surface. */}
-      <p className={STAGE_CAPTION}>
-        {/* Through the shared builder, exactly as the index row and `VideoObject.name` are. The
-            three strings must be one string (§B5 5.7), and this caption was the consumer outside
-            the seam (→ PR #70 review `FENER70-M1` / `CODE70-M4`). */}
-        <span className={STAGE_NAME}>{videoTitle(t, locale, video)}</span>
-        <span className={STAGE_FACTS}>
-          <span>{t("videoTagCount", { count: video.tags.length })}</span>
-          {rich !== null && (
-            <>
-              <span className={META_SEPARATOR} aria-hidden="true">
-                ·
-              </span>
-              <span className="sr-only">{t("durationLabel")}</span>
-              <time dateTime={rich.durationIso}>{formatDuration(rich.durationSeconds)}</time>
-              <span className={META_SEPARATOR} aria-hidden="true">
-                ·
-              </span>
-              <span className="sr-only">{t("publishedLabel")}</span>
-              <time dateTime={rich.publishedAtUtc}>{rich.publishedText}</time>
-            </>
+      <div className="shrink-0 px-4 pt-2 lg:px-6 lg:pt-4">
+        <DenemeVideo
+          video={video}
+          active={active}
+          authState={authState}
+          watched={knownWatched}
+          title={t("playerTitle", { label })}
+          watchLabel={t("watch")}
+          watchAriaLabel={t("watchAria", { label })}
+          watchAriaSignedOutLabel={t("watchAriaSignedOut", { label })}
+          signInCtaText={t("signInCta")}
+          sessionReadyAnnounceText={t("sessionReadyAnnounce")}
+          watchOnYoutubeLabel={t("watchOnYoutube")}
+          watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { label })}
+          watchOnYoutubeLoading={externalResolvingOrderNo === video.orderNo}
+          watchLoadingLabel={t("watchLoading")}
+          watchLoadingAriaLabel={t("watchLoadingAria", { label })}
+          onPlaybackTime={(second) => onPlaybackTime(video.orderNo, second)}
+          onEnded={() => onEnded(video.orderNo)}
+        />
+      </div>
+
+      <div className="flex shrink-0 flex-wrap items-end justify-between gap-x-4 gap-y-1 px-4 pt-3 lg:px-6">
+        <div className="min-w-0">
+          {video.groupTitleTr !== null && (
+            <p className="m-0 text-xs text-muted-foreground">{video.groupTitleTr}</p>
           )}
-        </span>
-      </p>
+          <h2
+            id="bench-current-heading"
+            tabIndex={-1}
+            className="m-0 font-heading text-xl font-semibold text-foreground"
+          >
+            {label}
+          </h2>
+          <p className="m-0 flex gap-3 text-xs tabular-nums text-muted-foreground">
+            <span>{t("markerCount", { count: video.markerCount, named })}</span>
+            {video.rich !== null && (
+              <span>
+                <span className="sr-only">{t("durationLabel")} </span>
+                <time dateTime={video.rich.durationIso}>
+                  {formatDuration(video.rich.durationSeconds)}
+                </time>
+              </span>
+            )}
+            {video.rich !== null && (
+              <span>
+                <span className="sr-only">{t("publishedLabel")} </span>
+                <time dateTime={video.rich.publishedAtUtc}>{video.rich.publishedText}</time>
+              </span>
+            )}
+          </p>
+        </div>
+        {!single && (
+          <div className="flex items-center gap-2">
+            <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <input
+                type="checkbox"
+                role="switch"
+                checked={autoNext}
+                onChange={onToggleAutoNext}
+                className="size-4 accent-primary"
+              />
+              {t("autoNext")}
+            </label>
+            <div className="hidden items-center gap-1 lg:flex">
+              <button
+                type="button"
+                disabled={prevVideo === undefined}
+                onClick={() => prevVideo && onGo(prevVideo.orderNo)}
+                aria-label={prevVideo ? t("prevAria", { label: prevVideo.label }) : t("prev")}
+                className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-11")}
+              >
+                <ChevronLeft className="size-4" aria-hidden="true" />
+              </button>
+              <span className="min-w-14 text-center text-sm tabular-nums text-muted-foreground">
+                {position}
+              </span>
+              <button
+                type="button"
+                disabled={nextVideo === undefined}
+                onClick={() => nextVideo && onGo(nextVideo.orderNo)}
+                aria-label={nextVideo ? t("nextAria", { label: nextVideo.label }) : t("next")}
+                className={cn(buttonVariants({ variant: "outline", size: "icon" }), "size-11")}
+              >
+                <ChevronRight className="size-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* UNCONDITIONAL, AND THE `rich` GATE IS INSIDE THE COMPONENT. The strip's whole encoding is
-          proportional position, so without `durationSeconds` there is nothing to be proportional
-          to and the ticks are dropped — but the CARD stays, because a box that appears and
-          disappears with the selection moves the thirty rows below it (→ `FENER70-I1`). The tags
-          are never lost either way: they are in the index row below, as they are for every one
-          of the thirty videos. */}
-      <BenchTimeline
-        orderNo={video.orderNo}
-        tags={video.tags}
-        durationSeconds={rich?.durationSeconds ?? null}
-      />
+      <div className="shrink-0 px-4 lg:px-6">
+        <VideoProgressControls
+          authState={authState}
+          progress={progress}
+          onToggleWatched={onSaveWatched}
+        />
+      </div>
 
-      {/* Sits BELOW the reserved-height stage, not above it (§5.6) — unlike the CTA/caption/
-          timeline above, a height change here does not shift the index, so it does not need
-          the reserved-box treatment those three carry; it renders nothing for a reader who is
-          not authenticated. */}
-      <VideoProgressControls
-        authState={authState}
-        progress={progress}
-        onToggleWatched={onSaveWatched}
-      />
+      <div
+        role="region"
+        aria-label={t("markersLabel", { named })}
+        className="min-h-[6rem] flex-1 overflow-y-auto px-4 pt-3 pb-4 lg:px-6"
+      >
+        {markers}
+      </div>
+
+      {!single && (
+        <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border p-2 lg:hidden">
+          <button
+            type="button"
+            disabled={prevVideo === undefined}
+            onClick={() => prevVideo && onGo(prevVideo.orderNo)}
+            className={cn(buttonVariants({ variant: "outline" }), "h-auto min-h-12 justify-start")}
+          >
+            <ChevronLeft className="size-4 shrink-0" aria-hidden="true" />
+            <span className="flex min-w-0 flex-col items-start leading-tight">
+              <span className="text-xs text-muted-foreground">{t("prev")}</span>
+              <span className="max-w-full truncate">{prevVideo?.label ?? ""}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            disabled={nextVideo === undefined}
+            onClick={() => nextVideo && onGo(nextVideo.orderNo)}
+            className={cn(buttonVariants({ variant: "outline" }), "h-auto min-h-12 justify-end")}
+          >
+            <span className="flex min-w-0 flex-col items-end leading-tight">
+              <span className="text-xs text-muted-foreground">{t("next")}</span>
+              <span className="max-w-full truncate">{nextVideo?.label ?? ""}</span>
+            </span>
+            <ChevronRight className="size-4 shrink-0" aria-hidden="true" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

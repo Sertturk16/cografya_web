@@ -163,12 +163,20 @@ export interface BookProgressResumeValue {
   readonly updatedAt: string;
 }
 
+/** One started video of the book (T-128) — feeds the list's per-row status icon. */
+export interface BookProgressVideoValue {
+  readonly bookVideoId: string;
+  readonly lastPositionSeconds: number;
+  readonly watched: boolean;
+}
+
 export interface BookProgressValue {
   readonly bookSlugTr: string;
   readonly videoCount: number;
   readonly watchedCount: number;
   readonly startedCount: number;
   readonly resume: BookProgressResumeValue | null;
+  readonly videos: readonly BookProgressVideoValue[];
 }
 
 export type FetchBookProgressResult = BookProgressValue | null;
@@ -219,12 +227,38 @@ function parseBookProgressBody(value: unknown): BookProgressValue | null {
     }
   }
 
+  // A malformed row is dropped rather than failing the whole body: the counts and the resume
+  // point are still right, and a missing status icon is the smaller loss.
+  const rawVideos = (progress as { videos?: unknown }).videos;
+  const videos: BookProgressVideoValue[] = Array.isArray(rawVideos)
+    ? rawVideos.flatMap((entry: unknown) => {
+        if (typeof entry !== "object" || entry === null) return [];
+        const e = entry as {
+          bookVideoId?: unknown;
+          lastPositionSeconds?: unknown;
+          watched?: unknown;
+        };
+        return typeof e.bookVideoId === "string" &&
+          typeof e.lastPositionSeconds === "number" &&
+          typeof e.watched === "boolean"
+          ? [
+              {
+                bookVideoId: e.bookVideoId,
+                lastPositionSeconds: e.lastPositionSeconds,
+                watched: e.watched,
+              },
+            ]
+          : [];
+      })
+    : [];
+
   return {
     bookSlugTr: (progress as { bookSlugTr: string }).bookSlugTr,
     videoCount: (progress as { videoCount: number }).videoCount,
     watchedCount: (progress as { watchedCount: number }).watchedCount,
     startedCount: (progress as { startedCount: number }).startedCount,
     resume: parsedResume,
+    videos,
   };
 }
 

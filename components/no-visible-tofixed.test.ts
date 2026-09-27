@@ -28,11 +28,6 @@ interface Allowed {
 
 const ALLOWED: readonly Allowed[] = [
   {
-    file: "components/book/bench-timeline.tsx",
-    line: "style={{ left: `${(ratio * 100).toFixed(2)}%` }}",
-    why: "A CSS `left` percentage. CSS requires the decimal point.",
-  },
-  {
     file: "lib/brand/glyph.ts",
     line: "const rx = (radiusRatio * 32).toFixed(2);",
     why: "An SVG `rx` attribute in the generated brand glyph. SVG requires the decimal point.",

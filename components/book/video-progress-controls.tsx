@@ -9,15 +9,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
- * `book-video.module.css`'s `.progressControls`, in bridge tokens (T-033 task 7).
- *
- * `max-w-[560px]` is the FOURTH copy of the stage's one cap (`FRAME`, `STAGE_CAPTION`,
- * `TIMELINE`, this row); `bench.structure.test.ts` asserts the four as an equality. Here the
- * cap is for visual alignment only — this block sits BELOW the index's stage column, so its
- * height is not a CLS mechanism the way the three above it are.
+ * The watched toggle's row, left-aligned under the stage heading (T-128): the 560px cap it shared
+ * with the retired stage caption and timeline went with them, and a centred toggle under a
+ * left-aligned heading read as floating.
  */
-const PROGRESS_CONTROLS =
-  "mx-auto mt-2.5 flex max-w-[560px] flex-wrap items-center gap-x-3 gap-y-2";
+const PROGRESS_CONTROLS = "mt-2 flex flex-wrap items-center gap-x-3 gap-y-2";
 
 /**
  * The resume line. `m-0` IS LOAD-BEARING: this is a `<p>`, and `app/globals.css`'s base rule

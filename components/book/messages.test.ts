@@ -28,19 +28,29 @@ const BOOK_DETAIL_KEYS = [
   "kunyeHeading",
   "videosHeading",
   "videoFallbackHeading",
-  // The index row's fact strip.
-  "videoTagCount",
-  // The jump strip. `videoFallbackHeading` above is its own accessible name, with no visible
-  // twin — the covered/uncovered split (and `jumpNoVideo`, its own former accessible name) is
-  // gone with the book-level count it depended on (P0 generic-catalogue cut-over,
-  // `DEC 2026-09-10c` md.1).
-  "jumpHeading",
   "tagLabel",
   "tagLabelAria",
-  // The bench's timeline. Another accessible name with no visible twin: the strip's meaning is
-  // carried by the ticks' POSITION, which is exactly the part that does not reach the
-  // accessibility tree, so a missing key here leaves a group of six links named by a dotted path.
-  "timelineLabel",
+  // Named markers (konu anlatımı, tek video) carry their own name in the accessible label.
+  "tagNamedAria",
+  // The workbench (T-128): the book bar, the list, the stage's controls and the resume card.
+  "bookSummary",
+  "bookWatched",
+  "bookInfo",
+  "markerCount",
+  "listLabel",
+  "markersLabel",
+  "backToList",
+  "position",
+  "prev",
+  "next",
+  "prevAria",
+  "nextAria",
+  "autoNext",
+  "resumeTitle",
+  "resumeDetail",
+  "statusDone",
+  "statusPart",
+  "onYoutube",
   "watch",
   "watchAria",
   "watchOnYoutube",
@@ -183,15 +193,20 @@ describe("BookDetail message catalogue", () => {
       "kunyeHeading",
       "pageCountLabel",
       "publisherLabel",
-      "purchase",
-      "purchaseAria",
       "sourceNewTab",
       "videosHeading",
     ];
     const live = [...BOOK_DETAIL_KEYS]
       .filter((key) => !ORPHANED_BY_V2_REWRITE.includes(key))
       .sort();
-    expect(requestedKeys).toEqual(live);
+    /** Requested through `videoTitle` (`lib/book/video-identity.ts`), which receives the page's
+     *  `t` as an argument rather than binding one, so the `t("…")` scan cannot see it (T-128
+     *  moved its last direct call there). The second assertion keeps the exemption honest. */
+    const REQUESTED_THROUGH_VIDEO_TITLE = ["videoFallbackHeading"];
+    expect([...requestedKeys, ...REQUESTED_THROUGH_VIDEO_TITLE].sort()).toEqual(live);
+    expect(
+      readFileSync(new URL("../../lib/book/video-identity.ts", import.meta.url), "utf8"),
+    ).toContain('return t("videoFallbackHeading",');
     // The catalogue still carries all of them — the orphans are dead copy, not missing copy.
     expect(Object.keys(trMessages.BookDetail).sort()).toEqual([...BOOK_DETAIL_KEYS].sort());
     // Every name on the debt list is a real key; a typo would silently excuse nothing.

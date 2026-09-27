@@ -156,6 +156,8 @@ export type BookList = components["schemas"]["BookListDto"];
  *    untouchable class and are printed as received — never translated, shortened or
  *    reworded on the way to the page. */
 export type BookDetail = components["schemas"]["BookDetailDto"];
+/** The closed set of book kinds (`deneme` … `tek_video`) — see `lib/book/workbench-model.ts`. */
+export type BookContentKind = BookDetail["contentKind"];
 /** One video solution: `book_videos.id` (the identifier the video-progress AND video-identity
  *  endpoints key on — UYELIK-06 / P2), its position IN THE BOOK, its display-title pair, the
  *  etiket index, and the nullable provider snapshot. **No YouTube video id here any more** (P2,
@@ -224,6 +226,8 @@ export type BookProgressResume = components["schemas"]["BookProgressResumeDto"];
 
 /** `GET /api/video-progress/books/{slug}`'s aggregate progress response on one book (PR-B / UYE-P3). */
 export type BookProgress = components["schemas"]["BookProgressDto"];
+/** One started video on the book progress response (T-128). */
+export type BookProgressVideo = components["schemas"]["BookProgressVideoDto"];
 
 // ---- Favorites (per-user saved provinces/countries — UYELIK-07/08) ----------
 /** One favorited entity: which axis it names (`type`), the matching plate/iso code (the

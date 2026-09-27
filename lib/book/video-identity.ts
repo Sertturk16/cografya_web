@@ -1,4 +1,5 @@
 import type { Locale } from "@/i18n/routing";
+import type { BookContentKind } from "@/lib/api/types";
 
 interface VideoIdentity {
   readonly orderNo: number;
@@ -34,16 +35,21 @@ export function tagFragment(
     : `${videoFragment(videoOrderNo)}-${folded}`;
 }
 
-type VideoTitleTranslator = (key: "videoFallbackHeading", values: { no: number }) => string;
+type VideoTitleTranslator = (
+  key: "videoFallbackHeading",
+  values: { no: number; kind: BookContentKind },
+) => string;
 
 export function videoTitle(
   t: VideoTitleTranslator,
   locale: Locale,
   video: VideoIdentity & { readonly titleTr: string | null; readonly titleEn: string | null },
+  /** Picks the composed noun: "Deneme 12", "Test 4", "Ders 3", "Fasikül 2", "Video 1". */
+  kind: BookContentKind,
 ): string {
   const authored = locale === "en" ? video.titleEn : video.titleTr;
   if (authored !== null) return authored;
-  return t("videoFallbackHeading", { no: video.orderNo });
+  return t("videoFallbackHeading", { no: video.orderNo, kind });
 }
 
 /** GLOSSARY.md §5's 4-step fold (lowercase → Turkish-char fold → non-alnum runs to one

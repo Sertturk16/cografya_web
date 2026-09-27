@@ -31,6 +31,7 @@ function book(overrides: Partial<BookListItem> = {}): BookListItem {
     titleTr: "Synthetic Book One",
     publisherName: "Synthetic Publisher",
     examTrack: "AYT",
+    contentKind: "deneme",
     coverImagePath: null,
     displayOrder: 1,
     updatedAt: "2026-01-01T00:00:00.000Z",

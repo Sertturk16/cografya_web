@@ -26,6 +26,8 @@ function video(youtube: BookVideoYoutube | null): BookVideo {
     orderNo: 12,
     titleTr: null,
     titleEn: null,
+    groupTitleTr: null,
+    groupTitleEn: null,
     tags: [{ orderNo: 1, startSecond: 0, nameTr: null, nameEn: null }],
     youtube,
   };

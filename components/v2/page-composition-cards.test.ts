@@ -580,7 +580,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // of on-map chip as the fullscreen credit.
 // 191 → **192** in T-118: `MapFullscreenToggle`, the atlas maps' top-left fullscreen cluster, the
 // same kind of on-map chip as the tool and game pages' own.
-export const HAND_DRAWN_CARDS = 192;
+// 192 → **190** in T-128: the book page's hero card and the bench's progress card left with the
+// workbench rewrite; the resume card that replaced the latter is a `rounded-lg` control, counted.
+export const HAND_DRAWN_CARDS = 190;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -611,7 +613,8 @@ export const HAND_DRAWN_CARDS = 192;
 // the settings personal card's consent `<fieldset>`, a bordered group and not a panel.
 // 148 → **147** in T-125: the tool workbench's in-page tool switcher, a gradient well no page
 // rendered (every tool page locked its mode), deleted with the switch it offered.
-export const HAND_DRAWN_WELLS = 147;
+// 147 → **146** in T-128: the book page's cover box left with the hero.
+export const HAND_DRAWN_WELLS = 146;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -638,8 +641,10 @@ export const HAND_DRAWN_WELLS = 147;
  * 224 → **223** in T-125: the deleted tool switcher's well was a one-off spelling.
  * 223 → **224** in T-117: the fullscreen credit panel above ({@link HAND_DRAWN_CARDS}).
  * 224 → **225** in T-120: the map result panel above ({@link HAND_DRAWN_CARDS}).
- * 225 → **226** in T-118: the atlas fullscreen toggle above ({@link HAND_DRAWN_CARDS}). */
-export const HAND_DRAWN_CARD_SPELLINGS = 226;
+ * 225 → **226** in T-118: the atlas fullscreen toggle above ({@link HAND_DRAWN_CARDS}).
+ * 226 → **223** in T-128: the book page's hero card, cover box and bench progress card were
+ * one-off spellings; the workbench's surfaces are listed above. */
+export const HAND_DRAWN_CARD_SPELLINGS = 223;
 
 /**
  * RULING AV — THE DOOR THE TAG EXCLUSION LEAVES OPEN, NOW WATCHED.
@@ -1022,7 +1027,10 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // T-121: 180 → **181**. `AreaResultPanel` hands its caller's placement to `MapResultPanel`
 // (`className={className}`); not a card of its own. 181 → **182**: `CoordinateResultPanel`, the
 // same pass-through.
-export const COMPUTED_CARD_CLASSNAMES = 182;
+// T-128: 182 → **162**. The book page's hoisted index constants (jump strip, `<details>` rows,
+// question grid) and the stage caption's constants left with the workbench rewrite; the list's
+// and marker panels' own constants replace fewer of them. None is a card.
+export const COMPUTED_CARD_CLASSNAMES = 162;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -1045,8 +1053,9 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   // footnote. 177 → 178 in T-096: the fault-line page's `SOURCE_NOTE` footnote. 178 → 179 in
   // T-037: `page-skeleton.tsx`'s `Bar`. 179 → 180 in T-120: `DistanceResultPanel`'s placement
   // pass-through. 180 → 182 in T-121: `AreaResultPanel`'s and `CoordinateResultPanel`'s
-  // placement pass-throughs. See {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 182],
+  // placement pass-throughs. 182 → 162 in T-128: the book workbench rewrite. See
+  // {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 162],
   // 9 → 8 in T-090: `/dunya/kita` dropped the continent-name chip that repeated each card's title.
   ["member", 8],
   ["ternary", 2],
@@ -1445,7 +1454,10 @@ describe("hand-drawn card surfaces are counted, split by what they actually draw
     // 63 after T-117: `map-attribution.tsx` joins with its fullscreen credit panel.
     // 64 after T-120: `map-result-panel.tsx` joins with the result panel the tool map renders.
     // 65 after T-118: `map-fullscreen-controls.tsx` joins with the atlas fullscreen toggle.
-    expect(handDrawnTotals().files).toBe(65);
+    // 64 after T-128: the book workbench rewrite left one file on the surface fewer — the
+    // bench's progress card went, and the list's and marker panels' surfaces are hoisted
+    // constants this spelling scan cannot read.
+    expect(handDrawnTotals().files).toBe(64);
   });
 
   it("a new hand-drawn card raises the count — the counter, not just the scanner", () => {
@@ -1514,8 +1526,9 @@ const CARD_SHAPED_PRIMITIVES: ReadonlyArray<readonly [string, string]> = [
  * exemption; it hid behind a template literal instead, which is the same thing wearing different
  * clothes and is worth knowing about the next population that counts by spelling.
  */
+// T-128: the book page's cover box (`aspect-[3/4]`, rounded, bordered) left with the hero, so
+// the recorded twelve are eleven.
 const MAP_VIEWPORTS: readonly string[] = [
-  "app/[locale]/(site)/kitaplar/[slug]/page.tsx <div>",
   "components/v2/v2-books-hub.tsx <div>",
   "components/v2/v2-continent-locator-map.tsx <div>",
   "components/v2/v2-earthquake-explorer.tsx <div>",

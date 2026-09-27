@@ -262,3 +262,18 @@ describe("sticky-header anchor offsets", () => {
     }
   });
 });
+
+describe("--header-height matches the header it names (T-128)", () => {
+  it("equals the site header's own row height plus its bottom border", () => {
+    // The token read 3.5rem while `V2Header`'s row is `h-16` with a 1px `border-b`: 65px against
+    // 56px. Anchor offsets hid the gap behind their own +1rem; the book workbench, which fills
+    // `100dvh - var(--header-height)`, overflowed the viewport by exactly the 9px.
+    const header = readFileSync(
+      fileURLToPath(new URL("./v2/v2-header.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(header).toContain('<nav className="sticky top-0 z-40 w-full border-b ');
+    expect(header).toContain("lg:px-8 h-16 flex items-center");
+    expect(rootBlock).toMatch(/--header-height:\s*calc\(4rem \+ 1px\);/);
+  });
+});
