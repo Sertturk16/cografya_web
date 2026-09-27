@@ -20,6 +20,12 @@ const eslintConfig = defineConfig([
   // red on a file nobody edited.
   globalIgnores([
     ".next/**",
+    // design-sync (claude.ai/design): staged converter scripts and their build output are
+    // tooling, and the authored previews import the bundle's "cografya_web" global, which only
+    // exists inside the converter's esbuild shim.
+    ".ds-sync/**",
+    "ds-bundle/**",
+    ".design-sync/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

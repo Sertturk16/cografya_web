@@ -1,0 +1,74 @@
+{
+  "projectId": "503bd96a-8ff8-47a0-a408-d02bf9552e31",
+  "shape": "package",
+  "pkg": "cografya_web",
+  "globalName": "CografyaGurmesi",
+  "entry": ".design-sync/entry.ts",
+  "tsconfig": "tsconfig.json",
+  "buildCmd": "node .design-sync/build-css.mjs",
+  "cssEntry": ".design-sync/ds.compiled.css",
+  "componentSrcMap": {
+    "Accordion": "components/ui/accordion.tsx",
+    "Alert": "components/ui/alert.tsx",
+    "Badge": "components/ui/badge.tsx",
+    "Breadcrumb": "components/ui/breadcrumb.tsx",
+    "Button": "components/ui/button.tsx",
+    "Card": "components/ui/card.tsx",
+    "CustomSelect": "components/ui/custom-select.tsx",
+    "Dialog": "components/ui/dialog.tsx",
+    "Input": "components/ui/input.tsx",
+    "Label": "components/ui/label.tsx",
+    "Progress": "components/ui/progress.tsx",
+    "Select": "components/ui/select.tsx",
+    "Sheet": "components/ui/sheet.tsx",
+    "Skeleton": "components/ui/skeleton.tsx",
+    "Spinner": "components/ui/spinner.tsx",
+    "Table": "components/ui/table.tsx",
+    "Tabs": "components/ui/tabs.tsx",
+    "Tooltip": "components/ui/tooltip.tsx",
+    "FormField": "components/patterns/form-field.tsx",
+    "FormErrorSummary": "components/patterns/form-field.tsx",
+    "MetricValue": "components/patterns/metric-value.tsx",
+    "PageContainer": "components/patterns/page-container.tsx",
+    "PageHero": "components/patterns/page-hero.tsx",
+    "StatGrid": "components/patterns/stat-grid.tsx",
+    "StatTile": "components/patterns/stat-tile.tsx",
+    "H1Display": "components/patterns/typography.tsx",
+    "Lede": "components/patterns/typography.tsx",
+    "Muted": "components/patterns/typography.tsx",
+    "Kbd": "components/patterns/typography.tsx"
+  },
+  "guidelinesGlob": ["docs/copy.md"],
+  "overrides": {
+    "Dialog": {
+      "cardMode": "single",
+      "viewport": "720x480"
+    },
+    "Sheet": {
+      "cardMode": "single",
+      "viewport": "720x560"
+    },
+    "Tooltip": {
+      "cardMode": "single",
+      "viewport": "480x200"
+    },
+    "Table": {
+      "cardMode": "column"
+    },
+    "PageContainer": {
+      "cardMode": "column"
+    },
+    "Progress": {
+      "cardMode": "single",
+      "primaryStory": "States"
+    },
+    "StatGrid": {
+      "cardMode": "column"
+    },
+    "CustomSelect": {
+      "cardMode": "single",
+      "viewport": "560x440"
+    }
+  },
+  "readmeHeader": ".design-sync/conventions.md"
+}
