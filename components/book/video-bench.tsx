@@ -1,9 +1,24 @@
 "use client";
 
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { RotateCcw } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import type { BookContentKind } from "@/lib/api/types";
 import { consumeResolved, requestAuth, useAuthModalState } from "@/lib/auth/auth-modal.client";
 import { useAuthSession } from "@/lib/auth/use-session.client";
+import { readAutoNext, writeAutoNext } from "@/lib/book/auto-next-preference";
+import {
+  BENCH_HISTORY_MARK,
+  type BenchStep,
+  isBenchEntry,
+  stepForHash,
+} from "@/lib/book/bench-history";
+import { rowStatuses } from "@/lib/book/book-status";
+import { currentMarkerIndex } from "@/lib/book/current-marker";
+import { formatDuration } from "@/lib/book/duration";
 import { resolveIzleStartSecond } from "@/lib/book/resume-second";
+import { videoFragment } from "@/lib/book/video-identity";
+import { nextPlayable } from "@/lib/book/workbench-model";
 import { fetchVideoIdentity, VIDEO_IDENTITY_FETCH_TIMEOUT_MS } from "@/lib/video-identity/client";
 import {
   buildWatchedTogglePayload,
@@ -15,82 +30,48 @@ import {
   type VideoProgressValue,
 } from "@/lib/video-progress/client";
 import { watchUrl } from "@/lib/youtube/embed";
-import { Progress } from "@/components/ui/progress";
 import { openVideo, resetBench, selectVideo, useBenchState } from "./active-video";
+import { BookBar, type BookBarProps } from "./book-bar";
 import { BenchStage, type BenchVideo } from "./bench-stage";
 
 /**
- * The workbench: one stage, one server-rendered index, and ONE delegated listener over both.
+ * The workbench island (T-128): one stage, a server-rendered list and marker strip, and ONE
+ * delegated listener over all of them.
  *
- * ## Thirty islands became one, and the count is the point
+ * ## The server markup is the state; this island reconciles it
  *
- * The accordion needed an island per block, because the thing that had to hear a press
- * (`<details>`'s own `toggle`) was the thing that had to be torn down. Nothing is collapsible any
- * more, so the natural scope is the workbench: one listener covers 180 question rows, 6 timeline
- * ticks and the İzle control, and "which video does this press belong to" is answered by the
- * `data-deneme` attribute the nearest ancestor carries rather than by a closure per block.
+ * Every video row and every marker is a real `<a href>` the server rendered (the page must read
+ * and navigate without JavaScript — `SEO-POLICY.md` §B8 8.2, §B12 12.2.b). This island never
+ * re-renders them. It writes the few attributes that change: `aria-current` on the selected row
+ * and the current marker, `hidden` on the marker panels, `data-status`/`--ring` on the rows,
+ * the group progress text. Each effect states the WHOLE answer on every run, so a reader who
+ * changed the DOM by hand cannot leave it disagreeing with the selection.
  *
- * ## The links stay REAL links, and the interception is conditional
+ * ## The interception is conditional, and the links stay real
  *
- * Every question row is a server-rendered `<a href="#video-12-etiket-3">` that resolves with no
- * JavaScript at all — `SEO-POLICY.md` §B8 8.2 rates JavaScript navigation a BLOCKER, and §B12
- * 12.2.b is what makes this index the page rather than an afterthought. This island does not
- * replace that behaviour; it adds to it, and only when all four of these hold:
+ * The delegated `onClick` acts only on an unmodified primary press on a control carrying
+ * `data-video-row` (select a video), `data-second` (a marker: seek or load) or
+ * `data-player-open` (İzle). Ctrl/Cmd/Shift/Alt and middle-click go to the browser, so "open in a
+ * new tab" still works. A marker press on a non-playable video keeps its plain fragment jump.
  *
- * · the press landed on a control carrying `data-second` (a question row or a timeline tick) or
- *   `data-player-open` (the stage's İzle button);
- * · that control sits inside something carrying `data-deneme`, so the video is known;
- * · the press is an unmodified primary click — Ctrl/Cmd/Shift/Alt and middle-click go to the
- *   browser, so "open this question in a new tab" still works;
- * · EITHER the video is `playable` (a question row, a timeline tick, or İzle loads/seeks its
- *   in-page player) OR the press landed on `data-player-open` for a video that is NOT playable
- *   (§10, P2 plan §5.3) — that combination is the ONE case this handler acts on for an
- *   `external` video: its own "watch on YouTube" control, gated and fetched the same way İzle
- *   is, resolving to an outbound tab instead of a player. A non-playable video's question rows
- *   and timeline ticks (`data-second`, no `data-player-open`) keep their plain fragment
- *   behaviour, exactly as before — this handler does nothing for them.
+ * ## The hash is the mobile step
  *
- * Anything else falls through untouched.
- *
- * `preventDefault` on the rows is not cosmetic: the native jump scrolls to the question row, which
- * on this layout is BELOW — often thousands of pixels below — the stage that is about to start
- * playing, and the Required Minimum Functionality rules ask that a player not begin playing
- * off-screen. The address bar is updated by hand instead, so the link stays copyable and
- * shareable.
- *
- * `replaceState` rather than `pushState`: this island has no `popstate` handler, so pushed entries
- * would move the URL while the stage stayed put, and 180 of them would bury whatever the reader
- * was on before. The cost — Back does not step through questions — is accepted knowingly.
+ * Selecting a video pushes a marked history entry (`#video-12`), so a phone's back gesture
+ * returns to the list step (`lib/book/bench-history.ts`). Marker presses keep `replaceState`:
+ * 180 entries would bury whatever the reader was on before. Arriving on a fragment selects the
+ * video and, below `lg`, opens the watch step — it never loads a player: the ledger permits the
+ * load only on a click or a key press, and a hash is neither.
  *
  * ## Keyboard needs no separate path
  *
  * `<a>` and `<button>` both dispatch a click on Enter (and Space, on the button), so the one
- * delegated `onClick` covers "a click or a key press" — which is the only way the ledger permits
- * the player to load. There is deliberately no `mouseover`, `pointerover` or `touchstart` handler
- * anywhere in this component tree.
- *
- * ## Arriving on a fragment selects, and does NOT load
- *
- * `#video-12-etiket-3` puts video 12 on the stage and arms İzle with that etiket's second. It
- * does not start a player: the ledger permits the load on a click or a key press, and a hash is
- * neither — the reader would otherwise have a third-party request made on their behalf by a link
- * somebody else sent them. The fragment still works exactly as it always did; what it adds is
- * that pressing İzle then starts at the question the link named.
- *
- * The selection is read from the DOM rather than passed down, because the rows already carry both
- * the id and the second, so it costs nothing in the payload.
+ * delegated `onClick` covers "a click or a key press". There is deliberately no hover or touch
+ * handler anywhere in this tree.
  */
+
 /**
- * Which video a node belongs to, or `null` — the island's ONE way of answering that.
- *
- * Both entry points ask it: the hash effect about the element a fragment resolved to, and the
- * delegated handler about the control that was pressed. They asked it with the same five lines
- * written twice (→ PR #70 review `SIMP70-M3`), and the copies could answer differently the day
- * one of them learned about a second attribute.
- *
- * `Number.parseInt` on a missing attribute yields `NaN`, which is why the finite check is the
- * return value rather than a comment: `data-deneme` is markup, so "absent" and "not a number" are
- * both reachable from a page edit, and neither may resolve to video 0.
+ * Which video a node belongs to, or `null` — the island's ONE way of answering that. `data-deneme`
+ * is markup, so "absent" and "not a number" are both reachable and neither may resolve to video 0.
  */
 function orderNoOf(node: Element): number | null {
   const holder = node.closest<HTMLElement>("[data-deneme]");
@@ -99,63 +80,119 @@ function orderNoOf(node: Element): number | null {
 }
 
 /**
- * Where a gated click's own fragment goes (uyelik-auth-redesign plan §5.6.4, superseding
- * UYELIK-06's original full-page `/kayit` redirect): AK-48's own "become a MEMBER" framing —
- * the auth modal opens in `"register"` mode by default (`requestAuth`'s own default), not
- * `"login"` — a first-time reader arriving from organic search on a solved-question video has
- * no account yet. Applied directly to the URL and to the bench's own selection, since there
- * is no navigation to carry it through this time: the modal changes nothing in the
- * surrounding page, so what the old redirect-and-return round trip achieved through a fresh
- * page load is achieved here by doing the SAME two things — select the video, replace the URL
- * — immediately, at click time, rather than deferring them to a page the reader never leaves.
+ * Where a gated click's own fragment goes (uyelik-auth-redesign plan §5.6.4): the auth modal
+ * opens in place, so the selection and the address are applied at click time rather than on a
+ * page the reader never leaves.
  */
 function applyFragmentAndSelect(orderNo: number, fragment: string | null): void {
-  if (fragment !== null) window.history.replaceState(null, "", fragment);
+  if (fragment !== null) {
+    window.history.replaceState(null, "", fragment);
+    notifyHash();
+  }
   selectVideo(orderNo);
 }
 
+/** `localStorage`, or `null` where reading the property itself throws (blocked storage). */
+function safeLocalStorage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The URL hash as an external store: the mobile step is derived from it rather than mirrored into
+ * state, so the back gesture, a shared link and the bench's own pushes cannot disagree. The
+ * History API fires no event for `pushState`/`replaceState`, so the bench calls
+ * {@link notifyHash} after each of its own writes.
+ */
+const hashListeners = new Set<() => void>();
+
+function subscribeHash(listener: () => void): () => void {
+  hashListeners.add(listener);
+  window.addEventListener("popstate", listener);
+  window.addEventListener("hashchange", listener);
+  return () => {
+    hashListeners.delete(listener);
+    window.removeEventListener("popstate", listener);
+    window.removeEventListener("hashchange", listener);
+  };
+}
+
+function notifyHash(): void {
+  for (const listener of hashListeners) listener();
+}
+
+/** Stored auto-next preference; storage changes from another tab are not followed. */
+function subscribeNothing(): () => void {
+  return () => undefined;
+}
+
+/** The breakpoint the two steps split at — `lg`, the same 64rem the layout classes use. */
+const NARROW_QUERY = "(max-width: 63.999rem)";
+
 export function VideoBench({
-  className,
-  indexClassName,
   videos,
-  defaultOrderNo,
+  kind,
   bookSlug,
-  children,
+  barProps,
+  list,
+  markers,
 }: {
-  /** Optional exactly as React types it: a CSS-module lookup is `string | undefined` under
-   *  `noUncheckedIndexedAccess`. The workbench is page LAYOUT, so its two class names come from
-   *  the page's own module rather than this island importing across the app boundary — the same
-   *  split the accordion row used before it. */
-  className?: string;
-  indexClassName?: string;
   videos: readonly BenchVideo[];
-  defaultOrderNo: number;
-  bookSlug?: string;
-  /** The server-rendered index — 30 rows, 180 links, untouched markup. */
-  children: ReactNode;
+  kind: BookContentKind;
+  bookSlug: string;
+  /** The book bar's server strings; the island adds the live watched count. */
+  barProps: Omit<BookBarProps, "watchedText">;
+  /** The server-rendered video list (`WorkbenchList`). */
+  list: ReactNode;
+  /** The server-rendered marker panels of every video (`MarkerPanels`). */
+  markers: ReactNode;
 }) {
+  const t = useTranslations("BookDetail");
   const rootRef = useRef<HTMLDivElement>(null);
-  /** The second İzle should start from — 0 unless the reader arrived on a question link. */
+  /** The second İzle should start from — 0 unless the reader arrived on a marker link. */
   const hashStartSecond = useRef(0);
   const modal = useAuthModalState();
   /** The modal request currently being served, or `null` (plan §5.6.4). */
   const authRequestId = useRef<string | null>(null);
-  /** What to resume once auth succeeds — the video only; the second is kept for the one-line
-   *  future flip named in §13, unused by the deliberate no-auto-load resume below. */
+  /** What to focus once auth succeeds — the video only; the load stays a deliberate press. */
   const authResume = useRef<{ readonly orderNo: number; readonly second: number } | null>(null);
 
-  // THE LOGIN GATE'S OWN SESSION READ (§5.3.2), called ONCE at the VideoBench level — `authState`
-  // is threaded down to `BenchStage`/`DenemeVideo`/`VideoProgressControls` as a prop, never
-  // re-derived with a second `useAuthSession()` call anywhere in this tree.
+  const orderNos = useMemo(() => videos.map((video) => video.orderNo), [videos]);
+  const defaultOrderNo = orderNos[0] ?? 0;
+  const single = videos.length === 1;
+  const hash = useSyncExternalStore(
+    subscribeHash,
+    () => window.location.hash,
+    () => "",
+  );
+  const landing = stepForHash(hash, orderNos);
+  const step: BenchStep = single ? "watch" : landing.step;
+  /** Set by a reader's own step change (not the first render), so focus follows only then. */
+  const focusOnStep = useRef(false);
+  const storedAutoNext = useSyncExternalStore(
+    subscribeNothing,
+    () => readAutoNext(safeLocalStorage()),
+    () => true,
+  );
+  /** The reader's toggle in this page view; wins over storage, so a blocked store still works. */
+  const [autoNextOverride, setAutoNextOverride] = useState<boolean | null>(null);
+  const autoNext = autoNextOverride ?? storedAutoNext;
+  const [currentMarker, setCurrentMarker] = useState<{ orderNo: number; index: number } | null>(
+    null,
+  );
+
+  // THE LOGIN GATE'S OWN SESSION READ (§5.3.2), called ONCE here and threaded down as a prop.
   const [authState] = useAuthSession();
 
-  // Book-level aggregate progress (UYE-P3, PR-B / §3.1) — only fetched when authenticated
+  // Book-level progress (UYE-P3 §3.1): the watched count, the resume card and, since T-128, one
+  // row per started video for the list's status icons. Only fetched when authenticated.
   const [fetchedBookProgress, setFetchedBookProgress] = useState<BookProgressValue | null>(null);
 
   useEffect(() => {
-    if (authState !== "authenticated" || !bookSlug) {
-      return;
-    }
+    if (authState !== "authenticated") return;
     let cancelled = false;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), VIDEO_PROGRESS_FETCH_TIMEOUT_MS);
@@ -171,31 +208,20 @@ export function VideoBench({
     };
   }, [authState, bookSlug]);
 
-  const bookProgress = authState === "authenticated" && bookSlug ? fetchedBookProgress : null;
-  const setBookProgress = setFetchedBookProgress;
+  const bookProgress = authState === "authenticated" ? fetchedBookProgress : null;
 
-  // THE PROGRESS FETCH (§5.4) — lazy, per video, on selection, never eager for all 30. Resolves
-  // the SELECTED video's `bookVideoId` the same way `BenchStage` resolves its own `video` (the
-  // `selected ?? defaultOrderNo` formula — the store is a singleton, so both components read
-  // the same underlying value, but this one has to compute it independently because it has to
-  // be available at CLICK TIME inside `onClick` below, which `BenchStage` does not own).
+  // THE PER-VIDEO PROGRESS FETCH (§5.4) — lazy, on selection, never eager for every video.
   const { selected } = useBenchState();
   const selectedOrderNo = selected ?? defaultOrderNo;
   const selectedVideo = videos.find((candidate) => candidate.orderNo === selectedOrderNo);
   const bookVideoId = selectedVideo?.bookVideoId;
 
   const [rawProgress, setRawProgress] = useState<VideoProgressValue | null | "loading">(null);
-  // Not authenticated, or no video selected yet, both fold to `undefined` — the same "nothing
-  // to fetch" key.
   const fetchKey = authState === "authenticated" ? bookVideoId : undefined;
   const [lastFetchKey, setLastFetchKey] = useState<string | undefined>(undefined);
 
-  // ADJUSTING STATE DURING RENDER (the same idiom `register-form.tsx`'s own district-follows-
-  // province fetch already uses, its own comment names it in as many words): the SYNCHRONOUS
-  // reset to `"loading"` (or `null` when there's nothing to fetch) happens HERE, comparing
-  // against the last key this ran for — never a bare `setState` at the top of an effect body,
-  // which `react-hooks/set-state-in-effect` correctly flags as the "derive state from props"
-  // anti-pattern it is. The effect below owns ONLY the actual fetch.
+  // Adjusting state during render (the idiom `register-form.tsx` uses): the synchronous reset
+  // happens here, and the effect below owns only the fetch.
   if (fetchKey !== lastFetchKey) {
     setLastFetchKey(fetchKey);
     setRawProgress(fetchKey === undefined ? null : "loading");
@@ -221,10 +247,9 @@ export function VideoBench({
     };
   }, [rawProgress, bookVideoId]);
 
-  /** The watched-toggle's own save (§5.6) — builds the full-state-replace payload through
-   *  {@link buildWatchedTogglePayload} (the mechanical enforcement of the hazard named there),
-   *  and, on success, updates the local `progress` state so the toggle reflects the new value
-   *  immediately rather than waiting for the next selection change to re-fetch it. */
+  /** The watched toggle's save (§5.6): a full-state replace through
+   *  {@link buildWatchedTogglePayload}, reflected locally in the video's and the book's state
+   *  so the toggle, the count and the row's status icon move without a re-fetch. */
   const saveWatched = async (nextWatched: boolean): Promise<{ readonly ok: boolean }> => {
     if (bookVideoId === undefined) return { ok: false };
     const current = progress !== null && progress !== "loading" ? progress : null;
@@ -236,83 +261,199 @@ export function VideoBench({
         watched: payload.watched,
         watchedAt: payload.watched ? new Date().toISOString() : null,
       });
-      setBookProgress((prev) => {
+      setFetchedBookProgress((prev) => {
         if (!prev) return prev;
-        const diff = nextWatched ? 1 : -1;
+        const others = prev.videos.filter((row) => row.bookVideoId !== bookVideoId);
+        const videosNext = [
+          ...others,
+          {
+            bookVideoId,
+            lastPositionSeconds: payload.lastPositionSeconds,
+            watched: payload.watched,
+          },
+        ];
         return {
           ...prev,
-          watchedCount: Math.max(0, Math.min(prev.videoCount, prev.watchedCount + diff)),
+          videos: videosNext,
+          watchedCount: videosNext.filter((row) => row.watched).length,
         };
       });
     }
     return result;
   };
 
-  useEffect(() => {
-    const id = window.location.hash.slice(1);
-    if (id === "") return;
-    const target = document.getElementById(id);
-    const root = rootRef.current;
-    if (target === null || root === null || !root.contains(target)) return;
+  /** Select a video as a reader action: a marked history entry, the watch step, and — below
+   *  `lg` — focus on the stage heading. */
+  const goTo = (orderNo: number) => {
+    window.history.pushState({ [BENCH_HISTORY_MARK]: true }, "", `#${videoFragment(orderNo)}`);
+    selectVideo(orderNo);
+    setCurrentMarker(null);
+    focusOnStep.current = window.matchMedia(NARROW_QUERY).matches;
+    notifyHash();
+  };
 
-    const orderNo = orderNoOf(target);
-    if (orderNo === null) return;
+  /** Back to the list: step back through our own entry when there is one, so the phone's back
+   *  gesture and this button agree; otherwise clear the fragment in place. */
+  const backToList = () => {
+    focusOnStep.current = true;
+    if (isBenchEntry(window.history.state)) {
+      window.history.back();
+      return;
+    }
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    notifyHash();
+  };
 
+  const onPlaybackTime = (orderNo: number, second: number) => {
     const video = videos.find((candidate) => candidate.orderNo === orderNo);
     if (video === undefined) return;
-    selectVideo(orderNo);
+    const index = currentMarkerIndex(
+      video.tags.map((tag) => tag.second),
+      second,
+    );
+    setCurrentMarker((prev) =>
+      index === -1 || (prev?.orderNo === orderNo && prev.index === index)
+        ? prev
+        : { orderNo, index },
+    );
+  };
 
+  /** Auto-next: only after the in-page player itself reported the end, only to a video that
+   *  plays in the page. The reader started this playback, so continuing it is theirs too. */
+  const onEnded = (orderNo: number) => {
+    if (!autoNext) return;
+    const next = nextPlayable(videos, orderNo);
+    if (next === null) return;
+    window.history.pushState({ [BENCH_HISTORY_MARK]: true }, "", `#${videoFragment(next.orderNo)}`);
+    notifyHash();
+    setCurrentMarker(null);
+    openVideo(next.orderNo, 0);
+  };
+
+  const toggleAutoNext = () => {
+    writeAutoNext(safeLocalStorage(), !autoNext);
+    setAutoNextOverride(!autoNext);
+  };
+
+  /** The resume card's press: a click, so loading the player here respects click-to-load. */
+  const resumeFrom = (orderNo: number, second: number, playable: boolean) => {
+    goTo(orderNo);
+    if (playable) openVideo(orderNo, second);
+  };
+
+  // The hash names a video (a shared link, the back gesture, our own push): select it. It never
+  // loads a player — the ledger permits the load only on a click or a key press.
+  useEffect(() => {
+    if (landing.orderNo !== null) selectVideo(landing.orderNo);
+  }, [landing.orderNo]);
+
+  // Arriving on a marker fragment arms İzle with that marker's second.
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    const target = id === "" ? null : document.getElementById(id);
+    const root = rootRef.current;
+    if (target === null || root === null || !root.contains(target)) return;
+    const orderNo = orderNoOf(target);
+    const video = videos.find((candidate) => candidate.orderNo === orderNo);
     const raw = target.dataset.second;
-    if (video.playable && raw !== undefined) {
+    if (video?.playable && raw !== undefined) {
       const second = Number.parseInt(raw, 10);
       if (Number.isFinite(second)) hashStartSecond.current = second;
     }
-
-    /* THE CORRECTIVE SCROLL, AND IT MEASURES THE PRE-SWAP LAYOUT. `selectVideo` above schedules a
-       re-render; React has not committed it when this line runs, so what is measured is the page
-       as the server rendered it. That is CORRECT here and it is correct for one reason only —
-       every block of the stage reserves its height in all three cover states, so the swap changes
-       no geometry to re-measure. It is NOT a tripwire for the day someone unreserves one: it
-       could not see that shift, because the shift happens after it (→ PR #70 review `CODE70-M1`).
-       The invariant is held where it is stated — `.frame`, `.stageCaption` and the timeline card,
-       each of which reserves its box for the non-rich states — and `bench.structure.test.ts` is
-       what fails when one of them stops.
-       What this line IS for is the ordinary fragment landing: it re-measures the target against
-       its own `scroll-margin-top` and corrects only a real displacement. An unconditional scroll
-       would be a scroll-jack — a reader who started moving between first paint and hydration would
-       be pulled back (→ PR #66 review `CODE66-M5`). The residual is stated rather than engineered
-       around: at most once per load, on a page with one island. */
-    const wanted = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-    if (Math.abs(target.getBoundingClientRect().top - wanted) > 1) target.scrollIntoView();
   }, [videos]);
 
-  /* The page is leaving. The store is module state and a client-side route change does not
-     re-evaluate the module, so without this an open player would survive leaving the page and
-     reappear, autoplaying, on the reader's next arrival, with no click and no key press anywhere
-     in between (→ PR #63 review `CODE63-I1`). One island means one unconditional reset; the
-     one-tick same-route residue is documented in `active-video.ts`, where the state lives. */
+  /* The page is leaving. The store is module state that a client-side route change does not
+     re-evaluate, so without this an open player would reappear on the reader's next arrival
+     (→ PR #63 review `CODE63-I1`). */
   useEffect(() => resetBench, []);
 
-  /** The `external`-state "watch on YouTube" control's own in-flight orderNo, or `null` (§10).
-   *  Local to `VideoBench` rather than `active-video.ts`'s store: an external video never gets
-   *  a player, so it has no business inside a store whose whole shape is "one player, ever". */
+  // Focus follows a reader's own step change, and only then.
+  useEffect(() => {
+    if (!focusOnStep.current) return;
+    focusOnStep.current = false;
+    if (step === "watch") {
+      document.getElementById("bench-current-heading")?.focus();
+      return;
+    }
+    rootRef.current
+      ?.querySelector<HTMLElement>(`[data-video-row][data-deneme="${selectedOrderNo}"]`)
+      ?.focus();
+  }, [step, selectedOrderNo]);
+
+  // The selection, stated whole: the current row, the visible marker panel, the row in view.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (root === null) return;
+    const key = String(selectedOrderNo);
+    for (const row of root.querySelectorAll<HTMLElement>("[data-video-row]")) {
+      if (row.dataset.deneme === key) row.setAttribute("aria-current", "true");
+      else row.removeAttribute("aria-current");
+    }
+    for (const panel of root.querySelectorAll<HTMLElement>("[data-marker-panel]")) {
+      panel.hidden = panel.dataset.deneme !== key;
+    }
+    root
+      .querySelector<HTMLElement>(`[data-video-row][data-deneme="${key}"]`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [selectedOrderNo]);
+
+  // The current marker, stated whole: playback or the last press, else the marker the hash names.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (root === null) return;
+    const id = hash.slice(1);
+    const named = currentMarker === null && id !== "" ? document.getElementById(id) : null;
+    for (const marker of root.querySelectorAll<HTMLElement>(
+      "[data-marker-panel] [data-marker-index]",
+    )) {
+      const panel = marker.closest<HTMLElement>("[data-marker-panel]");
+      const on =
+        currentMarker === null
+          ? marker === named
+          : panel?.dataset.deneme === String(currentMarker.orderNo) &&
+            marker.dataset.markerIndex === String(currentMarker.index);
+      if (on) marker.setAttribute("aria-current", "true");
+      else marker.removeAttribute("aria-current");
+    }
+  }, [currentMarker, hash]);
+
+  const statuses = useMemo(
+    () =>
+      rowStatuses(
+        bookProgress?.videos ?? [],
+        new Map(videos.map((video) => [video.bookVideoId, video.durationSeconds])),
+      ),
+    [bookProgress, videos],
+  );
+
+  // The status icons and the group progress, stated whole.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (root === null) return;
+    for (const row of root.querySelectorAll<HTMLElement>("[data-video-row]")) {
+      const status = statuses.get(row.dataset.videoId ?? "");
+      if (status === undefined) {
+        delete row.dataset.status;
+        row.style.removeProperty("--ring");
+      } else {
+        row.dataset.status = status.kind;
+        row.style.setProperty("--ring", status.kind === "part" ? String(status.fraction) : "1");
+      }
+    }
+    for (const slot of root.querySelectorAll<HTMLElement>("[data-group-progress]")) {
+      const ids = (slot.dataset.groupIds ?? "").split(" ").filter(Boolean);
+      const done = ids.filter((id) => statuses.get(id)?.kind === "done").length;
+      slot.textContent = bookProgress === null ? "" : `${done}/${ids.length}`;
+    }
+  }, [statuses, bookProgress]);
+
+  /** The external-state "watch on YouTube" control's in-flight orderNo, or `null` (§10). */
   const [externalResolving, setExternalResolving] = useState<number | null>(null);
 
   /**
-   * The `external`-state control's own flow (§10, P2 plan §5.3) — gated exactly like İzle
-   * (login gate already checked by the caller below), but resolving to a real outbound tab
-   * instead of an in-page player once the guarded fetch answers, rather than publishing the
-   * raw id into a real `href` before any click the way this control used to. Refuses a second
-   * press for the SAME video while its own fetch is already in flight; a different video
-   * pressed mid-flight simply starts its own, independent attempt.
-   *
-   * `window.open` runs only AFTER the `await` — a known, accepted trade named in the plan's own
-   * validation notes: some browsers may treat a popup opened after an async gap as not
-   * originating from the click and block it. The alternative (opening a blank tab
-   * SYNCHRONOUSLY and writing its `location` once the fetch resolves) needs a real reference
-   * back to that tab, which `noopener` — this repo's own standing rule for every other outbound
-   * `target="_blank"` link, kept here rather than weakened for this one control — deliberately
-   * prevents `window.open` from returning.
+   * The external-state control's flow (§10, P2 plan §5.3): gated like İzle, resolving to an
+   * outbound tab once the guarded identity fetch answers. `window.open` runs after the `await` —
+   * a known trade: `noopener` prevents writing a pre-opened tab's location.
    */
   async function openExternalWatch(video: BenchVideo): Promise<void> {
     if (externalResolving === video.orderNo) return;
@@ -328,12 +469,26 @@ export function VideoBench({
     }
   }
 
+  const resume = bookProgress?.resume ?? null;
+  const resumeVideo =
+    resume === null ? undefined : videos.find((video) => video.orderNo === resume.orderNo);
+
   const onClick = (event: React.MouseEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
       return;
     }
     if (!(event.target instanceof Element)) return;
+
+    const row = event.target.closest<HTMLElement>("[data-video-row]");
+    if (row !== null) {
+      const rowOrderNo = orderNoOf(row);
+      if (rowOrderNo === null) return;
+      event.preventDefault();
+      goTo(rowOrderNo);
+      return;
+    }
+
     const trigger = event.target.closest<HTMLElement>("[data-second], [data-player-open]");
     if (trigger === null) return;
 
@@ -343,11 +498,9 @@ export function VideoBench({
     if (video === undefined) return;
 
     if (!video.playable) {
-      // A question row or a timeline tick on a non-playable video is nothing but a fragment
-      // jump — the native default IS that behaviour (bench-stage.tsx's own docblock), so it is
-      // left untouched here. Only the "watch on YouTube" control (data-player-open, §10) is an
-      // action this handler owns for an `external` video: gated the same way İzle is, but
-      // resolving to an outbound tab instead of an in-page player.
+      // A marker on a non-playable video is nothing but a fragment jump — the native default.
+      // Only the "watch on YouTube" control (data-player-open, §10) is this handler's: gated the
+      // same way İzle is, resolving to an outbound tab instead of an in-page player.
       if (!trigger.hasAttribute("data-player-open")) return;
       event.preventDefault();
       if (authState !== "authenticated") {
@@ -365,10 +518,11 @@ export function VideoBench({
       const parsed = Number.parseInt(raw, 10);
       if (!Number.isFinite(parsed)) return;
       second = parsed;
+      const index = Number.parseInt(trigger.dataset.markerIndex ?? "", 10);
+      if (Number.isFinite(index)) setCurrentMarker({ orderNo, index });
     } else {
-      // §5.4's resume-second priority: a plain İzle press (no explicit `data-second`) resumes
-      // from the last saved position when one exists and is further along than the explicit
-      // (fragment-armed) target — never the reverse.
+      // §5.4's resume-second priority: a plain İzle press resumes from the last saved position
+      // when it is further along than the fragment-armed target — never the reverse.
       second = resolveIzleStartSecond(
         second,
         progress !== null && progress !== "loading" ? progress.lastPositionSeconds : undefined,
@@ -377,169 +531,97 @@ export function VideoBench({
 
     event.preventDefault();
 
-    // THE LOGIN GATE (§5.3.2/§5.3.3). `checking` is treated the same as `anonymous`: a control
-    // must not open a player before the session check has resolved.
+    // THE LOGIN GATE (§5.3.2/§5.3.3). `checking` is treated the same as `anonymous`.
     if (authState !== "authenticated") {
-      // The İzle button has no href of its own, so it addresses the video; a row addresses
-      // itself. Applied immediately — no navigation happens this time, so the fragment/
-      // selection have to be set here rather than deferred to a page the reader never leaves
-      // (uyelik-auth-redesign plan §5.6.4).
       applyFragmentAndSelect(orderNo, trigger.getAttribute("href"));
       authResume.current = { orderNo, second };
       authRequestId.current = requestAuth("video");
       return;
     }
 
-    // The İzle button has no href of its own, so it addresses the video; a row addresses itself.
+    // İzle has no href of its own, so it addresses the video; a marker addresses itself.
     const fragment = trigger.getAttribute("href");
     if (fragment !== null) window.history.replaceState(null, "", fragment);
+    notifyHash();
     openVideo(orderNo, second);
   };
 
-  // The resume — DELIBERATELY does NOT call `openVideo()` (plan §5.6.4, §13's one genuine
-  // owner-judgment item, surfaced with a reasoned default rather than left open). The video is
-  // already selected (`applyFragmentAndSelect` ran at click time); this only closes the modal
-  // and moves focus to the now-unblocked İzle control, one deliberate keypress from playing —
-  // a standing rule in this component tree, not caution for its own sake: `orderNoOf`'s own
-  // docblock states the ledger permits the load ONLY on a click or a key press, so a third-
-  // party (YouTube) request must never be made on the reader's behalf by an auth round trip
-  // that was not itself aimed at the player.
+  // The post-auth resume DELIBERATELY does NOT call `openVideo()` (plan §5.6.4/§13): it closes
+  // the loop by focusing the now-unblocked İzle control, one deliberate press from playing.
   useEffect(() => {
     const id = authRequestId.current;
     if (id === null || modal.resolvedRequestId !== id) return;
     if (!consumeResolved(id)) return;
     authRequestId.current = null;
-    const resume = authResume.current;
+    const pending = authResume.current;
     authResume.current = null;
-    if (resume === null) return;
+    if (pending === null) return;
     const target = rootRef.current?.querySelector<HTMLElement>(
-      `[data-deneme="${resume.orderNo}"] [data-player-open]`,
+      `[data-deneme="${pending.orderNo}"] [data-player-open]`,
     );
     target?.focus();
   }, [modal.resolvedRequestId]);
 
-  // THE MOBILE ACCORDION (T-070), and it is the island's job rather than the markup's because
-  // only the island knows which video is selected.
-  //
-  // WHAT THE SERVER SENDS IS EVERY ROW OPEN, which is the page as it was before this task —
-  // 31 rows and 186 links painted, for a crawler and for a reader with no JavaScript alike.
-  // What this does is CLOSE the rest, below `lg`, once there is a client to do it: at 390px
-  // the index was 5414px of identical six-button blocks between the reader and the bottom of
-  // the page, and 30 of those 31 blocks were for a video that was not on the stage.
-  //
-  // `lg` (64rem) is the SAME breakpoint `WORKBENCH` splits its columns at and `BenchStage`
-  // starts sticking at, and that is the whole reason it is the right one: above it the index
-  // sits BESIDE a stage that stays in view, so the list is a scannable index; below it the
-  // index sits UNDER the stage and every closed row is a screen the reader does not scroll.
-  // `matchMedia` and not a resize listener — the query fires only when the answer changes, and
-  // `change` covers a rotation as well as a resize.
-  //
-  // It writes `open` on every row on every selection, rather than toggling the two that moved:
-  // a reader can open a row by hand (it is a `<details>`), so "which rows are open" is not a
-  // value this component holds — the DOM is the state, and the only honest way to reconcile it
-  // is to state the whole answer.
-  useEffect(() => {
-    const root = rootRef.current;
-    if (root === null) return;
-    const narrow = window.matchMedia("(max-width: 63.999rem)");
-    const apply = () => {
-      for (const row of root.querySelectorAll<HTMLDetailsElement>("details[data-deneme]")) {
-        const orderNo = Number.parseInt(row.dataset.deneme ?? "", 10);
-        row.open = !narrow.matches || orderNo === selectedOrderNo;
-      }
-    };
-    /* THE JUMP STRIP LANDS ON A HEADING, AND THE HEADING IS IN THE `<summary>`. Chrome expands a
-       `<details>` when a fragment resolves INSIDE its content, which is why a question link
-       (`#video-9-etiket-2`) needs nothing here — but `#video-9` resolves to the row's own
-       heading, which sits in the summary, so nothing needed expanding and the reader arrived on
-       a closed row. The strip's links are plain fragment anchors and deliberately do NOT move the
-       stage (they never have), so this opens the row and changes nothing else. */
-    const openFromHash = () => {
-      const id = window.location.hash.slice(1);
-      if (id === "") return;
-      const target = document.getElementById(id);
-      if (target === null || !root.contains(target)) return;
-      const row = target.closest<HTMLDetailsElement>("details[data-deneme]");
-      if (row !== null) row.open = true;
-
-      /* AND RE-ALIGN, because the collapse moved the ground under the browser's own scroll.
-         Landing on `#video-20-etiket-3` measured the target 30px ABOVE the viewport: the engine
-         scrolled to it while all 30 rows were open, then this effect closed the 19 rows above it
-         and everything below moved up. The correction is the same measure-then-move the hash
-         effect performs for the ordinary landing, with the same guard against scroll-jacking —
-         it moves only a target that is actually off its own `scroll-margin-top`.
-         It runs on a REAL hash navigation only. A question press writes its fragment with
-         `replaceState`, which fires no `hashchange`, so this never competes with the player's own
-         corrective scroll in `deneme-video.tsx`. */
-      const wanted = Number.parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-      if (Math.abs(target.getBoundingClientRect().top - wanted) > 1) target.scrollIntoView();
-    };
-    apply();
-    openFromHash();
-    narrow.addEventListener("change", apply);
-    window.addEventListener("hashchange", openFromHash);
-    return () => {
-      narrow.removeEventListener("change", apply);
-      window.removeEventListener("hashchange", openFromHash);
-    };
-  }, [selectedOrderNo]);
+  const watchedText =
+    bookProgress === null
+      ? null
+      : t("bookWatched", { watched: bookProgress.watchedCount, count: bookProgress.videoCount });
 
   return (
-    <div ref={rootRef} className={className} onClick={onClick}>
-      {bookProgress !== null && bookProgress.videoCount > 0 && (
-        <div className="mb-6 p-4 rounded-2xl bg-card border border-border shadow-xs flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-              %{Math.round((bookProgress.watchedCount / bookProgress.videoCount) * 100)}
-            </div>
-            <div>
-              <div className="text-xs font-bold text-foreground">
-                Bu kitapta {bookProgress.videoCount} videodan {bookProgress.watchedCount} tanesini
-                izledin
-              </div>
-              {/* `Progress` rather than two nested divs (T-036): the hand-drawn bar carried
-                  no `role="progressbar"` and no `aria-valuenow`. The percentage IS on screen
-                  beside it, but only as text a sighted reader can pair with the bar; the bar
-                  itself was a decorative rectangle to assistive technology. */}
-              <Progress
-                value={Math.min(
-                  100,
-                  Math.round((bookProgress.watchedCount / bookProgress.videoCount) * 100),
-                )}
-                aria-label="Kitap ilerlemesi"
-                className="w-36 sm:w-48 mt-1.5"
-              />
-            </div>
-          </div>
-
-          {bookProgress.resume !== null && (
+    <div
+      ref={rootRef}
+      onClick={onClick}
+      data-step={step}
+      className="group/bench mx-auto flex h-[calc(100dvh-var(--header-height))] min-h-[30rem] w-full max-w-7xl flex-col lg:min-h-[36rem]"
+    >
+      <div className="shrink-0 border-b border-border px-4 py-3 group-data-[step=watch]/bench:max-lg:hidden sm:px-6 lg:px-8">
+        <BookBar {...barProps} watchedText={watchedText} />
+      </div>
+      <div className="flex min-h-0 flex-1 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]">
+        <div className="min-h-0 flex-1 overflow-y-auto group-data-[step=watch]/bench:max-lg:hidden lg:border-r lg:border-border">
+          {resume !== null && resumeVideo !== undefined && (
             <button
               type="button"
-              onClick={() => {
-                if (bookProgress.resume) {
-                  selectVideo(bookProgress.resume.orderNo);
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-colors cursor-pointer"
+              onClick={() =>
+                resumeFrom(resumeVideo.orderNo, resume.lastPositionSeconds, resumeVideo.playable)
+              }
+              className="m-3 flex min-h-14 w-[calc(100%-1.5rem)] items-center gap-3 rounded-lg border border-border bg-card px-3 text-left transition-colors duration-150 hover:border-primary"
             >
-              <span>Devam et: Deneme {bookProgress.resume.orderNo}</span>
-              <span className="text-[10px] text-muted-foreground">
-                ({Math.floor(bookProgress.resume.lastPositionSeconds / 60)}:
-                {String(bookProgress.resume.lastPositionSeconds % 60).padStart(2, "0")})
+              <RotateCcw className="size-5 shrink-0 text-primary" aria-hidden="true" />
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-foreground">
+                  {t("resumeTitle")}
+                </span>
+                <span className="block text-xs tabular-nums text-muted-foreground">
+                  {t("resumeDetail", {
+                    label: resumeVideo.label,
+                    time: formatDuration(resume.lastPositionSeconds),
+                  })}
+                </span>
               </span>
             </button>
           )}
+          {list}
         </div>
-      )}
-      <BenchStage
-        videos={videos}
-        defaultOrderNo={defaultOrderNo}
-        authState={authState}
-        progress={progress}
-        onSaveWatched={saveWatched}
-        externalResolvingOrderNo={externalResolving}
-      />
-      <div className={indexClassName}>{children}</div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col group-data-[step=pick]/bench:max-lg:hidden">
+          <BenchStage
+            videos={videos}
+            kind={kind}
+            defaultOrderNo={defaultOrderNo}
+            authState={authState}
+            progress={progress}
+            onSaveWatched={saveWatched}
+            externalResolvingOrderNo={externalResolving}
+            autoNext={autoNext}
+            onToggleAutoNext={toggleAutoNext}
+            onGo={goTo}
+            onBack={backToList}
+            onPlaybackTime={onPlaybackTime}
+            onEnded={onEnded}
+            markers={markers}
+          />
+        </div>
+      </div>
     </div>
   );
 }

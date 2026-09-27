@@ -43,6 +43,7 @@ const PAGE = flatCode(
     "utf8",
   ),
 );
+const BOOK_BAR = flatCode(readFileSync(new URL("./book-bar.tsx", import.meta.url), "utf8"));
 
 /** The `.filter(…)` predicate as written. Everything claimed about the PER-ROW gate is
  *  asserted against this slice rather than the whole file, so a condition that moved out of
@@ -136,7 +137,11 @@ describe("the book page's source statement", () => {
     // Both halves matter: `target="_blank"` makes the sentence true, and `rel="noopener
     // noreferrer"` is the repo's single form for it (→ PR #62 review `SEC62-M3`), never one
     // link's variant of it.
-    const newTabAnchors = PAGE.match(/<a\s[^>]*target="_blank"[^>]*>/g) ?? [];
+    // Since T-128 the seller link lives in the book bar the page renders through the bench.
+    const newTabAnchors = [
+      ...(PAGE.match(/<a\s[^>]*target="_blank"[^>]*>/g) ?? []),
+      ...(BOOK_BAR.match(/<a\s[^>]*target="_blank"[^>]*>/g) ?? []),
+    ];
     expect(newTabAnchors).toHaveLength(2); // the seller link, and W3's YouTube credit link
     for (const anchor of newTabAnchors) {
       expect(anchor).toContain('rel="noopener noreferrer"');

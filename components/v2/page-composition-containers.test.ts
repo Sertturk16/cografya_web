@@ -683,7 +683,13 @@ function rootsWithUncontainedBody(): Map<string, string[]> {
  * against the pre-fix tree. The other three leave it at 0 — they are shapes this tree does not
  * contain today, and the controls are what keep them from arriving unnoticed.
  */
-export const RENDER_ROOTS_WITH_UNCONTAINED_BODY = 0;
+/*
+ * 0 → **1** in T-128, deliberately: the book page's `<VideoBench>` is a one-screen workbench that
+ * draws its own `max-w-7xl` box and its own gutters per column (list rows and the stage run edge
+ * to edge on a phone). Inside `PageContainer` it would carry the container's gutter on top of its
+ * own — 32px a side at 360px. Everything else on that page is inside the container.
+ */
+export const RENDER_ROOTS_WITH_UNCONTAINED_BODY = 1;
 
 describe("every render root's body sits inside a PageContainer", () => {
   it("the count of roots with body content outside any container is exactly the recorded number", () => {

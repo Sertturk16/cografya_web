@@ -46,7 +46,8 @@ function flatCode(source: string): string {
 const VIDEO = flatCode(sourceOf("./deneme-video.tsx"));
 const BENCH = flatCode(sourceOf("./video-bench.tsx"));
 const STAGE = flatCode(sourceOf("./bench-stage.tsx"));
-const TIMELINE = flatCode(sourceOf("./bench-timeline.tsx"));
+const MARKERS = flatCode(sourceOf("./marker-panels.tsx"));
+const LIST = flatCode(sourceOf("./workbench-list.tsx"));
 const PAGE = flatCode(sourceOf("../../app/[locale]/(site)/kitaplar/[slug]/page.tsx"));
 
 /** The `playerEmbedSrc({ … })` argument object, as written. Everything asserted about the
@@ -181,17 +182,18 @@ describe("the click gate", () => {
     expect(BENCH).toContain('closest<HTMLElement>("[data-second], [data-player-open]")');
   });
 
-  it("selects hooks that the cover, the timeline and the page still emit", () => {
+  it("selects hooks that the cover, the marker panels and the list still emit", () => {
     // The other end of the same string contract, now with THREE emitters. Guarded at the
     // reader's end only, a rename in any of them leaves the selector above green while
     // `closest()` matches nothing: İzle stops opening a player, rows and ticks stop jumping, and
     // tsc, ESLint and every screenshot agree that nothing happened (→ `TA63R2-M3`).
     expect(VIDEO).toContain('data-player-open=""');
-    expect(PAGE).toContain("data-second={tag.startSecond}");
-    expect(TIMELINE).toContain("data-second={tag.second}");
+    expect(PAGE).toContain("second: tag.startSecond");
+    expect(MARKERS).toContain('"data-second": tag.second');
     // And the third hook the bench added: without `data-deneme` the island can resolve no video
     // at all, so every press falls through and the page silently becomes fragment-only.
-    expect(PAGE).toContain("data-deneme={video.orderNo}");
+    expect(MARKERS).toContain("data-deneme={video.orderNo}");
+    expect(LIST).toContain("data-deneme={video.orderNo}");
     expect(STAGE).toContain("data-deneme={video.orderNo}");
   });
 });
