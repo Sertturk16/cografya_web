@@ -151,7 +151,7 @@ The one rule that governs everything: **brand chrome ≠ data.** Terra tokens co
 | Brand            | `--color-primary` #b0522e, `--color-primary-dark` #7e3a1e, `--color-secondary` #4f6d30, `--color-accent` #276b70, `--color-on-primary` #fff                                    | primary-dark for links/hover; accent for focus ring and info                                                               |
 | Neutrals         | `--color-ink` #2b2622, `--color-ink-dark` #211c19, `--color-slate` #57504a, `--color-taupe` #8a8078, `--color-border` #ddd5cc, `--color-surface` #f1e9de, `--color-bg` #fbf8f3 | ink-dark is the only neutral that clears 3:1 as a line over every data fill; use it for borders on data, never for text    |
 | Chips / semantic | `--color-chip-bg` #ede3d5, `--color-chip-ink` #7e3a1e, `--color-success` #496f35, `--color-warning` #c9860f, `--color-danger` #b23b2e, `--color-info` #276b70                  |                                                                                                                            |
-| Layout           | `--container-max` 1120px, `--radius` 0.625rem, `--header-height` 3.5rem                                                                                                        | `--radius-sm`…`--radius-4xl` derive from `--radius` in `@theme inline` (`--radius-lg` = 10px); prefer Tailwind `rounded-*` |
+| Layout           | `--container-max` 1120px, `--radius` 0.625rem, `--header-height` calc(4rem + 1px)                                                                                              | `--radius-sm`…`--radius-4xl` derive from `--radius` in `@theme inline` (`--radius-lg` = 10px); prefer Tailwind `rounded-*` |
 | Fonts            | `--font-heading` (Fraunces), `--font-body` (Nunito Sans)                                                                                                                       | loaded in `lib/fonts.ts` via `next/font`, `latin` + `latin-ext` for İ ı ğ ş ç ö ü; never a Google Fonts `<link>`           |
 
 shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--muted`,
@@ -211,22 +211,18 @@ shadcn bridge tokens (`--background`, `--foreground`, `--card`, `--primary`, `--
 - Semantic families have two members. The base is the FILL; the `-strong` member is text on a
   tint of that fill. They are not interchangeable — the base measures 2.62:1 as text on its
   own 15% tint for warning, and 3.98-4.17:1 for the others.
-- **The categorical accent system is done (T-031c, closed 2026-09-19).** The raw palette went
-  939 → **15**, and all 15 are the dark map surfaces in `components/v2/v2-world-map-explorer.tsx`
-  — the graticule, the recede fill and the map highlight — deferred to **T-031d**, which still
-  owns map surfaces. They are listed by line in
-  `docs/superpowers/t031c-palette-inventory.md`'s world-map table and pinned as one named row in
-  `scripts/palette-inventory.mjs`'s `RAW_EXEMPT`. `app/[locale]/(site)/turkiye/[slug]/page.tsx`
-  is excluded from the count and belongs to T-033. The reason they could not simply be rebound is
-  measured: all 17 `--map-*` / `--province-*` / `--land-*` tokens are declared in `:root` and
-  `.dark` redefines none of them, and this map's basemap is a fixed navy in both themes.
+- **The categorical accent system is done (T-031c), and the raw palette is at zero.** It went
+  939 → 15 under T-031c; the last 15 (the dark map surfaces in
+  `components/v2/v2-world-map-explorer.tsx`) were bound to the `--map-*` tokens by T-031d. No
+  file in the tree carries a raw Tailwind palette class, nothing is excluded from the count, and
+  `scripts/palette-inventory.mjs`'s `RAW_EXEMPT` is `[]` — the empty array is the assertion, not
+  a placeholder waiting for a row.
 - **The count is held by four arms, none of them a budget** (`components/ui/raw-palette-count.test.ts`,
   `components/ui/compiled-stylesheet.test.ts`). Raw classes, bracketed colour values and colours
   inlined outside a class are each a table of named files with exact counts and a reason, zero
   everywhere else; the fourth compiles `app/globals.css` and asserts the SHIPPED stylesheet
-  carries palette rules only for the two deferred files. That fourth arm exists because the tree
-  reached zero in source while 125 palette rules were still shipping — Tailwind was scanning
-  `docs/`. `app/globals.css` now declares `@source not` for `docs/`, `scripts/` and test files.
+  carries no palette rules at all. That fourth arm exists because the tree reached zero in
+  source while 125 palette rules were still shipping — Tailwind was scanning `docs/`. `app/globals.css` now declares `@source not` for `docs/`, `scripts/` and test files.
 - `--chart-*` and `--sidebar-*` remain shadcn's achromatic stock (chroma exactly 0, unlike the
   rest of the dark palette) and nothing reads them.
 - The showcase at `/design-system` shows every component in both themes side by side. A
@@ -348,9 +344,9 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   to `components/ui`, `components/patterns` and `components/showcase/specimens`, but across
   `components/v2` and the pages it checks **only the escape rule**. Raw palette classes and
   hand-written `dark:` on that surface were the categorical accent system, which T-034 scoped out
-  and T-031c closed: the raw-palette count on that surface is now zero outside the one file
-  T-031d owns, held by `components/ui/raw-palette-count.test.ts` and
-  `components/ui/compiled-stylesheet.test.ts` rather than by `token-binding.test.ts`. Its
+  and T-031c closed: the raw-palette count on that surface is now zero, held by
+  `components/ui/raw-palette-count.test.ts` and `components/ui/compiled-stylesheet.test.ts`
+  rather than by `token-binding.test.ts`. Its
   exemption lists are named in the file with a reason each, and every one is paired with an
   assertion that the exemption is still needed.
 - A semantic family has two members: the base is the FILL, the `-strong` member is text on a
@@ -399,18 +395,14 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   palette class gets converted. The test is the ENTITY, not the page and not the hue.** A hue is
   decoration when nothing encodes _the thing this element names_; it is categorical when the colour
   says _which one_ and something elsewhere has to agree. Decoration moves to a bridge token;
-  categorical colour stays raw and gets its missing `dark:` half, because putting data categories
-  on brand hues is the data-viz rule below running backwards.
-  **The check is a grep, and this is the command.** Categorical hues are carried as
-  `borderClass` / `badgeClass` / `accentColor` fields on the entity's own record, so
-  `grep -rn "borderClass\|badgeClass\|accentColor" lib components app` finds every encoding on the
-  site — 13 files today: faults (`lib/earthquake/fault-lines-data.ts`), seas
-  (`components/v2/v2-marine-basin-cards.tsx`, `v2-marine-map-explorer.tsx`), regions
-  (`v2-turkey-map-explorer.tsx`, `turkiye/[slug]`, `turkiye/bolge/[slug]`), continents
-  (`lib/map/continent-theme.ts`, `v2-world-continents.tsx`, `v2-world-map-explorer.tsx`,
-  `dunya/[slug]`, `dunya/kita`, `dunya/kita/[slug]`). Then ask whether the entity you are
-  re-colouring is in one of them. Note `app` in that path: an encoding living on a page rather
-  than in `lib/` is exactly what a `lib`-only grep misses.
+  categorical colour goes through its entity's identity module, never onto a brand hue, because
+  putting data categories on brand hues is the data-viz rule below running backwards.
+  **The check is a grep, and this is the command.** Each categorical set (region, continent,
+  basin, fault, magnitude) is spelled once, in `lib/theme/<entity>-identity.ts` over its own
+  tokens in `app/globals.css`, so `grep -rln "lib/theme/[a-z]*-identity" lib components app`
+  lists every surface that encodes one. Then ask whether the entity you are re-colouring is in
+  one of them. Note `app` in that path: an encoding living on a page rather than in `lib/` is
+  exactly what a `lib`-only grep misses.
   Worked example, both halves of it wrong the first time. T-035 PR4 **converted** `deniz`'s
   "30 Nokta" and `deniz/kiyi-tipleri`'s "6 Kıyı Tipi": monitoring points and coastal types carry no
   colour anywhere (`lib/marine/coastal-types-detail.ts` has no colour field), so their cyan and
@@ -435,8 +427,6 @@ Read every CLI import before committing it. The T-034 batch arrived with `import
   without a click; a long verbatim licence text goes to `/hakkimizda` behind an anchor link.
   A value in site chrome (the live ticker) carries a short plain-text source label inside its
   own link instead, and the page that link opens carries the full note.
-- **`Separator` takes `decorative`** for a rule that carries no meaning; Base UI announces
-  every separator otherwise.
 
 ### Known warts
 
@@ -555,4 +545,4 @@ simply sits in a third place, and until it lands the frozen plot is the correct 
 
 Before calling a UI task done: light and dark screenshots at 390 px and desktop, no
 horizontal scroll at 320 px, focus ring visible on every new control, contrast checked on
-the real surface colour, and the affected `*.structure.test.tsx` updated.
+the real surface colour, and the affected `*.structure.test.ts` updated.

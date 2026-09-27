@@ -28,14 +28,14 @@ Read before writing a component, a test, or a commit.
 4. Use `components/ui/*` primitives and Tailwind theme keys (`bg-primary`, `text-muted-
 foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
 5. Links: `Link` from `@/i18n/navigation`; button-looking links use `buttonVariants`.
-6. Co-locate a `*.test.tsx` structure test under `components/v2/` if the component has
-   branching or a11y-relevant structure (see existing `*.structure.test.tsx`).
+6. Co-locate a `*.structure.test.ts` next to the component if it has branching or
+   a11y-relevant structure (see the existing `*.structure.test.ts`).
 
 ## Tests (vitest, node environment)
 
-- Co-located next to source: `foo.test.ts`, or a qualified suffix (`*.structure.test.tsx`,
+- Co-located next to source: `foo.test.ts`, or a qualified suffix (`*.structure.test.ts`,
   `*.contract.test.ts`, `*.<scope>.test.ts`). No `__tests__` folders.
-- Included globs: `lib/**`, `components/**`, `tools/**`. Nothing under `app/` runs.
+- Included globs: `lib/**`, `components/**`, `tools/**`, `scripts/**`. Nothing under `app/` runs.
 - No jsdom; component tests render with React and assert on the tree/markup. `server-only`
   is stubbed via `test/stubs/server-only.ts`; `next-intl` is inlined so `getPathname` is real.
 - **A test that greps source text strips comments first.** Nothing under `app/` runs, so page
@@ -59,10 +59,10 @@ foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
   thing the test exists to catch and watch it go red, because a source-text assertion that has
   never failed has not been shown to work.
 - One JSX scanner, not one per suite. `lib/test-support/composition-scan.ts` owns the walkers, the
-  literal extractor, the binding resolver and the source-injection harness that the three
-  `components/v2/page-composition-*.test.ts` suites (containers/breadcrumbs, headings, cards) count
-  with. T-035 shipped two extractors in one module and they disagreed about 22 real elements, with
-  the older one mangling every template hole it read; a second extractor is where a counter hides.
+  literal extractor, the binding resolver and the source-injection harness that the
+  `components/v2/page-composition-*.test.ts` suites count with. T-035 shipped two extractors in
+  one module and they disagreed about 22 real elements, with the older one mangling every template
+  hole it read; a second extractor is where a counter hides.
   Memos go through that module's `perFileCache()` / `graphCache()` so the harness invalidates them —
   a bare `new Map()` cache fails `composition-scan.test.ts`.
 - Re-pointing a citation after a deletion: check the cited IDENTIFIER still exists, not just the
@@ -120,10 +120,10 @@ comparison run by hand.
   `min-width: min(300px, 100%)` back to `min-width: 300px` would red `pnpm test`. T-033 retired the
   last module and deleted the census with it. The rule it stood for did not go: when a conversion
   deletes a pinned CSS value, the pin moves to the consumer's own test rather than evaporating
-  into the sweep. `lib/test-support/converted-floor.ts` carries it, and `book-detail-floors`,
-  `bench.structure`, `earthquake.structure` and `locator-map-floors` are the tests that hold the
-  values. It covered one of the three recorded defects, not all three — the other two are a text
-  node with no wrapping opportunity and a Tailwind class in JSX.
+  into the sweep. `lib/test-support/converted-floor.ts` carries it, and the consumers' own tests
+  that import it hold the values (`git grep -l converted-floor -- '*.test.ts'`). It covered one
+  of the three recorded defects, not all three — the other two are a text node with no wrapping
+  opportunity and a Tailwind class in JSX.
 - 768 is in the list because without it `md:min-w-[900px] lg:min-w-0` passes every check —
   inactive below 768, harmless at 1440. It closes the widest part of that band (any `sm:`- or
   `md:`-scoped width above 768 now overflows a swept viewport); 390–768 and 768–1440 stay

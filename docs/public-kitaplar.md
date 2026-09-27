@@ -35,8 +35,8 @@ router, so a file placed here can answer a URL the router was meant to answer �
 and not a failing test. The page simply becomes an image.
 
 **Every file in this directory MUST carry a file extension.** Book slugs never do
-(`ayt-cografya-konu-ozetli-brans-denemeleri` — `GLOSSARY.md` §5 keeps slugs to
-`[a-z0-9-]`), so the extension is the whole reason the two namespaces stay disjoint.
+(`ayt-cografya-konu-ozetli-brans-denemeleri` — a book slug matches `^[a-z0-9-]+$`, checked
+by `BOOK_SLUG_PATTERN` in `lib/api/books.ts` and by the API's slug param), so the extension is the whole reason the two namespaces stay disjoint.
 
 Two rules follow, and neither is a style preference:
 
@@ -76,6 +76,7 @@ provenance status drifts from the first, and the ledger is the only home for one
 
 ## Rendering
 
-Local images go through `next/image` (`ENGINEERING.md` §4 #9). The exception in that item
-covers a REMOTE image whose provider forbids byte copies — the YouTube thumbnail — and
-explicitly does not reach our own files. A cover here is our file.
+Local images go through `next/image` with explicit width/height (or `fill` in a fixed-size
+box), to hold CLS < 0.1; the images note in `next.config.ts` records the rule. Its one
+exception covers a REMOTE image whose provider forbids byte copies — the YouTube thumbnail,
+hotlinked and never optimised — and does not reach our own files. A cover here is our file.

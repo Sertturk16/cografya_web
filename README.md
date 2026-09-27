@@ -1,8 +1,9 @@
 # cografya_web
 
-Frontend of the **Coğrafya platform**, a free, SEO-first geography education site in Turkish
-with an English shell. Built with **Next.js 16 (App Router)**, **React 19** and TypeScript in
-`strict` mode. The API lives in the separate
+Frontend of the **Coğrafya platform**, a free, SEO-first geography education site in Turkish.
+An English locale exists in code but is switched off (`ENGLISH_ENABLED` in `i18n/routing.ts`;
+`/en/*` 301s to Turkish). Built with **Next.js 16 (App Router)**, **React 19** and TypeScript
+in `strict` mode. The API lives in the separate
 [`cografya_api`](https://github.com/Sertturk16/cografya_api) repo.
 
 Written and maintained by [Ömer Can Serttürk](https://github.com/Sertturk16). Working title;
@@ -12,7 +13,7 @@ the brand and domain are not final.
 
 - Next.js 16 App Router, React 19, TypeScript (`strict` + `noUncheckedIndexedAccess`)
 - Tailwind CSS v4 (CSS-first config in `app/globals.css`), shadcn `base-nova` on Base UI
-- next-intl 4 (TR at `/`, EN at `/en`, localized pathnames)
+- next-intl 4 (TR at `/`, localized pathnames; EN at `/en` only while `ENGLISH_ENABLED` is on)
 - zod env validation (`lib/env.ts` public, `lib/env.server.ts` server-only)
 - vitest (node environment), ESLint flat config, Prettier, husky + lint-staged + commitlint
 - Node 24 (`.nvmrc`), pnpm (pinned via `packageManager`)
@@ -22,7 +23,7 @@ the brand and domain are not final.
 ```bash
 pnpm install                 # deps + git hooks
 cp .env.example .env.local   # set API_BASE_URL (default http://localhost:3001)
-pnpm dev                     # http://localhost:3000/v2
+pnpm dev                     # http://localhost:3000
 ```
 
 The site expects the API running on port 3001 (see the API repo's README). Without it,
@@ -39,14 +40,17 @@ content pages render their empty states.
 | `pnpm format` / `pnpm format:check`                                                   | Prettier                                                                                |
 | `pnpm codegen`                                                                        | `openapi/openapi.json` → `lib/api/schema.ts` (after copying the spec from the API repo) |
 | `pnpm codegen:check`                                                                  | fails if the committed `schema.ts` is stale                                             |
-| `pnpm generate:map` / `generate:world-map` / `generate:water` / `generate:tr-context` | rebuild the committed SVG map artifacts in `lib/map/` from `data/*.geojson`             |
+| `pnpm generate:map` / `generate:world-map` / `generate:water` / `generate:tr-context` | rebuild the committed SVG path data (`lib/map/*.generated.ts`) from `data/*.geojson`    |
 | `pnpm generate:*:check`                                                               | drift gates for the four artifacts above                                                |
+| `pnpm design:tokens`                                                                  | regenerate the `docs/design.md` token frontmatter from `app/globals.css`                |
+| `pnpm design:tokens:check`                                                            | fails if that frontmatter is stale                                                      |
 | `pnpm sweep:overflow`                                                                 | Playwright horizontal-overflow check over a running server (see `docs/conventions.md`)  |
 
 ## Layout
 
-- `app/[locale]/` — the root layout and every page. `v2/**` is the current UI (Tailwind +
-  shadcn); the routes outside `v2/` are the frozen V1 surface (CSS Modules).
+- `app/[locale]/` — the root layout and every page, all Tailwind + shadcn. `(site)/**` holds
+  the reading pages (shared header, footer and `<main>`), `(play)/**` the fullscreen game
+  screens, `design-system/**` the noindex Terra component showcase.
 - `app/api/**` — BFF route handlers that proxy authenticated and mutating calls to the API.
 - `components/ui/` shadcn primitives · `components/v2/` V2 surface · `components/{game,map,
 tools,marine,book,...}` feature components.
@@ -57,13 +61,15 @@ tools,marine,book,...}` feature components.
 - `data/` build-time GeoJSON with its provenance ledger (`data/README.md`) · `scripts/`
   artifact generators and ad-hoc Playwright audits.
 - `docs/` — `architecture.md`, `conventions.md`, `design.md` (Terra design system and
-  data-viz colour rules), `public-kitaplar.md`.
+  data-viz colour rules), `copy.md` (Turkish copy rules), `product.md` (users and positioning),
+  `public-kitaplar.md`.
 
 ## Environment
 
 Validated at boot by zod; an invalid value aborts startup.
 
 - `NEXT_PUBLIC_SITE_URL` — absolute site origin, drives canonicals, hreflang and the sitemap.
+- `NEXT_PUBLIC_CONTACT_EMAIL` — contact address published on the site (has a default).
 - `API_BASE_URL` — server-only API origin (`http://api:3001` in production compose).
 - `INTERNAL_REQUEST_TOKEN` — server-only; exempts server-side GETs from the API throttle.
 - `NEXT_PUBLIC_GA_ID`, `NEXT_PUBLIC_GSC_VERIFICATION` — declared, not wired yet.
@@ -71,8 +77,9 @@ Validated at boot by zod; an invalid value aborts startup.
 ## Conventions
 
 Conventional Commits (commitlint), `feature/*` → `dev` squash PR, `dev` → `main` deploys via
-GitHub Actions to the production host. CI on every PR: typecheck, lint, five drift gates,
-tests, build. Details in `docs/conventions.md`.
+GitHub Actions to the production host. CI on every PR: typecheck, lint, every `*:check` drift
+gate (`generate:*:check`, `design:tokens:check`, `codegen:check`), tests, build. Details in
+`docs/conventions.md`.
 
 ## License
 

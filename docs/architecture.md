@@ -8,9 +8,9 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   document shell: `<html>`/`<body>`, `ThemeProvider`, `NextIntlClientProvider`, `<Toaster />`.
   Consequence: a URL that matches no segment falls to Next's unstyled 404, so `app/not-found.tsx`
   exists for that case.
-- **Two route groups, and they are load-bearing.** `(site)` holds the 34 reading surfaces and its
+- **Two route groups, and they are load-bearing.** `(site)` holds the reading surfaces and its
   layout owns the chrome — skip link, `V2Header`, ONE `<main id="main-content">`, `V2Footer`,
-  `V2AuthDialog`. `(play)` holds the three fullscreen game screens and gives them the bare
+  `V2AuthDialog`. `(play)` holds the fullscreen game screens and gives them the bare
   minimum. A page gets the chrome by WHERE IT LIVES, never by importing it: before T-032 PR3,
   `V2Header` was copied into 37 pages, two had lost the footer, and 24 nested a second `<main>`
   inside the root layout's. `components/v2/v2-a11y-navigation-polish.test.ts` walks the tree and
@@ -53,14 +53,14 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   messages and tests stay. `ALL_LOCALES`/`Locale` still include `en`; tests pin both positions by
   mocking the module (`lib/test-support/english-switch.ts`). Flip it to `true` to restore EN.
 - `i18n/routing.ts`: locales `tr` (default, unprefixed) / `en` (`/en`, served only when switched on),
-  `localePrefix: "as-needed"`, `localeDetection: false`, **39** `pathnames` entries, none of
-  which says `v2`. `type AppPathname` derives from it. English segments are `/turkiye/...`, not
+  `localePrefix: "as-needed"`, `localeDetection: false`, one `pathnames` entry per route, none
+  of which says `v2`. `type AppPathname` derives from it. English segments are `/turkiye/...`, not
   `/turkey/...` — the table's own recorded decision, which the V2 entries had contradicted.
 - `i18n/request.ts` pins `timeZone: "UTC"` (the API publishes instants in UTC).
 - `i18n/navigation.ts` is the only source of `Link`/`redirect`/`getPathname`.
 - `proxy.ts` (Next 16 name for middleware) wraps `createMiddleware(routing)`; the matcher
   excludes `api`, `_next`, files with extensions and metadata-image leaf segments.
-- `messages/{tr,en}.json`, 30 namespaces each. `lib/seo/indexing.ts` has
+- `messages/{tr,en}.json`, same namespaces in both. `lib/seo/indexing.ts` has
   `EN_CONTENT_READY = false` and a `ContentSurface` type (`localized | trNarrative |
 noindex | trOnly`) that decides which locales a page is indexable in.
 - Much of the V2 copy is hardcoded Turkish, so `/en/*` resolves and renders Turkish in places.
@@ -74,16 +74,18 @@ noindex | trOnly`) that decides which locales a page is indexable in.
 
 ## Data access
 
-- `lib/env.ts` (public, zod): `NEXT_PUBLIC_SITE_URL` default `http://localhost:3000`.
+- `lib/env.ts` (public, zod): `NEXT_PUBLIC_SITE_URL` default `http://localhost:3000`,
+  `NEXT_PUBLIC_CONTACT_EMAIL` (defaulted), `NEXT_PUBLIC_GA_ID` and
+  `NEXT_PUBLIC_GSC_VERIFICATION` (optional, not wired yet).
   `lib/env.server.ts` (`server-only`): `API_BASE_URL` default `http://localhost:3001`,
   `INTERNAL_REQUEST_TOKEN` optional (min 32 visible-ASCII).
 - `lib/api/client.ts` (`server-only`): `apiGet<T>(path, { revalidate })`, ISR default
   `CONTENT_REVALIDATE_SECONDS = 3600`, 15 s abort budget, sends `x-internal-request-token`
   (throttle exemption on the API, GET only), throws `ApiError(status)`. `*Resilient` /
   `*Safe` wrappers degrade build-time failures to empty so `next build` stays green.
-- Mutations / auth: `app/api/**/route.ts` (21 routes) delegate to
-  `lib/<domain>/transport.server.ts`. Most carry `force-dynamic` (18) + `force-no-store` (13) +
-  `runtime: nodejs` (15), but "all" is not true and reading it as a rule will mislead you:
+- Mutations / auth: `app/api/**/route.ts` delegate to
+  `lib/<domain>/transport.server.ts`. Most carry `force-dynamic`, `force-no-store` and
+  `runtime: nodejs` (count with `grep -rl <directive> app/api`), but "all" is not true and reading it as a rule will mislead you:
   `earthquakes/route.ts` and `marine/overview/route.ts` export none of the three, and
   `reference/districts/[plateCode]/route.ts` deliberately does the opposite (`revalidate = 3600`).
   Check the route you are editing rather than assuming the directive is already there.
@@ -125,7 +127,7 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   `items` array it renders, gated on `isIndexable(locale, structuredData)`. No page calls
   `faqPageJsonLd` (`components/v2/page-composition-faq.test.ts` pins that as an exact identity).
 - `app/robots.ts`: allow-all + `Disallow: /api/`. `next.config.ts`: `trailingSlash: false`,
-  `output: "standalone"`, one permanent redirect, no `images.remotePatterns` by policy (the
+  `output: "standalone"`, a short `redirects()` table of permanent redirects, no `images.remotePatterns` by policy (the
   single remote image is hotlinked), no `typedRoutes`.
 - Rendering per page type: content pages SSG/ISR with full HTML; live feeds SSR/short-ISR
   shell + client island; maps/games/tools = server shell + `dynamic(..., { ssr: false })`
@@ -135,7 +137,7 @@ noindex | trOnly`) that decides which locales a page is indexable in.
 
 - `data/*.geojson` (build-time only, ODbL/OSM; attribution must render beside every map,
   ledger in `data/README.md`). `scripts/generate-*.mjs` project them through the pinned
-  frame in `scripts/lib/tr-frame.mjs` into the five `lib/map/*.generated.ts` artifacts.
+  frame in `scripts/lib/tr-frame.mjs` into the `lib/map/*.generated.ts` artifacts.
   `scripts/fetch-*.mjs` are manual network steps, deliberately not pnpm scripts.
 - `lib/map/` holds projection, zoom-pan (`v2-zoom-pan.ts`), measurement and geometry.
   `components/map/`, `components/game/` and `components/v2/v2-tool-workbench.tsx` consume it.
@@ -162,13 +164,12 @@ noindex | trOnly`) that decides which locales a page is indexable in.
 
 ## Styling stack
 
-`app/globals.css` (~1060 lines): `@import "tailwindcss"`, `tw-animate-css`,
+`app/globals.css`: `@import "tailwindcss"`, `tw-animate-css`,
 `shadcn/tailwind.css`; `@custom-variant dark (&:is(.dark *))`; `:root` Terra tokens plus
 shadcn bridge tokens; `@theme inline` re-exports them as Tailwind keys; `.dark` block;
-`@layer base`; then eight global classes (`.btn*`, `.card`, `.container`, `.section`,
-`.scrollbar-none`) — T-032 PR4 removed the twenty V1-only rules, including a
-`.placeholder-note` that had carried a rejected `border-left: 4px` side-tab for months with
-zero consumers to review it. `components.json`: style `base-nova`, base colour neutral, CSS
+`@layer base`; `@layer utilities` holds `.scrollbar-none`. No unlayered global classes remain:
+T-032 PR4 removed the V1-only rules and T-041 the unlayered `.btn*`, `.card`, `.container`,
+`.section` (`components/globals-unlayered-css.test.ts` keeps them out). `components.json`: style `base-nova`, base colour neutral, CSS
 variables on, aliases `@/components`, `@/lib`, `@/hooks` (the last does not exist).
 
 **Dark mode is `next-themes`, mounted.** `app/[locale]/layout.tsx` renders `<ThemeProvider>`
@@ -185,10 +186,13 @@ Details and the open dark-mode bugs: `docs/design.md`.
 
 - `Dockerfile`: alpine, `pnpm build` in a builder stage, runner copies `.next/standalone`,
   `.next/static`, `public/`, `assets/`, `node_modules/flag-icons`; runs as `nextjs`.
-- `ci.yml` on PR/push to `dev`/`main`: typecheck, lint, four `generate:*:check`,
-  `codegen:check`, `pnpm test`, `pnpm build`.
-- `deploy.yml` on push to `main`: repeats the gate, then SSH → `git reset --hard origin/main`
-  in `/opt/cografya/cografya_web` → compose build/up `web` → `sleep 5`. No health check.
+- `ci.yml` on PR/push to `dev`/`main`: typecheck, lint, every `generate:*:check`,
+  `design:tokens:check`, `codegen:check`, `pnpm test`, `pnpm build` (against a seeded API).
+- `deploy.yml` on push to `main`: repeats the gate (minus build), then SSH →
+  `git reset --hard origin/main` in `/opt/cografya/cografya_web` → compose
+  `up -d --no-build --no-deps api` (the build prerenders against it) → fail unless api's `3001`
+  is published on loopback only → compose build `web` → `up -d --no-deps web` → `sleep 5`.
+  No health check.
 - To test the standalone output locally, run `node .next/standalone/server.js` with `PORT` set
   and WITHOUT `HOSTNAME=127.0.0.1` — an IPv4-only bind makes next-intl's proxy self-dispatch
   loop with 307s.
@@ -199,7 +203,7 @@ Details and the open dark-mode bugs: `docs/design.md`.
   `/app`; its `.next` is a named volume, and it hot-reloads host edits.** Two consequences a
   host `pnpm dev` does not announce: it silently takes `:3002` because `:3000` is held, so
   anything you point at `:3000` is still the container; and the tree then has two Turbopack
-  watchers. Under load — `pnpm sweep:overflow` drives 183 page loads — the container has been
+  watchers. Under load — `pnpm sweep:overflow` drives hundreds of page loads — the container has been
   observed writing `/app/.next/dev/prerender-manifest.json` twice without truncating, leaving a
   valid document followed by the tail of a second one. Next parses that manifest on every
   request, so **every route 500s with a `JSON.parse` "unexpected non-whitespace character"
