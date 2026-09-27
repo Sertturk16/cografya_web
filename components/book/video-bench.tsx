@@ -129,6 +129,22 @@ function subscribeNothing(): () => void {
   return () => undefined;
 }
 
+/**
+ * Bring `element` into view inside its nearest scrolling panel ONLY. `scrollIntoView` would also
+ * scroll the document, which moves the one-screen workbench off the top of the viewport.
+ */
+function scrollWithin(element: HTMLElement): void {
+  let panel = element.parentElement;
+  while (panel !== null && getComputedStyle(panel).overflowY !== "auto") {
+    panel = panel.parentElement;
+  }
+  if (panel === null) return;
+  const box = panel.getBoundingClientRect();
+  const item = element.getBoundingClientRect();
+  if (item.top < box.top) panel.scrollTop -= box.top - item.top;
+  else if (item.bottom > box.bottom) panel.scrollTop += item.bottom - box.bottom;
+}
+
 /** The breakpoint the two steps split at — `lg`, the same 64rem the layout classes use. */
 const NARROW_QUERY = "(max-width: 63.999rem)";
 
@@ -347,12 +363,20 @@ export function VideoBench({
     if (landing.orderNo !== null) selectVideo(landing.orderNo);
   }, [landing.orderNo]);
 
-  // Arriving on a marker fragment arms İzle with that marker's second.
+  // Arriving on a marker fragment arms İzle with that marker's second. Keyed on the hash, so an
+  // in-page fragment change (which the browser also scrolls the document for) is undone too.
   useEffect(() => {
-    const id = window.location.hash.slice(1);
+    const id = hash.slice(1);
     const target = id === "" ? null : document.getElementById(id);
     const root = rootRef.current;
     if (target === null || root === null || !root.contains(target)) return;
+    // The browser (and, on an in-page fragment change, Next's router after this commit) scrolls
+    // the DOCUMENT to this fragment; the workbench starts at the top of the page, so undo that on
+    // the next frame and bring the target into view inside its own panel instead.
+    const frame = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0 });
+      scrollWithin(target);
+    });
     const orderNo = orderNoOf(target);
     const video = videos.find((candidate) => candidate.orderNo === orderNo);
     const raw = target.dataset.second;
@@ -360,7 +384,8 @@ export function VideoBench({
       const second = Number.parseInt(raw, 10);
       if (Number.isFinite(second)) hashStartSecond.current = second;
     }
-  }, [videos]);
+    return () => cancelAnimationFrame(frame);
+  }, [videos, hash]);
 
   /* The page is leaving. The store is module state that a client-side route change does not
      re-evaluate, so without this an open player would reappear on the reader's next arrival
@@ -392,9 +417,8 @@ export function VideoBench({
     for (const panel of root.querySelectorAll<HTMLElement>("[data-marker-panel]")) {
       panel.hidden = panel.dataset.deneme !== key;
     }
-    root
-      .querySelector<HTMLElement>(`[data-video-row][data-deneme="${key}"]`)
-      ?.scrollIntoView({ block: "nearest" });
+    const row = root.querySelector<HTMLElement>(`[data-video-row][data-deneme="${key}"]`);
+    if (row !== null) scrollWithin(row);
   }, [selectedOrderNo]);
 
   // The current marker, stated whole: playback or the last press, else the marker the hash names.

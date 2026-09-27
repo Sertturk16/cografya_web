@@ -23,7 +23,7 @@ const ROW_SUB = "block text-xs text-muted-foreground";
 const ROW_DURATION = "ml-auto shrink-0 text-xs tabular-nums text-muted-foreground";
 const GROUP_HEAD =
   "sticky top-0 z-10 m-0 flex items-baseline justify-between gap-2 bg-background px-4 pt-3 " +
-  "pb-1.5 font-body text-xs font-semibold text-muted-foreground";
+  "pb-1.5 font-sans text-xs font-semibold text-muted-foreground";
 
 export function WorkbenchList({
   videos,

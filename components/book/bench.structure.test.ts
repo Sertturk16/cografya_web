@@ -63,7 +63,7 @@ describe("the island stays the one delegated listener", () => {
   });
 
   it("loads no player from a hash alone", () => {
-    const start = BENCH.indexOf("const id = window.location.hash.slice(1);");
+    const start = BENCH.indexOf("const id = hash.slice(1);");
     expect(start).toBeGreaterThan(-1);
     const effect = BENCH.slice(start, BENCH.indexOf("}, [", start));
     expect(effect).not.toContain("openVideo(");
@@ -72,6 +72,14 @@ describe("the island stays the one delegated listener", () => {
   it("pushes a marked history entry on selection, and keeps replaceState for a marker press", () => {
     expect(BENCH).toContain("window.history.pushState({ [BENCH_HISTORY_MARK]: true }");
     expect(BENCH).toContain('window.history.replaceState(null, "", fragment)');
+  });
+
+  it("undoes the browser's own fragment scroll so the workbench stays on screen", () => {
+    // A shared `#video-20-etiket-3` made the browser scroll the DOCUMENT to that marker, pushing
+    // the one-screen workbench 328px up. The island scrolls only inside its own panels.
+    expect(BENCH).toContain("window.scrollTo({ top: 0 });");
+    expect(BENCH).not.toContain("scrollIntoView(");
+    expect(BENCH).toContain("scrollWithin(");
   });
 
   it("clears the store when the bench leaves the page", () => {
@@ -98,6 +106,12 @@ describe("the one-screen frame", () => {
   it("scrolls the list and the marker strip inside their own boxes", () => {
     expect(BENCH).toMatch(/min-h-0 flex-1 overflow-y-auto/);
     expect(STAGE).toMatch(/flex-1 overflow-y-auto/);
+  });
+
+  it("left-aligns the watched toggle with the stage heading rather than centring it", () => {
+    const controls = flat("./video-progress-controls.tsx");
+    expect(controls).not.toContain("max-w-[560px]");
+    expect(controls).not.toContain("mx-auto");
   });
 
   it("keeps every marker target at least 44px", () => {

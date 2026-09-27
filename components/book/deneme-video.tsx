@@ -42,11 +42,11 @@ import { Button } from "@/components/ui/button";
  *
  * THE WIDTH COMES FROM THE COLUMN AND THE VIEWPORT (T-128). The 560px cap is gone: the workbench
  * column sets the width, and the second bound keeps a 16:9 box short enough to leave room for
- * what sits beside it on one screen — 19rem is the book bar, the caption row, the marker strip's
- * 8rem floor and the gutters on desktop.
+ * what sits beside it on one screen — 22rem is the book bar, the caption row, the signed-in
+ * reader's watched-toggle row, the marker strip's 8rem floor and the gutters on desktop.
  */
 const FRAME =
-  "relative mx-auto aspect-video min-h-[200px] w-full max-w-[min(100%,calc((100dvh-var(--header-height)-19rem)*16/9))] bg-muted";
+  "relative mx-auto aspect-video min-h-[200px] w-full max-w-[min(100%,calc((100dvh-var(--header-height)-22rem)*16/9))] bg-muted";
 
 /**
  * NO rounded corners and NO overflow clipping, deliberately. The ledger bars any "overlay,

@@ -242,6 +242,6 @@ describe("playback callbacks for the bench (T-128)", () => {
     expect(VIDEO).toMatch(/stopPeriodicSave\(\); stopTimePoll\(\);/);
   });
   it("binds the frame to the viewport height as well as the column width", () => {
-    expect(VIDEO).toContain("max-w-[min(100%,calc((100dvh-var(--header-height)-19rem)*16/9))]");
+    expect(VIDEO).toContain("max-w-[min(100%,calc((100dvh-var(--header-height)-22rem)*16/9))]");
   });
 });

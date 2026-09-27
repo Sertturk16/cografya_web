@@ -1163,7 +1163,9 @@
      (where the Turkish header already collapsed to one row) and 1024px (where the token
      stopped compensating) a letter jump on /turkiye landed 136.9px below the header's bottom
      edge — 120.9px more than the 16px gap the offset intends. */
-  --header-height: 3.5rem;
+  /* The site header's row (`h-16`) plus its 1px `border-b`, measured 65px (T-128). It read
+     3.5rem before, 9px short; `components/anchor-offset-token.test.ts` ties the two together. */
+  --header-height: calc(4rem + 1px);
   /* `--deneme-summary-height` WAS HERE AND IS RETIRED (bench PR, `KITAP-D1`).
 
      It carried the SECOND addend of the book page's question-row anchor offset: the open
