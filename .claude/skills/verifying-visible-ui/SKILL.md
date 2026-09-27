@@ -10,18 +10,20 @@ sweep) and `docs/design.md` are the authority; where this file disagrees, they w
 
 ## Steps
 
-1. **A server for THIS tree.** `cografya-web-dev` serves :3000 from the workspace checkout;
-   confirm the route answers 200 (`curl -s -o /dev/null -w '%{http_code}' localhost:3000/<path>`).
-   Any other checkout: `pnpm dev -p <port>` there and pass `--base-url` below. The API must
-   answer on :3001.
-2. **Routes.** List every route the change reaches (a shared component such as the header or
-   footer reaches all of them) and find the sweep ids covering them in
-   `lib/overflow-sweep/routes.ts`. A new route gets an entry there.
+1. **A server for THIS tree.** The docs prefer a fresh production build (`docker stop
+cografya-web-dev`, `pnpm build`, `pnpm start`); `cografya-web-dev` on :3000 serves the
+   workspace checkout and is what you usually have. Confirm the route answers 200. Any other
+   checkout: its own server on another port and `--base-url`. The API must answer on :3001.
+   Before believing a red sweep, check the named selector exists in the source (stale `.next`).
+2. **Routes.** List every route the change reaches and find the sweep ids covering them in
+   `lib/overflow-sweep/routes.ts`. A new route: decide out loud whether it is a variant of a
+   listed shape or needs its own entry (`docs/conventions.md`).
 3. **Overflow and screenshots, one run.**
-   `pnpm sweep:overflow -- --filter=<id> --shots=<task>-<change>` must end green. It measures
-   every width in both themes and saves a PNG per URL × width × theme in the workspace root's
+   `pnpm sweep:overflow -- --filter=<id> --shots=<task>-<change>` must end green (drop
+   `--filter` for a shared component such as the header or footer). It measures every width in
+   both themes and saves a PNG per URL × width × theme in the workspace root's
    `.playwright-mcp/<task>-<change>/`. Signed-in pages need `SWEEP_AUTH_PASSWORD` (docs).
-4. **Look.** Read the 320, 360, 390 and desktop PNGs, light and dark. Judge the change itself:
+4. **Look.** Read the `-320-`, `-360-`, `-390-` and `-desktop-` PNGs, light and dark. Judge the change itself:
    alignment, wrapping, clipping, dark-mode contrast, touch-target size. A green sweep only
    proves nothing scrolls sideways. A tall page arrives shrunk; for detail, take an element
    screenshot with Playwright MCP (step 5).

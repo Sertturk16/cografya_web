@@ -42,7 +42,7 @@
  * re-fetches on every navigation, so `--base-url` defaults to :3000 either way and the
  * navigation step retries once before it calls a page dead.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -383,10 +383,13 @@ async function walk(browser, viewport, theme, storageState, entries, lines) {
       };
       records.push(record);
       if (SHOTS_DIR) {
-        await page.screenshot({
-          path: join(SHOTS_DIR, shotFileName(entry.id, viewport.name, theme)),
-          fullPage: true,
-        });
+        // A failed screenshot is reported, never fatal: it must not discard the measurements.
+        await page
+          .screenshot({
+            path: join(SHOTS_DIR, shotFileName(entry.id, viewport.name, theme)),
+            fullPage: true,
+          })
+          .catch((error) => lines.push(`   SHOT ${entry.url} — ${error.message}`));
       }
       if (overflow > 0) {
         failures.push(record);
@@ -402,6 +405,9 @@ async function walk(browser, viewport, theme, storageState, entries, lines) {
 
 /** Every viewport × theme pair, in a stable order. */
 const pairs = viewports.flatMap((viewport) => themes.map((theme) => ({ viewport, theme })));
+
+// A PNG left from an earlier run would look current for a URL that failed to load this time.
+if (SHOTS_DIR) rmSync(SHOTS_DIR, { recursive: true, force: true });
 
 const browser = await chromium.launch();
 try {
