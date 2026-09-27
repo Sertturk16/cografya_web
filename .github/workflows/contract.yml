@@ -18,7 +18,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: contract-${{ github.ref }}
+  # event_name too: a push to dev must not cancel the daily run, which shares refs/heads/dev.
+  group: contract-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -36,11 +37,23 @@ jobs:
           ${{ github.event_name == 'schedule' && fromJSON('["dev","main"]')
           || fromJSON(format('["{0}"]', (github.base_ref || github.ref_name) == 'main' && 'main' || 'dev')) }}
     steps:
+      # The event's own ref: the PR merge commit, the pushed commit, or (daily) the default branch,
+      # so the check script always exists even on a branch it has not reached yet (main).
       - name: Checkout web
         uses: actions/checkout@v7
         with:
-          # Empty = the event's own ref (the PR merge commit, the pushed commit).
-          ref: ${{ github.event_name == 'schedule' && matrix.branch || '' }}
+          persist-credentials: false
+
+      # Daily only: the spec to judge comes from the matrix branch, not from the default branch.
+      - name: Checkout web spec (${{ matrix.branch }})
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ matrix.branch }}
+          path: .web
+          persist-credentials: false
+          sparse-checkout: openapi/openapi.json
+          sparse-checkout-cone-mode: false
 
       # `Sertturk16/cografya_api` is public, so the default GITHUB_TOKEN reads it; no PAT or
       # deploy key. Only the committed spec is compared: the API's own `openapi:check` already
@@ -51,6 +64,7 @@ jobs:
           repository: Sertturk16/cografya_api
           ref: ${{ matrix.branch }}
           path: .api
+          persist-credentials: false
           sparse-checkout: |
             package.json
             openapi/openapi.json
@@ -65,4 +79,5 @@ jobs:
       - name: Compare specs
         env:
           COGRAFYA_API_DIR: .api
+          CONTRACT_WEB_SPEC: ${{ github.event_name == 'schedule' && '.web/openapi/openapi.json' || '' }}
         run: node scripts/check-contract.mjs

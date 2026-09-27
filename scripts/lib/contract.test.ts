@@ -1,8 +1,8 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { diffContract, findApiRepo } from "./contract.mjs";
 
@@ -59,29 +59,36 @@ describe("diffContract", () => {
 });
 
 describe("findApiRepo", () => {
-  const root = mkdtempSync(path.join(tmpdir(), "contract-"));
-  const web = path.join(root, "cografya_web");
-  mkdirSync(web);
+  let root: string;
+  let web: string;
+  beforeEach(() => {
+    root = mkdtempSync(path.join(tmpdir(), "contract-"));
+    web = path.join(root, "cografya_web");
+    mkdirSync(web);
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  const pkg = (dir: string, name: string) => {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path.join(dir, "package.json"), JSON.stringify({ name }));
+  };
 
   it("fails with a message that says where it looked and how to fix it", () => {
     expect(() => findApiRepo(web, {})).toThrow(/cografya_api not found at [\s\S]*git clone/);
   });
 
   it("rejects a sibling directory that is not the API repo", () => {
-    const api = path.join(root, "cografya_api");
-    mkdirSync(api);
-    writeFileSync(path.join(api, "package.json"), JSON.stringify({ name: "something-else" }));
+    pkg(path.join(root, "cografya_api"), "something-else");
     expect(() => findApiRepo(web, {})).toThrow(/is not the API repo/);
   });
 
   it("returns the sibling checkout, or COGRAFYA_API_DIR when set", () => {
-    const api = path.join(root, "cografya_api");
-    writeFileSync(path.join(api, "package.json"), JSON.stringify({ name: "cografya-api" }));
-    expect(findApiRepo(web, {})).toBe(api);
+    pkg(path.join(root, "cografya_api"), "cografya-api");
+    expect(findApiRepo(web, {})).toBe(path.join(root, "cografya_api"));
 
-    const other = path.join(root, "elsewhere");
-    mkdirSync(other);
-    writeFileSync(path.join(other, "package.json"), JSON.stringify({ name: "cografya-api" }));
-    expect(findApiRepo(web, { COGRAFYA_API_DIR: other })).toBe(other);
+    pkg(path.join(root, "elsewhere"), "cografya-api");
+    expect(findApiRepo(web, { COGRAFYA_API_DIR: path.join(root, "elsewhere") })).toBe(
+      path.join(root, "elsewhere"),
+    );
   });
 });
