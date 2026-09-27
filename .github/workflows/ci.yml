@@ -81,6 +81,11 @@ jobs:
       - name: TR context artifact drift
         run: pnpm generate:tr-context:check
 
+      # `docs/design.md`'s frontmatter is generated from `app/globals.css` for impeccable's detector
+      # and live panel. Regenerate and diff, like the map artifacts. Pure node, no network.
+      - name: Design token frontmatter drift
+        run: pnpm design:tokens:check
+
       # `lib/api/schema.ts` is codegen output (`openapi-typescript` over the committed
       # `openapi/openapi.json`) and is the web half of the cross-repo DTO contract
       # (`CONVENTIONS.md` §3). CORRECTED (PR #83 review `CODE83-M1`): it has been consumed

@@ -20,6 +20,7 @@ pnpm dev                                  # rarely needed: cografya-web-dev alre
 pnpm typecheck && pnpm lint && pnpm test  # gate before every commit
 pnpm build                                # docker stop cografya-web-dev FIRST (shares .next); needs the API on :3001
 pnpm codegen                              # after replacing openapi/openapi.json from the API repo
+pnpm design:tokens                        # after changing tokens in app/globals.css (docs/design.md frontmatter)
 pnpm generate:map | generate:world-map | generate:water | generate:tr-context   # map artifacts
 ```
 

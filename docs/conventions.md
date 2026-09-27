@@ -166,9 +166,12 @@ marmara`, `/dunya`, `/dunya/almanya` and both book routes. A sweep over that bui
 | `lib/map/tr-inland-water.generated.ts` | `pnpm generate:water`                       | `generate:water:check`      |
 | `lib/map/tr-context.generated.ts`      | `pnpm generate:tr-context`                  | `generate:tr-context:check` |
 | `lib/map/tr-context-tall.generated.ts` | `pnpm generate:tr-context` (same run)       | `generate:tr-context:check` |
+| `docs/design.md` frontmatter only      | `pnpm design:tokens`                        | `design:tokens:check`       |
 
 Every entry must be in `.prettierignore` AND `eslint.config.mjs` `globalIgnores`, otherwise
-lint-staged rewrites it on commit and the gate goes red on an untouched file.
+lint-staged rewrites it on commit and the gate goes red on an untouched file. Exception:
+`docs/design.md` is hand-written prose with a generated head, so it stays prettier-formatted and
+the generator runs prettier itself; its gate therefore also fails on unformatted prose.
 
 ## Git
 

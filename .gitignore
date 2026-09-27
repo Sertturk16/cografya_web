@@ -79,3 +79,7 @@ ds-bundle/
 .design-sync/learnings/
 .design-sync/node_modules
 .design-sync/ds.compiled.css
+
+# impeccable live-mode session state; only the project config is shared
+.impeccable/live/*
+!.impeccable/live/config.json
