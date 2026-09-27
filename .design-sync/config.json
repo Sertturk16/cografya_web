@@ -70,5 +70,8 @@
       "viewport": "560x440"
     }
   },
-  "readmeHeader": ".design-sync/conventions.md"
+  "readmeHeader": ".design-sync/conventions.md",
+  "libOverrides": {
+    "dts.mjs": "read props from the TS sources behind .design-sync/entry.ts (Next app ships no .d.ts tree)"
+  }
 }
