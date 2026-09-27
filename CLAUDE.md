@@ -2,6 +2,7 @@
 
 Stack traps: shadcn `base-nova` on **Base UI** (no Radix anywhere), Tailwind v4 CSS-first (no
 config file), vitest in node env (no jsdom).
+Any code change: first read the skill `.claude/skills/nextjs-developer/SKILL.md`.
 
 Read on demand, not every session:
 
