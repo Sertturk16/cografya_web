@@ -59,6 +59,7 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   `lib/api/client.ts` from a client component.
 - Vitest does not run anything under `app/`; put tests next to code in `lib/`, `components/`,
   `tools/`, `scripts/`.
+- Before calling a visible UI change done, invoke the `verifying-visible-ui` skill.
 - Visible UI change: run `pnpm sweep:overflow` (or `-- --filter=<route>`) against a running
   server before calling it done, and check 320, 360, 390 px and desktop, light and dark
   (Playwright MCP). Take a screenshot when the user asked for a visual fix; save screenshots

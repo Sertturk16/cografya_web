@@ -125,3 +125,11 @@ export function formatSummary(counts: {
   }
   return `FAIL  ${parts.join(", ")} — ${scope}${retried}`;
 }
+
+/**
+ * File name for `--shots`: one PNG per URL × viewport × theme, e.g. `province-tr-320-dark.png`.
+ * The URL id carries a `:` (`province:tr`), which some filesystems reject.
+ */
+export function shotFileName(urlId: string, viewport: string, theme: string): string {
+  return `${urlId.replace(/[^\w.-]+/g, "-")}-${viewport}-${theme}.png`;
+}
