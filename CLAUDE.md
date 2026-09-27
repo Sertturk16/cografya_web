@@ -61,7 +61,7 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   `tools/`, `scripts/`.
 - Visible UI change: run `pnpm sweep:overflow` (or `-- --filter=<route>`) against a running
   server before calling it done, and check 320, 360, 390 px and desktop, light and dark
-  (Playwright MCP). Take a screenshot when the user asked for a visual fix; save screenshots
+  (its `--shots` PNGs, Playwright MCP for detail). Take a screenshot when the user asked for a visual fix; save screenshots
   in the workspace root's `.playwright-mcp/`: Playwright MCP resolves a relative filename from the
   workspace root, so pass `.playwright-mcp/<name>` (the scratchpad is outside its allowed roots).
 - impeccable finds `docs/design.md` only as a sibling of `docs/product.md`; keep both there.
@@ -76,3 +76,4 @@ typecheck + lint + test green, `pnpm build` passes if you touched routing/SEO/co
 relevant `*:check` gate (`docs/conventions.md`, Generated artifacts) is green if you touched an
 input, the matching `pathnames` entry exists for any new route, and `pnpm sweep:overflow` is
 green if anything visible changed.
+Anything visible changed: run the skill `.claude/skills/verifying-visible-ui/SKILL.md` first.

@@ -17,6 +17,11 @@
  *   pnpm sweep:overflow
  *   pnpm sweep:overflow -- --base-url=http://localhost:3000
  *   pnpm sweep:overflow -- --filter=istanbul --viewport=320
+ *   pnpm sweep:overflow -- --filter=istanbul --viewport=320,360,390,desktop --shots=t141-footer
+ *
+ * `--shots=<name>` also saves a full-page PNG of every URL × viewport × theme it measures into
+ * the workspace root's `.playwright-mcp/<name>/` (where Playwright MCP screenshots live too), so
+ * a visual check is one command plus reading the files, not a resize/theme round per width.
  *
  * SIGNED-IN PAGES (`session: true` in `routes.ts`, today `/hesabim/ayarlar`) need a local
  * account. The sweep logs in ONCE through the `/giris` form and shares that session with every
@@ -37,12 +42,12 @@
  * re-fetches on every navigation, so `--base-url` defaults to :3000 either way and the
  * navigation step retries once before it calls a page dead.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 import { routing } from "../i18n/routing.ts";
-import { formatFailure, formatSummary } from "../lib/overflow-sweep/report.ts";
+import { formatFailure, formatSummary, shotFileName } from "../lib/overflow-sweep/report.ts";
 import {
   SWEEP_THEMES,
   SWEEP_VIEWPORTS,
@@ -85,6 +90,10 @@ const JSON_OUT = resolve(ROOT, String(args.json ?? ".tmp-scratch/overflow-sweep.
 const FILTER = typeof args.filter === "string" ? args.filter : null;
 const VIEWPORT_FILTER = typeof args.viewport === "string" ? args.viewport.split(",") : null;
 const THEME_FILTER = typeof args.theme === "string" ? args.theme.split(",") : null;
+const SHOTS_DIR =
+  args.shots === undefined
+    ? null
+    : resolve(ROOT, "..", ".playwright-mcp", args.shots === true ? "sweep" : String(args.shots));
 const CONCURRENCY = Math.max(1, Number(args.concurrency ?? 4) || 4);
 const AUTH_EMAIL = process.env.SWEEP_AUTH_EMAIL ?? "iris-audit@local.test";
 const AUTH_PASSWORD = process.env.SWEEP_AUTH_PASSWORD ?? null;
@@ -373,6 +382,15 @@ async function walk(browser, viewport, theme, storageState, entries, lines) {
         elements: measured.elements,
       };
       records.push(record);
+      if (SHOTS_DIR) {
+        // A failed screenshot is reported, never fatal: it must not discard the measurements.
+        await page
+          .screenshot({
+            path: join(SHOTS_DIR, shotFileName(entry.id, viewport.name, theme)),
+            fullPage: true,
+          })
+          .catch((error) => lines.push(`   SHOT ${entry.url} — ${error.message}`));
+      }
       if (overflow > 0) {
         failures.push(record);
         lines.push(`   FAIL ${entry.url} +${overflow}px`);
@@ -387,6 +405,9 @@ async function walk(browser, viewport, theme, storageState, entries, lines) {
 
 /** Every viewport × theme pair, in a stable order. */
 const pairs = viewports.flatMap((viewport) => themes.map((theme) => ({ viewport, theme })));
+
+// A PNG left from an earlier run would look current for a URL that failed to load this time.
+if (SHOTS_DIR) rmSync(SHOTS_DIR, { recursive: true, force: true });
 
 const browser = await chromium.launch();
 try {
@@ -464,5 +485,6 @@ console.log(
   })}`,
 );
 console.log(`${(durationMs / 1000).toFixed(1)}s · ${JSON_OUT}`);
+if (SHOTS_DIR) console.log(`screenshots: ${SHOTS_DIR}`);
 
 if (failures.length > 0 || loadFailures.length > 0) process.exit(1);

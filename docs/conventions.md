@@ -104,6 +104,9 @@ comparison run by hand.
   in `cografya_api`. A run that selects such a page without the password refuses to start,
   and any visit that lands on a different pathname (an expired session bounced to `/giris`)
   is a `LOAD FAILURE`, not a pass.
+- **`--shots=<name>`** also saves a full-page PNG per URL × viewport × theme into the workspace
+  root's `.playwright-mcp/<name>/`, next to Playwright MCP's screenshots; with
+  `--viewport=320,360,390,desktop` that is the eight views `CLAUDE.md` asks you to look at.
 - **Done means, for any task with a visible UI change:** `pnpm sweep:overflow` green, or the
   filtered run covering the routes you touched (`-- --filter=turkiye`). Never widen the
   tolerance to get there — a tolerance that hides a real overflow is worse than no sweep.

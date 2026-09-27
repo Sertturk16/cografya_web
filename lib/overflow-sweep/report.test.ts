@@ -4,6 +4,7 @@ import {
   type SweepFailure,
   formatFailure,
   formatSummary,
+  shotFileName,
 } from "@/lib/overflow-sweep/report";
 
 /**
@@ -121,5 +122,12 @@ describe("formatSummary", () => {
     expect(formatSummary({ urls: 21, checks: 168, failures: 0, retries: 0 })).not.toContain(
       "retries",
     );
+  });
+});
+
+describe("shotFileName", () => {
+  it("names a screenshot by route, locale, viewport and theme, safe for any filesystem", () => {
+    expect(shotFileName("province:tr", "320", "dark")).toBe("province-tr-320-dark.png");
+    expect(shotFileName("home:en", "desktop", "light")).toBe("home-en-desktop-light.png");
   });
 });
