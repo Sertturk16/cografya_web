@@ -69,3 +69,13 @@ scripts/verify_*.mjs
 # Impeccable: the config records deliberate rule suppressions and travels with the repo;
 # the hook cache is a local scratch index and does not.
 .impeccable/hook.cache.json
+
+# design-sync (claude.ai/design): staged converter scripts, build output and machine state.
+# The durable set (.design-sync/config.json, NOTES.md, conventions.md, previews/, entry.ts,
+# build-css.mjs, ds.css) is committed.
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/ds.compiled.css

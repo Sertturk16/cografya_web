@@ -40,3 +40,7 @@ data/tr-inland-water-jrc.geojson
 # Committed OpenAPI contract artifact (synced from cografya_api; kept byte-identical
 # to the api's generator output, so Prettier must not reformat it).
 openapi/
+
+# design-sync build output (claude.ai/design)
+.ds-sync/
+ds-bundle/
