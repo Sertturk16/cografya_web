@@ -44,3 +44,6 @@ openapi/
 # design-sync build output (claude.ai/design)
 .ds-sync/
 ds-bundle/
+# design-sync lib forks: kept byte-close to the upstream converter file so a re-sync can diff
+# them, and their bytes key every component's verification grade (a reformat re-verifies all).
+.design-sync/overrides/

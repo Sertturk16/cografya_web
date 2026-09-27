@@ -21,6 +21,11 @@
   `cardMode: single`; CustomSelect has no open prop, so its preview clicks its own trigger on mount.
 - **Playwright**: validate/capture need `playwright@1.62.1` in `.ds-sync/` (matches the cached
   chromium-1234; `cd .ds-sync && npm i playwright@1.62.1`).
+- **Props come from a `dts.mjs` fork** (`cfg.libOverrides`). Upstream only reads a shipped `.d.ts`
+  tree; this repo has none, and its `lib/` dir fooled `findTypesRoot`, so the first sync shipped
+  every `<Name>.d.ts` as `[key: string]: unknown`. The fork points ts-morph at `.design-sync/entry.ts`
+  with the repo tsconfig (`@/*` paths) and reads the real `.tsx` sources. It imports `ts-morph`
+  bare: on a fresh clone run `ln -sfn ../.ds-sync/node_modules .design-sync/node_modules`.
 - **Guidelines**: only `docs/copy.md` (`cfg.guidelinesGlob`); the other docs are engineering notes.
 
 ## Known render warns
@@ -29,9 +34,11 @@
 
 ## Re-sync risks
 
-- The first sync uploaded previews and conventions.md BEFORE lint-staged's Prettier pass reformatted
-  them on commit; the next sync sees changed sources and re-captures those cards (formatting only).
-
+- `.design-sync/overrides/dts.mjs` is a fork of the converter's `lib/dts.mjs`: diff it against the
+  freshly staged `.ds-sync/lib/dts.mjs` on every re-sync and port upstream changes. Its bytes key
+  every component's grade, so any edit (or reformat) re-verifies all 29; `.prettierignore` covers it.
+- Commit sync inputs BEFORE uploading, or upload after lint-staged has run: a Prettier pass on a
+  preview `.tsx` after upload makes the next sync re-capture that card (formatting only).
 - `ds.compiled.css` is generated from the live `app/globals.css`; a token rename there changes every
   card without touching a preview — conventions.md names tokens and must be re-validated.
 - `componentSrcMap` and `entry.ts` are hand lists: a new `components/ui/*` file is NOT picked up
