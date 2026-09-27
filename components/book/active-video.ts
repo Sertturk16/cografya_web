@@ -149,6 +149,8 @@ export interface ActiveVideoStore {
   failLoad(orderNo: number, loadToken: number): void;
   /** Clears both axes — the page is leaving. */
   reset(): void;
+  /** Drop the player and keep the selection — the phone left the watch step (T-128). */
+  close(): void;
 }
 
 /** The one snapshot the server ever produces, and the same reference every time it is asked
@@ -220,6 +222,10 @@ export function createActiveVideoStore(): ActiveVideoStore {
       if (state === EMPTY) return;
       commit(EMPTY);
     },
+    close() {
+      if (state.active === null) return;
+      commit({ selected: state.selected, active: null });
+    },
   };
 }
 
@@ -230,6 +236,7 @@ export const openVideo = store.open;
 export const resolveVideoId = store.resolveVideoId;
 export const failLoad = store.failLoad;
 export const resetBench = store.reset;
+export const closeVideo = store.close;
 
 export function useBenchState(): BenchState {
   return useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot);

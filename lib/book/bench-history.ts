@@ -27,3 +27,23 @@ export function isBenchEntry(state: unknown): boolean {
     (state as Record<string, unknown>)[BENCH_HISTORY_MARK] === true
   );
 }
+
+/**
+ * Push or replace for a bench-made video entry: the first one goes on top of the list entry,
+ * every later one replaces it. At most one bench entry sits above the list, so one back (the
+ * button or the gesture) always returns to the list step, however many videos were visited.
+ */
+export function historyWriteFor(state: unknown): "push" | "replace" {
+  return isBenchEntry(state) ? "replace" : "push";
+}
+
+/** A marker's second armed by a fragment landing, and the video it belongs to. */
+export interface ArmedSecond {
+  readonly orderNo: number;
+  readonly second: number;
+}
+
+/** Where İzle starts: the armed marker's second only for the video it was armed on, else 0. */
+export function armedSecondFor(armed: ArmedSecond | null, orderNo: number): number {
+  return armed !== null && armed.orderNo === orderNo ? armed.second : 0;
+}

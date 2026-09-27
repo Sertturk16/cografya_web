@@ -71,7 +71,9 @@ describe("the island stays the one delegated listener", () => {
 
   it("pushes a marked history entry on selection, and keeps replaceState for a marker press", () => {
     expect(BENCH).toContain("window.history.pushState({ [BENCH_HISTORY_MARK]: true }");
-    expect(BENCH).toContain('window.history.replaceState(null, "", fragment)');
+    expect(BENCH).toContain('window.history.replaceState(window.history.state, "", fragment)');
+    expect(BENCH).not.toContain("replaceState(null,");
+    expect(BENCH).toContain("historyWriteFor(window.history.state)");
   });
 
   it("undoes the browser's own fragment scroll so the workbench stays on screen", () => {
@@ -80,6 +82,17 @@ describe("the island stays the one delegated listener", () => {
     expect(BENCH).toContain("window.scrollTo({ top: 0 });");
     expect(BENCH).not.toContain("scrollIntoView(");
     expect(BENCH).toContain("scrollWithin(");
+  });
+
+  it("stops the player when a phone leaves the watch step", () => {
+    expect(BENCH).toContain(
+      'if (step === "pick" && window.matchMedia(NARROW_QUERY).matches) closeVideo();',
+    );
+  });
+
+  it("never lets a marker armed on one video set another video's start", () => {
+    expect(BENCH).toContain("armedSecondFor(armed.current, orderNo)");
+    expect(BENCH).toContain("armed.current = null;");
   });
 
   it("clears the store when the bench leaves the page", () => {
@@ -112,6 +125,15 @@ describe("the one-screen frame", () => {
     const controls = flat("./video-progress-controls.tsx");
     expect(controls).not.toContain("max-w-[560px]");
     expect(controls).not.toContain("mx-auto");
+  });
+
+  it("keeps the book bar on screen for a single-video book, which has no pick step", () => {
+    expect(BENCH).toContain('single ? "" : "group-data-[step=watch]/bench:max-lg:hidden"');
+  });
+
+  it("still renders the book bar when a book has no videos", () => {
+    expect(PAGE).toContain("defaultOrderNo === undefined && (");
+    expect(PAGE).toContain("<BookBar {...barProps} watchedText={null} />");
   });
 
   it("keeps every marker target at least 44px", () => {

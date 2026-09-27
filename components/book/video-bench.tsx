@@ -8,8 +8,11 @@ import { consumeResolved, requestAuth, useAuthModalState } from "@/lib/auth/auth
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { readAutoNext, writeAutoNext } from "@/lib/book/auto-next-preference";
 import {
+  type ArmedSecond,
+  armedSecondFor,
   BENCH_HISTORY_MARK,
   type BenchStep,
+  historyWriteFor,
   isBenchEntry,
   stepForHash,
 } from "@/lib/book/bench-history";
@@ -29,8 +32,9 @@ import {
   type BookProgressValue,
   type VideoProgressValue,
 } from "@/lib/video-progress/client";
+import { cn } from "@/lib/utils";
 import { watchUrl } from "@/lib/youtube/embed";
-import { openVideo, resetBench, selectVideo, useBenchState } from "./active-video";
+import { closeVideo, openVideo, resetBench, selectVideo, useBenchState } from "./active-video";
 import { BookBar, type BookBarProps } from "./book-bar";
 import { BenchStage, type BenchVideo } from "./bench-stage";
 
@@ -86,10 +90,24 @@ function orderNoOf(node: Element): number | null {
  */
 function applyFragmentAndSelect(orderNo: number, fragment: string | null): void {
   if (fragment !== null) {
-    window.history.replaceState(null, "", fragment);
+    window.history.replaceState(window.history.state, "", fragment);
     notifyHash();
   }
   selectVideo(orderNo);
+}
+
+/**
+ * Write a bench-made video entry: push the first one above the list, replace it afterwards
+ * ({@link historyWriteFor}), so one back always returns to the list step.
+ */
+function writeVideoEntry(orderNo: number): void {
+  const url = `#${videoFragment(orderNo)}`;
+  if (historyWriteFor(window.history.state) === "push") {
+    window.history.pushState({ [BENCH_HISTORY_MARK]: true }, "", url);
+  } else {
+    window.history.replaceState({ ...window.history.state, [BENCH_HISTORY_MARK]: true }, "", url);
+  }
+  notifyHash();
 }
 
 /** `localStorage`, or `null` where reading the property itself throws (blocked storage). */
@@ -168,8 +186,9 @@ export function VideoBench({
 }) {
   const t = useTranslations("BookDetail");
   const rootRef = useRef<HTMLDivElement>(null);
-  /** The second İzle should start from — 0 unless the reader arrived on a marker link. */
-  const hashStartSecond = useRef(0);
+  /** The marker second a fragment armed İzle with, and the video it belongs to — never carried
+   *  over to another video ({@link armedSecondFor}). */
+  const armed = useRef<ArmedSecond | null>(null);
   const modal = useAuthModalState();
   /** The modal request currently being served, or `null` (plan §5.6.4). */
   const authRequestId = useRef<string | null>(null);
@@ -301,11 +320,10 @@ export function VideoBench({
   /** Select a video as a reader action: a marked history entry, the watch step, and — below
    *  `lg` — focus on the stage heading. */
   const goTo = (orderNo: number) => {
-    window.history.pushState({ [BENCH_HISTORY_MARK]: true }, "", `#${videoFragment(orderNo)}`);
+    writeVideoEntry(orderNo);
     selectVideo(orderNo);
     setCurrentMarker(null);
     focusOnStep.current = window.matchMedia(NARROW_QUERY).matches;
-    notifyHash();
   };
 
   /** Back to the list: step back through our own entry when there is one, so the phone's back
@@ -316,7 +334,12 @@ export function VideoBench({
       window.history.back();
       return;
     }
-    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    // The list entry carries no bench mark, so the next pick pushes above it again.
+    window.history.replaceState(
+      { ...window.history.state, [BENCH_HISTORY_MARK]: false },
+      "",
+      window.location.pathname + window.location.search,
+    );
     notifyHash();
   };
 
@@ -340,8 +363,7 @@ export function VideoBench({
     if (!autoNext) return;
     const next = nextPlayable(videos, orderNo);
     if (next === null) return;
-    window.history.pushState({ [BENCH_HISTORY_MARK]: true }, "", `#${videoFragment(next.orderNo)}`);
-    notifyHash();
+    writeVideoEntry(next.orderNo);
     setCurrentMarker(null);
     openVideo(next.orderNo, 0);
   };
@@ -369,6 +391,7 @@ export function VideoBench({
     const id = hash.slice(1);
     const target = id === "" ? null : document.getElementById(id);
     const root = rootRef.current;
+    armed.current = null;
     if (target === null || root === null || !root.contains(target)) return;
     // The browser (and, on an in-page fragment change, Next's router after this commit) scrolls
     // the DOCUMENT to this fragment; the workbench starts at the top of the page, so undo that on
@@ -382,10 +405,16 @@ export function VideoBench({
     const raw = target.dataset.second;
     if (video?.playable && raw !== undefined) {
       const second = Number.parseInt(raw, 10);
-      if (Number.isFinite(second)) hashStartSecond.current = second;
+      if (Number.isFinite(second) && orderNo !== null) armed.current = { orderNo, second };
     }
     return () => cancelAnimationFrame(frame);
   }, [videos, hash]);
+
+  // A phone that leaves the watch step (the button or the gesture) leaves the player behind a
+  // `display: none` column; drop it there rather than let it play, unseen, into auto-next.
+  useEffect(() => {
+    if (step === "pick" && window.matchMedia(NARROW_QUERY).matches) closeVideo();
+  }, [step]);
 
   /* The page is leaving. The store is module state that a client-side route change does not
      re-evaluate, so without this an open player would reappear on the reader's next arrival
@@ -537,7 +566,7 @@ export function VideoBench({
     }
 
     const raw = trigger.dataset.second;
-    let second = hashStartSecond.current;
+    let second = armedSecondFor(armed.current, orderNo);
     if (raw !== undefined) {
       const parsed = Number.parseInt(raw, 10);
       if (!Number.isFinite(parsed)) return;
@@ -565,7 +594,7 @@ export function VideoBench({
 
     // İzle has no href of its own, so it addresses the video; a marker addresses itself.
     const fragment = trigger.getAttribute("href");
-    if (fragment !== null) window.history.replaceState(null, "", fragment);
+    if (fragment !== null) window.history.replaceState(window.history.state, "", fragment);
     notifyHash();
     openVideo(orderNo, second);
   };
@@ -598,7 +627,13 @@ export function VideoBench({
       data-step={step}
       className="group/bench mx-auto flex h-[calc(100dvh-var(--header-height))] min-h-[30rem] w-full max-w-7xl flex-col lg:min-h-[36rem]"
     >
-      <div className="shrink-0 border-b border-border px-4 py-3 group-data-[step=watch]/bench:max-lg:hidden sm:px-6 lg:px-8">
+      <div
+        className={cn(
+          "shrink-0 border-b border-border px-4 py-3 sm:px-6 lg:px-8",
+          // A single-video book has no pick step, so its bar stays on screen in the watch step.
+          single ? "" : "group-data-[step=watch]/bench:max-lg:hidden",
+        )}
+      >
         <BookBar {...barProps} watchedText={watchedText} />
       </div>
       <div className="flex min-h-0 flex-1 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]">

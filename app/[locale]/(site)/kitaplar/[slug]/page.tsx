@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Fragment } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import type { BenchVideo } from "@/components/book/bench-stage";
+import { BookBar } from "@/components/book/book-bar";
 import { MarkerPanels } from "@/components/book/marker-panels";
 import { VideoBench } from "@/components/book/video-bench";
 import { WorkbenchList } from "@/components/book/workbench-list";
@@ -157,6 +158,23 @@ export default async function V2BookDetailPage({ params }: PageProps) {
     return schema === null ? [] : [schema];
   });
 
+  const barProps = {
+    title,
+    coverImagePath: book.coverImagePath,
+    coverAlt: t("coverAlt", { title }),
+    examTrack: book.examTrack,
+    summary: t("bookSummary", {
+      count: benchVideos.length,
+      kind,
+      markers: totalMarkers,
+      named: anyNamed ? "yes" : "no",
+    }),
+    infoLabel: t("bookInfo"),
+    purchaseUrl: book.purchaseUrl,
+    purchaseLabel: t("purchase"),
+    purchaseAria: t("purchaseAria"),
+  };
+
   return (
     <>
       <JsonLd
@@ -173,27 +191,20 @@ export default async function V2BookDetailPage({ params }: PageProps) {
       />
       {videoSchemas.length > 0 && <JsonLd schema={videoSchemas} />}
 
+      {/* A book with no videos still names itself: the bar alone, in the page gutter. */}
+      {defaultOrderNo === undefined && (
+        <PageContainer space="band">
+          <div className="border-b border-border py-3">
+            <BookBar {...barProps} watchedText={null} />
+          </div>
+        </PageContainer>
+      )}
       {defaultOrderNo !== undefined && (
         <VideoBench
           videos={benchVideos}
           kind={kind}
           bookSlug={book.slugTr}
-          barProps={{
-            title,
-            coverImagePath: book.coverImagePath,
-            coverAlt: t("coverAlt", { title }),
-            examTrack: book.examTrack,
-            summary: t("bookSummary", {
-              count: benchVideos.length,
-              kind,
-              markers: totalMarkers,
-              named: anyNamed ? "yes" : "no",
-            }),
-            infoLabel: t("bookInfo"),
-            purchaseUrl: book.purchaseUrl,
-            purchaseLabel: t("purchase"),
-            purchaseAria: t("purchaseAria"),
-          }}
+          barProps={barProps}
           list={
             <WorkbenchList
               videos={benchVideos}
