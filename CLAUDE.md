@@ -5,11 +5,11 @@ config file), vitest in node env (no jsdom).
 
 Read on demand, not every session:
 
-- `docs/architecture.md` — routing, route groups, API access path, SEO helpers, generated
-  artifacts, known gaps. Read before adding a route, a fetch, or touching i18n/SEO.
+- `docs/architecture.md` — routing, route groups, API access path, SEO helpers, build/CI,
+  known gaps. Read before adding a route, a fetch, or touching i18n/SEO.
 - `docs/design.md` — Terra tokens, typography, dark mode state, a11y floor, data-viz colour
   doctrine, component patterns. Read before any visible UI change.
-- `docs/conventions.md` — style, tests, commits, generated-file hygiene.
+- `docs/conventions.md` — style, tests, commits, generated artifacts and their gates.
 - `docs/copy.md` — rules for any user-facing Turkish copy. Read before writing or changing it.
 - `docs/product.md` — users, purpose, positioning, product principles (impeccable's PRODUCT.md).
 
@@ -58,7 +58,7 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 - `import "server-only"` guards are load-bearing; never import `lib/env.server.ts` or
   `lib/api/client.ts` from a client component.
 - Vitest does not run anything under `app/`; put tests next to code in `lib/`, `components/`,
-  `tools/`.
+  `tools/`, `scripts/`.
 - Visible UI change: run `pnpm sweep:overflow` (or `-- --filter=<route>`) against a running
   server before calling it done, and check 320, 360, 390 px and desktop, light and dark
   (Playwright MCP). Take a screenshot when the user asked for a visual fix; save screenshots
@@ -73,6 +73,6 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 ## Done means
 
 typecheck + lint + test green, `pnpm build` passes if you touched routing/SEO/config, the
-relevant `generate:*:check` or `codegen:check` is green if you touched an input, the
-matching `pathnames` entry exists for any new route, and `pnpm sweep:overflow` is green if
-anything visible changed.
+relevant `*:check` gate (`docs/conventions.md`, Generated artifacts) is green if you touched an
+input, the matching `pathnames` entry exists for any new route, and `pnpm sweep:overflow` is
+green if anything visible changed.
