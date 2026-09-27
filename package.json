@@ -14,6 +14,8 @@
     "typecheck": "tsc --noEmit",
     "codegen": "openapi-typescript ./openapi/openapi.json --output ./lib/api/schema.ts",
     "codegen:check": "pnpm run codegen && git diff --exit-code -- lib/api/schema.ts",
+    "contract:sync": "node scripts/sync-contract.mjs",
+    "contract:check": "node scripts/check-contract.mjs",
     "generate:map": "node scripts/generate-map-paths.mjs",
     "generate:map:check": "pnpm run generate:map && git diff --exit-code -- lib/map/tr-provinces.generated.ts",
     "generate:world-map": "node scripts/generate-world-map-paths.mjs",
