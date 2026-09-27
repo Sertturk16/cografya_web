@@ -29,6 +29,9 @@
 
 ## Re-sync risks
 
+- The first sync uploaded previews and conventions.md BEFORE lint-staged's Prettier pass reformatted
+  them on commit; the next sync sees changed sources and re-captures those cards (formatting only).
+
 - `ds.compiled.css` is generated from the live `app/globals.css`; a token rename there changes every
   card without touching a preview — conventions.md names tokens and must be re-validated.
 - `componentSrcMap` and `entry.ts` are hand lists: a new `components/ui/*` file is NOT picked up
