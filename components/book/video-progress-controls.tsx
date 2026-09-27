@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
-import { formatDuration } from "@/lib/book/duration";
 import type { VideoProgressValue } from "@/lib/video-progress/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -14,16 +13,6 @@ import { cn } from "@/lib/utils";
  * left-aligned heading read as floating.
  */
 const PROGRESS_CONTROLS = "mt-2 flex flex-wrap items-center gap-x-3 gap-y-2";
-
-/**
- * The resume line. `m-0` IS LOAD-BEARING: this is a `<p>`, and `app/globals.css`'s base rule
- * gives every `<p>` `margin: 0 0 1rem`; the stylesheet's `margin: 0` cancelled it, and dropping
- * the utility would let 16px back in and break the row's baseline alignment with the toggle.
- * `text-[0.85rem]` rather than `text-sm`, for the line-height reason the whole stage shares.
- * `text-muted-foreground` is `--color-slate`'s bridge — **7.48:1 light / 8.53:1 dark** on the
- * page's `--background`; the frozen token measured 2.36:1 in dark.
- */
-const RESUME_LINE = "m-0 text-[0.85rem] text-muted-foreground";
 
 /**
  * WCAG 2.2 §2.5.5 (AAA) 44px, the same generosity the İzle control takes — these are the
@@ -69,7 +58,8 @@ const WATCHED_TOGGLE_CHECKED =
 
 /**
  * The signed-in reader's own progress on the video currently on the stage (UYELIK-06 plan
- * §5.6): a resume-position line, and a watched self-declaration toggle.
+ * §5.6): a watched self-declaration toggle. (The resume-position line was removed after
+ * T-128 with the rest of continue-where-you-left-off.)
  *
  * RENDERED BY `BenchStage`, NOT INSIDE `DenemeVideo`'s cover — unlike the sign-in CTA
  * (§5.3.4), this control is meaningful in EVERY video state (including `external`, and
@@ -81,7 +71,7 @@ const WATCHED_TOGGLE_CHECKED =
  * height changes would shift it (`bench-stage.tsx`'s own rule: "reserve it in all three states
  * or do not put it above the index"). This block sits BELOW the index's own stage column, so a
  * height change here (an anonymous reader sees nothing at all; an authenticated one sees a
- * toggle, and sometimes also a resume line) moves nothing that rule protects — the same posture
+ * toggle) moves nothing that rule protects — the same posture
  * `login-form.tsx`'s own authenticated/anonymous swap already takes.
  */
 export function VideoProgressControls({
@@ -91,7 +81,7 @@ export function VideoProgressControls({
 }: {
   authState: AuthSessionState;
   /** `"loading"` and `null` are both treated as "no known saved state yet" here — an
-   *  unchecked toggle and no resume line are the correct default for both. */
+   *  unchecked toggle is the correct default for both. */
   progress: VideoProgressValue | null | "loading";
   onToggleWatched: (watched: boolean) => Promise<{ readonly ok: boolean }>;
 }) {
@@ -119,15 +109,6 @@ export function VideoProgressControls({
 
   return (
     <div className={PROGRESS_CONTROLS}>
-      {/* A resume-position line states a FACT about THIS reader's own saved position — never a
-          coverage ratio across the catalogue (`CONTENT-STYLE.md` §22's "eksik-vurgusu" ban).
-          Omitted entirely at 0: "resume from 0:00" tells the reader nothing they do not
-          already know from the cover itself. */}
-      {known !== null && known.lastPositionSeconds > 0 && (
-        <p className={RESUME_LINE}>
-          {t("resumeLine", { time: formatDuration(known.lastPositionSeconds) })}
-        </p>
-      )}
       <Button
         type="button"
         variant="outline"

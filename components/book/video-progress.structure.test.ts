@@ -171,18 +171,17 @@ describe("the resume — deliberately does NOT auto-load the player (plan §5.6.
   });
 });
 
-describe("the resume-second priority (§5.4)", () => {
-  it("only applies when the press carries no explicit data-second", () => {
+describe("no continue-where-you-left-off (removed after T-128)", () => {
+  it("starts İzle from the pressed marker or the armed fragment, never a saved position", () => {
     const handler = clickHandler();
-    const explicitBranch = handler.indexOf("if (raw !== undefined)");
-    const resumeCall = handler.indexOf("resolveIzleStartSecond(");
-    expect(explicitBranch).toBeGreaterThan(0);
-    expect(resumeCall).toBeGreaterThan(explicitBranch);
-    // The resume call sits in the else branch of the same if/else — never inside the explicit
-    // branch itself, which would let a saved position override a real deep link.
-    const elseIndex = handler.indexOf("} else {", explicitBranch);
-    expect(elseIndex).toBeGreaterThan(0);
-    expect(resumeCall).toBeGreaterThan(elseIndex);
+    expect(handler).not.toBe("");
+    expect(handler).not.toContain("resolveIzleStartSecond(");
+    expect(handler).not.toContain("lastPositionSeconds");
+  });
+
+  it("renders no resume card above the list", () => {
+    expect(BENCH).not.toContain('t("resumeTitle")');
+    expect(BENCH).not.toContain("bookProgress?.resume");
   });
 });
 
@@ -239,8 +238,8 @@ describe("the watched toggle (§5.6)", () => {
     expect(PROGRESS_CONTROLS).toContain("const watched = known?.watched ?? false;");
   });
 
-  it("never shows a resume line for an exactly-zero saved position", () => {
-    expect(PROGRESS_CONTROLS).toContain("known.lastPositionSeconds > 0");
+  it("shows no resume line under the player (removed after T-128)", () => {
+    expect(PROGRESS_CONTROLS).not.toContain('t("resumeLine"');
   });
 
   it("uses aria-disabled={pending} on the toggle button, never a literal disabled={pending} (PR #90 review `TEST90R2-I1`)", () => {

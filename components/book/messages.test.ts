@@ -32,7 +32,7 @@ const BOOK_DETAIL_KEYS = [
   "tagLabelAria",
   // Named markers (konu anlatımı, tek video) carry their own name in the accessible label.
   "tagNamedAria",
-  // The workbench (T-128): the book bar, the list, the stage's controls and the resume card.
+  // The workbench (T-128): the book bar, the list and the stage's controls.
   "bookSummary",
   "bookWatched",
   "bookInfo",
@@ -46,8 +46,6 @@ const BOOK_DETAIL_KEYS = [
   "prevAria",
   "nextAria",
   "autoNext",
-  "resumeTitle",
-  "resumeDetail",
   "statusDone",
   "statusPart",
   "onYoutube",
@@ -80,8 +78,7 @@ const BOOK_DETAIL_KEYS = [
   // İzle button's accessible name both swap silently once the async session check resolves to
   // authenticated — this is the AT-audible signal that swap happened.
   "sessionReadyAnnounce",
-  // The progress controls (§5.6): the resume-position line and the watched toggle's on/off pair.
-  "resumeLine",
+  // The progress controls (§5.6): the watched toggle's on/off pair.
   "watchedToggle",
   "watchedToggleAriaOn",
   "watchedToggleAriaOff",

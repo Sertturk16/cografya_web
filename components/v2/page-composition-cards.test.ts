@@ -1030,7 +1030,9 @@ describe("the card primitive is not used to hand-draw a card surface", () => {
 // T-128: 182 → **162**. The book page's hoisted index constants (jump strip, `<details>` rows,
 // question grid) and the stage caption's constants left with the workbench rewrite; the list's
 // and marker panels' own constants replace fewer of them. None is a card.
-export const COMPUTED_CARD_CLASSNAMES = 162;
+// 162 → **161**: the video progress controls' resume line (`RESUME_LINE`) left with the
+// continue-where-you-left-off feature.
+export const COMPUTED_CARD_CLASSNAMES = 161;
 
 /** The whole unreadable-className population by expression shape — the rest of what the counter
  * above deliberately does not watch, kept visible rather than dropped.
@@ -1055,7 +1057,8 @@ const UNREADABLE_CLASSNAME_SHAPES: ReadonlyArray<readonly [string, number]> = [
   // pass-through. 180 → 182 in T-121: `AreaResultPanel`'s and `CoordinateResultPanel`'s
   // placement pass-throughs. 182 → 162 in T-128: the book workbench rewrite. See
   // {@link COMPUTED_CARD_CLASSNAMES}.
-  ["identifier", 162],
+  // 162 → 161: the removed resume line. See {@link COMPUTED_CARD_CLASSNAMES}.
+  ["identifier", 161],
   // 9 → 8 in T-090: `/dunya/kita` dropped the continent-name chip that repeated each card's title.
   ["member", 8],
   ["ternary", 2],
