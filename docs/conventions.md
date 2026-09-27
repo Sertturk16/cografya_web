@@ -158,15 +158,16 @@ marmara`, `/dunya`, `/dunya/almanya` and both book routes. A sweep over that bui
 
 ## Generated artifacts
 
-| File                                   | Regenerate                                  | Gate                        |
-| -------------------------------------- | ------------------------------------------- | --------------------------- |
-| `lib/api/schema.ts`                    | `pnpm codegen` (after copying the API spec) | `codegen:check`             |
-| `lib/map/tr-provinces.generated.ts`    | `pnpm generate:map`                         | `generate:map:check`        |
-| `lib/map/world-countries.generated.ts` | `pnpm generate:world-map`                   | `generate:world-map:check`  |
-| `lib/map/tr-inland-water.generated.ts` | `pnpm generate:water`                       | `generate:water:check`      |
-| `lib/map/tr-context.generated.ts`      | `pnpm generate:tr-context`                  | `generate:tr-context:check` |
-| `lib/map/tr-context-tall.generated.ts` | `pnpm generate:tr-context` (same run)       | `generate:tr-context:check` |
-| `docs/design.md` frontmatter only      | `pnpm design:tokens`                        | `design:tokens:check`       |
+| File                                   | Regenerate                              | Gate                        |
+| -------------------------------------- | --------------------------------------- | --------------------------- |
+| `openapi/openapi.json` (API's copy)    | `pnpm contract:sync`                    | `contract:check`            |
+| `lib/api/schema.ts`                    | `pnpm codegen` (run by `contract:sync`) | `codegen:check`             |
+| `lib/map/tr-provinces.generated.ts`    | `pnpm generate:map`                     | `generate:map:check`        |
+| `lib/map/world-countries.generated.ts` | `pnpm generate:world-map`               | `generate:world-map:check`  |
+| `lib/map/tr-inland-water.generated.ts` | `pnpm generate:water`                   | `generate:water:check`      |
+| `lib/map/tr-context.generated.ts`      | `pnpm generate:tr-context`              | `generate:tr-context:check` |
+| `lib/map/tr-context-tall.generated.ts` | `pnpm generate:tr-context` (same run)   | `generate:tr-context:check` |
+| `docs/design.md` frontmatter only      | `pnpm design:tokens`                    | `design:tokens:check`       |
 
 Every entry must be in `.prettierignore` AND `eslint.config.mjs` `globalIgnores`, otherwise
 lint-staged rewrites it on commit and the gate goes red on an untouched file. Exception:

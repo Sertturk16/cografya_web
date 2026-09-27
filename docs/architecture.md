@@ -90,8 +90,10 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   `reference/districts/[plateCode]/route.ts` deliberately does the opposite (`revalidate = 3600`).
   Check the route you are editing rather than assuming the directive is already there.
   Helpers in `lib/http/bff-helpers.server.ts`, `lib/http/same-origin.ts`.
-- Contract: `openapi/openapi.json` is a manual copy of the API repo's spec; `pnpm codegen`
-  emits `lib/api/schema.ts` (committed, ESLint/Prettier ignored). Alias types in
+- Contract: `openapi/openapi.json` is a byte-identical copy of the API repo's spec, refreshed
+  by `pnpm contract:sync` (sibling `../cografya_api` or `COGRAFYA_API_DIR`) and guarded by
+  `.github/workflows/contract.yml` (`contract:check` against the API's same branch, also
+  daily); `pnpm codegen` emits `lib/api/schema.ts` (committed, ESLint/Prettier ignored). Alias types in
   `lib/api/types.ts`.
 - **When to pick `force-dynamic` over `revalidate` + a resilient empty fallback.** The
   production Docker build has no network access to the api container, so any build-time

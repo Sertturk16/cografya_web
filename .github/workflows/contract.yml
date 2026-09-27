@@ -1,0 +1,83 @@
+name: Contract
+
+# Fails when this repo's `openapi/openapi.json` is no longer byte-identical to the API repo's
+# committed spec on the matching branch (web `dev` ↔ api `dev`, web `main` ↔ api `main`).
+# `codegen:check` in ci.yml cannot see this: it only proves `lib/api/schema.ts` matches the web's
+# OWN copy. The fix is always `pnpm contract:sync` and a web PR.
+#
+# The daily run covers the case no push here triggers: an API PR changed the contract and the web
+# has not followed yet. It checks both branches, from the default branch's copy of this file.
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  # event_name too: a push to dev must not cancel the daily run, which shares refs/heads/dev.
+  group: contract-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: API contract in sync (${{ matrix.branch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # PR → its base branch; push/dispatch → the branch itself; any other branch → dev.
+        branch: >-
+          ${{ github.event_name == 'schedule' && fromJSON('["dev","main"]')
+          || fromJSON(format('["{0}"]', (github.base_ref || github.ref_name) == 'main' && 'main' || 'dev')) }}
+    steps:
+      # The event's own ref: the PR merge commit, the pushed commit, or (daily) the default branch,
+      # so the check script always exists even on a branch it has not reached yet (main).
+      - name: Checkout web
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # Daily only: the spec to judge comes from the matrix branch, not from the default branch.
+      - name: Checkout web spec (${{ matrix.branch }})
+        if: github.event_name == 'schedule'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ matrix.branch }}
+          path: .web
+          persist-credentials: false
+          sparse-checkout: openapi/openapi.json
+          sparse-checkout-cone-mode: false
+
+      # `Sertturk16/cografya_api` is public, so the default GITHUB_TOKEN reads it; no PAT or
+      # deploy key. Only the committed spec is compared: the API's own `openapi:check` already
+      # proves that file matches its DTOs.
+      - name: Checkout api
+        uses: actions/checkout@v7
+        with:
+          repository: Sertturk16/cografya_api
+          ref: ${{ matrix.branch }}
+          path: .api
+          persist-credentials: false
+          sparse-checkout: |
+            package.json
+            openapi/openapi.json
+          sparse-checkout-cone-mode: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+
+      # Node built-ins only, so no install.
+      - name: Compare specs
+        env:
+          COGRAFYA_API_DIR: .api
+          CONTRACT_WEB_SPEC: ${{ github.event_name == 'schedule' && '.web/openapi/openapi.json' || '' }}
+        run: node scripts/check-contract.mjs

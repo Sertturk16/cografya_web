@@ -31,20 +31,22 @@ content pages render their empty states.
 
 ## Scripts
 
-| Script                                                                                | What it does                                                                            |
-| ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `pnpm dev` / `pnpm build` / `pnpm start`                                              | Dev server, production build (standalone), serve                                        |
-| `pnpm typecheck`                                                                      | `tsc --noEmit`                                                                          |
-| `pnpm lint`                                                                           | ESLint                                                                                  |
-| `pnpm test` / `pnpm test:watch`                                                       | vitest                                                                                  |
-| `pnpm format` / `pnpm format:check`                                                   | Prettier                                                                                |
-| `pnpm codegen`                                                                        | `openapi/openapi.json` → `lib/api/schema.ts` (after copying the spec from the API repo) |
-| `pnpm codegen:check`                                                                  | fails if the committed `schema.ts` is stale                                             |
-| `pnpm generate:map` / `generate:world-map` / `generate:water` / `generate:tr-context` | rebuild the committed SVG path data (`lib/map/*.generated.ts`) from `data/*.geojson`    |
-| `pnpm generate:*:check`                                                               | drift gates for the four artifacts above                                                |
-| `pnpm design:tokens`                                                                  | regenerate the `docs/design.md` token frontmatter from `app/globals.css`                |
-| `pnpm design:tokens:check`                                                            | fails if that frontmatter is stale                                                      |
-| `pnpm sweep:overflow`                                                                 | Playwright horizontal-overflow check over a running server (see `docs/conventions.md`)  |
+| Script                                                                                | What it does                                                                           |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm build` / `pnpm start`                                              | Dev server, production build (standalone), serve                                       |
+| `pnpm typecheck`                                                                      | `tsc --noEmit`                                                                         |
+| `pnpm lint`                                                                           | ESLint                                                                                 |
+| `pnpm test` / `pnpm test:watch`                                                       | vitest                                                                                 |
+| `pnpm format` / `pnpm format:check`                                                   | Prettier                                                                               |
+| `pnpm contract:sync`                                                                  | API `openapi:generate` → copy the spec here → `pnpm codegen` (needs `../cografya_api`) |
+| `pnpm contract:check`                                                                 | fails if `openapi/openapi.json` differs from the API's spec (CI: `contract.yml`)       |
+| `pnpm codegen`                                                                        | `openapi/openapi.json` → `lib/api/schema.ts` (run by `contract:sync`)                  |
+| `pnpm codegen:check`                                                                  | fails if the committed `schema.ts` is stale                                            |
+| `pnpm generate:map` / `generate:world-map` / `generate:water` / `generate:tr-context` | rebuild the committed SVG path data (`lib/map/*.generated.ts`) from `data/*.geojson`   |
+| `pnpm generate:*:check`                                                               | drift gates for the four artifacts above                                               |
+| `pnpm design:tokens`                                                                  | regenerate the `docs/design.md` token frontmatter from `app/globals.css`               |
+| `pnpm design:tokens:check`                                                            | fails if that frontmatter is stale                                                     |
+| `pnpm sweep:overflow`                                                                 | Playwright horizontal-overflow check over a running server (see `docs/conventions.md`) |
 
 ## Layout
 
