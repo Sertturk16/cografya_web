@@ -1,6 +1,5 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { BookContentKind } from "@/lib/api/types";
@@ -18,8 +17,6 @@ import {
 } from "@/lib/book/bench-history";
 import { rowStatuses } from "@/lib/book/book-status";
 import { currentMarkerIndex } from "@/lib/book/current-marker";
-import { formatDuration } from "@/lib/book/duration";
-import { resolveIzleStartSecond } from "@/lib/book/resume-second";
 import { videoFragment } from "@/lib/book/video-identity";
 import { nextPlayable } from "@/lib/book/workbench-model";
 import { fetchVideoIdentity, VIDEO_IDENTITY_FETCH_TIMEOUT_MS } from "@/lib/video-identity/client";
@@ -222,7 +219,7 @@ export function VideoBench({
   // THE LOGIN GATE'S OWN SESSION READ (§5.3.2), called ONCE here and threaded down as a prop.
   const [authState] = useAuthSession();
 
-  // Book-level progress (UYE-P3 §3.1): the watched count, the resume card and, since T-128, one
+  // Book-level progress (UYE-P3 §3.1): the watched count and, since T-128, one
   // row per started video for the list's status icons. Only fetched when authenticated.
   const [fetchedBookProgress, setFetchedBookProgress] = useState<BookProgressValue | null>(null);
 
@@ -373,12 +370,6 @@ export function VideoBench({
     setAutoNextOverride(!autoNext);
   };
 
-  /** The resume card's press: a click, so loading the player here respects click-to-load. */
-  const resumeFrom = (orderNo: number, second: number, playable: boolean) => {
-    goTo(orderNo);
-    if (playable) openVideo(orderNo, second);
-  };
-
   // The hash names a video (a shared link, the back gesture, our own push): select it. It never
   // loads a player — the ledger permits the load only on a click or a key press.
   useEffect(() => {
@@ -522,10 +513,6 @@ export function VideoBench({
     }
   }
 
-  const resume = bookProgress?.resume ?? null;
-  const resumeVideo =
-    resume === null ? undefined : videos.find((video) => video.orderNo === resume.orderNo);
-
   const onClick = (event: React.MouseEvent<HTMLElement>) => {
     if (event.defaultPrevented) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) {
@@ -573,13 +560,6 @@ export function VideoBench({
       second = parsed;
       const index = Number.parseInt(trigger.dataset.markerIndex ?? "", 10);
       if (Number.isFinite(index)) setCurrentMarker({ orderNo, index });
-    } else {
-      // §5.4's resume-second priority: a plain İzle press resumes from the last saved position
-      // when it is further along than the fragment-armed target — never the reverse.
-      second = resolveIzleStartSecond(
-        second,
-        progress !== null && progress !== "loading" ? progress.lastPositionSeconds : undefined,
-      );
     }
 
     event.preventDefault();
@@ -638,28 +618,6 @@ export function VideoBench({
       </div>
       <div className="flex min-h-0 flex-1 lg:grid lg:grid-cols-[22rem_minmax(0,1fr)]">
         <div className="min-h-0 flex-1 overflow-y-auto group-data-[step=watch]/bench:max-lg:hidden lg:border-r lg:border-border">
-          {resume !== null && resumeVideo !== undefined && (
-            <button
-              type="button"
-              onClick={() =>
-                resumeFrom(resumeVideo.orderNo, resume.lastPositionSeconds, resumeVideo.playable)
-              }
-              className="m-3 flex min-h-14 w-[calc(100%-1.5rem)] items-center gap-3 rounded-lg border border-border bg-card px-3 text-left transition-colors duration-150 hover:border-primary"
-            >
-              <RotateCcw className="size-5 shrink-0 text-primary" aria-hidden="true" />
-              <span className="min-w-0">
-                <span className="block text-sm font-semibold text-foreground">
-                  {t("resumeTitle")}
-                </span>
-                <span className="block text-xs tabular-nums text-muted-foreground">
-                  {t("resumeDetail", {
-                    label: resumeVideo.label,
-                    time: formatDuration(resume.lastPositionSeconds),
-                  })}
-                </span>
-              </span>
-            </button>
-          )}
           {list}
         </div>
         <div className="flex min-h-0 min-w-0 flex-1 flex-col group-data-[step=pick]/bench:max-lg:hidden">
