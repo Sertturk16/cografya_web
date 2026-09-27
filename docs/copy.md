@@ -1,7 +1,7 @@
 # cografya_web — copy rules
 
 Read before writing or changing any user-facing Turkish text: cards, badges, ledes, buttons,
-feedback lines, `messages/tr.json`. The reader is a student or a curious adult, not a reviewer.
+feedback lines, `messages/tr.json`. The reader is described in `docs/product.md` (Users); never a reviewer.
 
 ## Rules
 

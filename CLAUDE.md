@@ -11,6 +11,7 @@ Read on demand, not every session:
   doctrine, component patterns. Read before any visible UI change.
 - `docs/conventions.md` — style, tests, commits, generated-file hygiene.
 - `docs/copy.md` — rules for any user-facing Turkish copy. Read before writing or changing it.
+- `docs/product.md` — users, purpose, positioning, product principles (impeccable's PRODUCT.md).
 
 ## Commands
 
@@ -62,9 +63,9 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   (Playwright MCP). Take a screenshot when the user asked for a visual fix; save screenshots
   in the workspace root's `.playwright-mcp/`: Playwright MCP resolves a relative filename from the
   workspace root, so pass `.playwright-mcp/<name>` (the scratchpad is outside its allowed roots).
-- `/impeccable audit|critique|polish` and the `web-design-guidelines` skill are review
-  aids; `docs/design.md` overrides them. Never `/impeccable init`, never let it create a
-  DESIGN.md/PRODUCT.md or re-theme Terra.
+- impeccable finds `docs/design.md` only as a sibling of `docs/product.md`; keep both there.
+  Never let it create a `DESIGN.md`/`PRODUCT.md` elsewhere or re-theme Terra. `docs/design.md`
+  overrides its advice; voice and visual rules stay out of `docs/product.md`.
 - No worktrees here (root `CLAUDE.md`). Establish a baseline with `git show <sha>:<path>` or
   `git stash`.
 
