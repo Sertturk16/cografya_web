@@ -143,6 +143,23 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   is a local override. Both are in `outputFileTracingIncludes` and copied by the
   Dockerfile.
 
+## Book page (`/kitaplar/[slug]`)
+
+- One model for every book kind: Book → group (`groupTitleTr`) → video → marker (etiket).
+  `contentKind` picks the composed nouns; the pure rules are in `lib/book/workbench-model.ts`.
+- The page renders every video row (`WorkbenchList`) and every marker of every video
+  (`MarkerPanels`) as server-side `<a href="#…">` links and hands them to the one client island,
+  `VideoBench`. The island never re-renders them; it reconciles attributes on them:
+  `aria-current` on the selected row and the current marker, `hidden` on marker panels,
+  `data-status`/`--ring` on rows, the group progress text. The DOM contract is
+  `data-video-row`, `data-deneme`, `data-video-id`, `data-marker-panel`, `data-marker-index`,
+  `data-second`, `data-player-open`.
+- The URL hash is the mobile step (`lib/book/bench-history.ts`): selecting a video pushes a
+  marked entry, so the back gesture returns to the list. The island scrolls only inside its own
+  panels; it undoes the document scroll a fragment landing causes.
+- The workbench is `100dvh - var(--header-height)` tall, so `--header-height` must equal the
+  header's real height (`components/anchor-offset-token.test.ts` ties them).
+
 ## Styling stack
 
 `app/globals.css` (~1060 lines): `@import "tailwindcss"`, `tw-animate-css`,
