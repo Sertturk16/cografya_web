@@ -36,8 +36,7 @@ function residue(source: string): string[] {
 
 describe("impeccable live residue", () => {
   it("recognises each marker (control)", () => {
-    expect(residue('<script id="impeccable-live-start" />')).toEqual(["impeccable-live-start"]);
-    expect(residue('<div data-impeccable-variant="1">')).toEqual(["data-impeccable-"]);
+    for (const marker of MARKERS) expect(residue(`{/* ${marker}x */}`)).toEqual([marker]);
     expect(residue("export const x = 1;")).toEqual([]);
   });
 

@@ -30,8 +30,6 @@ const CSS = `
   --color-primary: var(--primary);
   --color-background: var(--background);
   --color-ring: var(--ring);
-  --color-mixed: var(--mixed);
-  --color-missing: var(--missing);
   --color-chart-1: var(--chart-1);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-lg: var(--radius);
@@ -66,6 +64,26 @@ describe("extractTokens", () => {
   it("emits dark values under a night- prefix, resolving through :root", () => {
     expect(tokens.colors["night-background"]).toBe("#0b1416");
     expect(tokens.colors["night-primary"]).toBe("#b0522e");
+  });
+
+  it("throws when an exported bridge token stops resolving to a literal colour", () => {
+    const broken = CSS.replace(
+      "--color-ring: var(--ring);",
+      "--color-ring: var(--ring);\n  --color-mixed: var(--mixed);",
+    );
+    expect(() => extractTokens(broken)).toThrow(/mixed/);
+  });
+
+  it("throws when the base type ramp cannot be read", () => {
+    expect(() => extractTokens(CSS.replace("h2 {", "h2, .h2 {"))).toThrow(/h2 font-size/);
+  });
+
+  it("throws on a radius form it does not understand", () => {
+    const odd = CSS.replace(
+      "--radius-xl: calc(var(--radius) * 1.4);",
+      "--radius-xl: calc(var(--radius) - 4px);",
+    );
+    expect(() => extractTokens(odd)).toThrow(/radius-xl/);
   });
 
   it("skips values that do not end in a literal colour", () => {
@@ -114,5 +132,10 @@ describe("spliceFrontmatter", () => {
     const replaced = spliceFrontmatter("---\nname: old\n---\n\n# Title\n\nBody\n", fm);
     expect(replaced).toBe(first);
     expect(replaced.match(/^---$/gm)).toHaveLength(2);
+  });
+
+  it("replaces a CRLF frontmatter instead of stacking a second one", () => {
+    const crlf = "---\r\nname: old\r\n---\r\n\r\n# Title\n\nBody\n";
+    expect(spliceFrontmatter(crlf, fm)).toBe(`${fm}\n# Title\n\nBody\n`);
   });
 });

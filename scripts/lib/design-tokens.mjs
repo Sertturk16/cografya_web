@@ -13,7 +13,8 @@
  * name, with their `.dark` values as `night-<name>`. Data-encoding tokens (`--region-*`,
  * `--eq-mag-*`, `--map-*`, ...) stay out on purpose: `docs/design.md` "brand chrome ≠ data", and a
  * palette entry is an invitation to colour UI with it. shadcn's `chart-*` and `sidebar-*` are
- * re-exported but have no call site.
+ * re-exported but have no call site. A bridge token that stops resolving to a literal colour
+ * throws rather than silently leaving the palette.
  */
 
 const UNUSED_BRIDGE = /^(chart-\d+|sidebar(-.*)?)$/;
@@ -108,6 +109,21 @@ function ruleDecls(css, selector) {
   return new Map();
 }
 
+/**
+ * Fails the generator instead of writing a hole: a value the frontmatter promises (a bridge
+ * token Tailwind exports, the base type ramp) that no longer parses is a globals.css shape this
+ * file must learn, and `design:tokens:check` would otherwise pass on the degraded output.
+ * @param {string | null | undefined} value
+ * @param {string} what
+ * @returns {string}
+ */
+function required(value, what) {
+  if (value === null || value === undefined || value === "") {
+    throw new Error(`design-tokens: could not resolve ${what} from app/globals.css`);
+  }
+  return value;
+}
+
 /** `var(--font-nunito-sans), system-ui` → `Nunito Sans, system-ui` */
 function fontStack(/** @type {string} */ value) {
   return value.replace(/var\(--font-([\w-]+)\)/g, (_, /** @type {string} */ name) =>
@@ -153,9 +169,10 @@ export function extractTokens(rawCss) {
     if (!name.startsWith("color-") || target !== name.slice(6)) continue;
     if (!target.startsWith("color-") && !UNUSED_BRIDGE.test(target)) bridge.push(target);
   }
-  for (const name of bridge) add(name, resolveColor(`var(--${name})`, [root]));
+  for (const name of bridge) add(name, required(resolveColor(`var(--${name})`, [root]), name));
   for (const name of bridge) {
-    if (dark.has(name)) add(`night-${name}`, resolveColor(`var(--${name})`, [dark, root]));
+    if (!dark.has(name)) continue;
+    add(`night-${name}`, required(resolveColor(`var(--${name})`, [dark, root]), `.dark ${name}`));
   }
 
   const heading = fontStack(root.get("font-heading") ?? "");
@@ -168,18 +185,18 @@ export function extractTokens(rawCss) {
   const typography = {
     display: {
       fontFamily: heading,
-      fontSize: h1.get("font-size") ?? "",
-      fontWeight: Number(h1.get("font-weight")),
+      fontSize: required(h1.get("font-size"), "h1 font-size"),
+      fontWeight: Number(required(h1.get("font-weight"), "h1 font-weight")),
     },
     headline: {
       fontFamily: heading,
-      fontSize: h2.get("font-size") ?? "",
-      fontWeight: Number(h2.get("font-weight")),
+      fontSize: required(h2.get("font-size"), "h2 font-size"),
+      fontWeight: Number(required(h2.get("font-weight"), "h2 font-weight")),
     },
     body: {
       fontFamily: body,
-      fontSize: bodyRule.get("font-size") ?? "",
-      lineHeight: Number(bodyRule.get("line-height")),
+      fontSize: required(bodyRule.get("font-size"), "body font-size"),
+      lineHeight: Number(required(bodyRule.get("line-height"), "body line-height")),
     },
   };
   for (const [role, step] of Object.entries(INCUMBENT_TYPE_STEPS)) {
@@ -195,6 +212,7 @@ export function extractTokens(rawCss) {
     const factor = /^calc\(var\(--radius\) \* ([\d.]+)\)$/.exec(value);
     if (factor) rounded[name.slice(7)] = px(base * Number(factor[1]));
     else if (value === "var(--radius)") rounded[name.slice(7)] = px(base);
+    else throw new Error(`--${name}: unsupported radius form "${value}"; teach extractTokens it`);
   }
   const focusRadius = ruleDecls(css, ":focus-visible").get("border-radius");
   if (focusRadius) rounded.focus = focusRadius;
@@ -237,6 +255,6 @@ export function renderFrontmatter(tokens) {
  * @param {string} fm
  */
 export function spliceFrontmatter(md, fm) {
-  const rest = md.replace(/^---\n[\s\S]*?\n---\n+/, "");
+  const rest = md.replace(/^---\r?\n[\s\S]*?\r?\n---(\r?\n)+/, "");
   return `${fm}\n${rest}`;
 }
