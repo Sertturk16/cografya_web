@@ -1,4 +1,5 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { readFileSync, readdirSync } from "node:fs";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -12,12 +13,12 @@ import { describe, expect, it } from "vitest";
  * notices. `docs/superpowers/**` is a historical record and is not checked.
  *
  * A reference counts when it is backticked and ends in a source or doc extension. It resolves
- * against the repo root, `docs/`, the workspace root, or, for a bare file name, any file of that
- * name in the repo. A `*` makes it a glob that must match at least one file name.
+ * against TRACKED files only (`git ls-files`), so a gitignored scratch file on one machine cannot
+ * make CI and a laptop disagree: from the repo root, from `docs/`, as a path suffix, or, for a bare
+ * file name, any tracked file of that name. A `*` makes it a glob that must match a tracked file.
  */
 
 const repoRoot = fileURLToPath(new URL("../", import.meta.url));
-const workspaceRoot = join(repoRoot, "..");
 
 const DOCS = [
   "CLAUDE.md",
@@ -33,6 +34,7 @@ const DOCS = [
  */
 const ALLOWED_MISSING: Record<string, string> = {
   ".env.prod": "production secrets on the host, never committed",
+  "inspect_deprem.js": "conventions.md: named as gitignored scratch that tracked code must not use",
   "DESIGN.md": "CLAUDE.md forbids creating one; docs/design.md plays that role",
   "PRODUCT.md": "impeccable's name for docs/product.md",
   "foo.test.ts": "conventions.md: an example name, not a file",
@@ -53,16 +55,10 @@ const ALLOWED_MISSING: Record<string, string> = {
 };
 
 const REF = /`([^`\s<>{}$…]+\.(?:md|ts|tsx|mjs|js|json|css|yml|yaml))`/g;
-const SKIP_DIRS = new Set(["node_modules", ".git", ".next", "ds-bundle"]);
-
-const walk = (dir: string): string[] =>
-  readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
-    if (SKIP_DIRS.has(entry.name)) return [];
-    const full = join(dir, entry.name);
-    return entry.isDirectory() ? walk(full) : [full];
-  });
-
-const allFiles = walk(repoRoot);
+const allFiles = execFileSync("git", ["ls-files"], { cwd: repoRoot, encoding: "utf8" })
+  .split("\n")
+  .filter(Boolean);
+const tracked = new Set(allFiles);
 const allNames = new Set(allFiles.map((f) => basename(f)));
 
 function globToRegExp(glob: string): RegExp {
@@ -78,14 +74,13 @@ function resolves(ref: string): boolean {
   if (ref.startsWith("/")) return true;
   if (ref.includes("*")) {
     const pattern = globToRegExp(ref.replace(/^.*\*\*\//, ""));
-    return allFiles.some((f) => pattern.test(f.slice(repoRoot.length)));
+    return allFiles.some((f) => pattern.test(f));
   }
   const clean = ref.replace(/^\.\//, "").replace(/:\d+(-\d+)?$/, "");
-  if (!clean.includes("/")) return allNames.has(clean) || existsSync(join(workspaceRoot, clean));
+  if (!clean.includes("/")) return allNames.has(clean);
   return (
-    [repoRoot, join(repoRoot, "docs"), workspaceRoot].some((base) =>
-      existsSync(join(base, clean)),
-    ) ||
+    tracked.has(clean) ||
+    tracked.has(`docs/${clean}`) ||
     // A path written relative to where it lives (`earthquakes/route.ts` under `app/api/`).
     allFiles.some((f) => f.endsWith(`/${clean}`))
   );
