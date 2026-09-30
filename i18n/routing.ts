@@ -334,6 +334,17 @@ export const routing = defineRouting({
       tr: "/deprem/hazirlik",
       en: "/earthquakes/preparedness",
     },
+    // "Dünya Analizi": the world wind / ocean-current map, an embedded third-party page
+    // (earth.nullschool.net) under the site header, in the `(embed)` group. LOCALIZED segment
+    // on the `/deniz ↔ /sea` precedent — "analiz" does not read as English. It is a SIBLING
+    // segment of `/dunya`, not a child, so `/dunya/[slug]` can never swallow it; the header's
+    // active-state check matches whole segments for that reason. `surface: "noindex"`: the
+    // page holds no content of ours, only the frame, so it resolves to ONE correct URL per
+    // locale and stays out of the sitemap.
+    "/dunya-analizi": {
+      tr: "/dunya-analizi",
+      en: "/world-analysis",
+    },
     "/design-system": {
       tr: "/design-system",
       en: "/design-system",

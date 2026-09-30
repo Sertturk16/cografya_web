@@ -25,6 +25,7 @@ import {
   Menu,
   Settings,
   Search,
+  Wind,
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/routing";
@@ -95,22 +96,14 @@ export function V2Header() {
   }, [activeDropdown]);
 
   const isHome = pathStr === "/";
-  const isAtlasActive =
-    pathStr.startsWith("/turkiye") ||
-    pathStr.startsWith("/turkiye") ||
-    pathStr.startsWith("/dunya") ||
-    pathStr.startsWith("/dunya");
-  const isTelemetryActive =
-    pathStr.startsWith("/deniz") ||
-    pathStr.startsWith("/deniz") ||
-    pathStr.startsWith("/deprem") ||
-    pathStr.startsWith("/deprem");
-  const isInteractiveActive =
-    pathStr.startsWith("/oyun") ||
-    pathStr.startsWith("/oyun") ||
-    pathStr.startsWith("/araclar") ||
-    pathStr.startsWith("/araclar");
-  const isKitaplarActive = pathStr.startsWith("/kitaplar") || pathStr.startsWith("/kitaplar");
+  // Whole-segment match, not `startsWith("/dunya")`: `/dunya-analizi` is a sibling of `/dunya`
+  // and a bare prefix test lit "Atlas ve Harita" on the Dünya Analizi page.
+  const inSection = (base: string) => pathStr === base || pathStr.startsWith(`${base}/`);
+  const isAtlasActive = inSection("/turkiye") || inSection("/dunya");
+  const isTelemetryActive = inSection("/deniz") || inSection("/deprem");
+  const isInteractiveActive = inSection("/oyun") || inSection("/araclar");
+  const isKitaplarActive = inSection("/kitaplar");
+  const isWorldAnalysisActive = inSection("/dunya-analizi");
 
   const toggleDropdown = (name: "atlas" | "telemetry" | "interactive" | "account") => {
     setActiveDropdown((prev) => (prev === name ? null : name));
@@ -385,6 +378,19 @@ export function V2Header() {
             )}
           </div>
 
+          {/* Dünya Analizi Direct Link */}
+          <Link
+            href="/dunya-analizi"
+            aria-current={isWorldAnalysisActive ? "page" : undefined}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              isWorldAnalysisActive
+                ? "bg-primary/10 text-primary-strong font-bold border border-primary/20"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+            }`}
+          >
+            <span>Dünya Analizi</span>
+          </Link>
+
           {/* Kitaplar (Kütüphane) Direct Link */}
           <Link
             href="/kitaplar"
@@ -554,6 +560,28 @@ export function V2Header() {
                     <Search className="size-4 text-primary" />
                     <span>İl veya Ülke Ara...</span>
                   </button>
+
+                  {/* Dünya Analizi: a direct link on desktop, so a direct row here too */}
+                  <Link
+                    href="/dunya-analizi"
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={isWorldAnalysisActive ? "page" : undefined}
+                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-colors ${
+                      isWorldAnalysisActive
+                        ? "bg-primary/10 border-primary/20"
+                        : "border-border/80 hover:bg-muted"
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Wind className="size-4 text-primary" />
+                      <span className="truncate text-sm font-semibold text-foreground">
+                        Dünya Analizi
+                      </span>
+                    </div>
+                    <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                      Rüzgâr, akıntı
+                    </span>
+                  </Link>
 
                   {/* Category 1: Atlas */}
                   <div className="space-y-2">

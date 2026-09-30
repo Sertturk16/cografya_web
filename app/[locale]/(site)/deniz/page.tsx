@@ -24,7 +24,7 @@ import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { cn } from "@/lib/utils";
-import { Home, Layers, ArrowRight } from "lucide-react";
+import { Home, Layers, ArrowRight, Wind } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { marineShowsValues } from "@/lib/marine/overview";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -316,6 +316,34 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
             )}
           >
             <span>Fay Hatlarına Bak</span>
+            <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </div>
+
+        {/* WIND AND CURRENTS MAP CALLOUT: opens the full-page earth.nullschool.net frame. */}
+        <div className="p-5 rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <Wind className="size-5" />
+            </div>
+            <div>
+              <span className="font-heading text-base font-bold text-foreground block">
+                Rüzgâr ve Okyanus Akıntıları
+              </span>
+              <span className="text-xs text-muted-foreground block">
+                Dünya genelinde rüzgârı, dalgaları ve akıntıları haritada izle. Harita
+                earth.nullschool.net&apos;ten gelir ve sayfamızın içinde açılır.
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/dunya-analizi"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "shrink-0 font-bold text-xs group gap-1.5",
+            )}
+          >
+            <span>Haritayı Aç</span>
             <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
