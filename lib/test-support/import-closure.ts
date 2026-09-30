@@ -28,9 +28,10 @@ export const EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"] as const;
  * There were two askers; `components/orphan-stylesheets.test.ts` went with the last CSS Module in
  * T-033, so `components/orphan.test.ts` is the one that remains.
  *
- * Three entries, all of them things Next.js itself renders: the locale layout (the chrome every
- * product page gets by its directory — it sits ABOVE the two route groups and is where `Toaster`
- * is mounted, the only thing that makes `sonner.tsx` reachable at all), and the two route groups.
+ * Four entries, all of them things Next.js itself renders: the locale layout (the chrome every
+ * product page gets by its directory — it sits ABOVE the route groups and is where `Toaster`
+ * is mounted, the only thing that makes `sonner.tsx` reachable at all), and the three route
+ * groups (`(site)`, `(play)` and `(embed)`; `design-system` is deliberately not one).
  *
  * NOT WIDENED to the other Next.js entry points — `app/api`, `app/maps`, `app/sitemap.ts`,
  * `app/robots.ts`, `app/not-found.tsx`, `app/global-error.tsx`, `app/layout.tsx`,
@@ -46,6 +47,7 @@ export const PRODUCT_ROOTS = [
   "app/[locale]/layout.tsx",
   "app/[locale]/(site)",
   "app/[locale]/(play)",
+  "app/[locale]/(embed)",
 ] as const;
 
 /**

@@ -39,7 +39,8 @@ blank-map games.
   `/en/*` redirects to Turkish.
 - Sections: `/turkiye` (81 provinces, 7 regions), `/dunya` (countries, continents), `/deniz`
   (sea conditions, 4 basins, coast types), `/deprem` (AFAD earthquakes, fault lines,
-  preparedness), `/kitaplar` (books, video solutions), `/araclar` (distance, coordinate, area;
+  preparedness), `/dunya-analizi` (world wind and ocean-current map,
+  earth.nullschool.net embedded under the site header), `/kitaplar` (books, video solutions), `/araclar` (distance, coordinate, area;
   no sign-up), `/oyun` (map games, sub-brand "Kâşif"), accounts, legal.
 - An account adds favourites, saved game rounds, saved measurements and video progress.
   Watching a video solution requires an account; everything else is open.

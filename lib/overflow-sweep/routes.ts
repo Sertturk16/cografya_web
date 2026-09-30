@@ -250,6 +250,15 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "guarantee it here, so the fullscreen game screen has to be measured separately.",
   },
   {
+    id: "embed",
+    pathname: "/dunya-analizi",
+    locales: ["tr"],
+    why:
+      "The `(embed)` group: header plus one viewport-filling iframe, no footer and no padded " +
+      "container. Its height is `h-dvh`, so the sweep measures that the frame never makes " +
+      "the document wider or taller than the window.",
+  },
+  {
     id: "auth",
     pathname: "/giris",
     locales: ["tr"],

@@ -190,7 +190,7 @@
     "metaDescription": "Coğrafya Gurmesi'nin hangi kişisel verileri, hangi amaçla ve ne kadar süre işlediği; verilerin aktarıldığı sağlayıcılar ve KVKK kapsamındaki hakların.",
     "heading": "Gizlilik ve KVKK Aydınlatma Metni",
     "lede": "Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (KVKK) 10. maddesi uyarınca, Coğrafya Gurmesi'ni kullanırken kişisel verilerinin nasıl işlendiğini anlatır.",
-    "updated": "Son güncelleme: 26 Eylül 2026",
+    "updated": "Son güncelleme: 1 Ekim 2026",
     "authoritative": "Bu metnin Türkçe sürümü bağlayıcıdır.",
     "controllerHeading": "1. Veri Sorumlusu",
     "controllerBody": "Kişisel verilerin, veri sorumlusu sıfatıyla aşağıda bilgileri yer alan Coğrafya Gurmesi tarafından işlenir. Bu bilgiler aynı zamanda 5651 sayılı Kanun kapsamındaki içerik sağlayıcı bilgileridir.",
@@ -254,6 +254,11 @@
         "name": "Google LLC (YouTube)",
         "role": "Video çözümlerinin oynatılması. Yalnız bir videoyu sen başlattığında YouTube'a bağlanılır; video, YouTube'un gizlilik korumalı alan adından yüklenir.",
         "location": "ABD"
+      },
+      {
+        "name": "earth.nullschool.net (Nullschool Technologies)",
+        "role": "Dünya Analizi sayfasındaki rüzgâr ve okyanus akıntıları haritası. Sayfayı açtığında tarayıcın bu siteye bağlanır; IP adresin ve istek bilgilerin harita sitesine ulaşır. Harita sitesi kendi ziyaretçi istatistikleri için Google Analytics kullanır; bu ölçüm bizim değil harita sitesinindir. Site Cloudflare üzerinden sunulur.",
+        "location": "ABD (Cloudflare altyapısı üzerinden)"
       }
     ],
     "recipientsAuthorities": "Ayrıca, kanunen yetkili kamu kurum ve kuruluşlarına ve yargı mercilerine, talep etmeleri halinde ve kanunun izin verdiği ölçüde bilgi verilebilir.",

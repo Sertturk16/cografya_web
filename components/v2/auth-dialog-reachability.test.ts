@@ -101,7 +101,7 @@ describe("the reachability scanner itself", () => {
       renderTrees()
         .map((tree) => tree.name)
         .sort(),
-    ).toEqual(["(play)", "(site)", "design-system"]);
+    ).toEqual(["(embed)", "(play)", "(site)", "design-system"]);
   });
 
   it("every render tree walks a real, non-trivial slice of the surface", () => {

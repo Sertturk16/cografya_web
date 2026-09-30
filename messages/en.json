@@ -190,7 +190,7 @@
     "metaDescription": "Which personal data Coğrafya Gurmesi processes, why and for how long; the providers it is shared with and your rights under Turkish data protection law (KVKK).",
     "heading": "Privacy and KVKK Notice",
     "lede": "This notice, given under Article 10 of Turkey's Personal Data Protection Law No. 6698 (KVKK), explains how your personal data is processed when you use Coğrafya Gurmesi.",
-    "updated": "Last updated: 26 September 2026",
+    "updated": "Last updated: 1 October 2026",
     "authoritative": "The Turkish version of this notice is authoritative.",
     "controllerHeading": "1. Data Controller",
     "controllerBody": "Your personal data is processed by Coğrafya Gurmesi, the data controller identified below. The same details are the content provider information required by Law No. 5651.",
@@ -254,6 +254,11 @@
         "name": "Google LLC (YouTube)",
         "role": "Playing video solutions. YouTube is contacted only when you start a video, which loads from YouTube's privacy-enhanced domain.",
         "location": "USA"
+      },
+      {
+        "name": "earth.nullschool.net (Nullschool Technologies)",
+        "role": "The wind and ocean-current map on the Dünya Analizi page. When you open that page your browser connects to this site, so your IP address and request details reach the map site. The map site uses Google Analytics for its own visitor statistics; that measurement is the map site's, not ours. It is served through Cloudflare.",
+        "location": "USA (through Cloudflare's infrastructure)"
       }
     ],
     "recipientsAuthorities": "Information may also be given to legally authorised public bodies and courts, on request and as far as the law allows.",

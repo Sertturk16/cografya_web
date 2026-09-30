@@ -22,7 +22,14 @@ describe("Privacy namespace", () => {
 
   it("names every provider the site's data reaches, with its country", () => {
     const names = tr.Privacy.recipients.map((recipient) => recipient.name).join(" | ");
-    for (const provider of ["Hetzner Online GmbH", "Amazon SES", "Cloudflare, Inc.", "YouTube"]) {
+    for (const provider of [
+      "Hetzner Online GmbH",
+      "Amazon SES",
+      "Cloudflare, Inc.",
+      "YouTube",
+      // The `/dunya-analizi` frame connects the visitor to this host on page open.
+      "earth.nullschool.net",
+    ]) {
       expect(names).toContain(provider);
     }
     const locations = tr.Privacy.recipients.map((recipient) => recipient.location).join(" | ");

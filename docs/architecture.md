@@ -15,7 +15,14 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   `V2Header` was copied into 37 pages, two had lost the footer, and 24 nested a second `<main>`
   inside the root layout's. `components/v2/v2-a11y-navigation-polish.test.ts` walks the tree and
   fails if any page carries its own `id="main-content"`.
-- `app/[locale]/design-system/**` is in NEITHER group: internal tooling that brings its own
+- **`(embed)` is the third group**: header plus one viewport-filling third-party iframe, no
+  footer. Its layout is `h-dvh` with a single `<main>` (`flex-1`); the page positions the frame
+  `absolute inset-0` inside it. One member today, `/dunya-analizi` ("Dünya Analizi", `noindex`): the
+  earth.nullschool.net frame (`components/v2/v2-world-map-frame.tsx`, which explains why its URL
+  carries `?kiosk`), linked from the header, the mobile drawer, the footer and a callout on
+  `/deniz`. The group has its own `error.tsx`, like the other two.
+  `components/v2/auth-dialog-reachability.test.ts` lists the groups on disk.
+- `app/[locale]/design-system/**` is in NONE of these groups: internal tooling that brings its own
   full-page chrome, and it carries its own `noindex` (both in `buildMetadata` and the layout's
   `robots`) — the blanket `/v2` de-indexing that used to cover it is gone.
 - Unlocalized: `app/api/**` (BFF), `app/flags/[flag]`, `app/maps/*.svg`, `app/llms.txt`,
