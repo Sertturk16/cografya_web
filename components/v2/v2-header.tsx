@@ -416,7 +416,33 @@ export function V2Header() {
           {/* Theme Toggle (Dark / Light) */}
           <ThemeToggle />
 
-          {authState === "authenticated" ? (
+          {/* T-163: while the session check runs, neither the guest pair nor the account menu
+              shows (a member used to see "Giriş Yap / Üye Ol" on every load). The placeholder
+              is the guest pair's size, so a guest's header does not move when it settles. */}
+          {authState === "checking" ? (
+            <div aria-hidden="true" className="hidden xl:block h-8 w-44" />
+          ) : authState === "anonymous" ? (
+            <div className="hidden xl:flex items-center gap-1.5">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs h-8 px-2.5 text-muted-foreground hover:text-foreground font-semibold"
+                leftIcon={<LogIn className="size-3.5" />}
+                onClick={() => requestAuth("generic", "login")}
+              >
+                Giriş Yap
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                className="text-xs h-8 px-3 font-semibold shadow-xs"
+                leftIcon={<UserPlus className="size-3.5" />}
+                onClick={() => requestAuth("generic", "register")}
+              >
+                Üye Ol
+              </Button>
+            </div>
+          ) : (
             /* T-061: ONE account control instead of two.
                The header used to carry a "Hesabım" link and a "Çıkış Yap" button side by
                side, and the hub hero carried a third sign-out below them. Two of those three
@@ -487,27 +513,6 @@ export function V2Header() {
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            <div className="hidden xl:flex items-center gap-1.5">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs h-8 px-2.5 text-muted-foreground hover:text-foreground font-semibold"
-                leftIcon={<LogIn className="size-3.5" />}
-                onClick={() => requestAuth("generic", "login")}
-              >
-                Giriş Yap
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                className="text-xs h-8 px-3 font-semibold shadow-xs"
-                leftIcon={<UserPlus className="size-3.5" />}
-                onClick={() => requestAuth("generic", "register")}
-              >
-                Üye Ol
-              </Button>
             </div>
           )}
 
@@ -750,7 +755,9 @@ export function V2Header() {
                     <ThemeToggle />
                   </div>
 
-                  {authState !== "authenticated" ? (
+                  {authState === "checking" ? (
+                    <div aria-hidden="true" className="h-10" />
+                  ) : authState === "anonymous" ? (
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         variant="outline"

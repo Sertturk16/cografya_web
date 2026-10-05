@@ -5,6 +5,7 @@ import { Map, Layers, BookOpen } from "lucide-react";
 import { badgeVariants } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
+import { V2FooterAccountLinks } from "./v2-footer-account-links";
 
 /**
  * The source badges are the FOOTER HALF of the central-attribution decision.
@@ -208,16 +209,9 @@ export function V2Footer() {
                   Hakkımızda
                 </Link>
               </li>
-              <li>
-                <Link href="/giris" className="hover:text-accent transition-colors block">
-                  Giriş Yap
-                </Link>
-              </li>
-              <li>
-                <Link href="/kayit" className="hover:text-accent transition-colors block">
-                  Ücretsiz Kayıt Ol
-                </Link>
-              </li>
+              {/* T-163: the account rows follow the session in a client island, so this
+                  footer stays a static server component. */}
+              <V2FooterAccountLinks />
               {/* The terms are reachable from outside the register form too (T-073): a member
                   who has already agreed to them is the reader most likely to want to re-read
                   them, and the register card is the one place they would no longer look. */}

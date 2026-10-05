@@ -78,3 +78,23 @@ describe("no surface links to the retired profile route", () => {
     expect(SOURCE).not.toContain('href="/profil"');
   });
 });
+
+describe("while the session check runs, the header shows neither account state (T-163)", () => {
+  // `"checking"` is not `"anonymous"` (T-162's rule): a guest branch written as
+  // `authState !== "authenticated"` showed every signed-in reader "Giriş Yap / Üye Ol" for the
+  // moment the session check took, on every page load.
+  it("never routes checking into the guest branch", () => {
+    expect(SOURCE).not.toContain('authState !== "authenticated"');
+    expect(SOURCE).not.toContain('authState === "authenticated" ? (');
+  });
+
+  it("the desktop cluster and the drawer each hold an aria-hidden placeholder while checking", () => {
+    const checking = SOURCE.match(/authState === "checking" \? \(\s*<div aria-hidden="true"/g);
+    expect(checking).toHaveLength(2);
+  });
+
+  it("both guest branches are gated on a settled anonymous session", () => {
+    const anonymous = SOURCE.match(/authState === "anonymous" \? \(/g);
+    expect(anonymous).toHaveLength(2);
+  });
+});
