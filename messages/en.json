@@ -259,6 +259,11 @@
         "name": "earth.nullschool.net (Nullschool Technologies)",
         "role": "The wind and ocean-current map on the Dünya Analizi page. When you open that page your browser connects to this site, so your IP address and request details reach the map site. The map site uses Google Analytics for its own visitor statistics; that measurement is the map site's, not ours. It is served through Cloudflare.",
         "location": "USA (through Cloudflare's infrastructure)"
+      },
+      {
+        "name": "Ministry of National Education (OGM Materyal CBS)",
+        "role": "The GIS platform on the OGM Materyal CBS page. When you open that page on a wide screen your browser connects to the Ministry's site (ogmmateryal.eba.gov.tr), so your IP address and request details reach it. The platform loads its map from the General Directorate of Mapping and some files from Google Fonts, unpkg and cdnjs, and runs Google Analytics code; that measurement is the Ministry's, not ours. If you sign in or enter data there, the Ministry's platform handles it; none of it reaches us.",
+        "location": "Türkiye"
       }
     ],
     "recipientsAuthorities": "Information may also be given to legally authorised public bodies and courts, on request and as far as the law allows.",

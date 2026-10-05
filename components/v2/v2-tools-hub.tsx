@@ -2,7 +2,10 @@
 
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { OGM_CBS_PATHNAME } from "@/lib/tools/tool-registry";
 import {
   Compass,
   MapPin,
@@ -184,6 +187,35 @@ export function V2ToolsHub() {
             </div>
           </div>
         </div>
+
+        {/* The Ministry's full GIS, framed on its own page: the step past these three tools. */}
+        <Card variant="panel" space="none">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-4">
+              <span className="shrink-0 rounded-2xl bg-accent/15 p-3 text-accent">
+                <Layers className="size-6" />
+              </span>
+              <div>
+                <h3 className="font-heading text-xl font-bold text-foreground">OGM Materyal CBS</h3>
+                <p className="mt-2 max-w-2xl text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Katman oluşturmak, Excel&apos;deki il ve ilçe verisini haritada göstermek ya da
+                  analiz yapmak istersen: Millî Eğitim Bakanlığı Ortaöğretim Genel
+                  Müdürlüğü&apos;nün coğrafi bilgi sistemi.
+                </p>
+              </div>
+            </div>
+            <Link
+              href={OGM_CBS_PATHNAME}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-11 shrink-0 gap-2 text-xs font-bold",
+              )}
+            >
+              Platformu Aç
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </Card>
       </div>
 
       {/* 2. TARGET AUDIENCES & USE CASES SECTION (HEDEF KİTLE VE KULLANIM SENARYOLARI) */}
