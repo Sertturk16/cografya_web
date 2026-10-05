@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getTranslations } from "next-intl/server";
 import { getPathname } from "@/i18n/navigation";
 import { hasLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
@@ -9,7 +10,8 @@ import { buildSearchIndex } from "@/lib/search/index-source";
 import type { SearchIndexPayload } from "@/lib/search/types";
 
 /**
- * `/api/search-index/{locale}` — the header search's data source.
+ * `/api/search-index/{locale}` — the data source of both search boxes (header and homepage
+ * hero). What goes into it is `lib/search/index-source.ts`'s decision.
  *
  * ## Why an endpoint and not an embed
  *
@@ -57,38 +59,51 @@ export async function GET(_request: Request, ctx: { params: Promise<{ locale: st
   }
 
   // `force-dynamic` means this body only ever runs at request time — no build-time
-  // resilience wrapper needed (previously used `getProvincesResilient`/
-  // `getCountriesResilient`; dropped for the same reason `lib/reference/reference.server.ts`
-  // dropped its own, see T-020). A genuine api outage throws and surfaces as a 500 from this
-  // handler; the island's `!response.ok` branch degrades to the fallback link, and a failed
-  // attempt no longer latches search off for the session.
-  const [provinces, countries] = await Promise.all([getProvinces(), getCountries()]);
+  // resilience wrapper needed (dropped for the same reason `lib/reference/reference.server.ts`
+  // dropped its own, see T-020). Each api source fails ALONE: a province outage drops the
+  // provinces and keeps countries, regions, continents, seas, tools and pages searchable.
+  const [provinces, countries] = await Promise.allSettled([getProvinces(), getCountries()]);
+  const incomplete = provinces.status === "rejected" || countries.status === "rejected";
+  if (incomplete) {
+    console.warn(
+      `[search-index] serving without ${[
+        provinces.status === "rejected" ? "provinces" : null,
+        countries.status === "rejected" ? "countries" : null,
+      ]
+        .filter(Boolean)
+        .join(" and ")}`,
+    );
+  }
+  const t = await getTranslations({ locale, namespace: "SearchIndex" });
 
   const payload: SearchIndexPayload = {
     entries: buildSearchIndex({
-      provinces,
-      countries,
+      provinces: provinces.status === "fulfilled" ? provinces.value : null,
+      countries: countries.status === "fulfilled" ? countries.value : null,
       locale,
       // Paths resolved through the routing table here, on the server, so the client never
-      // needs to know how a province or country URL is spelled in either locale.
-      provincePath: (slug) =>
-        getPathname({ locale, href: { pathname: "/turkiye/[slug]", params: { slug } } }),
-      countryPath: (slug) =>
-        getPathname({ locale, href: { pathname: "/dunya/[slug]", params: { slug } } }),
+      // needs to know how any URL is spelled in either locale.
+      pathOf: (href) => getPathname({ locale, href }),
+      text: (key) => t(key),
     }),
+    ...(incomplete ? { incomplete: true } : {}),
   };
 
   return NextResponse.json(payload, {
-    headers: {
-      // A short BROWSER lifetime so a reader who searches, navigates and searches again does
-      // not re-download the index. (An earlier version of this comment justified it with
-      // "every navigation is a full page load", which is wrong — the header uses next-intl
-      // `Link`, i.e. client-side RSC navigation, and the island does not even remount. The
-      // cache window is still worth having for full loads and cross-tab visits; review M3.)
-      // `s-maxage` keeps shared caches on the same 1 h window as the content itself.
-      // The browser window is deliberately much shorter than the content window: this file
-      // may lag a freshly seeded entity by minutes, never by an hour.
-      "Cache-Control": `public, max-age=300, s-maxage=${CONTENT_REVALIDATE_SECONDS}, stale-while-revalidate=86400`,
-    },
+    // A partial index is never cached: the next request should get the whole one back as soon
+    // as the api recovers, not an hour later.
+    headers: incomplete
+      ? { "Cache-Control": "no-store" }
+      : {
+          // A short BROWSER lifetime so a reader who searches, navigates and searches again does
+          // not re-download the index. (An earlier version of this comment justified it with
+          // "every navigation is a full page load", which is wrong — the header uses next-intl
+          // `Link`, i.e. client-side RSC navigation, and the island does not even remount. The
+          // cache window is still worth having for full loads and cross-tab visits; review M3.)
+          // `s-maxage` keeps shared caches on the same 1 h window as the content itself.
+          // The browser window is deliberately much shorter than the content window: this file
+          // may lag a freshly seeded entity by minutes, never by an hour.
+          "Cache-Control": `public, max-age=300, s-maxage=${CONTENT_REVALIDATE_SECONDS}, stale-while-revalidate=86400`,
+        },
   });
 }

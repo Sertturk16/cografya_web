@@ -20,14 +20,13 @@ import {
 } from "@/components/ui/dialog";
 import { nextActiveIndex } from "@/lib/search/active-option";
 import { focusReturnTarget } from "@/lib/search/focus-return";
-import { prepareSearchIndex, type PreparedEntry, searchPrepared } from "@/lib/search/match";
-import { isSearchIndexPayload } from "@/lib/search/types";
+import { KIND_LABEL_KEY } from "@/lib/search/kind-label";
+import { searchPrepared } from "@/lib/search/match";
+import { searchPanelState } from "@/lib/search/panel-state";
+import { useSearchIndex } from "./use-search-index";
 
 /** How many hits the listbox shows before the "see the full list" row. */
 const RESULT_LIMIT = 8;
-
-/** Give up on the index rather than leaving the panel silently empty forever. */
-const FETCH_TIMEOUT_MS = 8000;
 
 /**
  * Province labels are Turkish in BOTH locales (`ProvinceListItem` carries no `nameEn`), so
@@ -121,8 +120,7 @@ export function SearchCombobox({
   const mounted = useSyncExternalStore(NEVER_CHANGES, onClient, onServer);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [entries, setEntries] = useState<PreparedEntry[] | null>(null);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const { entries, loadFailed, incomplete, ensureIndex } = useSearchIndex(indexUrl);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [announcement, setAnnouncement] = useState("");
 
@@ -130,7 +128,6 @@ export function SearchCombobox({
   const desktopTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileTriggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
-  const inFlight = useRef(false);
   /** What opened the dialog: the pressed trigger, or whatever had focus when Ctrl/Cmd+K fired. */
   const openerRef = useRef<HTMLElement | null>(null);
 
@@ -148,43 +145,6 @@ export function SearchCombobox({
     [pathPrefix],
   );
 
-  /**
-   * A USABLE index — non-null and non-empty. An empty one is treated as "not loaded yet"
-   * rather than as loaded, which is what makes the retry below reach the post-deploy case
-   * (see `indexUnavailable`).
-   */
-  const indexReady = entries !== null && entries.length > 0;
-
-  /**
-   * Fetches the index at most once per usable load. A failed OR empty result clears the
-   * guard so the next focus retries: the original revision set the flag before the await and
-   * never reset it, which let one connectivity blip latch the search dead for as long as the
-   * island stayed mounted — and it stays mounted across client-side navigations (review I2).
-   */
-  const ensureIndex = useCallback(async () => {
-    if (inFlight.current || indexReady) return;
-    inFlight.current = true;
-    setLoadFailed(false);
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-      const response = await fetch(indexUrl, { signal: controller.signal });
-      if (!response.ok) throw new Error(`search index responded ${response.status}`);
-      const payload: unknown = await response.json();
-      // Network input, so the shape is CHECKED rather than asserted; a malformed body becomes
-      // the same honest "could not load" as a 500 (review M14).
-      if (!isSearchIndexPayload(payload)) throw new Error("search index payload malformed");
-      setEntries(prepareSearchIndex(payload.entries));
-    } catch {
-      // No console noise for the reader: the control falls back to the index link, which is a
-      // working answer rather than an error state.
-      setLoadFailed(true);
-    } finally {
-      clearTimeout(timeout);
-      inFlight.current = false;
-    }
-  }, [indexUrl, indexReady]);
-
   const hits = useMemo(
     () =>
       entries === null
@@ -197,22 +157,21 @@ export function SearchCombobox({
   );
 
   const hasQuery = query.trim().length > 0;
-  /** Waiting on the index is NOT the same as having nothing to show for this query. */
-  const isLoading = entries === null && !loadFailed;
   /**
-   * The index cannot answer anything right now — either the fetch failed, or it SUCCEEDED
-   * and returned zero entries.
-   *
-   * The empty case is not hypothetical: a CI build with no api service prerenders
-   * `{"entries":[]}`, which is a valid 200 and passes the payload guard, so it is what every
-   * reader gets between a deploy and the first ISR regeneration. Without this branch the
-   * panel would answer every query with "no results" during exactly that window — the false
-   * statement review CR-I3 was accepted to remove, still reachable through the other door
-   * (confirm-leg NEW-1). An empty index means "the list is unavailable", never "your search
-   * matched nothing".
+   * Loading, results, "no results" or "the list is unavailable" — `searchPanelState` decides,
+   * so an empty, failed or partial index never answers a query with "no results" (review
+   * CR-I3, confirm-leg NEW-1). Waiting on the index is NOT the same as having nothing to show.
    */
-  const indexUnavailable = loadFailed || (entries !== null && entries.length === 0);
-  const showNoResults = hasQuery && !isLoading && !indexUnavailable && hits.length === 0;
+  const panelState = searchPanelState({
+    entryCount: entries === null ? null : entries.length,
+    loadFailed,
+    incomplete,
+    hasQuery,
+    hitCount: hits.length,
+  });
+  const indexUnavailable = panelState === "unavailable";
+  const showNoResults = panelState === "noResults";
+  const isLoading = panelState === "loading";
 
   // Announce on a debounce — WCAG 4.1.3 without narrating every keystroke. The whole decision
   // lives inside the timeout, including the "say nothing" case: a synchronous setState in the
@@ -427,7 +386,9 @@ export function SearchCombobox({
             <label className="sr-only" htmlFor={inputId}>
               {t("label")}
             </label>
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-border bg-background">
+            {/* Tighter below `sm` so the placeholder, which names every kind of result, fits
+                the input at 320px instead of losing its last word. */}
+            <div className="flex items-center gap-2 px-3 sm:gap-3 sm:px-4 py-3.5 border-b border-border bg-background">
               <SearchIcon />
               <input
                 ref={inputRef}
@@ -490,7 +451,7 @@ export function SearchCombobox({
                       >
                         <span className="font-bold">{hit.name}</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-muted text-muted-foreground">
-                          {hit.kind === "p" ? t("province") : t("country")}
+                          {t(KIND_LABEL_KEY[hit.kind])}
                         </span>
                       </a>
                     </li>

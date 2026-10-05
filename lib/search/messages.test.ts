@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import enMessages from "@/messages/en.json";
 import trMessages from "@/messages/tr.json";
+import { KIND_LABEL_KEY } from "./kind-label";
 
 /**
  * MESSAGE-KEY RESOLUTION GUARD for the header search (the `lib/home/messages.test.ts` pattern).
@@ -31,12 +32,24 @@ const SEARCH_KEYS = [
   "seeAllCountries",
   "province",
   "country",
+  "region",
+  "continent",
+  "sea",
+  "tool",
+  "page",
   "loadFailed",
+  // The homepage hero box (T-164): same index, same matcher, its own frame.
+  "heroPlaceholder",
+  "clearLabel",
+  "enterHint",
+  "opening",
+  "emptyQuery",
 ] as const;
 
 /** Placeholders each templated key must carry, so a message can never drop an interpolation. */
 const REQUIRED_PLACEHOLDERS: Record<string, readonly string[]> = {
   resultCount: ["count"],
+  opening: ["name"],
 };
 
 const catalogues = { tr: trMessages.Search, en: enMessages.Search } as const;
@@ -71,5 +84,34 @@ describe("Search message catalogue", () => {
     // broken promise the split removed.
     expect(trMessages.Search).not.toHaveProperty("seeAll");
     expect(enMessages.Search).not.toHaveProperty("seeAll");
+  });
+
+  it("has a label for every result kind", () => {
+    for (const key of Object.values(KIND_LABEL_KEY)) {
+      expect(SEARCH_KEYS as readonly string[]).toContain(key);
+    }
+  });
+});
+
+/** Flattens a nested catalogue to its dotted leaf keys. */
+const leafKeys = (node: unknown, prefix = ""): string[] =>
+  typeof node === "string"
+    ? [prefix]
+    : Object.entries(node as Record<string, unknown>).flatMap(([key, child]) =>
+        leafKeys(child, prefix ? `${prefix}.${key}` : key),
+      );
+
+describe("SearchIndex message catalogue", () => {
+  it("carries the SAME leaf keys in both locales, each a non-empty string", () => {
+    const tr = leafKeys(trMessages.SearchIndex).sort();
+    expect(leafKeys(enMessages.SearchIndex).sort()).toEqual(tr);
+    for (const catalogue of [trMessages.SearchIndex, enMessages.SearchIndex]) {
+      for (const key of tr) {
+        const value = key
+          .split(".")
+          .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], catalogue);
+        expect(String(value).trim().length, key).toBeGreaterThan(0);
+      }
+    }
   });
 });
