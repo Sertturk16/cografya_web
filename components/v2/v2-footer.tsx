@@ -233,21 +233,42 @@ export function V2Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {currentYear} Coğrafya Gurmesi</p>
-          <div className="flex items-center gap-4 text-[11px]">
-            <Link href="/turkiye" className="hover:underline">
+          <p className="m-0">© {currentYear} Coğrafya Gurmesi</p>
+          {/* Below `sm` a 2×2 grid, so no link breaks inside itself and none is left alone on a
+              row; from `sm` the dotted row. The dots are `hidden` on phones, which also keeps
+              them out of the grid. `min-h-6` is the 24 px touch target (docs/design.md). */}
+          <div className="grid grid-cols-2 justify-items-center gap-x-4 gap-y-1 text-[11px] sm:flex sm:flex-wrap sm:items-center sm:justify-center">
+            <Link
+              href="/turkiye"
+              className="inline-flex min-h-6 items-center whitespace-nowrap hover:underline"
+            >
               81 İl Atlası
             </Link>
-            <span className="text-border">·</span>
-            <Link href="/dunya" className="hover:underline">
+            <span className="hidden text-border sm:inline" aria-hidden>
+              ·
+            </span>
+            <Link
+              href="/dunya"
+              className="inline-flex min-h-6 items-center whitespace-nowrap hover:underline"
+            >
               199 Ülke Atlası
             </Link>
-            <span className="text-border">·</span>
-            <Link href="/deniz" className="hover:underline">
+            <span className="hidden text-border sm:inline" aria-hidden>
+              ·
+            </span>
+            <Link
+              href="/deniz"
+              className="inline-flex min-h-6 items-center whitespace-nowrap hover:underline"
+            >
               Denizler ve Kıyılar
             </Link>
-            <span className="text-border">·</span>
-            <Link href="/hakkimizda" className="hover:underline">
+            <span className="hidden text-border sm:inline" aria-hidden>
+              ·
+            </span>
+            <Link
+              href="/hakkimizda"
+              className="inline-flex min-h-6 items-center whitespace-nowrap hover:underline"
+            >
               Hakkımızda
             </Link>
           </div>
