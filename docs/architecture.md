@@ -202,8 +202,15 @@ Details and the open dark-mode bugs: `docs/design.md`.
 - `deploy.yml` on push to `main`: repeats the gate (minus build), then SSH →
   `git reset --hard origin/main` in `/opt/cografya/cografya_web` → compose
   `up -d --no-build --no-deps api` (the build prerenders against it) → fail unless api's `3001`
-  is published on loopback only → compose build `web` → `up -d --no-deps web` → `sleep 5`.
-  No health check.
+  is published on loopback only → compose build `web` → `up -d --no-deps web` → poll
+  `docker compose exec -T web node healthcheck.mjs` for up to 120 s (red if it never answers;
+  an `"api":"down"` answer only warns) → the same `/api/health` through the caddy container
+  (red on failure).
+- Health: `GET /api/health` (`app/api/health/route.ts`, logic in `lib/health/report.ts`) returns
+  `{"status":"ok","api":"ok"|"down"}`, always 200 while the web runs; the API is probed through
+  `apiGet("/health", { revalidate: 0 })`. `scripts/healthcheck.mjs` is copied to the image root
+  and is both the Dockerfile `HEALTHCHECK` (visibility only, nothing restarts on it) and the
+  deploy's probe. `scripts/deploy-health.test.ts` pins the deploy side.
 - To test the standalone output locally, run `node .next/standalone/server.js` with `PORT` set
   and WITHOUT `HOSTNAME=127.0.0.1` — an IPv4-only bind makes next-intl's proxy self-dispatch
   loop with 307s.

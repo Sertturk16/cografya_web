@@ -154,10 +154,43 @@ jobs:
             echo "==> Restarting Web container..."
             docker compose -f docker-compose.prod.yml up -d --no-deps web
 
-            echo "==> Waiting for container readiness..."
-            sleep 5
+            # Readiness, not a fixed wait. `up -d` returns once the container STARTS; a server
+            # that crashes on boot used to finish this deploy green after `sleep 5`. The probe is
+            # the image's own `healthcheck.mjs` (also the Dockerfile HEALTHCHECK), run inside the
+            # NEW container because web publishes no host port. Bounded by wall-clock time, not
+            # attempts: one attempt can take up to 20 s when the API hangs.
+            echo "==> Waiting for the web container to answer /api/health (up to 120 s)..."
+            HEALTH=""
+            DEADLINE=$((SECONDS + 120))
+            while [ "$SECONDS" -lt "$DEADLINE" ]; do
+              if HEALTH="$(docker compose -f docker-compose.prod.yml exec -T web node healthcheck.mjs 2>/dev/null)"; then
+                break
+              fi
+              HEALTH=""
+              sleep 2
+            done
+            if [ -z "$HEALTH" ]; then
+              echo "ERROR: the web container never answered /api/health. Last log lines:" >&2
+              docker compose -f docker-compose.prod.yml ps web >&2 || true
+              docker compose -f docker-compose.prod.yml logs --tail 50 web >&2 || true
+              exit 1
+            fi
+            echo "    $HEALTH"
+            # The web deploy did not cause an API outage, so it does not fail on one; it says so.
+            case "$HEALTH" in
+              *'"api":"ok"'*) ;;
+              *) echo "WARNING: web is up but reports the API as unreachable." >&2 ;;
+            esac
 
-            echo "==> Verifying Web container status..."
-            docker compose -f docker-compose.prod.yml ps web
+            # The container answering is not the site answering: Caddy has to reach it over the
+            # compose network too. Asked from inside the caddy container (busybox `wget` ships in
+            # caddy:2-alpine; the host is not assumed to have curl). The Caddyfile's `:80` block
+            # serves any Host, so no Host header is needed.
+            echo "==> Verifying Caddy reaches the new container..."
+            if ! docker compose -f docker-compose.prod.yml exec -T caddy wget -q -T 25 -O - http://127.0.0.1/api/health; then
+              echo "ERROR: Caddy did not return a healthy /api/health from the new container." >&2
+              exit 1
+            fi
+            echo
             echo "==> Web Deployment completed successfully! 🚀"
           EOF

@@ -79,9 +79,16 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/assets ./assets
 # Copy flag-icons package for runtime file system reading by country and flag routes
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/flag-icons ./node_modules/flag-icons
+# Liveness probe for HEALTHCHECK below and for deploy.yml's readiness wait.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/healthcheck.mjs ./healthcheck.mjs
 
 USER nextjs
 
 EXPOSE 3000
+
+# Visibility only (`docker ps` shows healthy/unhealthy); nothing restarts on it. The deploy waits
+# on the same probe itself rather than on this, so it does not depend on the interval.
+HEALTHCHECK --interval=30s --timeout=25s --start-period=30s --retries=3 \
+  CMD ["node", "healthcheck.mjs"]
 
 CMD ["node", "server.js"]
