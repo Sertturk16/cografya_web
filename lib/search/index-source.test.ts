@@ -17,6 +17,7 @@ const province = (nameTr: string, slugTr: string, slugEn: string): ProvinceListI
   slugEn,
   region: "MARMARA",
   climateKoppen: null,
+  climateCurriculumNameTr: null,
   climateAnnualMeanTempC: null,
   // Added when the api began publishing the il-merkezi point (CBS-P2 E0). Null here on
   // purpose: the search index never reads a coordinate, so a fixture that carried one would

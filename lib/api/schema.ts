@@ -1027,10 +1027,15 @@ export interface components {
              */
             slugEn: string;
             /**
-             * @description Köppen iklim kısa kodu (MGM 2023). Liste DTO’suna bilinçli eklendi: "benzer iklime sahip iller" bloğu bu alan olmadan kurulamaz (aynı Köppen kodlu illere çapraz link). Saf toplama, kırıcı değil.
+             * @description Köppen iklim kısa kodu (MGM 2023). Saf toplama, kırıcı değil.
              * @example Csa
              */
             climateKoppen: string | null;
+            /**
+             * @description Müfredat iklim adı (MEB Coğrafya 9) — detay DTO’sundaki `climateCurriculumNameTr` ile AYNI sütun, türetme yok. "İklimi benzeyen iller" bloğu illeri bu ada göre gruplar (Köppen kodu müfredat iklim tiplerinden geniş: Csa sekiz tipin hepsine yayılır). EN karşılığı yok. Saf toplama, kırıcı değil.
+             * @example Akdeniz iklimi
+             */
+            climateCurriculumNameTr: string | null;
             /**
              * @description Yıllık ortalama sıcaklık (°C) — 12 aylık ortalamanın ortalaması, 1 ondalık. Detay DTO’sundaki climate.derived.annualMeanTempC ile AYNI türetilmiş değerdir (tek kaynak: climate-derivations.ts; liste yolunda yeniden türetilmez, aynı buildClimate çağrısıyla canlı hesaplanır). Benzer-iklim bloğunun "en yakın 5" seçimi (→ DEC 2026-07-20b) ve çapa metnindeki "il adı + °C" bu alan olmadan kurulamaz. İlin yayınlanabilir iklim serisi yoksa null. Saf toplama, kırıcı değil.
              * @example 14.2

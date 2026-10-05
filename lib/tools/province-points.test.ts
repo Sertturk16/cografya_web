@@ -17,6 +17,7 @@ function province(overrides: Partial<ProvinceListItem> & { plateCode: string }):
     slugTr: overrides.slugTr ?? "fixture",
     slugEn: overrides.slugEn ?? "fixture",
     climateKoppen: overrides.climateKoppen ?? null,
+    climateCurriculumNameTr: overrides.climateCurriculumNameTr ?? null,
     climateAnnualMeanTempC: overrides.climateAnnualMeanTempC ?? null,
     latitude: overrides.latitude ?? null,
     longitude: overrides.longitude ?? null,
