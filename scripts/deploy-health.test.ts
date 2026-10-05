@@ -18,13 +18,23 @@ describe("deploy waits for a healthy web container", () => {
   });
 
   it("polls the in-image health probe inside the new container", () => {
-    expect(DEPLOY).toContain("exec -T web node healthcheck.mjs");
+    expect(DEPLOY).toContain("exec -T web node healthcheck.mjs </dev/null");
   });
 
   it("fails the deploy when the probe never succeeds", () => {
     // lastIndexOf: an earlier comment in the script names the same command.
     const afterUp = DEPLOY.slice(DEPLOY.lastIndexOf("up -d --no-deps web"));
     expect(afterUp).toMatch(/exit 1/);
+  });
+
+  it("never lets a `docker compose exec` read the script's stdin", () => {
+    // The remote script is ssh's stdin; `exec` forwards stdin into the container, so an `exec`
+    // without `</dev/null` swallows every line after it and the deploy exits 0 unchecked.
+    const execLines = DEPLOY.split("\n").filter(
+      (line) => !line.trim().startsWith("#") && /docker compose .*\bexec\b/.test(line),
+    );
+    expect(execLines.length, "exec lines found").toBeGreaterThanOrEqual(2);
+    for (const line of execLines) expect(line, line.trim()).toContain("</dev/null");
   });
 
   it("checks that Caddy reaches the new container", () => {
