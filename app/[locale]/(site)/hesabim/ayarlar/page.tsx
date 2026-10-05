@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Home } from "lucide-react";
-import { getPathname } from "@/i18n/navigation";
+import { redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { readProfileForPage } from "@/lib/profile/profile.server";
@@ -48,7 +47,7 @@ export default async function AccountSettingsPage({ params }: AccountSettingsPag
   const result = await readProfileForPage();
 
   if (result.kind === "unauthenticated") {
-    redirect(getPathname({ locale, href: "/giris" }));
+    return redirect({ href: "/giris", locale });
   }
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [

@@ -92,6 +92,12 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   `CONTENT_REVALIDATE_SECONDS = 3600`, 15 s abort budget, sends `x-internal-request-token`
   (throttle exemption on the API, GET only), throws `ApiError(status)`. `*Resilient` /
   `*Safe` wrappers degrade build-time failures to empty so `next build` stays green.
+- A route's real ISR window is the SMALLEST of its segment `revalidate` and every `apiGet`
+  `revalidate` it renders. A page that exports `revalidate = 86400` but calls `apiGet` with the
+  default still regenerates hourly: `pnpm build`'s Revalidate column shows `1h` for
+  `araclar/alan-hesaplama`, `deprem/fay-hatlari`, `deprem/hazirlik` and `kitaplar/[slug]`, and
+  `1d` only for pages with no shorter fetch (`/oyun`). Pass `apiGet(..., { revalidate })` to
+  match when the longer window is intended.
 - Mutations / auth: `app/api/**/route.ts` delegate to
   `lib/<domain>/transport.server.ts`. Most carry `force-dynamic`, `force-no-store` and
   `runtime: nodejs` (count with `grep -rl <directive> app/api`), but "all" is not true and reading it as a rule will mislead you:
@@ -141,8 +147,10 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   `output: "standalone"`, a short `redirects()` table of permanent redirects, no `images.remotePatterns` by policy (the
   single remote image is hotlinked), no `typedRoutes`.
 - Rendering per page type: content pages SSG/ISR with full HTML; live feeds SSR/short-ISR
-  shell + client island; maps/games/tools = server shell + `dynamic(..., { ssr: false })`
-  widget in a fixed-size container. Never flip a content route to SSR for cosmetics.
+  shell + client island; maps/games/tools = server shell + a `"use client"` widget imported
+  directly, in a fixed-size container (browser-only APIs touched only inside effects). There is
+  no `next/dynamic` in the tree, and `dynamic(..., { ssr: false })` inside a Server Component is
+  a build error since Next 15. Never flip a content route to SSR for cosmetics.
 
 ## Maps and geodata
 
@@ -239,11 +247,11 @@ Details and the open dark-mode bugs: `docs/design.md`.
   container; purge that path (not `/app/.next/cache`) to see a Suspense fallback with the API
   paused.
 
-- `NEXT_PUBLIC_SITE_URL` and `API_BASE_URL` reach the container only at runtime, not in the
-  Docker build stage. This works today (verified on prod 2026-09-15: canonicals, hreflang and
-  a 307-URL sitemap all carry the real origin) because `lib/env.ts` parses `process.env` as
-  an object at runtime instead of referencing `process.env.NEXT_PUBLIC_*` directly, which
-  Next would inline at build. Keep it that way, or add build `ARG`s before changing it.
+- `NEXT_PUBLIC_SITE_URL` is a Docker build `ARG` and is inlined into the client bundle at build
+  (T-069: a runtime-only value left the `localhost` default in shipped JavaScript); the
+  Dockerfile refuses to build without it. It is also set at runtime for server code.
+  `API_BASE_URL` is a build `ARG` too (the build prerenders against the API on the host's
+  `127.0.0.1:3001`) and is overridden at runtime with the compose network address.
 - `scripts/` mixes durable generators with ad-hoc Playwright audits (`audit_*`, `capture_full`,
   `inspect_*`, `run_v2_qa_test`, `test_interactions`).
 - `pnpm build` against a live local API can fail on one province or country page (fetch abort /

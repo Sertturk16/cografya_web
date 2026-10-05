@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import { Home } from "lucide-react";
-import { getPathname } from "@/i18n/navigation";
+import { redirect } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
 import { getSession } from "@/lib/auth/session";
@@ -84,7 +83,7 @@ export default async function V2MemberHubPage({ params }: V2MemberHubPageProps) 
 
   const session = await getSession();
   if (!session) {
-    redirect(getPathname({ locale, href: "/giris" }));
+    return redirect({ href: "/giris", locale });
   }
 
   const profileResult = await readProfileForPage();
