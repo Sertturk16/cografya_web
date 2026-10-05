@@ -26,7 +26,9 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
     it("verifies server-side session and redirects unauthenticated users to /v2/giris", () => {
       expect(pageSource).toContain("const session = await getSession();");
       expect(pageSource).toContain("if (!session) {");
-      expect(pageSource).toContain('redirect(getPathname({ locale, href: "/giris" }));');
+      // `return`: next-intl's `redirect` is typed `never`, but TypeScript only narrows on a call to
+      // a function DECLARED `never`, so without it `session` stays nullable below.
+      expect(pageSource).toContain('return redirect({ href: "/giris", locale });');
     });
 
     it("uses buildAuthMetadata to guarantee noindex,follow and proper canonical alternates", () => {

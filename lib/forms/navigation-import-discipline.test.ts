@@ -83,6 +83,17 @@ describe("navigation import discipline", () => {
     expect(callers).toEqual([...RAW_ROUTER_CALLERS].sort());
   });
 
+  it("server redirects come from @/i18n/navigation, never next/navigation", () => {
+    // next-intl's `redirect({ href, locale })` resolves the localized pathname itself; a raw
+    // `redirect` from next/navigation needed a hand-built `getPathname` path at every call site.
+    const callers = files.filter((file) =>
+      /import\s*\{[^}]*\bredirect\b[^}]*\}\s*from\s*["']next\/navigation["']/.test(
+        readSource(file),
+      ),
+    );
+    expect(callers.map(label)).toEqual([]);
+  });
+
   it("nothing imports next/link", () => {
     expect(importersOf("next/link")).toEqual([]);
   });
