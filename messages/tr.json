@@ -1269,7 +1269,7 @@
       "institutionType": "Çalıştığın kurum"
     },
     "hints": {
-      "newPassword": "En az 6 karakter; bir küçük harf, bir büyük harf ve bir rakam."
+      "newPassword": "En az {min} karakter; bir küçük harf, bir büyük harf ve bir rakam."
     },
     "selectPlaceholder": "Seç",
     "district": {
@@ -1294,7 +1294,7 @@
       "required": "Bu alanı doldurman gerekiyor.",
       "emailInvalid": "Geçerli bir e-posta adresi gir.",
       "phoneInvalid": "Geçerli bir telefon numarası gir (5XX XXX XX XX).",
-      "passwordPolicy": "Şifre en az 6 karakter olmalı; bir küçük harf, bir büyük harf ve bir rakam içermeli.",
+      "passwordPolicy": "Şifre en az {min} karakter olmalı; bir küçük harf, bir büyük harf ve bir rakam içermeli.",
       "passwordMismatch": "Şifreler eşleşmiyor. Aynı şifreyi iki alana da gir.",
       "codeShape": "Kodu 6 haneli olarak gir."
     },
@@ -1401,10 +1401,10 @@
       "hide": "Şifreyi gizle",
       "submit": "Şifreyi değiştir",
       "saved": "Şifren değiştirildi.",
-      "policy": "Şifren en az 6 karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.",
+      "policy": "Şifren en az {min} karakter olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.",
       "sameAsCurrent": "Yeni şifren mevcut şifrenle aynı olamaz.",
       "mismatch": "İki şifre birbirini tutmuyor.",
-      "ruleLength": "6+ karakter",
+      "ruleLength": "{min}+ karakter",
       "ruleUpper": "Büyük harf",
       "ruleLower": "Küçük harf",
       "ruleDigit": "Rakam",

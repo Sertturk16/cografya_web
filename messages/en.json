@@ -1252,7 +1252,7 @@
       "institutionType": "Where you teach"
     },
     "hints": {
-      "newPassword": "At least 6 characters, with one lowercase letter, one uppercase letter and one digit."
+      "newPassword": "At least {min} characters, with one lowercase letter, one uppercase letter and one digit."
     },
     "selectPlaceholder": "Select",
     "district": {
@@ -1277,7 +1277,7 @@
       "required": "This field is required.",
       "emailInvalid": "Enter a valid e-mail address.",
       "phoneInvalid": "Enter a valid phone number (5XX XXX XX XX).",
-      "passwordPolicy": "The password must be at least 6 characters, with one lowercase letter, one uppercase letter and one digit.",
+      "passwordPolicy": "The password must be at least {min} characters, with one lowercase letter, one uppercase letter and one digit.",
       "passwordMismatch": "The passwords do not match. Enter the same password in both fields.",
       "codeShape": "Enter the 6-digit code."
     },
@@ -1384,10 +1384,10 @@
       "hide": "Hide password",
       "submit": "Change password",
       "saved": "Your password was changed.",
-      "policy": "Your password must be at least 6 characters and contain an uppercase letter, a lowercase letter and a digit.",
+      "policy": "Your password must be at least {min} characters and contain an uppercase letter, a lowercase letter and a digit.",
       "sameAsCurrent": "Your new password cannot be the one you already use.",
       "mismatch": "The two passwords do not match.",
-      "ruleLength": "6+ characters",
+      "ruleLength": "{min}+ characters",
       "ruleUpper": "Uppercase",
       "ruleLower": "Lowercase",
       "ruleDigit": "Digit",
