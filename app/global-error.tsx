@@ -1,18 +1,17 @@
 "use client";
 
-interface GlobalErrorProps {
-  error: Error & { digest?: string };
-  reset: () => void;
-}
-
 /**
  * Last-resort boundary for errors thrown by the ROOT layout itself
  * (`app/[locale]/layout.tsx`). It replaces the whole document, so it must render
  * its own `<html>`/`<body>`. At this point neither the next-intl request context
  * nor `globals.css` is guaranteed to be present, so this stays intentionally
  * hardcoded, English-minimal, and self-styled with the Terra token hexes inline.
+ *
+ * "Try again" reloads the page. `reset()` alone would re-render the same failed root layout on
+ * the client, and this boundary sits outside every provider, so the route group boundaries'
+ * `router.refresh()` path is not available here; a reload re-requests the whole document.
  */
-export default function GlobalError({ reset }: GlobalErrorProps) {
+export default function GlobalError() {
   return (
     <html lang="en">
       <body
@@ -42,7 +41,7 @@ export default function GlobalError({ reset }: GlobalErrorProps) {
           </p>
           <button
             type="button"
-            onClick={() => reset()}
+            onClick={() => window.location.reload()}
             style={{
               background: "#b0522e",
               color: "#ffffff",

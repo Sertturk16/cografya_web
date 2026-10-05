@@ -78,6 +78,22 @@ describe("V2 error boundaries", () => {
     expect(source).toContain(".focus()");
   });
 
+  it("the shared body's retry refetches from the server, not only re-renders", () => {
+    // `reset()` alone re-renders the same failed RSC payload, so a Server Component error (the
+    // API was down) stays on screen. `retryRoute` refreshes first; see `lib/nav/retry-route.ts`.
+    const source = stripComments(read(ROUTE_ERROR));
+    expect(source).toContain("onClick={() => retryRoute(router, reset)}");
+    expect(source).not.toContain("onClick={reset}");
+    expect(source).toMatch(/import \{ useRouter \} from "@\/i18n\/navigation"/);
+  });
+
+  it("global-error's retry reloads the document", () => {
+    // It sits outside every provider and replaces the whole document; a reload is the refetch.
+    const source = stripComments(read("../../app/global-error.tsx"));
+    expect(source).toContain("window.location.reload()");
+    expect(source).not.toMatch(/\breset\(/);
+  });
+
   it("the shared body takes no error and logs nothing", () => {
     const source = stripComments(read(ROUTE_ERROR));
     expect(source).not.toContain("console.error");
