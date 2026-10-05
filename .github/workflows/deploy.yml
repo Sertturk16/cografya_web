@@ -159,11 +159,17 @@ jobs:
             # the image's own `healthcheck.mjs` (also the Dockerfile HEALTHCHECK), run inside the
             # NEW container because web publishes no host port. Bounded by wall-clock time, not
             # attempts: one attempt can take up to 20 s when the API hangs.
+            #
+            # `</dev/null` ON EVERY `exec` IS LOAD-BEARING. This whole script reaches the host as
+            # ssh's stdin, and `docker compose exec` forwards its stdin into the container: without
+            # the redirect the first probe swallowed the rest of the script, bash hit EOF and the
+            # deploy ended green without ever checking the result (the first run of this block
+            # did exactly that). `scripts/deploy-health.test.ts` fails on an `exec` without it.
             echo "==> Waiting for the web container to answer /api/health (up to 120 s)..."
             HEALTH=""
             DEADLINE=$((SECONDS + 120))
             while [ "$SECONDS" -lt "$DEADLINE" ]; do
-              if HEALTH="$(docker compose -f docker-compose.prod.yml exec -T web node healthcheck.mjs 2>/dev/null)"; then
+              if HEALTH="$(docker compose -f docker-compose.prod.yml exec -T web node healthcheck.mjs </dev/null 2>/dev/null)"; then
                 break
               fi
               HEALTH=""
@@ -187,7 +193,7 @@ jobs:
             # caddy:2-alpine; the host is not assumed to have curl). The Caddyfile's `:80` block
             # serves any Host, so no Host header is needed.
             echo "==> Verifying Caddy reaches the new container..."
-            if ! docker compose -f docker-compose.prod.yml exec -T caddy wget -q -T 25 -O - http://127.0.0.1/api/health; then
+            if ! docker compose -f docker-compose.prod.yml exec -T caddy wget -q -T 25 -O - http://127.0.0.1/api/health </dev/null; then
               echo "ERROR: Caddy did not return a healthy /api/health from the new container." >&2
               exit 1
             fi
