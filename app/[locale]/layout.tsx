@@ -22,17 +22,16 @@ export function generateStaticParams() {
 }
 
 // Root viewport (this locale layout IS the root layout in the next-intl setup).
-// `themeColor` tints mobile browser chrome; the hex mirrors the Terra
-// `--color-primary` token (globals.css) — the metadata layer cannot read CSS vars.
+// `themeColor` tints mobile browser chrome. The metadata layer cannot read CSS variables, so
+// both hexes are written out; `components/theme-color.test.ts` fails if either drifts from
+// `app/globals.css`.
 export const viewport: Viewport = {
   // A pair, so mobile browser chrome follows the theme instead of staying terracotta on a
-  // dark page. The light value is `--color-primary`; the dark value is the near-black the
-  // `.dark` block currently paints, and it is PROVISIONAL — T-034 phase C replaces the whole
-  // dark palette, and this hex has to move with it. The metadata layer cannot read CSS
-  // variables, which is why both are written out here.
+  // dark page. Light: Terra's `--color-primary`. Dark: the `.dark` block's `--background`
+  // (Night Sea), so the address bar and the page meet without a seam.
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#b0522e" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1416" },
   ],
 };
 
