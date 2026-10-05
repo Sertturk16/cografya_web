@@ -31,9 +31,9 @@
     "register": "Üye ol"
   },
   "Search": {
-    "label": "İl veya ülke ara",
+    "label": "İl, ülke, bölge, kıta, deniz ya da araç ara",
     "triggerLabel": "Ara",
-    "placeholder": "İl veya ülke ara",
+    "placeholder": "İl, ülke, bölge, kıta, deniz, araç",
     "openLabel": "Aramayı aç",
     "closeLabel": "Aramayı kapat",
     "noResults": "Sonuç bulunamadı.",
@@ -42,7 +42,74 @@
     "seeAllCountries": "Tüm ülke listesi",
     "province": "İl",
     "country": "Ülke",
-    "loadFailed": "Arama listesi şu an yüklenemedi."
+    "region": "Bölge",
+    "continent": "Kıta",
+    "sea": "Deniz",
+    "tool": "Araç",
+    "page": "Sayfa",
+    "loadFailed": "Arama listesi şu an yüklenemedi.",
+    "heroPlaceholder": "ör. Asya, Ege, mesafe",
+    "clearLabel": "Aramayı temizle",
+    "enterHint": "Enter ↵ ile aç",
+    "opening": "{name} açılıyor…",
+    "emptyQuery": "Aramak istediğin yerin ya da aracın adını yaz."
+  },
+  "SearchIndex": {
+    "regions": {
+      "MARMARA": "Marmara Bölgesi",
+      "EGE": "Ege Bölgesi",
+      "AKDENIZ": "Akdeniz Bölgesi",
+      "IC_ANADOLU": "İç Anadolu Bölgesi",
+      "KARADENIZ": "Karadeniz Bölgesi",
+      "DOGU_ANADOLU": "Doğu Anadolu Bölgesi",
+      "GUNEYDOGU_ANADOLU": "Güneydoğu Anadolu Bölgesi"
+    },
+    "seas": {
+      "karadeniz": "Karadeniz",
+      "marmara": "Marmara Denizi",
+      "ege": "Ege Denizi",
+      "akdeniz": "Akdeniz"
+    },
+    "tools": {
+      "mesafe": {
+        "name": "Kuş Uçuşu Mesafe Ölçme",
+        "keywords": "uzaklık km araç"
+      },
+      "koordinat": {
+        "name": "Koordinat Bulma",
+        "keywords": "enlem boylam konum dönüştürme araç"
+      },
+      "alan": {
+        "name": "Alan Hesaplama",
+        "keywords": "yüzölçümü çevre km² araç"
+      }
+    },
+    "pages": {
+      "turkiye": {
+        "name": "Türkiye İlleri",
+        "keywords": "81 il iller bölgeler harita"
+      },
+      "dunya": {
+        "name": "Dünya Atlası",
+        "keywords": "ülkeler kıtalar harita"
+      },
+      "deniz": {
+        "name": "Denizler ve Kıyılar",
+        "keywords": "deniz suyu sıcaklığı dalga kıyı"
+      },
+      "oyun": {
+        "name": "Harita Oyunları",
+        "keywords": "oyun dilsiz harita 81 il bölge"
+      },
+      "deprem": {
+        "name": "Son Depremler",
+        "keywords": "deprem afad fay"
+      },
+      "kitaplar": {
+        "name": "Kitaplar",
+        "keywords": "deneme çözüm videosu kitap"
+      }
+    }
   },
   "Breadcrumb": {
     "label": "Sayfa yolu",

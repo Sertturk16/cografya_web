@@ -1,16 +1,26 @@
 import { describe, expect, it } from "vitest";
+import type { CountryListItem, ProvinceListItem } from "@/lib/api/types";
+import trMessages from "@/messages/tr.json";
+import enMessages from "@/messages/en.json";
+import { buildSearchIndex, type IndexHref, type SearchIndexMessageKey } from "./index-source";
 import { prepareSearchIndex, searchPrepared } from "./match";
-import type { SearchIndexRecord } from "./types";
+import type { SearchEntityKind, SearchIndexRecord } from "./types";
 
 /**
  * Structural invariants of query ranking (CONVENTIONS §2 — synthetic entities only; the
  * names below are invented so nothing here can go stale when real content is revised).
  */
-const record = (name: string, path: string, kind: "p" | "c" = "p"): SearchIndexRecord => [
+const record = (name: string, path: string, kind: SearchEntityKind = "p"): SearchIndexRecord => [
   name,
   path,
   kind,
 ];
+const withKeywords = (
+  name: string,
+  path: string,
+  kind: SearchEntityKind,
+  keywords: string,
+): SearchIndexRecord => [name, path, kind, keywords];
 
 const OPTS = { limit: 8, collationLocale: "tr" } as const;
 const search = (records: readonly SearchIndexRecord[], query: string, limit = 8) =>
@@ -140,5 +150,122 @@ describe("searchPrepared", () => {
     const before = prepared.map((e) => e.name);
     searchPrepared(prepared, "avlak", OPTS);
     expect(prepared.map((e) => e.name)).toEqual(before);
+  });
+});
+
+describe("keywords", () => {
+  it("finds a tool or page through a keyword its name does not carry", () => {
+    const records = [withKeywords("Son Zavlaklar", "/zavlak", "g", "avlak kuvlak")];
+    expect(search(records, "kuvlak")).toEqual(["Son Zavlaklar"]);
+    expect(search(records, "kuvl")).toEqual(["Son Zavlaklar"]);
+  });
+
+  it("ranks a keyword hit below any name hit, even a mid-word one", () => {
+    // An exact keyword must not outrank a place that merely CONTAINS the query in its name:
+    // the name is what the reader sees, the keyword is a hint behind it.
+    const records = [
+      withKeywords("Bir Sayfa", "/sayfa", "g", "avlak"),
+      record("Zavlak", "/turkiye/zavlak"),
+    ];
+    expect(search(records, "avlak")).toEqual(["Zavlak", "Bir Sayfa"]);
+  });
+
+  it("matches keywords on word starts and inside words, never as an exact name", () => {
+    const records = [withKeywords("Bir Sayfa", "/sayfa", "g", "uzunavlak")];
+    expect(search(records, "avlak")).toEqual(["Bir Sayfa"]);
+    expect(prepareSearchIndex(records)[0]?.foldedKeywords).toBe("uzunavlak");
+  });
+});
+
+/**
+ * The task's acceptance queries over the REAL static kinds (regions, continents, seas, tools,
+ * pages from the repo's tables) plus two api-shaped fixtures. Province names are the only
+ * real-world strings in the fixtures, and only because the query that must lose to a
+ * continent is about one of them.
+ */
+describe("acceptance queries over the built index", () => {
+  const province = (nameTr: string, slug: string): ProvinceListItem => ({
+    plateCode: "00",
+    nameTr,
+    slugTr: slug,
+    slugEn: slug,
+    region: "KARADENIZ",
+    climateKoppen: null,
+    climateCurriculumNameTr: null,
+    climateAnnualMeanTempC: null,
+    latitude: null,
+    longitude: null,
+  });
+  const country = (nameTr: string, nameEn: string, slug: string): CountryListItem => ({
+    isoCode: "ZZ",
+    nameTr,
+    nameEn,
+    slugTr: slug,
+    slugEn: slug,
+    continent: "AFRIKA",
+  });
+
+  const index = (locale: "tr" | "en") => {
+    const catalogue = (locale === "en" ? enMessages : trMessages).SearchIndex as unknown;
+    return prepareSearchIndex(
+      buildSearchIndex({
+        provinces: [province("Amasya", "amasya"), province("Konya", "konya")],
+        countries: [country("Senegal", "Senegal", "senegal")],
+        locale,
+        pathOf: (href: IndexHref) =>
+          typeof href === "string" ? href : href.pathname.replace("[slug]", href.params.slug),
+        text: (key: SearchIndexMessageKey) =>
+          String(
+            key
+              .split(".")
+              .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], catalogue),
+          ),
+      }),
+    );
+  };
+  const top = (query: string, locale: "tr" | "en" = "tr", limit = 6) =>
+    searchPrepared(index(locale), query, { limit, collationLocale: "tr" }).map(
+      (hit) => `${hit.kind}:${hit.path}`,
+    );
+
+  it("Karadeniz: the sea and the region, both first", () => {
+    expect(top("Karadeniz").slice(0, 2)).toEqual([
+      "s:/deniz/karadeniz",
+      "r:/turkiye/bolge/karadeniz",
+    ]);
+  });
+
+  it.each([
+    ["Ege", "/deniz/ege", "/turkiye/bolge/ege"],
+    ["Akdeniz", "/deniz/akdeniz", "/turkiye/bolge/akdeniz"],
+    ["Marmara", "/deniz/marmara", "/turkiye/bolge/marmara"],
+  ])("%s: the sea and the region in the first two rows", (query, sea, region) => {
+    expect(top(query).slice(0, 2).sort()).toEqual([`r:${region}`, `s:${sea}`].sort());
+  });
+
+  it("Asya: the continent above Amasya", () => {
+    expect(top("Asya")).toEqual(["k:/dunya/kita/asya", "p:/turkiye/amasya"]);
+  });
+
+  it("Avrupa: the continent first", () => {
+    expect(top("Avrupa")[0]).toBe("k:/dunya/kita/avrupa");
+  });
+
+  it("finds tools by name and by what they measure", () => {
+    expect(top("mesafe")[0]).toBe("t:/araclar/mesafe-olcme");
+    expect(top("koordinat")[0]).toBe("t:/araclar/koordinat-bulma");
+    expect(top("enlem")[0]).toBe("t:/araclar/koordinat-bulma");
+    expect(top("afad")[0]).toBe("g:/deprem");
+  });
+
+  it("keeps a province query on the province", () => {
+    expect(top("konya")[0]).toBe("p:/turkiye/konya");
+  });
+
+  it("answers the English queries from the English index", () => {
+    expect(top("Asia", "en")[0]).toBe("k:/dunya/kita/asia");
+    expect(top("Black Sea", "en").slice(0, 2).sort()).toEqual(
+      ["r:/turkiye/bolge/karadeniz", "s:/deniz/karadeniz"].sort(),
+    );
   });
 });

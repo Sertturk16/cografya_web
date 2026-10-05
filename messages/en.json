@@ -31,9 +31,9 @@
     "register": "Sign up"
   },
   "Search": {
-    "label": "Search a province or country",
+    "label": "Search provinces, countries, regions, continents, seas or tools",
     "triggerLabel": "Search",
-    "placeholder": "Search a province or country",
+    "placeholder": "Province, country, region, continent, sea, tool",
     "openLabel": "Open search",
     "closeLabel": "Close search",
     "noResults": "No results found.",
@@ -42,7 +42,74 @@
     "seeAllCountries": "Full country list",
     "province": "Province",
     "country": "Country",
-    "loadFailed": "The search list could not be loaded right now."
+    "region": "Region",
+    "continent": "Continent",
+    "sea": "Sea",
+    "tool": "Tool",
+    "page": "Page",
+    "loadFailed": "The search list could not be loaded right now.",
+    "heroPlaceholder": "e.g. Asia, Aegean, distance",
+    "clearLabel": "Clear search",
+    "enterHint": "Enter ↵ to open",
+    "opening": "Opening {name}…",
+    "emptyQuery": "Type the name of a place or a tool."
+  },
+  "SearchIndex": {
+    "regions": {
+      "MARMARA": "Marmara Region",
+      "EGE": "Aegean Region",
+      "AKDENIZ": "Mediterranean Region",
+      "IC_ANADOLU": "Central Anatolia Region",
+      "KARADENIZ": "Black Sea Region",
+      "DOGU_ANADOLU": "Eastern Anatolia Region",
+      "GUNEYDOGU_ANADOLU": "Southeastern Anatolia Region"
+    },
+    "seas": {
+      "karadeniz": "Black Sea",
+      "marmara": "Sea of Marmara",
+      "ege": "Aegean Sea",
+      "akdeniz": "Mediterranean Sea"
+    },
+    "tools": {
+      "mesafe": {
+        "name": "Great-circle distance",
+        "keywords": "distance measure km tool"
+      },
+      "koordinat": {
+        "name": "Coordinate lookup",
+        "keywords": "latitude longitude location tool"
+      },
+      "alan": {
+        "name": "Area calculation",
+        "keywords": "area perimeter km² tool"
+      }
+    },
+    "pages": {
+      "turkiye": {
+        "name": "Provinces of Türkiye",
+        "keywords": "81 provinces regions map"
+      },
+      "dunya": {
+        "name": "World atlas",
+        "keywords": "countries continents map"
+      },
+      "deniz": {
+        "name": "Seas and coasts",
+        "keywords": "sea temperature waves coast"
+      },
+      "oyun": {
+        "name": "Map games",
+        "keywords": "game blank map 81 provinces regions"
+      },
+      "deprem": {
+        "name": "Latest earthquakes",
+        "keywords": "earthquake afad fault"
+      },
+      "kitaplar": {
+        "name": "Books",
+        "keywords": "practice exam solution video book"
+      }
+    }
   },
   "Breadcrumb": {
     "label": "Breadcrumb",
