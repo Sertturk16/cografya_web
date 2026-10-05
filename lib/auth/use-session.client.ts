@@ -1,6 +1,15 @@
 "use client";
 
-import { type Dispatch, type SetStateAction, useEffect, useSyncExternalStore } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import { type AuthIntent, requestAuth } from "@/lib/auth/auth-modal.client";
 import { AUTH_FETCH_TIMEOUT_MS } from "@/lib/auth/submit.client";
 import {
   clearSessionFlag,
@@ -9,6 +18,9 @@ import {
 } from "@/lib/session/session-flag.client";
 
 export type AuthSessionState = "checking" | "authenticated" | "anonymous";
+
+/** What the session check ends as; `"checking"` is the absence of an answer, not a guest. */
+export type SettledAuthSessionState = Exclude<AuthSessionState, "checking">;
 
 /**
  * The pure half of the session check — extracted from `login-form.tsx`'s original inline
@@ -70,6 +82,10 @@ export interface AuthSessionStore {
   /** Drops to `"checking"` and starts a fresh fetch — exported for a future consumer that needs
    *  to force a re-check; no call site in this task uses it yet. */
   invalidate(): void;
+  /** Resolves with the first settled state: at once when the check has already answered,
+   *  otherwise on the next commit that leaves `"checking"`. Starts the fetch itself when nobody
+   *  has, and the fetch's `AUTH_FETCH_TIMEOUT_MS` abort ends as `"anonymous"`, so it cannot hang. */
+  whenSettled(): Promise<SettledAuthSessionState>;
 }
 
 export function createAuthSessionStore(): AuthSessionStore {
@@ -95,7 +111,7 @@ export function createAuthSessionStore(): AuthSessionStore {
       .finally(() => clearTimeout(timeout));
   };
 
-  return {
+  const store: AuthSessionStore = {
     subscribe(listener) {
       listeners.add(listener);
       return () => {
@@ -129,10 +145,120 @@ export function createAuthSessionStore(): AuthSessionStore {
       commit("checking");
       runFetch();
     },
+    whenSettled() {
+      if (state !== "checking") return Promise.resolve(state);
+      return new Promise<SettledAuthSessionState>((resolve) => {
+        const unsubscribe = store.subscribe(() => {
+          if (state === "checking") return;
+          unsubscribe();
+          resolve(state);
+        });
+        store.ensureFetched();
+      });
+    },
   };
+  return store;
 }
 
 const store = createAuthSessionStore();
+
+export type SessionGateOutcome = "ran" | "auth-requested" | "cancelled";
+
+export interface SessionGateOptions {
+  readonly intent: AuthIntent;
+  /** The gated action itself; runs when the session is, or settles as, authenticated. */
+  readonly onAuthenticated: () => void;
+  /** A guest was sent to the auth dialog; the id is what the caller's resume effect matches. */
+  readonly onAuthRequested: (requestId: string) => void;
+  /** The session was still `"checking"`, so the press now waits for it. */
+  readonly onWaiting?: () => void;
+  /** Read once the session settles; `true` (the control unmounted, the reader moved on) drops
+   *  the press without running either outcome. */
+  readonly isCancelled?: () => boolean;
+}
+
+export interface SessionGateDeps {
+  readonly store: Pick<AuthSessionStore, "getSnapshot" | "whenSettled">;
+  readonly requestAuth: (intent: AuthIntent) => string;
+}
+
+/**
+ * THE LOGIN GATE for a press (T-162). `"checking"` is not `"anonymous"`: treating it as one
+ * opened the auth dialog for a signed-in reader who pressed before the session check answered,
+ * the dialog then turned into "Zaten Giriş Yaptın" and the press was lost. A known state is
+ * dispatched SYNCHRONOUSLY, inside the press, so an action that needs the user activation keeps
+ * it; only a `"checking"` press waits for {@link AuthSessionStore.whenSettled}.
+ */
+export function gateOnAuthSession(
+  options: SessionGateOptions,
+  deps: SessionGateDeps = { store, requestAuth },
+): Promise<SessionGateOutcome> {
+  const dispatch = (settled: SettledAuthSessionState): SessionGateOutcome => {
+    if (settled === "authenticated") {
+      options.onAuthenticated();
+      return "ran";
+    }
+    options.onAuthRequested(deps.requestAuth(options.intent));
+    return "auth-requested";
+  };
+
+  const now = deps.store.getSnapshot();
+  if (now !== "checking") return Promise.resolve(dispatch(now));
+
+  options.onWaiting?.();
+  return deps.store
+    .whenSettled()
+    .then((settled) => (options.isCancelled?.() === true ? "cancelled" : dispatch(settled)));
+}
+
+/**
+ * {@link gateOnAuthSession} for a single control: `waiting` drives the control's loading state,
+ * a second press while waiting is ignored, an unmount cancels the wait, and both callbacks are
+ * read at settle time so the action sees the latest render's state.
+ */
+export function useSessionGate(
+  intent: AuthIntent,
+  onAuthenticated: () => void,
+  onAuthRequested: (requestId: string) => void,
+): { readonly waiting: boolean; readonly run: () => void } {
+  const [waiting, setWaiting] = useState(false);
+  const waitingRef = useRef(false);
+  const mountedRef = useRef(false);
+  const onAuthenticatedRef = useRef(onAuthenticated);
+  const onAuthRequestedRef = useRef(onAuthRequested);
+
+  useEffect(() => {
+    onAuthenticatedRef.current = onAuthenticated;
+    onAuthRequestedRef.current = onAuthRequested;
+  }, [onAuthenticated, onAuthRequested]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const run = useCallback(() => {
+    if (waitingRef.current) return;
+    void gateOnAuthSession({
+      intent,
+      onAuthenticated: () => onAuthenticatedRef.current(),
+      onAuthRequested: (requestId) => onAuthRequestedRef.current(requestId),
+      onWaiting: () => {
+        waitingRef.current = true;
+        setWaiting(true);
+      },
+      isCancelled: () => !mountedRef.current,
+    }).finally(() => {
+      if (!waitingRef.current) return;
+      waitingRef.current = false;
+      if (mountedRef.current) setWaiting(false);
+    });
+  }, [intent]);
+
+  return { waiting, run } as const;
+}
 
 /**
  * `useAuthSession()` — the shared session-check hook. **THIRTEEN consumers** today

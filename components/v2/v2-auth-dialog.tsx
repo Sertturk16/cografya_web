@@ -17,7 +17,7 @@ import { X, LogIn, UserPlus } from "lucide-react";
 
 export function V2AuthDialog() {
   const modal = useAuthModalState();
-  const [, setAuthState] = useAuthSession();
+  const [authState, setAuthState] = useAuthSession();
   const [provinces, setProvinces] = React.useState<Array<{ plateCode: string; nameTr: string }>>(
     [],
   );
@@ -35,6 +35,13 @@ export function V2AuthDialog() {
         .catch(() => {});
     }
   }, [modal.open, modal.mode, provinces.length]);
+
+  // A request opened while the session check was still running (T-162) is served once the check
+  // answers "signed in": resolving it closes the dialog and lets the requester resume, instead of
+  // leaving a signed-in reader on "Zaten Giriş Yaptın".
+  React.useEffect(() => {
+    if (modal.open && authState === "authenticated") resolveAuth();
+  }, [modal.open, authState]);
 
   const handleAuthenticated = () => {
     setAuthState("authenticated");
