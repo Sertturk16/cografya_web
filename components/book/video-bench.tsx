@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { BookContentKind } from "@/lib/api/types";
-import { consumeResolved, requestAuth, useAuthModalState } from "@/lib/auth/auth-modal.client";
-import { useAuthSession } from "@/lib/auth/use-session.client";
+import { consumeResolved, useAuthModalState } from "@/lib/auth/auth-modal.client";
+import { gateOnAuthSession, useAuthSession } from "@/lib/auth/use-session.client";
 import { readAutoNext, writeAutoNext } from "@/lib/book/auto-next-preference";
 import {
   type ArmedSecond,
@@ -191,6 +191,14 @@ export function VideoBench({
   const authRequestId = useRef<string | null>(null);
   /** What to focus once auth succeeds — the video only; the load stays a deliberate press. */
   const authResume = useRef<{ readonly orderNo: number; readonly second: number } | null>(null);
+  /** A press waiting on the session check is dropped once the bench is gone (T-162). */
+  const mountedRef = useRef(false);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const orderNos = useMemo(() => videos.map((video) => video.orderNo), [videos]);
   const defaultOrderNo = orderNos[0] ?? 0;
@@ -543,12 +551,19 @@ export function VideoBench({
       // same way İzle is, resolving to an outbound tab instead of an in-page player.
       if (!trigger.hasAttribute("data-player-open")) return;
       event.preventDefault();
-      if (authState !== "authenticated") {
-        authResume.current = { orderNo, second: 0 };
-        authRequestId.current = requestAuth("video");
-        return;
-      }
-      void openExternalWatch(video);
+      if (externalResolving === orderNo) return;
+      // While the session check runs, the control shows its resolving state (T-162).
+      void gateOnAuthSession({
+        intent: "video",
+        onAuthenticated: () => void openExternalWatch(video),
+        onAuthRequested: (requestId) => {
+          setExternalResolving(null);
+          authResume.current = { orderNo, second: 0 };
+          authRequestId.current = requestId;
+        },
+        onWaiting: () => setExternalResolving(orderNo),
+        isCancelled: () => !mountedRef.current,
+      });
       return;
     }
 
@@ -564,19 +579,24 @@ export function VideoBench({
 
     event.preventDefault();
 
-    // THE LOGIN GATE (§5.3.2/§5.3.3). `checking` is treated the same as `anonymous`.
-    if (authState !== "authenticated") {
-      applyFragmentAndSelect(orderNo, trigger.getAttribute("href"));
-      authResume.current = { orderNo, second };
-      authRequestId.current = requestAuth("video");
-      return;
-    }
-
-    // İzle has no href of its own, so it addresses the video; a marker addresses itself.
+    // THE LOGIN GATE (§5.3.2/§5.3.3). A press while the session check is still running waits for
+    // it instead of treating the reader as a guest (T-162).
     const fragment = trigger.getAttribute("href");
-    if (fragment !== null) window.history.replaceState(window.history.state, "", fragment);
-    notifyHash();
-    openVideo(orderNo, second);
+    void gateOnAuthSession({
+      intent: "video",
+      onAuthenticated: () => {
+        // İzle has no href of its own, so it addresses the video; a marker addresses itself.
+        if (fragment !== null) window.history.replaceState(window.history.state, "", fragment);
+        notifyHash();
+        openVideo(orderNo, second);
+      },
+      onAuthRequested: (requestId) => {
+        applyFragmentAndSelect(orderNo, fragment);
+        authResume.current = { orderNo, second };
+        authRequestId.current = requestId;
+      },
+      isCancelled: () => !mountedRef.current,
+    });
   };
 
   // The post-auth resume DELIBERATELY does NOT call `openVideo()` (plan §5.6.4/§13): it closes

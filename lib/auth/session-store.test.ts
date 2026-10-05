@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAuthSessionStore } from "./use-session.client";
+import type { AuthIntent } from "./auth-modal.client";
+import { AUTH_FETCH_TIMEOUT_MS } from "./submit.client";
+import {
+  type AuthSessionState,
+  createAuthSessionStore,
+  gateOnAuthSession,
+} from "./use-session.client";
 
 /**
  * `createAuthSessionStore()` unit tests (uyelik-auth-redesign plan §11.2), the
@@ -170,5 +176,177 @@ describe("createAuthSessionStore", () => {
 
     store.set("anonymous");
     expect(fakeDoc.cookie).toContain("max-age=0");
+  });
+});
+
+/**
+ * T-162: the store starts at `"checking"` and three gated controls (the game's "Turu Başlat",
+ * the favourite heart, the video İzle) read that as "guest" and opened the auth dialog for a
+ * reader who was signed in, so the dialog flipped to "Zaten Giriş Yaptın" and the action was lost.
+ * `whenSettled()` and `gateOnAuthSession()` wait for the check instead.
+ */
+describe("whenSettled", () => {
+  it("resolves at once with the settled state", async () => {
+    const store = createAuthSessionStore();
+    store.set("authenticated");
+    await expect(store.whenSettled()).resolves.toBe("authenticated");
+  });
+
+  it("while checking, resolves with the next settled commit", async () => {
+    vi.stubGlobal("document", { cookie: "cg_has_session=1" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    const store = createAuthSessionStore();
+    store.ensureFetched();
+    let settled: string | null = null;
+    void store.whenSettled().then((value) => {
+      settled = value;
+    });
+    await Promise.resolve();
+    expect(settled).toBeNull();
+    store.set("authenticated");
+    await vi.waitFor(() => expect(settled).toBe("authenticated"));
+  });
+
+  it("starts the session fetch itself when nobody has, so it cannot wait on nothing", async () => {
+    vi.stubGlobal("document", { cookie: "cg_has_session=1" });
+    const fetchMock = vi.fn(() => Promise.resolve(statusOnlyResponse(200)));
+    vi.stubGlobal("fetch", fetchMock);
+    const store = createAuthSessionStore();
+    await expect(store.whenSettled()).resolves.toBe("authenticated");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("a session fetch that never answers ends anonymous at the auth timeout", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("document", { cookie: "cg_has_session=1" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        (_url: string, init: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () =>
+              reject(new DOMException("", "AbortError")),
+            );
+          }),
+      ),
+    );
+    const store = createAuthSessionStore();
+    let settled: string | null = null;
+    void store.whenSettled().then((value) => {
+      settled = value;
+    });
+    await vi.advanceTimersByTimeAsync(AUTH_FETCH_TIMEOUT_MS - 1);
+    expect(settled).toBeNull();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(settled).toBe("anonymous");
+  });
+
+  it("keeps waiting through an invalidate() and resolves on the next settled value", async () => {
+    vi.stubGlobal("document", { cookie: "cg_has_session=1" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    const store = createAuthSessionStore();
+    store.ensureFetched();
+    let settled: string | null = null;
+    void store.whenSettled().then((value) => {
+      settled = value;
+    });
+    store.invalidate();
+    await Promise.resolve();
+    expect(settled).toBeNull();
+    store.set("anonymous");
+    await vi.waitFor(() => expect(settled).toBe("anonymous"));
+  });
+});
+
+describe("gateOnAuthSession", () => {
+  function setup(initial: AuthSessionState) {
+    vi.stubGlobal("document", { cookie: "cg_has_session=1" });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise<Response>(() => {})),
+    );
+    const store = createAuthSessionStore();
+    if (initial === "checking") store.ensureFetched();
+    else store.set(initial);
+    const requestAuth = vi.fn((intent: AuthIntent) => `request-${intent}`);
+    const onAuthenticated = vi.fn();
+    const onAuthRequested = vi.fn();
+    const onWaiting = vi.fn();
+    return { store, requestAuth, onAuthenticated, onAuthRequested, onWaiting };
+  }
+
+  it("while checking it opens no dialog and runs nothing; once authenticated it runs the action exactly once", async () => {
+    const { store, requestAuth, onAuthenticated, onAuthRequested, onWaiting } = setup("checking");
+    const outcome = gateOnAuthSession(
+      { intent: "gameRound", onAuthenticated, onAuthRequested, onWaiting },
+      { store, requestAuth },
+    );
+    await Promise.resolve();
+    expect(onWaiting).toHaveBeenCalledTimes(1);
+    expect(requestAuth).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
+
+    store.set("authenticated");
+    await expect(outcome).resolves.toBe("ran");
+    expect(onAuthenticated).toHaveBeenCalledTimes(1);
+    expect(requestAuth).not.toHaveBeenCalled();
+    expect(onAuthRequested).not.toHaveBeenCalled();
+  });
+
+  it("while checking, a session that settles anonymous opens the dialog for the intent", async () => {
+    const { store, requestAuth, onAuthenticated, onAuthRequested } = setup("checking");
+    const outcome = gateOnAuthSession(
+      { intent: "favorite", onAuthenticated, onAuthRequested },
+      { store, requestAuth },
+    );
+    store.set("anonymous");
+    await expect(outcome).resolves.toBe("auth-requested");
+    expect(requestAuth).toHaveBeenCalledTimes(1);
+    expect(requestAuth).toHaveBeenCalledWith("favorite");
+    expect(onAuthRequested).toHaveBeenCalledWith("request-favorite");
+    expect(onAuthenticated).not.toHaveBeenCalled();
+  });
+
+  it("an already authenticated session runs the action synchronously, inside the press", () => {
+    const { store, requestAuth, onAuthenticated, onAuthRequested, onWaiting } =
+      setup("authenticated");
+    void gateOnAuthSession(
+      { intent: "video", onAuthenticated, onAuthRequested, onWaiting },
+      { store, requestAuth },
+    );
+    expect(onAuthenticated).toHaveBeenCalledTimes(1);
+    expect(onWaiting).not.toHaveBeenCalled();
+    expect(requestAuth).not.toHaveBeenCalled();
+  });
+
+  it("an already anonymous session opens the dialog synchronously", () => {
+    const { store, requestAuth, onAuthenticated, onAuthRequested } = setup("anonymous");
+    void gateOnAuthSession(
+      { intent: "video", onAuthenticated, onAuthRequested },
+      { store, requestAuth },
+    );
+    expect(requestAuth).toHaveBeenCalledWith("video");
+    expect(onAuthRequested).toHaveBeenCalledWith("request-video");
+    expect(onAuthenticated).not.toHaveBeenCalled();
+  });
+
+  it("a press abandoned while waiting (the reader left) runs nothing once the session settles", async () => {
+    const { store, requestAuth, onAuthenticated, onAuthRequested } = setup("checking");
+    let left = false;
+    const outcome = gateOnAuthSession(
+      { intent: "gameRound", onAuthenticated, onAuthRequested, isCancelled: () => left },
+      { store, requestAuth },
+    );
+    left = true;
+    store.set("anonymous");
+    await expect(outcome).resolves.toBe("cancelled");
+    expect(requestAuth).not.toHaveBeenCalled();
+    expect(onAuthenticated).not.toHaveBeenCalled();
   });
 });

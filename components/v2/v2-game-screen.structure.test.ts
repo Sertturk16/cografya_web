@@ -9,10 +9,15 @@ function readSource(): string {
 describe("V2GameScreen structural contract and auth gate", () => {
   const source = readSource();
 
-  it("gates game start behind authentication via requestAuth('gameRound')", () => {
-    expect(source).toContain('requestAuth("gameRound")');
-    expect(source).toContain("handleStartGameClick");
-    expect(source).toContain('authState !== "authenticated"');
+  it("gates game start behind authentication through the session gate (T-162)", () => {
+    // The gate waits while the session is still "checking" instead of opening the dialog for a
+    // signed-in reader; its behaviour is unit-tested in lib/auth/session-store.test.ts.
+    expect(source).toContain('useSessionGate("gameRound", startRound, onAuthRequested)');
+    expect(source).toContain("const handleStartGameClick = sessionGate.run;");
+  });
+
+  it("shows the loading state on both start buttons while the session check runs", () => {
+    expect(source.match(/isLoading=\{sessionGate\.waiting\}/g)).toHaveLength(2);
   });
 
   it("wires handleStartGameClick to both 'Turu Başlat' and 'Tekrar Oyna' buttons", () => {

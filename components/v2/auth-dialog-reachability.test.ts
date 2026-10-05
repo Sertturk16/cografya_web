@@ -74,17 +74,29 @@ function renderTrees(): Array<{ name: string; roots: string[] }> {
     }));
 }
 
+/** The session gate (T-162): it calls `requestAuth` on behalf of the gated controls, so it is the
+ *  gate's definition, never a caller of its own, exactly like {@link AUTH_STORE}. */
+const SESSION_GATE = "lib/auth/use-session.client.ts";
+
 /**
- * A caller both IMPORTS `requestAuth` from the store and invokes it. The import clause is what
- * keeps this from firing on an unrelated local identifier; the invocation is what keeps it from
- * firing on `v2-auth-dialog.tsx` itself, which imports four other members of the same module
- * and no `requestAuth`.
+ * A caller both IMPORTS `requestAuth` from the store and invokes it, OR imports the session gate
+ * (`gateOnAuthSession` / `useSessionGate`, T-162) and invokes that: the gate opens the dialog
+ * for a guest, so a control pressing it needs the dialog in its tree just the same. The import
+ * clause is what keeps this from firing on an unrelated local identifier; the invocation is what
+ * keeps it from firing on `v2-auth-dialog.tsx` itself, which imports four other members of the
+ * same module and no `requestAuth`.
  */
 function callsRequestAuth(file: string): boolean {
-  if (relative(repoRoot, file) === AUTH_STORE) return false;
+  const path = relative(repoRoot, file);
+  if (path === AUTH_STORE || path === SESSION_GATE) return false;
   const source = stripComments(readFileSync(file, "utf8"));
-  if (!/from\s+["']@\/lib\/auth\/auth-modal\.client["']/.test(source)) return false;
-  return /\brequestAuth\s*\(/.test(source);
+  const direct =
+    /from\s+["']@\/lib\/auth\/auth-modal\.client["']/.test(source) &&
+    /\brequestAuth\s*\(/.test(source);
+  const gated =
+    /from\s+["']@\/lib\/auth\/use-session\.client["']/.test(source) &&
+    /\b(gateOnAuthSession|useSessionGate)\s*\(/.test(source);
+  return direct || gated;
 }
 
 const rel = (file: string) => relative(repoRoot, file);
@@ -123,6 +135,10 @@ describe("the reachability scanner itself", () => {
 
   it("the store that defines requestAuth is not counted as a caller", () => {
     expect(callsRequestAuth(join(repoRoot, AUTH_STORE))).toBe(false);
+  });
+
+  it("the session gate that calls requestAuth for its users is not counted as a caller", () => {
+    expect(callsRequestAuth(join(repoRoot, SESSION_GATE))).toBe(false);
   });
 
   it("the surface still has callers at all -- anti-vacuity floor", () => {

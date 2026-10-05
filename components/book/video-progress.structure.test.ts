@@ -83,46 +83,49 @@ function handleToggleBody(): string {
 }
 
 describe("the login gate (§5.3.2)", () => {
-  // P2 (§10) gave the delegated handler a SECOND, earlier `if (authState !== "authenticated")`
-  // — the external "watch on YouTube" control's own gate, inside the `!video.playable` branch.
-  // The assertions below are about the PLAYABLE path's gate specifically (the one that reaches
-  // `openVideo`), so they anchor past `const raw = trigger.dataset.second;`, which only exists
-  // in that branch, rather than finding the first (external) occurrence by accident.
+  // P2 (§10) gave the delegated handler a SECOND, earlier gate — the external "watch on YouTube"
+  // control's own, inside the `!video.playable` branch. The assertions below are about the
+  // PLAYABLE path's gate specifically (the one that reaches `openVideo`), so they anchor past
+  // `const raw = trigger.dataset.second;`, which only exists in that branch.
+  //
+  // T-162: both gates go through `gateOnAuthSession` (`lib/auth/use-session.client.ts`), which
+  // waits while the session is `"checking"` instead of treating it as `"anonymous"` and runs
+  // EXACTLY ONE of its two callbacks (unit-tested in `lib/auth/session-store.test.ts`). So the
+  // shape pinned here is: `openVideo` lives only in `onAuthenticated`, the modal's bookkeeping
+  // only in `onAuthRequested`.
   function playableBranch(handler: string): string {
     const start = handler.indexOf("const raw = trigger.dataset.second;");
     return start < 0 ? "" : handler.slice(start);
   }
 
-  it("checks authState before ever calling openVideo", () => {
+  function callbacks(playable: string): { authenticated: string; requested: string } {
+    const gate = playable.indexOf("gateOnAuthSession({");
+    const authenticated = playable.indexOf("onAuthenticated:", gate);
+    const requested = playable.indexOf("onAuthRequested:", gate);
+    const end = playable.indexOf("isCancelled:", requested);
+    if (gate < 0 || authenticated < gate || requested < authenticated || end < requested) {
+      return { authenticated: "", requested: "" };
+    }
+    return {
+      authenticated: playable.slice(authenticated, requested),
+      requested: playable.slice(requested, end),
+    };
+  }
+
+  it("reaches openVideo only through the session gate's authenticated outcome", () => {
     const handler = clickHandler();
     expect(handler).not.toBe("");
     const playable = playableBranch(handler);
     expect(playable).not.toBe("");
-    const gate = playable.indexOf('if (authState !== "authenticated")');
-    const openCall = playable.indexOf("openVideo(orderNo, second)");
-    expect(gate).toBeGreaterThan(0);
-    expect(openCall).toBeGreaterThan(gate);
+    const { authenticated, requested } = callbacks(playable);
+    expect(authenticated).toContain("openVideo(orderNo, second)");
+    expect(requested).not.toContain("openVideo(");
+    expect(playable.match(/openVideo\(/g)).toHaveLength(1);
   });
 
-  it("treats `checking` the same as `anonymous` — a strict inequality, not an enum match", () => {
-    // A gate written as `authState === "anonymous"` would let a `checking` press straight
-    // through to `openVideo`.
-    expect(BENCH).toContain('if (authState !== "authenticated")');
-  });
-
-  it("returns immediately after opening the auth modal, never falling through to openVideo (uyelik-auth-redesign plan §5.6.4, superseding the earlier /kayit redirect)", () => {
-    // Position-based, like `deneme-video.src-invariant.test.ts`'s own click-gate checks.
-    const handler = clickHandler();
-    const playable = playableBranch(handler);
-    expect(playable).not.toBe("");
-    const gate = playable.indexOf('if (authState !== "authenticated")');
-    const requestCall = playable.indexOf('requestAuth("video")', gate);
-    const gateReturn = playable.indexOf("return;", requestCall);
-    const openCall = playable.indexOf("openVideo(orderNo, second)");
-    expect(gate).toBeGreaterThan(0);
-    expect(requestCall).toBeGreaterThan(gate);
-    expect(gateReturn).toBeGreaterThan(requestCall);
-    expect(openCall).toBeGreaterThan(gateReturn);
+  it("never opens the auth modal itself — a `checking` press waits in the gate instead (T-162)", () => {
+    expect(BENCH).not.toMatch(/\brequestAuth\(/);
+    expect(BENCH).not.toContain('authState !== "authenticated") { applyFragmentAndSelect');
   });
 
   it("no longer redirects to /kayit or /giris — the auth modal opens in place instead", () => {
@@ -131,15 +134,12 @@ describe("the login gate (§5.3.2)", () => {
     expect(BENCH).not.toContain("redirectToSignIn");
   });
 
-  it("applies the fragment and selects the video at GATE time (not deferred to a page the reader never leaves), before opening the modal", () => {
-    const handler = clickHandler();
-    const playable = playableBranch(handler);
-    const gate = playable.indexOf('if (authState !== "authenticated")');
-    const applyCall = playable.indexOf("applyFragmentAndSelect(orderNo,", gate);
-    const requestCall = playable.indexOf('requestAuth("video")', gate);
-    expect(gate).toBeGreaterThan(0);
-    expect(applyCall).toBeGreaterThan(gate);
-    expect(requestCall).toBeGreaterThan(applyCall);
+  it("applies the fragment and selects the video when the guest is sent to the modal (not deferred to a page the reader never leaves)", () => {
+    const { requested } = callbacks(playableBranch(clickHandler()));
+    const applyCall = requested.indexOf("applyFragmentAndSelect(orderNo,");
+    const keepId = requested.indexOf("authRequestId.current = requestId");
+    expect(applyCall).toBeGreaterThan(0);
+    expect(keepId).toBeGreaterThan(applyCall);
   });
 
   it("reads authState from the shared hook exactly once, at the VideoBench level", () => {
@@ -156,10 +156,11 @@ describe("the resume — deliberately does NOT auto-load the player (plan §5.6.
 
   it("the resume effect never calls openVideo — only focuses the İzle control", () => {
     // The resume effect is the ONE that follows the click handler's own closing `};` — found
-    // by searching forward from the request call inside `onClick`, past that handler's own
-    // closing brace, for the next `useEffect(`.
-    const requestCall = BENCH.indexOf('requestAuth("video")');
-    expect(requestCall).toBeGreaterThan(0);
+    // by searching forward from the playable gate's request-id bookkeeping inside `onClick`,
+    // past that handler's own closing brace, for the next `useEffect(`.
+    const handlerStart = BENCH.indexOf("const onClick = (event");
+    const requestCall = BENCH.lastIndexOf("authRequestId.current = requestId");
+    expect(requestCall).toBeGreaterThan(handlerStart);
     const start = BENCH.indexOf("useEffect(() => {", requestCall);
     const end = BENCH.indexOf("[modal.resolvedRequestId]);", start);
     expect(start).toBeGreaterThan(requestCall);

@@ -3,8 +3,8 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { useAuthSession } from "@/lib/auth/use-session.client";
-import { requestAuth, useAuthModalState, consumeResolved } from "@/lib/auth/auth-modal.client";
+import { useAuthSession, useSessionGate } from "@/lib/auth/use-session.client";
+import { useAuthModalState, consumeResolved } from "@/lib/auth/auth-modal.client";
 import {
   fetchFavorites,
   saveFavorite,
@@ -103,16 +103,19 @@ export function V2FavoriteButton({
     }
   }, [favorited, target]);
 
-  const handleClick = async () => {
-    if (pending) return;
+  // A press while the session check is still running waits for it rather than treating the
+  // reader as a guest (T-162): a signed-in reader gets the toggle, a guest the auth dialog.
+  const toggleNow = React.useCallback(() => void performToggle(), [performToggle]);
+  const onAuthRequested = React.useCallback((requestId: string) => {
+    authRequestId.current = requestId;
+  }, []);
+  const sessionGate = useSessionGate("favorite", toggleNow, onAuthRequested);
+  const busy = pending || sessionGate.waiting;
+
+  const handleClick = () => {
+    if (busy) return;
     hasClickedRef.current = true;
-
-    if (authState !== "authenticated") {
-      authRequestId.current = requestAuth("favorite");
-      return;
-    }
-
-    await performToggle();
+    sessionGate.run();
   };
 
   // Resume after authentication
@@ -140,15 +143,15 @@ export function V2FavoriteButton({
               ? t("addAria")
               : t("signInRequiredAria")
         }
-        disabled={pending}
-        onClick={() => void handleClick()}
+        disabled={busy}
+        onClick={handleClick}
         className={`rounded-full transition-all duration-300 ${
           favorited
             ? "hover:bg-primary-strong shadow-sm scale-105"
             : "text-muted-foreground hover:text-foreground"
         } ${className}`}
       >
-        {pending ? (
+        {busy ? (
           <Spinner size="default" label={t("savingLabel")} className="text-muted-foreground" />
         ) : (
           <Heart
@@ -176,15 +179,15 @@ export function V2FavoriteButton({
               ? t("addAria")
               : t("signInRequiredAria")
         }
-        disabled={pending}
-        onClick={() => void handleClick()}
+        disabled={busy}
+        onClick={handleClick}
         className={`rounded-xl h-9 px-3 text-xs font-semibold gap-2 transition-all duration-300 shadow-2xs ${
           favorited
             ? "hover:bg-primary-strong shadow-md scale-[1.02]"
             : "bg-card/80 hover:bg-card border-border text-foreground"
         } ${className}`}
       >
-        {pending ? (
+        {busy ? (
           <Spinner size="sm" label={t("savingLabel")} className="text-muted-foreground" />
         ) : favorited ? (
           <Heart className="size-3.5 fill-current animate-in zoom-in-50 duration-200" />

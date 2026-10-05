@@ -20,8 +20,8 @@ import { MAP_VIEWBOX } from "@/lib/map/tr-provinces.generated";
 import { CONTEXT_SHAPES } from "@/lib/map/tr-context.generated";
 import { INLAND_WATER_SHAPES } from "@/lib/map/tr-inland-water.generated";
 import { submitGameRound } from "@/lib/game-rounds/client";
-import { useAuthSession } from "@/lib/auth/use-session.client";
-import { requestAuth, useAuthModalState, consumeResolved } from "@/lib/auth/auth-modal.client";
+import { useSessionGate } from "@/lib/auth/use-session.client";
+import { useAuthModalState, consumeResolved } from "@/lib/auth/auth-modal.client";
 import {
   playSuccessSound,
   playWrongSound,
@@ -161,7 +161,6 @@ export function V2GameScreen({
   viewBox = MAP_VIEWBOX,
   currentPath,
 }: V2GameScreenProps) {
-  const [authState] = useAuthSession();
   const modal = useAuthModalState();
   const authRequestId = React.useRef<string | null>(null);
 
@@ -458,14 +457,14 @@ export function V2GameScreen({
     setPan({ x: 0, y: 0 });
   }, [targetSet, difficulty]);
 
-  // Start new round or request authentication if guest
-  const handleStartGameClick = React.useCallback(() => {
-    if (authState !== "authenticated") {
-      authRequestId.current = requestAuth("gameRound");
-      return;
-    }
-    startRound();
-  }, [authState, startRound]);
+  // Start a new round, or send a guest to the auth dialog. A press while the session check is
+  // still running waits for it (the button shows its loading state) instead of treating the
+  // reader as a guest, then starts the round by itself (T-162).
+  const onAuthRequested = React.useCallback((requestId: string) => {
+    authRequestId.current = requestId;
+  }, []);
+  const sessionGate = useSessionGate("gameRound", startRound, onAuthRequested);
+  const handleStartGameClick = sessionGate.run;
 
   const currentTarget = questions[currentIndex] || null;
 
@@ -1301,6 +1300,8 @@ export function V2GameScreen({
                     variant="primary"
                     size="lg"
                     onClick={handleStartGameClick}
+                    isLoading={sessionGate.waiting}
+                    aria-busy={sessionGate.waiting}
                     leftIcon={<Zap className="size-4" />}
                   >
                     Turu Başlat
@@ -1494,6 +1495,8 @@ export function V2GameScreen({
                       variant="primary"
                       size="lg"
                       onClick={handleStartGameClick}
+                      isLoading={sessionGate.waiting}
+                      aria-busy={sessionGate.waiting}
                       leftIcon={<RotateCcw className="size-4" />}
                     >
                       Tekrar Oyna
