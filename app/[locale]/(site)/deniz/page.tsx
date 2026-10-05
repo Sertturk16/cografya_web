@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 import { getMarinePointsSafe, getMarineOverviewSafe, getMarineLayersSafe } from "@/lib/api/marine";
 import { getProvincesResilient } from "@/lib/api/provinces";
-import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import type { MarineOverviewPoint } from "@/lib/api/types";
 import { collectionPageJsonLd, learningResourceJsonLd, JsonLd } from "@/lib/seo/json-ld";
@@ -21,10 +20,9 @@ import { InlineSkeleton, PlateSkeleton, ProseSkeleton } from "@/components/patte
 import { StatGrid } from "@/components/patterns/stat-grid";
 import { StatTile } from "@/components/patterns/stat-tile";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
-import { buttonVariants } from "@/components/ui/button";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
-import { cn } from "@/lib/utils";
-import { Home, Layers, ArrowRight, Wind } from "lucide-react";
+import { LinkCallout } from "@/components/patterns/link-callout";
+import { Home, Layers, Wind } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { marineShowsValues } from "@/lib/marine/overview";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -292,61 +290,27 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         {/* SECTION 3: COASTAL TYPES & OCEANOGRAPHY GUIDE */}
         <V2MarineOceanographyGuide />
 
-        {/* SUBMARINE FAULTS CALLOUT BANNER */}
-        <div className="p-5 rounded-3xl border border-destructive/30 bg-gradient-to-r from-destructive/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-2xl bg-destructive/10 text-destructive-strong flex items-center justify-center shrink-0">
-              <Layers className="size-5" />
-            </div>
-            <div>
-              <span className="font-heading text-base font-bold text-foreground block">
-                Deniz Tabanındaki Faylar
-              </span>
-              <span className="text-xs text-muted-foreground block">
-                Kuzey Anadolu Fayı, Marmara&apos;nın dibindeki derin çukurların içinden geçer.
-                Ege&apos;de ise yer kabuğu gerilip açılıyor.
-              </span>
-            </div>
-          </div>
-          <Link
-            href="/deprem/fay-hatlari"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "shrink-0 font-bold text-xs group gap-1.5",
-            )}
-          >
-            <span>Fay Hatlarına Bak</span>
-            <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
+        <LinkCallout
+          tone="destructive"
+          icon={Layers}
+          title="Deniz Tabanındaki Faylar"
+          href="/deprem/fay-hatlari"
+          action="Fay Hatlarına Bak"
+        >
+          Kuzey Anadolu Fayı, Marmara&apos;nın dibindeki derin çukurların içinden geçer. Ege&apos;de
+          ise yer kabuğu gerilip açılıyor.
+        </LinkCallout>
 
-        {/* WIND AND CURRENTS MAP CALLOUT: opens the full-page earth.nullschool.net frame. */}
-        <div className="p-5 rounded-3xl border border-primary/30 bg-gradient-to-r from-primary/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="size-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Wind className="size-5" />
-            </div>
-            <div>
-              <span className="font-heading text-base font-bold text-foreground block">
-                Rüzgâr ve Okyanus Akıntıları
-              </span>
-              <span className="text-xs text-muted-foreground block">
-                Dünya genelinde rüzgârı, dalgaları ve akıntıları haritada izle. Harita
-                earth.nullschool.net&apos;ten gelir ve sayfamızın içinde açılır.
-              </span>
-            </div>
-          </div>
-          <Link
-            href="/dunya-analizi"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "shrink-0 font-bold text-xs group gap-1.5",
-            )}
-          >
-            <span>Haritayı Aç</span>
-            <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
+        <LinkCallout
+          tone="primary"
+          icon={Wind}
+          title="Rüzgâr ve Okyanus Akıntıları"
+          href="/dunya-analizi"
+          action="Haritayı Aç"
+        >
+          Dünya genelinde rüzgârı, dalgaları ve akıntıları haritada izle. Harita
+          earth.nullschool.net&apos;ten gelir ve sayfamızın içinde açılır.
+        </LinkCallout>
 
         {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}
         <Suspense fallback={<ProseSkeleton lines={4} />}>

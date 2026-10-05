@@ -8,19 +8,21 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   document shell: `<html>`/`<body>`, `ThemeProvider`, `NextIntlClientProvider`, `<Toaster />`.
   Consequence: a URL that matches no segment falls to Next's unstyled 404, so `app/not-found.tsx`
   exists for that case.
-- **Two route groups, and they are load-bearing.** `(site)` holds the reading surfaces and its
-  layout owns the chrome — skip link, `V2Header`, ONE `<main id="main-content">`, `V2Footer`,
-  `V2AuthDialog`. `(play)` holds the fullscreen game screens and gives them the bare
-  minimum. A page gets the chrome by WHERE IT LIVES, never by importing it: before T-032 PR3,
+- **Three route groups, and they are load-bearing.** `(site)` holds the reading surfaces and its
+  layout owns the chrome — skip link, `V2Header`, ONE `<main id="main-content">`, `V2Footer`.
+  `(play)` holds the fullscreen game screens and gives them the bare minimum; `(embed)` is
+  described below. `V2AuthDialog` and `UnsavedChangesDialog` mount once in the locale layout,
+  above all three. A page gets the chrome by WHERE IT LIVES, never by importing it: before T-032 PR3,
   `V2Header` was copied into 37 pages, two had lost the footer, and 24 nested a second `<main>`
   inside the root layout's. `components/v2/v2-a11y-navigation-polish.test.ts` walks the tree and
   fails if any page carries its own `id="main-content"`.
-- **`(embed)` is the third group**: header plus one viewport-filling third-party iframe, no
+- **`(embed)`**: header plus one viewport-filling third-party iframe, no
   footer. Its layout is `h-dvh` with a single `<main>` (`flex-1`); the page positions the frame
   `absolute inset-0` inside it. One member today, `/dunya-analizi` ("Dünya Analizi", `noindex`): the
   earth.nullschool.net frame (`components/v2/v2-world-map-frame.tsx`, which explains why its URL
   carries `?kiosk`), linked from the header, the mobile drawer, the footer and a callout on
-  `/deniz`. The group has its own `error.tsx`, like the other two.
+  `/deniz`. The group has its own `error.tsx`, like the other two; all three render
+  `components/v2/v2-route-error.tsx`.
   `components/v2/auth-dialog-reachability.test.ts` lists the groups on disk.
 - `app/[locale]/design-system/**` is in NONE of these groups: internal tooling that brings its own
   full-page chrome, and it carries its own `noindex` (both in `buildMetadata` and the layout's

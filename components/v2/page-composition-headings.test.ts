@@ -960,7 +960,9 @@ export const H1_SPELLINGS = 12;
 // element 16 other roots already reach.
 // T-106: 15 → **16**. `(play)/error.tsx` writes its own, in the shells' spelling (row 3 below),
 // so the spelling count does not move.
-export const H1_ELEMENTS = 16;
+// 16 → **15**: the `(site)` and `(play)` boundaries' two `<h1>`s became the one in
+// `components/v2/v2-route-error.tsx`, which every route group's `error.tsx` renders.
+export const H1_ELEMENTS = 15;
 
 /**
  * Render roots whose entire closure holds no `<h1>` element. Measured 2026-09-18 over

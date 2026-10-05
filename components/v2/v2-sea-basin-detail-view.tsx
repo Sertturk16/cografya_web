@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
+import { LinkCallout } from "@/components/patterns/link-callout";
 import type { SeaBasinDetailData } from "@/lib/marine/sea-basins-detail";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -162,29 +163,15 @@ export function V2SeaBasinDetailView({
 
       {/* SUBMARINE FAULT CALLOUT (IF MARMARA OR EGE) */}
       {data.faultLineNotice && (
-        <div className="p-5 sm:p-6 rounded-3xl border border-destructive/30 bg-gradient-to-r from-destructive/5 via-card to-card flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
-            <div className="size-11 rounded-2xl bg-destructive/10 text-destructive-strong flex items-center justify-center shrink-0">
-              <Layers className="size-6" />
-            </div>
-            <div>
-              <span className="font-heading text-base sm:text-lg font-bold text-foreground block">
-                Tabandaki Faylar
-              </span>
-              <p className="text-xs text-muted-foreground mt-0.5">{data.faultLineNotice.text}</p>
-            </div>
-          </div>
-          <Link
-            href={data.faultLineNotice.href as LinkHref}
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "shrink-0 font-bold text-xs group gap-1.5",
-            )}
-          >
-            <span>Fay Hatlarına Bak</span>
-            <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
-        </div>
+        <LinkCallout
+          tone="destructive"
+          icon={Layers}
+          title="Tabandaki Faylar"
+          href={data.faultLineNotice.href as LinkHref}
+          action="Fay Hatlarına Bak"
+        >
+          {data.faultLineNotice.text}
+        </LinkCallout>
       )}
 
       {/* 8 CORE CURRICULUM GEOGRAPHICAL SECTIONS */}

@@ -12,10 +12,13 @@
  * special-cases one named partner), so it can stop working without notice; if the "earth"
  * button is opening a tab again, that is the first place to look.
  *
- * `sandbox` keeps the frame from navigating the top page; scripts and its own origin are what
- * the map needs to load its data. `no-referrer`: the map has no use for which page framed it.
+ * `sandbox` grants only what the map needs: scripts, and its own origin to load its data. No
+ * popups, no forms, no top navigation, so the third-party page cannot open an unsandboxed window
+ * or move the reader off the site. `FRAME_SANDBOX` is exported so a test pins it.
+ * `no-referrer`: the map has no use for which page framed it.
  */
 const FRAME_SRC = "https://earth.nullschool.net/?kiosk";
+export const FRAME_SANDBOX = "allow-scripts allow-same-origin";
 
 export function V2WorldMapFrame({ title }: { title: string }) {
   return (
@@ -24,7 +27,7 @@ export function V2WorldMapFrame({ title }: { title: string }) {
       title={`${title}: rüzgâr ve okyanus akıntıları haritası (earth.nullschool.net)`}
       className="absolute inset-0 size-full border-0 bg-muted"
       referrerPolicy="no-referrer"
-      sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms"
+      sandbox={FRAME_SANDBOX}
     />
   );
 }
