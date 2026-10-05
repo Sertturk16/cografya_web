@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { OGM_CBS_PATHNAME } from "@/lib/tools/tool-registry";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -372,6 +373,23 @@ export function V2Header() {
                     </span>
                   </div>
                 </Link>
+                <Link
+                  href={OGM_CBS_PATHNAME}
+                  onClick={() => setActiveDropdown(null)}
+                  className="flex items-center p-2 rounded-xl hover:bg-muted transition-colors group cursor-pointer"
+                >
+                  <div className="size-7 rounded-lg bg-accent/10 text-accent flex items-center justify-center mr-2 shrink-0 group-hover:scale-105 transition-transform">
+                    <Map className="size-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-xs block text-foreground group-hover:text-accent transition-colors">
+                      OGM Materyal CBS
+                    </span>
+                    <span className="text-[10px] text-muted-foreground block">
+                      Bakanlığın coğrafi bilgi sistemi
+                    </span>
+                  </div>
+                </Link>
               </div>
             )}
           </div>
@@ -694,6 +712,19 @@ export function V2Header() {
                         <span className="ml-2 shrink-0 text-xs text-muted-foreground">
                           Mesafe, alan
                         </span>
+                      </Link>
+                      <Link
+                        href={OGM_CBS_PATHNAME}
+                        onClick={() => setMobileOpen(false)}
+                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
+                      >
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <Map className="size-4 text-accent" />
+                          <span className="truncate text-sm font-semibold text-foreground">
+                            OGM Materyal CBS
+                          </span>
+                        </div>
+                        <span className="ml-2 shrink-0 text-xs text-muted-foreground">MEB</span>
                       </Link>
                       <Link
                         href="/kitaplar"
