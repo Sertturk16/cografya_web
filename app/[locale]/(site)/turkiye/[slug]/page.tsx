@@ -329,16 +329,14 @@ async function ProvinceLinkChips({
       {/* Similar Climate Provinces Chips */}
       {showSimilar && similarClimate.length > 0 && (
         <div className="pt-3 border-t border-border space-y-2.5">
-          <div className="flex items-center justify-between">
+          {/* The badge names the curriculum climate type the chips are grouped by
+              (`selectSimilarClimateProvinces`); wraps under the label at phone widths, since
+              the longest name ("Güneydoğu Anadolu karasal iklimi") does not fit beside it. */}
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
             <span className="text-xs font-semibold text-muted-foreground block">
               İklimi Benzeyen İller:
             </span>
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-primary/10 text-primary border-primary/20"
-            >
-              {province.climateKoppen}
-            </Badge>
+            <Badge size="sm">{province.climateCurriculumNameTr}</Badge>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {similarClimate.map((sc) => (
