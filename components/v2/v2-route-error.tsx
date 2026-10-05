@@ -4,9 +4,15 @@ import * as React from "react";
 import { useTranslations } from "next-intl";
 import { RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "@/i18n/navigation";
+import { retryRoute } from "@/lib/nav/retry-route";
 
 /**
  * The body every route group's `error.tsx` renders: heading, one sentence, "Tekrar dene".
+ *
+ * "Tekrar dene" refetches from the server before clearing the boundary (`retryRoute`), so it
+ * also recovers from a Server Component error, not only a client render error. When the retry
+ * fails again the boundary mounts this component afresh, and focus returns to the heading.
  *
  * `docs/design.md`'s a11y floor requires a state change of this kind to announce itself:
  * focus moves to the heading on mount, which is why the heading is `tabIndex={-1}` —
@@ -26,6 +32,7 @@ import { Button } from "@/components/ui/button";
  */
 export function V2RouteError({ reset }: { reset: () => void }) {
   const t = useTranslations("Error");
+  const router = useRouter();
   const headingRef = React.useRef<HTMLHeadingElement>(null);
 
   React.useEffect(() => {
@@ -42,7 +49,12 @@ export function V2RouteError({ reset }: { reset: () => void }) {
         {t("heading")}
       </h1>
       <p className="text-muted-foreground">{t("body")}</p>
-      <Button type="button" variant="primary" onClick={reset} leftIcon={<RotateCw />}>
+      <Button
+        type="button"
+        variant="primary"
+        onClick={() => retryRoute(router, reset)}
+        leftIcon={<RotateCw />}
+      >
         {t("retry")}
       </Button>
     </>
