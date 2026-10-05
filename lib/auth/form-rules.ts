@@ -56,7 +56,7 @@ export const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  *  screen's NEW password enforces this through {@link isPasswordPolicyCompliant} below;
  *  `/giris`'s password field does NOT — an existing account may predate this policy, and
  *  the web has no way to know, so login only checks non-empty (plan §4.3.2). */
-export const PASSWORD_MIN = 6;
+export const PASSWORD_MIN = 8;
 
 /** `RegisterRequestDto.password.maxLength` — contract-derived, gate G2. */
 export const PASSWORD_MAX = 128;
@@ -187,13 +187,7 @@ export const PHONE_INPUT_MAX_LENGTH = 13;
  * `parent` and `enthusiast` are T-103's; `parent` carries the child's secondary grade and stream.
  */
 export type UserType =
-  | "student"
-  | "secondary"
-  | "undergraduate"
-  | "graduate"
-  | "teacher"
-  | "parent"
-  | "enthusiast";
+  "student" | "secondary" | "undergraduate" | "graduate" | "teacher" | "parent" | "enthusiast";
 
 /**
  * The whole register-screen state `buildRegisterPayload` reads (plan §4.3.2 part 3, the

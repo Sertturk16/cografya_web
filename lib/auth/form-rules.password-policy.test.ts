@@ -23,7 +23,7 @@ function compliantOfLength(length: number): string {
 
 describe("isPasswordPolicyCompliant — positive", () => {
   const accepted = [
-    "Abcdef1",
+    "Abcdefg1",
     "Password1",
     "aB3aB3aB3",
     compliantOfLength(PASSWORD_MIN),
@@ -41,21 +41,21 @@ describe("isPasswordPolicyCompliant — negative, one missing class at a time", 
   // Positive control first: the shared base IS accepted, so the negative cases below are
   // proof a single missing class flips the result, not proof the base itself was already
   // rejected for an unrelated reason.
-  const base = "Abcdef1";
+  const base = "Abcdefg1";
   it("positive control — the shared base string is itself accepted", () => {
     expect(isPasswordPolicyCompliant(base)).toBe(true);
   });
 
   it("rejects with no lowercase", () => {
-    expect(isPasswordPolicyCompliant("ABCDEF1")).toBe(false);
+    expect(isPasswordPolicyCompliant("ABCDEFG1")).toBe(false);
   });
 
   it("rejects with no uppercase", () => {
-    expect(isPasswordPolicyCompliant("abcdef1")).toBe(false);
+    expect(isPasswordPolicyCompliant("abcdefg1")).toBe(false);
   });
 
   it("rejects with no digit", () => {
-    expect(isPasswordPolicyCompliant("Abcdefg")).toBe(false);
+    expect(isPasswordPolicyCompliant("Abcdefgh")).toBe(false);
   });
 
   it("rejects the empty string", () => {

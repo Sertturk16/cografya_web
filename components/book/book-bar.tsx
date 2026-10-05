@@ -38,7 +38,7 @@ export function BookBar(props: BookBarProps) {
           height={53}
           sizes="40px"
           className="h-[53px] w-10 shrink-0 rounded-md border border-border object-cover"
-          priority
+          preload
         />
       )}
       <div className="min-w-0 flex-1">

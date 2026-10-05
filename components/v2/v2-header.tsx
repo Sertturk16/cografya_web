@@ -136,7 +136,7 @@ export function V2Header() {
                 width={40}
                 height={40}
                 className="object-contain"
-                priority
+                preload
               />
             </div>
             <div className="flex flex-col min-w-0">

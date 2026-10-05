@@ -41,8 +41,9 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 - Every route needs an entry in `i18n/routing.ts` `pathnames` (TR and EN).
 - Reads from the API go through `apiGet` in `lib/api/client.ts` (server-only, ISR 3600 s,
   attaches the internal token). Mutations and authenticated reads go through
-  `lib/<domain>/transport.server.ts` behind `app/api/**/route.ts` BFF routes. No third path,
-  no `fetch` to the API from client code.
+  `lib/<domain>/transport.server.ts` behind `app/api/**/route.ts` BFF routes. The one other
+  path: `lib/auth/session.ts` and `lib/profile/profile.server.ts` read the access cookie in
+  server pages and fetch the API `no-store`. No `fetch` to the API from client code.
 - Types from the contract: alias `components["schemas"][...]` once in `lib/api/types.ts`,
   never reference `schema.ts` shapes at call sites.
 - Generated files (`lib/api/schema.ts`, `lib/map/*.generated.ts`) are never hand-edited; each

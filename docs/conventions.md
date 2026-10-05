@@ -23,8 +23,9 @@ Read before writing a component, a test, or a commit.
    `generateMetadata` via `buildMetadata()`, data via `apiGet` or a `lib/<domain>` loader,
    `notFound()` on unknown slug.
 3. Presentational pieces in `components/v2/v2-<name>.tsx`; interactive parts as small
-   `"use client"` islands. Heavy widgets (maps, games) via `dynamic(..., { ssr: false })`
-   inside a fixed-size box.
+   `"use client"` islands. Heavy widgets (maps, games) are client components imported by the
+   server page, inside a fixed-size box; no `next/dynamic` (`ssr: false` is a build error in a
+   Server Component).
 4. Use `components/ui/*` primitives and Tailwind theme keys (`bg-primary`, `text-muted-
 foreground`, `border-border`, `font-heading`). Colours per `docs/design.md`.
 5. Links: `Link` from `@/i18n/navigation`; button-looking links use `buttonVariants`.
