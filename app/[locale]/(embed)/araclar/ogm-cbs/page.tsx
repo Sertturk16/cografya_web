@@ -40,7 +40,7 @@ export default async function OgmCbsPage({ params }: PageProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="overflow-y-auto md:shrink-0 md:border-b md:border-border md:bg-card">
-        <div className="mx-auto flex max-w-xl flex-col gap-5 px-4 py-10 sm:px-6 md:max-w-none md:flex-row md:items-center md:justify-between md:gap-6 md:py-2.5">
+        <div className="mx-auto flex max-w-xl flex-col gap-5 px-4 py-10 sm:px-6 md:max-w-7xl lg:px-8 md:flex-row md:items-center md:justify-between md:gap-6 md:py-2.5">
           <div className="min-w-0 space-y-2 md:space-y-0">
             <h1 className="font-heading text-2xl font-bold tracking-tight text-foreground md:text-lg">
               {PAGE_TITLE}
@@ -60,11 +60,12 @@ export default async function OgmCbsPage({ params }: PageProps) {
             rel="noopener"
             className={cn(
               buttonVariants({ variant: "primary", size: "md" }),
-              "min-h-11 w-full shrink-0 md:w-auto",
+              // The header's "Üye Ol" size from `md` up; a full-width 44px target on phones.
+              "min-h-11 w-full shrink-0 md:h-8 md:min-h-0 md:w-auto md:px-3 md:text-xs md:font-semibold md:shadow-xs",
             )}
           >
             Yeni Sekmede Aç
-            <ExternalLink className="size-4" aria-hidden="true" />
+            <ExternalLink className="size-4 md:size-3.5" aria-hidden="true" />
           </a>
         </div>
       </div>
