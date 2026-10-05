@@ -70,6 +70,7 @@ export const CATEGORIES: readonly ShowcaseCategory[] = [
       "page-container",
       "page-hero",
       "faq-section",
+      "link-callout",
     ],
   },
   {

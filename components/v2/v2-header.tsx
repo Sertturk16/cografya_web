@@ -34,6 +34,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth } from "@/lib/auth/auth-modal.client";
 import { submitAuth } from "@/lib/auth/submit.client";
+import { activeNavSection } from "@/lib/nav/active-section";
 
 export function V2Header() {
   const locale = useLocale() as Locale;
@@ -95,15 +96,12 @@ export function V2Header() {
     };
   }, [activeDropdown]);
 
-  const isHome = pathStr === "/";
-  // Whole-segment match, not `startsWith("/dunya")`: `/dunya-analizi` is a sibling of `/dunya`
-  // and a bare prefix test lit "Atlas ve Harita" on the Dünya Analizi page.
-  const inSection = (base: string) => pathStr === base || pathStr.startsWith(`${base}/`);
-  const isAtlasActive = inSection("/turkiye") || inSection("/dunya");
-  const isTelemetryActive = inSection("/deniz") || inSection("/deprem");
-  const isInteractiveActive = inSection("/oyun") || inSection("/araclar");
-  const isKitaplarActive = inSection("/kitaplar");
-  const isWorldAnalysisActive = inSection("/dunya-analizi");
+  const activeSection = activeNavSection(pathStr);
+  const isAtlasActive = activeSection === "atlas";
+  const isTelemetryActive = activeSection === "telemetry";
+  const isInteractiveActive = activeSection === "interactive";
+  const isKitaplarActive = activeSection === "books";
+  const isWorldAnalysisActive = activeSection === "worldAnalysis";
 
   const toggleDropdown = (name: "atlas" | "telemetry" | "interactive" | "account") => {
     setActiveDropdown((prev) => (prev === name ? null : name));
@@ -129,7 +127,7 @@ export function V2Header() {
     <nav className="sticky top-0 z-40 w-full border-b border-border/80 bg-background/90 backdrop-blur-xl transition-all shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         {/* Brand / Logo */}
-        <div className="flex items-center gap-3 min-w-0 lg:shrink-0">
+        <div className="flex items-center gap-3 min-w-0 xl:shrink-0">
           <Link href="/" className="flex items-center gap-2.5 group min-w-0">
             <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
               <Image
@@ -153,7 +151,7 @@ export function V2Header() {
         </div>
 
         {/* Desktop Grouped Navigation Menu */}
-        <div ref={navContainerRef} className="hidden lg:flex items-center gap-1.5 relative">
+        <div ref={navContainerRef} className="hidden xl:flex items-center gap-1.5 relative">
           {/* Atlas & Haritalar Dropdown */}
           <div className="relative">
             <button
@@ -161,8 +159,8 @@ export function V2Header() {
               type="button"
               onClick={() => toggleDropdown("atlas")}
               aria-expanded={activeDropdown === "atlas"}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
-                isAtlasActive && !isHome
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
+                isAtlasActive
                   ? "bg-primary/10 text-primary-strong font-bold border border-primary/20"
                   : activeDropdown === "atlas"
                     ? "bg-muted text-foreground"
@@ -257,7 +255,7 @@ export function V2Header() {
               type="button"
               onClick={() => toggleDropdown("telemetry")}
               aria-expanded={activeDropdown === "telemetry"}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
                 isTelemetryActive
                   ? "bg-accent/10 text-accent font-bold border border-accent/20"
                   : activeDropdown === "telemetry"
@@ -321,7 +319,7 @@ export function V2Header() {
               type="button"
               onClick={() => toggleDropdown("interactive")}
               aria-expanded={activeDropdown === "interactive"}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
+              className={`inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
                 isInteractiveActive
                   ? "bg-secondary/10 text-secondary font-bold border border-secondary/20"
                   : activeDropdown === "interactive"
@@ -378,30 +376,12 @@ export function V2Header() {
             )}
           </div>
 
-          {/* Dünya Analizi Direct Link */}
-          <Link
-            href="/dunya-analizi"
-            aria-current={isWorldAnalysisActive ? "page" : undefined}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              isWorldAnalysisActive
-                ? "bg-primary/10 text-primary-strong font-bold border border-primary/20"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-            }`}
-          >
-            <span>Dünya Analizi</span>
-          </Link>
-
-          {/* Kitaplar (Kütüphane) Direct Link */}
-          <Link
-            href="/kitaplar"
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-              isKitaplarActive
-                ? "bg-primary/10 text-primary-strong font-bold border border-primary/20"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-            }`}
-          >
-            <span>Kitaplar</span>
-          </Link>
+          <DesktopNavLink href="/dunya-analizi" active={isWorldAnalysisActive}>
+            Dünya Analizi
+          </DesktopNavLink>
+          <DesktopNavLink href="/kitaplar" active={isKitaplarActive}>
+            Kitaplar
+          </DesktopNavLink>
         </div>
 
         {/* Right Side Actions & Mobile Trigger */}
@@ -430,7 +410,7 @@ export function V2Header() {
                through them, Escape closes and returns focus. Deliberately not a `role="menu"`
                widget: one header with two different menu mechanisms is worse than one with a
                pattern used four times. */
-            <div ref={accountMenuRef} className="hidden lg:block relative">
+            <div ref={accountMenuRef} className="hidden xl:block relative">
               <button
                 ref={accountBtnRef}
                 type="button"
@@ -491,7 +471,7 @@ export function V2Header() {
               )}
             </div>
           ) : (
-            <div className="hidden lg:flex items-center gap-1.5">
+            <div className="hidden xl:flex items-center gap-1.5">
               <Button
                 variant="ghost"
                 size="sm"
@@ -514,7 +494,7 @@ export function V2Header() {
           )}
 
           {/* Mobile Drawer Hamburger Trigger */}
-          <div className="lg:hidden">
+          <div className="xl:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger
                 aria-label="Menüyü Aç"
@@ -809,5 +789,34 @@ export function V2Header() {
         </div>
       </div>
     </nav>
+  );
+}
+
+/**
+ * A top-level header item that is a plain link rather than a dropdown. Same pill as the
+ * dropdown triggers above, and `whitespace-nowrap` for the same reason: a label that wraps
+ * doubles the item's height inside the 64 px bar.
+ */
+function DesktopNavLink({
+  href,
+  active,
+  children,
+}: {
+  href: React.ComponentProps<typeof Link>["href"];
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "page" : undefined}
+      className={`inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+        active
+          ? "bg-primary/10 text-primary-strong font-bold border border-primary/20"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
+      }`}
+    >
+      {children}
+    </Link>
   );
 }

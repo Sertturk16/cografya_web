@@ -20,10 +20,11 @@ interface SiteLayoutProps {
  * their own `<main>` inside the root layout's, nesting the landmark. A page can no longer
  * ship without the chrome, and it can no longer ship with two of it.
  *
- * The three fullscreen game screens opt out by living in the sibling `(play)` group — a
- * structural choice of directory, not an omitted import somebody has to remember. The design
- * system showcase is in neither group: it is internal tooling that brings its own full-page
- * chrome, so it sits directly under `[locale]` and takes only the document shell.
+ * The three fullscreen game screens opt out by living in the sibling `(play)` group, and the
+ * header-only embed page (`/dunya-analizi`) by living in `(embed)` — a structural choice of
+ * directory, not an omitted import somebody has to remember. The design system showcase is in
+ * none of the groups: it is internal tooling that brings its own full-page chrome, so it sits
+ * directly under `[locale]` and takes only the document shell.
  */
 export default async function SiteLayout({ children, params }: SiteLayoutProps) {
   const { locale } = await params;

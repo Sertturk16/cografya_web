@@ -51,19 +51,13 @@ describe("V2 error boundaries", () => {
     "../../app/[locale]/(embed)/error.tsx",
   ];
 
-  it.each(ERROR_BOUNDARIES)("%s is a client component and exposes reset", (rel) => {
-    const source = read(rel);
-    expect(source).toContain('"use client"');
-    expect(source).toContain("reset");
-  });
+  /** The body all three render; the a11y and no-leak rules live in it, once. */
+  const ROUTE_ERROR = "./v2-route-error.tsx";
 
-  it.each(ERROR_BOUNDARIES)("%s moves focus to its heading", (rel) => {
-    // docs/design.md a11y floor: a boundary that swaps page content in place mid-session has
-    // to announce itself, and focus movement is the signal that does not depend on a live
-    // region being noticed before its content settles.
+  it.each(ERROR_BOUNDARIES)("%s is a client component that renders the shared body", (rel) => {
     const source = stripComments(read(rel));
-    expect(source).toContain("tabIndex={-1}");
-    expect(source).toContain(".focus()");
+    expect(source).toContain('"use client"');
+    expect(source).toMatch(/<V2RouteError[^>]*reset=\{reset\}/);
   });
 
   it.each(ERROR_BOUNDARIES)("%s never surfaces the error object", (rel) => {
@@ -71,8 +65,23 @@ describe("V2 error boundaries", () => {
     // channel, so logging or rendering it adds nothing and can leak.
     const source = stripComments(read(rel));
     expect(source).not.toContain("console.error");
-    expect(source).not.toContain("{error.message}");
-    expect(source).not.toContain("{error.digest}");
+    expect(source).not.toContain("error.message");
+    expect(source).not.toContain("error.digest");
+  });
+
+  it("the shared body moves focus to its heading", () => {
+    // docs/design.md a11y floor: a boundary that swaps page content in place mid-session has
+    // to announce itself, and focus movement is the signal that does not depend on a live
+    // region being noticed before its content settles.
+    const source = stripComments(read(ROUTE_ERROR));
+    expect(source).toContain("tabIndex={-1}");
+    expect(source).toContain(".focus()");
+  });
+
+  it("the shared body takes no error and logs nothing", () => {
+    const source = stripComments(read(ROUTE_ERROR));
+    expect(source).not.toContain("console.error");
+    expect(source).not.toMatch(/\berror\b/);
   });
 
   it("the (play) boundary draws the chrome its layout does not", () => {
@@ -80,12 +89,12 @@ describe("V2 error boundaries", () => {
     // itself, and the boundary replaces the page, so it has to bring both back.
     const source = stripComments(read("../../app/[locale]/(play)/error.tsx"));
     expect(source).toContain("<V2Header");
-    expect(source).toContain("<main");
+    expect(source).toMatch(/<main[^>]*>\s*<V2RouteError/);
   });
 
   it("every boundary takes its copy from the catalogues", () => {
     // Hard-coded Turkish here would be invisible to the EN reader who triggered it.
-    for (const rel of ["../../app/[locale]/(site)/not-found.tsx", ...ERROR_BOUNDARIES]) {
+    for (const rel of ["../../app/[locale]/(site)/not-found.tsx", ROUTE_ERROR]) {
       expect(stripComments(read(rel))).toMatch(/useTranslations|getTranslations/);
     }
   });

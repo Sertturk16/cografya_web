@@ -51,10 +51,11 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Home } from "lucide-react";
+import { Home, Layers, Wind } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";
+import { LinkCallout } from "@/components/patterns/link-callout";
 import { Specimen, SpecimenRow } from "../specimen";
 
 const RHYTHMS = ["band", "tight", "default", "loose"] as const;
@@ -356,6 +357,32 @@ export function DuzenSpecimens() {
             { label: "Çanakkale", path: "/turkiye/canakkale" },
           ]}
         />
+      </Specimen>
+
+      <Specimen
+        name="LinkCallout — iki ton"
+        description="Bir bölümün yanındaki ilgili sayfaya giden tek satırlık bant: ikon, başlık, bir cümle, çerçeveli düğme. `destructive` tehlike konuları (faylar), `primary` diğerleri. Başlık bir etiket, sayfa ana hattına girmez."
+      >
+        <div className="w-full space-y-4">
+          <LinkCallout
+            tone="destructive"
+            icon={Layers}
+            title="Deniz Tabanındaki Faylar"
+            href="/deprem/fay-hatlari"
+            action="Fay Hatlarına Bak"
+          >
+            Kuzey Anadolu Fayı, Marmara&apos;nın dibindeki derin çukurların içinden geçer.
+          </LinkCallout>
+          <LinkCallout
+            tone="primary"
+            icon={Wind}
+            title="Rüzgâr ve Okyanus Akıntıları"
+            href="/dunya-analizi"
+            action="Haritayı Aç"
+          >
+            Dünya genelinde rüzgârı, dalgaları ve akıntıları haritada izle.
+          </LinkCallout>
+        </div>
       </Specimen>
 
       <Specimen
