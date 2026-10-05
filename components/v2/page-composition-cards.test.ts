@@ -614,7 +614,9 @@ export const HAND_DRAWN_CARDS = 190;
 // 148 → **147** in T-125: the tool workbench's in-page tool switcher, a gradient well no page
 // rendered (every tool page locked its mode), deleted with the switch it offered.
 // 147 → **146** in T-128: the book page's cover box left with the hero.
-export const HAND_DRAWN_WELLS = 146;
+// 146 → **145** with the OGM CBS link: the "other tools" row's two link wells became one,
+// rendered from a list.
+export const HAND_DRAWN_WELLS = 145;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *
@@ -1597,7 +1599,7 @@ const INTERACTIVE_CARD_CARRIERS: readonly string[] = [
   "components/v2/v2-member-hub.tsx <Link>",
   "components/v2/v2-member-hub.tsx <Link>",
   "components/v2/v2-member-hub.tsx <Link>",
-  "components/v2/v2-related-tools.tsx <Link>",
+  // One `<Link>` rendered from a list since the OGM CBS link joined the row.
   "components/v2/v2-related-tools.tsx <Link>",
   "components/v2/v2-sea-basin-detail-view.tsx <Link>",
   "components/v2/v2-sea-basin-detail-view.tsx <Link>",
@@ -1639,7 +1641,7 @@ describe("the three card-shaped populations PR4 must not touch", () => {
     ).toEqual([...MAP_VIEWPORTS].sort());
   });
 
-  it("the interactive carriers are exactly the recorded 36, by file", () => {
+  it("the interactive carriers are exactly the recorded 35, by file", () => {
     const tags = new Set(["Link", "a", "button", "DialogTrigger"]);
     const found = cardsMatching((element) => tags.has(element.tag));
     expect(

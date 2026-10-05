@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { getPathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
-import { TOOL_HUB_PATHNAME, TOOL_REGISTRY } from "./tool-registry";
+import { OGM_CBS_PATHNAME, TOOL_HUB_PATHNAME, TOOL_REGISTRY } from "./tool-registry";
 
 /**
  * THE TOOL TIER'S THREE SIDES MUST AGREE: the register, the routing table, and the pages on
@@ -78,6 +78,8 @@ describe("tool registry", () => {
       // (fix round, İRİS finding A1) so the EN alias reverse-maps correctly — it is not a
       // tool route and carries no register entry, page-on-disk, or sitemap row by design.
       .filter((pathname) => !pathname.includes("["))
+      // The framed third-party GIS page: under the hub's path, deliberately not a tool.
+      .filter((pathname) => pathname !== OGM_CBS_PATHNAME)
       .sort();
     expect(declared).toEqual(TOOL_REGISTRY.map((tool) => tool.pathname).sort());
   });

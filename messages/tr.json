@@ -259,6 +259,11 @@
         "name": "earth.nullschool.net (Nullschool Technologies)",
         "role": "Dünya Analizi sayfasındaki rüzgâr ve okyanus akıntıları haritası. Sayfayı açtığında tarayıcın bu siteye bağlanır; IP adresin ve istek bilgilerin harita sitesine ulaşır. Harita sitesi kendi ziyaretçi istatistikleri için Google Analytics kullanır; bu ölçüm bizim değil harita sitesinindir. Site Cloudflare üzerinden sunulur.",
         "location": "ABD (Cloudflare altyapısı üzerinden)"
+      },
+      {
+        "name": "Millî Eğitim Bakanlığı (OGM Materyal CBS)",
+        "role": "OGM Materyal CBS sayfasındaki coğrafi bilgi sistemi. Sayfayı geniş ekranda açtığında tarayıcın Bakanlığın sitesine (ogmmateryal.eba.gov.tr) bağlanır; IP adresin ve istek bilgilerin bu siteye ulaşır. Platform haritayı Harita Genel Müdürlüğü'nden, bazı dosyalarını Google Fonts, unpkg ve cdnjs'ten yükler ve Google Analytics kodunu çalıştırır; bu ölçüm bizim değil Bakanlığındır. Platformda giriş yaparsan ya da veri girersen bunları Bakanlığın platformu işler; hiçbiri bize ulaşmaz.",
+        "location": "Türkiye"
       }
     ],
     "recipientsAuthorities": "Ayrıca, kanunen yetkili kamu kurum ve kuruluşlarına ve yargı mercilerine, talep etmeleri halinde ve kanunun izin verdiği ölçüde bilgi verilebilir.",

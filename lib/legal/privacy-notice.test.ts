@@ -29,6 +29,8 @@ describe("Privacy namespace", () => {
       "YouTube",
       // The `/dunya-analizi` frame connects the visitor to this host on page open.
       "earth.nullschool.net",
+      // The `/araclar/ogm-cbs` frame connects the visitor to the Ministry's host on a wide screen.
+      "OGM Materyal CBS",
     ]) {
       expect(names).toContain(provider);
     }
@@ -36,6 +38,7 @@ describe("Privacy namespace", () => {
     expect(locations).toContain("Avrupa Birliği");
     expect(locations).toContain("eu-north-1");
     expect(locations).toContain("ABD");
+    expect(locations).toContain("Türkiye");
   });
 
   it("states the retention periods the api enforces and the 5651 log period", () => {

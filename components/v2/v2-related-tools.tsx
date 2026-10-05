@@ -4,6 +4,7 @@ import {
   AREA_TOOL,
   COORDINATE_TOOL,
   DISTANCE_TOOL,
+  OGM_CBS_PATHNAME,
   TOOL_HUB_PATHNAME,
   TOOL_REGISTRY,
 } from "@/lib/tools/tool-registry";
@@ -49,32 +50,32 @@ export async function V2RelatedTools({ current }: V2RelatedToolsProps) {
   const tHub = await getTranslations("Tools.hub");
   const tBreadcrumb = await getTranslations("Breadcrumb");
 
-  const others = TOOL_REGISTRY.filter((tool) => tool.pathname !== current);
+  // The other registered tools, then the Ministry's GIS (framed, not one of ours), then the hub.
+  const links = [
+    ...TOOL_REGISTRY.filter((tool) => tool.pathname !== current).map((tool) => ({
+      href: tool.pathname,
+      label: tHub(TOOL_NAME_KEY[tool.pathname]!),
+    })),
+    { href: OGM_CBS_PATHNAME, label: "OGM Materyal CBS" },
+    { href: TOOL_HUB_PATHNAME, label: tBreadcrumb("araclar") },
+  ];
 
   return (
     <Card as="section" variant="panel" space="4" aria-labelledby="v2-other-tools-heading">
       <h2 id="v2-other-tools-heading" className="font-heading text-xl font-bold text-foreground">
         {tHub("otherToolsHeading")}
       </h2>
-      <ul role="list" className="grid gap-3 sm:grid-cols-3">
-        {others.map((tool) => (
-          <li key={tool.pathname}>
+      <ul role="list" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {links.map((link) => (
+          <li key={link.href}>
             <Link
-              href={tool.pathname}
+              href={link.href}
               className="block rounded-2xl border border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
             >
-              {tHub(TOOL_NAME_KEY[tool.pathname]!)}
+              {link.label}
             </Link>
           </li>
         ))}
-        <li>
-          <Link
-            href={TOOL_HUB_PATHNAME}
-            className="block rounded-2xl border border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
-          >
-            {tBreadcrumb("araclar")}
-          </Link>
-        </li>
       </ul>
     </Card>
   );

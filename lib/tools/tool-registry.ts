@@ -123,3 +123,13 @@ export const TOOL_HUB_PATHNAME: StaticPathname = "/araclar";
  * value is written once and the test compares the pages and the sitemap against IT.
  */
 export const TOOLS_SURFACE: ContentSurface = "trNarrative";
+
+/**
+ * The OGM Materyal CBS page (`/araclar/ogm-cbs`): the Ministry of Education's web GIS, framed
+ * under the site header in the `(embed)` group. It sits under the hub's path so the header's
+ * "Oyun ve Araçlar" section stays active on it, but it is NOT a register entry: the page holds
+ * no content of ours, so it is `noindex`, has no sitemap row and no `ItemList` position, and its
+ * page lives in `(embed)` rather than `(site)/araclar/`. `tool-registry.test.ts` exempts exactly
+ * this pathname from the "no unregistered tool route" check.
+ */
+export const OGM_CBS_PATHNAME = "/araclar/ogm-cbs" as const satisfies StaticPathname;

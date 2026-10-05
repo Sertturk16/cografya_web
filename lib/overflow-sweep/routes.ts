@@ -259,6 +259,15 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "the document wider or taller than the window.",
   },
   {
+    id: "embed-bar",
+    pathname: "/araclar/ogm-cbs",
+    locales: ["tr"],
+    why:
+      "The other `(embed)` page, with a bar of our own above the frame. Below `md` the frame is " +
+      "not rendered and the bar is the whole page, so the narrow widths measure our copy and " +
+      "button, not a third-party app.",
+  },
+  {
     id: "auth",
     pathname: "/giris",
     locales: ["tr"],

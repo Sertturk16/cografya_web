@@ -253,6 +253,13 @@ export const routing = defineRouting({
       tr: "/araclar/alan-hesaplama",
       en: "/tools/area",
     },
+    // The Ministry of Education's (OGM) web GIS, embedded under the site header in the `(embed)`
+    // group on the `/dunya-analizi` precedent. Not one of our tools: it carries no register
+    // entry, no sitemap row and `surface: "noindex"` (see `OGM_CBS_PATHNAME`).
+    "/araclar/ogm-cbs": {
+      tr: "/araclar/ogm-cbs",
+      en: "/tools/ogm-gis",
+    },
     // The auth page shell — login, password reset, registration and e-mail verification
     // (UYELIK-04, `Owner's Inbox/uyelik-ve-giris-yol-haritasi/UYELIK-04-web-plan.md` §4.1;
     // PR-1 shipped the first three, PR-2 added the last two). LOCALIZED segments, on the
