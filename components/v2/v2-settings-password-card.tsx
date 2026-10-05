@@ -57,7 +57,11 @@ export function V2SettingsPasswordCard() {
   useUnsavedChanges(currentPassword !== "" || newPassword !== "" || confirmPassword !== "");
 
   const rules = [
-    { key: "length", ok: newPassword.length >= PASSWORD_MIN, label: t("password.ruleLength") },
+    {
+      key: "length",
+      ok: newPassword.length >= PASSWORD_MIN,
+      label: t("password.ruleLength", { min: PASSWORD_MIN }),
+    },
     { key: "upper", ok: /[A-Z]/.test(newPassword), label: t("password.ruleUpper") },
     { key: "lower", ok: /[a-z]/.test(newPassword), label: t("password.ruleLower") },
     { key: "digit", ok: /[0-9]/.test(newPassword), label: t("password.ruleDigit") },
@@ -70,7 +74,8 @@ export function V2SettingsPasswordCard() {
 
     const next: Partial<Record<FieldKey, string>> = {};
     if (!currentPassword) next.currentPassword = tAuth("fieldErrors.required");
-    if (!isPasswordPolicyCompliant(newPassword)) next.newPassword = t("password.policy");
+    if (!isPasswordPolicyCompliant(newPassword))
+      next.newPassword = t("password.policy", { min: PASSWORD_MIN });
     else if (newPassword === currentPassword) next.newPassword = t("password.sameAsCurrent");
     if (confirmPassword !== newPassword) next.confirmPassword = t("password.mismatch");
 

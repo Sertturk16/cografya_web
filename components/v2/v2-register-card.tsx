@@ -14,6 +14,8 @@ import {
   PHONE_INPUT_MAX_LENGTH,
   buildRegisterPayload,
   isPasswordPolicyCompliant,
+  PASSWORD_MAX,
+  PASSWORD_MIN,
   missingRegisterConsents,
   type RegisterFormState,
   type UserType,
@@ -288,8 +290,8 @@ export function V2RegisterCard({
     };
   }, [selectedPlate]);
 
-  // Canonical password policy requirements (lib/auth/form-rules.ts PASSWORD_MIN = 6, ASCII letters)
-  const hasMinLength = password.length >= 6;
+  // Canonical password policy requirements (lib/auth/form-rules.ts, ASCII letters)
+  const hasMinLength = password.length >= PASSWORD_MIN;
   const hasLower = /[a-z]/.test(password);
   const hasUpper = /[A-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);
@@ -327,8 +329,7 @@ export function V2RegisterCard({
 
     // Canonical password policy validation
     if (!isPasswordPolicyCompliant(password)) {
-      errors.password =
-        "Şifren 6 ile 128 karakter arasında olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.";
+      errors.password = `Şifren ${PASSWORD_MIN} ile ${PASSWORD_MAX} karakter arasında olmalı; en az bir büyük harf, bir küçük harf ve bir rakam içermeli.`;
     }
 
     if (missingRegisterConsents({ termsAccepted, marketingConsent }).includes("termsAccepted")) {
@@ -744,7 +745,7 @@ export function V2RegisterCard({
                 id="v2-register-password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
-                placeholder="En az 6 karakter, büyük/küçük harf ve rakam..."
+                placeholder={`En az ${PASSWORD_MIN} karakter, büyük/küçük harf ve rakam...`}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 leftIcon={<Lock className="size-4 text-muted-foreground" />}
@@ -766,12 +767,12 @@ export function V2RegisterCard({
             <FieldError id="v2-error-password" message={fieldErrors.password} />
 
             {/* Dynamic Password Strength Indicators */}
-            <div className="grid grid-cols-4 gap-1 pt-1 text-[11px] text-muted-foreground">
+            <div className="grid grid-cols-2 gap-1 pt-1 text-[11px] text-muted-foreground sm:grid-cols-4">
               <span
                 className={`inline-flex items-center gap-0.5 ${hasMinLength ? "text-success-strong font-bold" : ""}`}
               >
-                <Check className={`size-3 ${hasMinLength ? "opacity-100" : "opacity-30"}`} /> 6+
-                karakter
+                <Check className={`size-3 ${hasMinLength ? "opacity-100" : "opacity-30"}`} />{" "}
+                {PASSWORD_MIN}+ karakter
               </span>
               <span
                 className={`inline-flex items-center gap-0.5 ${hasUpper ? "text-success-strong font-bold" : ""}`}

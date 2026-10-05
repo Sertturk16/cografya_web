@@ -123,9 +123,11 @@ describe("V2RegisterCard structural contract", () => {
     expect(source).not.toContain('href: "/profil"');
   });
 
-  it("enforces ASCII password policy and 6-char minimum requirement (CODE125-I1, FU125SEC-M2)", () => {
+  it("enforces ASCII password policy and the contract minimum from PASSWORD_MIN (CODE125-I1, FU125SEC-M2)", () => {
     expect(source).toMatch(/isPasswordPolicyCompliant\(password\)/);
-    expect(source).toContain("password.length >= 6");
+    expect(source).toContain("password.length >= PASSWORD_MIN");
+    // The number lives once, in lib/auth/form-rules.ts; a literal here drifted from it before.
+    expect(source).not.toMatch(/password\.length >= \d/);
     expect(source).toContain("/[a-z]/.test(password)");
     expect(source).toContain("/[A-Z]/.test(password)");
     expect(source).not.toContain("/[a-zğüşıöç]/");

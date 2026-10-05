@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { CheckCircle2, KeyRound } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { AUTH_ERROR_MESSAGE_KEYS } from "@/lib/auth/error-messages";
-import { isPasswordPolicyCompliant, PASSWORD_MAX } from "@/lib/auth/form-rules";
+import { isPasswordPolicyCompliant, PASSWORD_MAX, PASSWORD_MIN } from "@/lib/auth/form-rules";
 import { submitAuth } from "@/lib/auth/submit.client";
 import type { AuthBffCode } from "@/lib/auth/transport.server";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -156,7 +156,7 @@ export function V2PasswordResetConfirmCard() {
     if (resetToken.trim().length === 0) next.resetToken = t("fieldErrors.required");
     if (newPassword.length === 0) next.newPassword = t("fieldErrors.required");
     else if (!isPasswordPolicyCompliant(newPassword)) {
-      next.newPassword = t("fieldErrors.passwordPolicy");
+      next.newPassword = t("fieldErrors.passwordPolicy", { min: PASSWORD_MIN });
     }
     if (passwordConfirm.length === 0) next.passwordConfirm = t("fieldErrors.required");
     else if (passwordConfirm !== newPassword) {
@@ -285,7 +285,7 @@ export function V2PasswordResetConfirmCard() {
         autoComplete="new-password"
         required
         maxLength={PASSWORD_MAX}
-        helper={t("hints.newPassword")}
+        helper={t("hints.newPassword", { min: PASSWORD_MIN })}
         value={newPassword}
         onChange={(event) => setNewPassword(event.target.value)}
         error={fieldErrors.newPassword}
