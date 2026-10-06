@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchCombobox } from "@/components/site-search/use-search-combobox";
 import { useSearchIndex } from "@/components/site-search/use-search-index";
 import { KIND_LABEL_KEY } from "@/lib/search/kind-label";
 import { searchPrepared } from "@/lib/search/match";
@@ -79,13 +80,17 @@ function KindIcon({ kind }: { kind: SearchEntityKind }) {
  * `/api/search-index/{locale}` through the same loader as the header, on the reader's first
  * focus rather than on mount, and ranks with the same `searchPrepared`. The shortcuts moved
  * into the server index as tools and pages.
+ *
+ * ONE COMBOBOX BEHAVIOUR (T-168). The box is the header's ARIA combobox with a listbox of
+ * options, through the shared `useSearchCombobox`: the same keys, ids, active option and
+ * debounced result announcement. Only the markup is the hero's own (inline panel, kind icons
+ * and badges), and Escape is handled here because the hero has no dialog to own it.
  */
 export function V2Hero({ title, lede, stats }: V2HeroProps) {
   const t = useTranslations("Search");
   const locale = useLocale();
   const [query, setQuery] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
-  const [activeIndex, setActiveIndex] = React.useState(0);
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
   const { entries, loadFailed, incomplete, ensureIndex } = useSearchIndex(
     `/api/search-index/${locale}`,
@@ -101,12 +106,25 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
           }),
     [entries, query],
   );
+  const hasQuery = query.trim().length > 0;
   const panelState = searchPanelState({
     entryCount: entries === null ? null : entries.length,
     loadFailed,
     incomplete,
-    hasQuery: query.trim().length > 0,
+    hasQuery,
     hitCount: hits.length,
+  });
+  // Options exist only while the results panel shows; `aria-expanded` follows that.
+  const panelShown = isOpen && panelState !== "idle" && panelState !== "loading";
+  const combobox = useSearchCombobox({
+    open: panelShown,
+    hasQuery,
+    panelState,
+    optionCount: panelShown && panelState === "results" ? hits.length : 0,
+    onSelect: (index) => {
+      const hit = hits[index];
+      if (hit) handleNavigate(hit.path, hit.name);
+    },
   });
 
   // Close dropdown on outside click
@@ -131,27 +149,22 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (!isOpen && hits.length > 0) {
-        setIsOpen(true);
-        return;
-      }
-      setActiveIndex((prev) => (prev + 1) % (hits.length || 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setActiveIndex((prev) => (prev - 1 + hits.length) % (hits.length || 1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const target = hits[activeIndex] ?? hits[0];
-      if (target) {
-        handleNavigate(target.path, target.name);
-      } else if (query.trim()) {
-        // The panel already says why there is nothing to open; make sure it is showing.
-        setIsOpen(true);
-      }
-    } else if (e.key === "Escape") {
+    if (e.key === "Escape") {
       setIsOpen(false);
+      combobox.resetActive();
+      return;
+    }
+    // A closed panel opens on ArrowDown first, the way a native combobox does.
+    if (e.key === "ArrowDown" && !isOpen && hits.length > 0) {
+      e.preventDefault();
+      setIsOpen(true);
+      return;
+    }
+    if (combobox.handleKey(e)) return;
+    if (e.key === "Enter") {
+      // No option to open: the form's submit says why (or asks for a query) and shows the panel.
+      e.preventDefault();
+      if (hasQuery) setIsOpen(true);
     }
   };
 
@@ -225,6 +238,7 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
                 <Search className="size-5" />
               </div>
               <input
+                {...combobox.inputProps}
                 type="text"
                 autoComplete="off"
                 enterKeyHint="search"
@@ -235,7 +249,7 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setIsOpen(true);
-                  setActiveIndex(0);
+                  combobox.resetActive();
                   void ensureIndex();
                 }}
                 onFocus={() => {
@@ -244,7 +258,7 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
                   if (query.trim()) setIsOpen(true);
                 }}
                 onKeyDown={handleKeyDown}
-                className="h-14 bg-transparent text-foreground placeholder:text-muted-foreground/70 text-sm sm:text-base outline-none min-w-0 flex-1 pr-2 pl-1"
+                className="h-14 bg-transparent text-foreground placeholder:text-muted-foreground text-sm sm:text-base outline-none min-w-0 flex-1 pr-2 pl-1"
               />
               {query && (
                 <button
@@ -252,6 +266,7 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
                   onClick={() => {
                     setQuery("");
                     setIsOpen(false);
+                    combobox.resetActive();
                   }}
                   className="p-1.5 mr-2 text-muted-foreground hover:text-foreground cursor-pointer rounded-lg hover:bg-muted transition-colors"
                   aria-label={t("clearLabel")}
@@ -276,41 +291,52 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
           </form>
 
           {/* Suggestion panel. Nothing while the index is still loading: an empty "0 sonuç"
-              header would be a false answer for a query the index may well match. */}
-          {isOpen && panelState !== "idle" && panelState !== "loading" && (
+              header would be a false answer for a query the index may well match. The count row
+              sits OUTSIDE the listbox (a listbox owns only options); screen readers hear the
+              count from the status region below instead. */}
+          {panelShown && (
             <div className="absolute top-full left-0 right-0 mt-2 p-2 rounded-2xl shadow-2xl border border-border bg-card/95 backdrop-blur-md z-50 animate-in fade-in-50 zoom-in-95 duration-100 space-y-1 max-h-80 overflow-y-auto">
               {panelState === "results" ? (
                 <>
-                  <div className="flex items-center justify-between px-3 py-1.5 text-[11px] text-muted-foreground border-b border-border/60">
+                  <div
+                    aria-hidden="true"
+                    className="flex items-center justify-between px-3 py-1.5 text-[11px] text-muted-foreground border-b border-border/60"
+                  >
                     <span>{t("resultCount", { count: hits.length })}</span>
                     <span className="font-mono text-[10px]">{t("enterHint")}</span>
                   </div>
-                  {hits.map((hit, index) => (
-                    <button
-                      key={hit.path}
-                      type="button"
-                      onClick={() => handleNavigate(hit.path, hit.name)}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      className={`w-full flex items-center justify-between gap-2 p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
-                        activeIndex === index
-                          ? "bg-primary/10 text-primary-strong font-bold"
-                          : "hover:bg-muted text-foreground"
-                      }`}
-                    >
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <div className="size-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <KindIcon kind={hit.kind} />
-                        </div>
-                        <div className="min-w-0 font-bold text-xs">{hit.name}</div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        <Badge variant={KIND_BADGE[hit.kind]} size="sm">
-                          {t(KIND_LABEL_KEY[hit.kind])}
-                        </Badge>
-                        <ArrowRight className="size-3 text-muted-foreground" />
-                      </div>
-                    </button>
-                  ))}
+                  <ul {...combobox.listboxProps} aria-label={t("label")} className="space-y-1">
+                    {hits.map((hit, index) => (
+                      <li key={hit.path} role="presentation">
+                        <a
+                          {...combobox.optionProps(index)}
+                          href={hit.path}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleNavigate(hit.path, hit.name);
+                          }}
+                          className={`w-full flex items-center justify-between gap-2 p-2.5 rounded-xl text-left text-xs transition-colors cursor-pointer ${
+                            combobox.activeIndex === index
+                              ? "bg-primary/10 text-primary-strong font-bold"
+                              : "hover:bg-muted text-foreground"
+                          }`}
+                        >
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <div className="size-7 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                              <KindIcon kind={hit.kind} />
+                            </div>
+                            <div className="min-w-0 font-bold text-xs">{hit.name}</div>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            <Badge variant={KIND_BADGE[hit.kind]} size="sm">
+                              {t(KIND_LABEL_KEY[hit.kind])}
+                            </Badge>
+                            <ArrowRight className="size-3 text-muted-foreground" />
+                          </div>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
                 </>
               ) : (
                 <div className="p-4 text-center text-xs text-muted-foreground">
@@ -319,6 +345,10 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
               )}
             </div>
           )}
+
+          <div role="status" aria-live="polite" className="sr-only">
+            {combobox.announcement}
+          </div>
 
           {/* Quick Access Pills */}
           <div className="flex items-center justify-center gap-2 flex-wrap pt-3 text-xs">

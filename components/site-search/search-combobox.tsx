@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import {
   Dialog,
@@ -18,11 +10,11 @@ import {
   DialogPortal,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { nextActiveIndex } from "@/lib/search/active-option";
 import { focusReturnTarget } from "@/lib/search/focus-return";
 import { KIND_LABEL_KEY } from "@/lib/search/kind-label";
 import { searchPrepared } from "@/lib/search/match";
 import { searchPanelState } from "@/lib/search/panel-state";
+import { useSearchCombobox } from "./use-search-combobox";
 import { useSearchIndex } from "./use-search-index";
 
 /** How many hits the listbox shows before the "see the full list" row. */
@@ -95,13 +87,9 @@ interface SearchComboboxProps {
  *
  * ## a11y
  *
- * ARIA 1.2 combobox-with-listbox: the input owns `role="combobox"`, `aria-expanded`,
- * `aria-controls` and `aria-activedescendant`; the popup is a `role="listbox"` whose `<li>`
- * wrappers are `role="presentation"`, so the options are its OWNED elements — without that,
- * the intervening listitem breaks the chain and the "1 of 8" position announcements the
- * option role exists for never happen. Options are real `<a href>` carrying `role="option"`
- * and `tabIndex={-1}`: the role is what AT announces, the href keeps middle-click working,
- * and the negative tabindex preserves the combobox's single-tab-stop invariant.
+ * ARIA 1.2 combobox-with-listbox, from {@link useSearchCombobox}, which the homepage hero box
+ * shares (T-168): the keys, the ids, the active option and the debounced result announcement
+ * are one implementation for both boxes. See the hook for the attribute-level reasoning.
  *
  * The combobox lives inside a MODAL dialog (T-078): the repo's Base UI `Dialog`, so the focus
  * trap, Escape, outside press and focus return are the primitive's, not this file's. The
@@ -121,20 +109,12 @@ export function SearchCombobox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const { entries, loadFailed, incomplete, ensureIndex } = useSearchIndex(indexUrl);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [announcement, setAnnouncement] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
   const desktopTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileTriggerRef = useRef<HTMLButtonElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
   /** What opened the dialog: the pressed trigger, or whatever had focus when Ctrl/Cmd+K fired. */
   const openerRef = useRef<HTMLElement | null>(null);
-
-  const baseId = useId();
-  const inputId = `${baseId}-input`;
-  const listboxId = `${baseId}-listbox`;
-  const optionId = useCallback((index: number) => `${baseId}-option-${index}`, [baseId]);
 
   const resolvePath = useCallback(
     (rawPath: string) => {
@@ -171,56 +151,36 @@ export function SearchCombobox({
   });
   const indexUnavailable = panelState === "unavailable";
   const showNoResults = panelState === "noResults";
-  const isLoading = panelState === "loading";
 
-  // Announce on a debounce — WCAG 4.1.3 without narrating every keystroke. The whole decision
-  // lives inside the timeout, including the "say nothing" case: a synchronous setState in the
-  // effect body would cascade a render on every character typed. `isLoading` is what stops the
-  // region asserting "no results" for a query that does match, before the index arrives — a
-  // certainty right after every deploy, when the prerendered index is empty (review I3).
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!open || !hasQuery || isLoading) {
-        setAnnouncement("");
-        return;
-      }
-      // An unavailable index is ANNOUNCED, not silently swallowed: a reader who cannot see
-      // the inline notice still needs to know why their query produced nothing.
-      if (indexUnavailable) {
-        setAnnouncement(t("loadFailed"));
-        return;
-      }
-      setAnnouncement(
-        hits.length === 0 ? t("noResults") : t("resultCount", { count: hits.length }),
-      );
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [open, hasQuery, isLoading, indexUnavailable, hits.length, t]);
-
-  // Keep the active option visible: eight rows overflow the panel's max-height on a short
-  // viewport, where ArrowDown would otherwise move an off-screen highlight while
-  // `aria-activedescendant` pointed at something nobody can see (review M8).
-  useEffect(() => {
-    if (activeIndex < 0) return;
-    listRef.current
-      ?.querySelector(`#${CSS.escape(optionId(activeIndex))}`)
-      ?.scrollIntoView({ block: "nearest" });
-  }, [activeIndex, optionId]);
+  const combobox = useSearchCombobox({
+    open,
+    hasQuery,
+    panelState,
+    optionCount: hits.length,
+    onSelect: (index) => {
+      const hit = hits[index];
+      if (hit) window.location.assign(resolvePath(hit.path));
+    },
+  });
+  const { activeIndex, resetActive } = combobox;
 
   const close = useCallback(() => {
     setOpen(false);
-    setActiveIndex(-1);
-  }, []);
+    resetActive();
+  }, [resetActive]);
 
   /**
    * The ONLY way the query changes. The active option resets with it, here in the event
    * handler rather than in an effect watching `query`, so the highlight can never survive
    * into a different result set.
    */
-  const updateQuery = useCallback((next: string) => {
-    setQuery(next);
-    setActiveIndex(-1);
-  }, []);
+  const updateQuery = useCallback(
+    (next: string) => {
+      setQuery(next);
+      resetActive();
+    },
+    [resetActive],
+  );
 
   /**
    * Opens the dialog and remembers what opened it. The caret is placed by the popup's
@@ -267,36 +227,10 @@ export function SearchCombobox({
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
   }, [enableGlobalShortcut, open, openSearch, close]);
 
+  // Arrows, Home/End and Enter are the shared combobox keys. Tab and Escape are not handled
+  // here: the modal dialog keeps Tab inside the panel and owns Escape.
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    // Tab is deliberately NOT handled here: the modal dialog keeps it inside the panel.
-    if (hits.length === 0) return;
-
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((current) =>
-        nextActiveIndex(current, hits.length, event.key === "ArrowDown" ? 1 : -1),
-      );
-      return;
-    }
-    if (event.key === "Home") {
-      event.preventDefault();
-      setActiveIndex(0);
-      return;
-    }
-    if (event.key === "End") {
-      event.preventDefault();
-      setActiveIndex(hits.length - 1);
-      return;
-    }
-    if (event.key === "Enter") {
-      // With no explicit selection the first hit is the intent — typing a province name and
-      // pressing Enter used to do nothing at all (review M9).
-      const hit = hits[activeIndex >= 0 ? activeIndex : 0];
-      if (hit) {
-        event.preventDefault();
-        window.location.assign(resolvePath(hit.path));
-      }
-    }
+    combobox.handleKey(event);
   };
 
   // Pre-hydration and no-JS: a real link to the alphabetical province index. Both anchors
@@ -383,7 +317,7 @@ export function SearchCombobox({
             finalFocus={returnFocus}
             className="fixed top-[12vh] left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2rem)] max-w-lg bg-card border border-border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 flex flex-col max-h-[75vh]"
           >
-            <label className="sr-only" htmlFor={inputId}>
+            <label className="sr-only" htmlFor={combobox.inputProps.id}>
               {t("label")}
             </label>
             {/* Tighter below `sm` so the placeholder, which names every kind of result, fits
@@ -392,20 +326,15 @@ export function SearchCombobox({
               <SearchIcon />
               <input
                 ref={inputRef}
-                id={inputId}
+                {...combobox.inputProps}
                 /* No `outline-none`: this input's row draws no ring of its own, so
                    suppressing here would leave the command dialog's only control with no
                    visible focus once T-053 made suppression work. Site default applies. */
                 className="w-full bg-transparent text-sm font-medium text-foreground placeholder:text-muted-foreground border-none"
                 type="text"
-                role="combobox"
                 autoComplete="off"
                 placeholder={t("placeholder")}
                 value={query}
-                aria-expanded={hits.length > 0}
-                aria-controls={listboxId}
-                aria-autocomplete="list"
-                aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
                 onChange={(event) => updateQuery(event.target.value)}
                 onKeyDown={onKeyDown}
               />
@@ -421,9 +350,7 @@ export function SearchCombobox({
 
             {hits.length > 0 ? (
               <ul
-                ref={listRef}
-                id={listboxId}
-                role="listbox"
+                {...combobox.listboxProps}
                 aria-label={t("label")}
                 data-combobox-items="true"
                 className="p-2 overflow-y-auto space-y-1 flex-1 max-h-80"
@@ -433,17 +360,13 @@ export function SearchCombobox({
                   return (
                     <li key={hit.path} role="presentation">
                       <a
-                        id={optionId(index)}
-                        role="option"
-                        tabIndex={-1}
-                        aria-selected={index === activeIndex}
+                        {...combobox.optionProps(index)}
                         href={resolvedPath}
                         className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                           index === activeIndex
                             ? "bg-primary/10 text-primary"
                             : "text-foreground hover:bg-muted"
                         }`}
-                        onMouseEnter={() => setActiveIndex(index)}
                         onClick={(e) => {
                           e.preventDefault();
                           window.location.assign(resolvedPath);
@@ -474,7 +397,7 @@ export function SearchCombobox({
             </div>
 
             <div role="status" aria-live="polite" className="sr-only">
-              {announcement}
+              {combobox.announcement}
             </div>
           </DialogPopup>
         </DialogPortal>
