@@ -68,6 +68,8 @@ describe("setAuthModalMode has exactly one owner", () => {
   });
 
   it("the scan reaches a broad slice of the surface -- anti-vacuity", () => {
-    expect(sourcesNaming("requestAuth").length).toBeGreaterThan(5);
+    // Login-gated presses reach `requestAuth` through the session gate (T-162, T-165), so the
+    // direct callers shrink as presses move behind it; the gate module itself is one of them.
+    expect(sourcesNaming("requestAuth").length).toBeGreaterThanOrEqual(5);
   });
 });

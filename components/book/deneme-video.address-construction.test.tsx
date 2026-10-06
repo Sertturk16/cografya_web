@@ -134,7 +134,7 @@ function renderAnonymousCover(): string {
       sessionReadyAnnounceText=""
       watchOnYoutubeLabel="YouTube'da izle"
       watchOnYoutubeAriaLabel="YouTube'da izle"
-      watchOnYoutubeLoading={false}
+      pressPending={false}
       watchLoadingLabel="Yükleniyor"
       watchLoadingAriaLabel="Yükleniyor"
     />,

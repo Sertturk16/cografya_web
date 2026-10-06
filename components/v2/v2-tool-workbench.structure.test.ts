@@ -179,15 +179,20 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       );
     });
 
-    it("guards handleSaveMeasurement with the per-type gate, not an empty-list check", () => {
-      const handler = sliceFrom("const handleSaveMeasurement = ", "\n  };");
-      expect(handler).toContain("if (!canSave) return;");
-      expect(handler).not.toContain("points.length === 0");
+    it("guards the press and the save with the per-type gate, not an empty-list check", () => {
+      // T-165: the press goes through the session gate, and the save re-reads the gate when the
+      // session settles, since the points can change while a press waits.
+      const press = sliceFrom("const handleSaveMeasurement = ", "\n  };");
+      expect(press).toContain("if (!canSave || saveInFlightRef.current) return;");
+      expect(press).toContain("saveGate.run();");
+      const save = sliceFrom("const saveMeasurementNow = ", "\n  };");
+      expect(save).toContain("if (!canSave) return;");
+      expect(save + press).not.toContain("points.length === 0");
     });
 
     it("disables the save button on the same gate and points it at the reason", () => {
       const button = sliceFrom("onClick={handleSaveMeasurement}", ">");
-      expect(button).toContain("disabled={!canSave}");
+      expect(button).toContain("disabled={!canSave || saveGate.waiting}");
       expect(button).toContain("aria-describedby={canSave ? undefined : saveHintId}");
       expect(code).toContain('tMeasurements("minPointsHint", { count: minPointsToSave })');
     });
@@ -258,7 +263,8 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       return code.slice(from, to);
     }
 
-    const handler = (): string => sliceFrom("const handleSaveMeasurement = ", "\n  };");
+    // The save itself; the press (`handleSaveMeasurement`) reaches it through the session gate.
+    const handler = (): string => sliceFrom("const saveMeasurementNow = ", "\n  };");
 
     it("records a failed save, including a thrown one, instead of dropping it", () => {
       const body = handler();
@@ -309,15 +315,13 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     });
 
     it("takes every save-row string from the Measurements catalogue", () => {
-      for (const key of [
-        "saveLabel",
-        "savedLabel",
-        "savingLabel",
-        "saveSuccess",
-        "signInHint",
-        "titleLabel",
-      ]) {
+      for (const key of ["saveSuccess", "signInHint", "titleLabel", "checkingSessionLabel"]) {
         expect(code, key).toContain(`tMeasurements("${key}")`);
+      }
+      // The button text: one of three keys, picked by `measurementSaveLabelKey` (T-167).
+      expect(code.replace(/\s+/g, " ")).toContain("{tMeasurements( measurementSaveLabelKey({");
+      for (const key of ["saveLabel", "savedLabel", "savingLabel"]) {
+        expect(code, key).toContain(`return "${key}";`);
       }
       for (const literal of [
         '"Kaydet"',

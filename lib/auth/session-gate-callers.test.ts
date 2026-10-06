@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { stripComments } from "@/lib/test-support/strip-comments";
 
 /**
- * T-162: the three login-gated presses go through the shared session gate
+ * T-162 (T-165 added the measurement save): the login-gated presses go through the shared session gate
  * (`useSessionGate` / `gateOnAuthSession` in `use-session.client.ts`), which waits while the
  * session is `"checking"`. A direct `requestAuth(` call in these files is the old
  * `authState !== "authenticated"` branch coming back: it opens the dialog for a signed-in reader
@@ -13,6 +13,7 @@ const GATED = [
   "components/v2/v2-game-screen.tsx",
   "components/v2/v2-favorite-button.tsx",
   "components/book/video-bench.tsx",
+  "components/v2/v2-tool-workbench.tsx",
 ] as const;
 
 describe("login-gated presses use the session gate", () => {

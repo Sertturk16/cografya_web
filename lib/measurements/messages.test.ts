@@ -40,6 +40,8 @@ const MEASUREMENTS_KEYS = [
   "minPointsHint",
   "maxPointsHint",
   "savingLabel",
+  // T-167: the save spinner while a press waits for the session check.
+  "checkingSessionLabel",
   "saveSuccess",
   "signInHint",
   // T-080: an expired session during a save or delete (rich text, `<link>` to the login page),

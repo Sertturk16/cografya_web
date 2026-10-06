@@ -35,6 +35,8 @@ const FAVORITES_KEYS = [
   "addLabel",
   "addedLabel",
   "savingLabel",
+  // T-167: the spinner while a press waits for the session check, before any save starts.
+  "checkingSessionLabel",
   "sessionExpired",
 ] as const;
 

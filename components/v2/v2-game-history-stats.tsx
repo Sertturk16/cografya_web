@@ -110,8 +110,9 @@ export function V2GameHistoryStats() {
         ) : null}
       </div>
 
-      {/* Guest Lock Banner */}
-      {authState !== "authenticated" && (
+      {/* Guest lock banner: a guest only. While the session check runs nothing shows here, so a
+          signed-in reader is never told to sign in (T-165). */}
+      {authState === "anonymous" && (
         <div className="p-4 rounded-2xl bg-muted/40 border border-border flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="size-10 rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground">
