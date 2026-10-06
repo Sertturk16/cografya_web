@@ -236,16 +236,18 @@ Details and the open dark-mode bugs: `docs/design.md`.
   error that names no file of yours.** `docker restart cografya-web-dev` regenerates it. The
   signature to recognise: every route fails, including ones your change cannot reach, and the
   same byte offset repeats in each error.
-  **The restart is not the whole repair.** Pages rendered during the broken window are written
-  to the ISR route cache and then served from it for their full `revalidate` window — so
-  `turkiye/bolge/[slug]` and `dunya/kita/[slug]`, both `revalidate = 86400`, kept returning 404
-  for a day after the server itself was healthy, while `turkiye/[slug]` (`revalidate = 120`)
-  had already healed itself. The tell is a 404 in ~30 ms with no API call, on a route whose
-  endpoint answers 200 from inside the container. `rm -rf /app/.next/cache` before the restart;
-  clearing only `fetch-cache` is not enough, because the poisoned artefact is the rendered page.
+  **Deep dynamic routes can 404 after a dev-server self-restart.** Next restarts the dev process
+  when its heap nears the limit (log: `approaching the used memory threshold`) and rebuilds the
+  route table from the watcher's first scan event; Next 16's 5 ms `aggregateTimeout` lets a
+  stalled scan drop the deepest folders (vercel/next.js#96139). The depth-5 pages —
+  `turkiye/bolge/[slug]`, `dunya/kita/[slug]`, `oyun/bolge-bolge-il/[bolge]` — then serve Next's
+  built-in not-found page, with no `generate-params:` in the request's log line, until a file
+  under `app/` changes. Repair: `touch` any `page.tsx` under `app/` (or
+  `docker restart cografya-web-dev`). Not a cache problem: deleting `.next` caches does not help,
+  and polling would not either, since file events do reach the container. Production builds read
+  the routes from disk and are unaffected.
   Turbopack dev keeps the fetch Data Cache at `/app/.next/dev/cache/fetch-cache` inside the
-  container; purge that path (not `/app/.next/cache`) to see a Suspense fallback with the API
-  paused.
+  container; purge that path to see a Suspense fallback with the API paused.
 
 - `NEXT_PUBLIC_SITE_URL` is a Docker build `ARG` and is inlined into the client bundle at build
   (T-069: a runtime-only value left the `localhost` default in shipped JavaScript); the

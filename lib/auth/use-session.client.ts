@@ -261,13 +261,12 @@ export function useSessionGate(
 }
 
 /**
- * `useAuthSession()` — the shared session-check hook. **THIRTEEN consumers** today
- * (`git grep -l "useAuthSession(" -- '*.ts' '*.tsx'`, tests and this file excluded): three under
- * `components/book/` and ten under `components/v2/`. All of them read the SAME store through this
- * hook, so a successful modal login propagates to every one without a page reload
- * (uyelik-auth-redesign plan §5.4/K1).
+ * `useAuthSession()` — the shared session-check hook. Its consumers are whatever
+ * `git grep -l "useAuthSession(" -- '*.ts' '*.tsx'` lists (tests and this file excluded). All of
+ * them read the SAME store through this hook, so a successful modal login propagates to every one
+ * without a page reload (uyelik-auth-redesign plan §5.4/K1).
  *
- * A COUNT AND THE COMMAND THAT PRODUCES IT, not a list. The list this replaces had been
+ * THE COMMAND, not a list or a count (a count went stale the same way). The list this replaces had been
  * half-updated across two rewrites and named three files that no longer existed
  * (`login-form.tsx`, `favorite-button.tsx`, `game-round-save.tsx` — V1, deleted in T-032 PR4)
  * while missing most of the ones that did. A hand-maintained roster in a docblock decays exactly
