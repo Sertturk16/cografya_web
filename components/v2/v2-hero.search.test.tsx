@@ -66,7 +66,7 @@ describe("the hero's suggestion panel (source)", () => {
   it("renders the hits as options owned by a listbox", () => {
     expect(flat).toContain("<ul {...combobox.listboxProps}");
     expect(flat).toContain('<li key={hit.path} role="presentation">');
-    expect(flat).toContain("{...combobox.optionProps(index)}");
+    expect(flat).toContain("{...combobox.optionProps(index, hit)}");
     expect(flat).not.toMatch(/<button[^>]*onClick=\{\(\) => handleNavigate/);
   });
 

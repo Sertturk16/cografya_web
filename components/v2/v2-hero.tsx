@@ -309,7 +309,7 @@ export function V2Hero({ title, lede, stats }: V2HeroProps) {
                     {hits.map((hit, index) => (
                       <li key={hit.path} role="presentation">
                         <a
-                          {...combobox.optionProps(index)}
+                          {...combobox.optionProps(index, hit)}
                           href={hit.path}
                           onClick={(e) => {
                             e.preventDefault();

@@ -360,7 +360,7 @@ export function SearchCombobox({
                   return (
                     <li key={hit.path} role="presentation">
                       <a
-                        {...combobox.optionProps(index)}
+                        {...combobox.optionProps(index, hit)}
                         href={resolvedPath}
                         className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
                           index === activeIndex
