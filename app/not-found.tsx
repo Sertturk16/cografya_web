@@ -2,15 +2,19 @@ import "./globals.css";
 import { ENGLISH_ENABLED } from "@/i18n/routing";
 
 /**
- * ROOT 404 — the boundary for a URL that matches no route at all.
+ * ROOT 404 — two jobs, one page.
  *
- * Next resolves an unmatched URL against the ROOT not-found only; a nested
- * `app/[locale]/(site)/not-found.tsx` fires exclusively when `notFound()` is thrown from inside a
- * MATCHED segment. Without this file such a URL falls to Next's own unstyled, unlocalized
- * default page — the defect `app/[locale]/(site)/araclar/[...rest]/page.tsx` was added to work
- * around for one subtree. This file replaces that pattern for every subtree at once.
+ * 1. A URL that matches no route at all. `app/global-not-found.tsx` re-exports this page and
+ *    Next renders it as the whole document (`experimental.globalNotFound`). A nested
+ *    `app/[locale]/(site)/not-found.tsx` fires only when `notFound()` is thrown from inside a
+ *    MATCHED segment, so without a root 404 such a URL falls to Next's unstyled, unlocalized
+ *    default page.
+ * 2. The boundary for a `notFound()` thrown from a segment with no nearer `not-found.tsx`
+ *    (`(play)`, `design-system`). Here it replaces `app/[locale]/layout.tsx`.
  *
- * It renders outside `app/[locale]/layout.tsx`, so it supplies its own `<html>`/`<body>`.
+ * Either way it renders outside `app/[locale]/layout.tsx`, so it supplies its own
+ * `<html>`/`<body>`. Never serve it as a plain root `not-found` for unmatched URLs: with no root
+ * layout Next would wrap it in a built-in `<html><body>` and nest this `<html>` inside that one.
  *
  * DELIBERATELY BILINGUAL (while `ENGLISH_ENABLED` is on) AND STATIC. Resolving a locale here means a request read, which in
  * this SSG setup flips the statically-prerendered route that threw `notFound()` from static

@@ -6,8 +6,10 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
 
 - No root `app/layout.tsx`. `app/[locale]/layout.tsx` is the root layout and is now only the
   document shell: `<html>`/`<body>`, `ThemeProvider`, `NextIntlClientProvider`, `<Toaster />`.
-  Consequence: a URL that matches no segment falls to Next's unstyled 404, so `app/not-found.tsx`
-  exists for that case.
+  Consequence: a URL that matches no segment falls to Next's unstyled 404, so
+  `app/global-not-found.tsx` (behind `experimental.globalNotFound`) renders `app/not-found.tsx`
+  as a whole document. Without the flag Next nests that page's `<html>` inside a built-in one
+  (invalid markup, a hydration mismatch on every unknown URL).
 - **Three route groups, and they are load-bearing.** `(site)` holds the reading surfaces and its
   layout owns the chrome — skip link, `V2Header`, ONE `<main id="main-content">`, `V2Footer`.
   `(play)` holds the fullscreen game screens and gives them the bare minimum; `(embed)` is
