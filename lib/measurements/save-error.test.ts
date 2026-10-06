@@ -89,14 +89,14 @@ describe("deleteErrorCodeFromResponse", () => {
 });
 
 describe("SAVE_ERROR_MESSAGE_KEY / DELETE_ERROR_MESSAGE_KEY", () => {
-  it("sends each kind to its own copy: quota, re-login, or retry", () => {
+  // T-112: an expired session has no copy. The workbench opens the auth dialog instead and
+  // repeats the save or delete once the reader signs in again.
+  it("sends each shown kind to its own copy: quota or retry; an expired session has none", () => {
     expect(SAVE_ERROR_MESSAGE_KEY).toEqual({
-      "session-expired": "sessionExpired",
       "quota-exceeded": "saveQuotaError",
       failed: "saveError",
     });
     expect(DELETE_ERROR_MESSAGE_KEY).toEqual({
-      "session-expired": "sessionExpired",
       failed: "deleteError",
     });
   });
@@ -111,12 +111,6 @@ describe("SAVE_ERROR_MESSAGE_KEY / DELETE_ERROR_MESSAGE_KEY", () => {
       const value = (catalogue as Record<string, unknown>)[key];
       expect(typeof value).toBe("string");
       expect((value as string).trim().length).toBeGreaterThan(0);
-    }
-  });
-
-  it("the session-expired copy carries the <link> the workbench fills with the login route", () => {
-    for (const catalogue of [trMessages.Measurements, enMessages.Measurements]) {
-      expect(catalogue.sessionExpired).toMatch(/<link>[^<]+<\/link>/);
     }
   });
 });

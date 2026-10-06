@@ -5,6 +5,7 @@ import {
   type AuthSessionState,
   createAuthSessionStore,
   gateOnAuthSession,
+  signInAgain,
 } from "./use-session.client";
 
 /**
@@ -348,5 +349,39 @@ describe("gateOnAuthSession", () => {
     await expect(outcome).resolves.toBe("cancelled");
     expect(requestAuth).not.toHaveBeenCalled();
     expect(onAuthenticated).not.toHaveBeenCalled();
+  });
+});
+
+describe("signInAgain", () => {
+  // T-112: a request sent as a signed-in reader came back 401. The session is gone, so the store
+  // must say so BEFORE the dialog opens: the dialog resolves any open request at once while the
+  // store still says "authenticated" (its T-162 safety net), which would close it unseen and
+  // resume the failed action into another 401.
+  it("moves the session to anonymous before it opens the dialog, and returns the request id", () => {
+    vi.stubGlobal("document", { cookie: "cg_has_session=1" });
+    const store = createAuthSessionStore();
+    store.set("authenticated");
+    const seenAtOpen: AuthSessionState[] = [];
+    const requestAuth = vi.fn((intent: AuthIntent) => {
+      seenAtOpen.push(store.getSnapshot());
+      return `request-${intent}`;
+    });
+
+    const requestId = signInAgain("measurement", { store, requestAuth });
+
+    expect(requestId).toBe("request-measurement");
+    expect(requestAuth).toHaveBeenCalledTimes(1);
+    expect(requestAuth).toHaveBeenCalledWith("measurement");
+    expect(seenAtOpen).toEqual(["anonymous"]);
+    expect(store.getSnapshot()).toBe("anonymous");
+  });
+
+  it("clears the session flag, so the next page load does not start as a member", () => {
+    const doc = { cookie: "cg_has_session=1" };
+    vi.stubGlobal("document", doc);
+    const store = createAuthSessionStore();
+    store.set("authenticated");
+    signInAgain("measurement", { store, requestAuth: () => "request" });
+    expect(doc.cookie).toMatch(/^cg_has_session=;.*max-age=0/);
   });
 });

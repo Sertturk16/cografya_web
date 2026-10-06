@@ -34,16 +34,19 @@ export function deleteErrorCodeFromResponse(
   return mutationErrorCodeFromResponse(status, body);
 }
 
-/** The `Measurements` message key for each save error kind. `sessionExpired` is rich text: it
- *  carries a `<link>` to the login page. */
+/** The save failures the workbench shows as a line of copy. An expired session is not one
+ *  (T-112): it opens the auth dialog and the save is repeated after sign-in. */
+export type ShownSaveErrorCode = Exclude<SaveMeasurementErrorCode, "session-expired">;
+/** The delete failures the workbench shows as a line of copy; see {@link ShownSaveErrorCode}. */
+export type ShownDeleteErrorCode = Exclude<DeleteMeasurementErrorCode, "session-expired">;
+
+/** The `Measurements` message key for each shown save error kind. */
 export const SAVE_ERROR_MESSAGE_KEY = {
-  "session-expired": "sessionExpired",
   "quota-exceeded": "saveQuotaError",
   failed: "saveError",
-} as const satisfies Record<SaveMeasurementErrorCode, string>;
+} as const satisfies Record<ShownSaveErrorCode, string>;
 
-/** The `Measurements` message key for each delete error kind. */
+/** The `Measurements` message key for each shown delete error kind. */
 export const DELETE_ERROR_MESSAGE_KEY = {
-  "session-expired": "sessionExpired",
   failed: "deleteError",
-} as const satisfies Record<DeleteMeasurementErrorCode, string>;
+} as const satisfies Record<ShownDeleteErrorCode, string>;
