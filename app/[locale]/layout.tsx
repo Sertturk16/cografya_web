@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
+import { pickClientMessages } from "@/lib/i18n/client-messages";
 import { fraunces, nunitoSans } from "@/lib/fonts";
 import { getSiteUrl, siteConfig } from "@/lib/seo/site";
 import { Toaster } from "@/components/ui/sonner";
@@ -72,10 +73,10 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     >
       <body>
         <ThemeProvider>
-          {/* Supplies locale + messages to client components (e.g. the locale
-            switcher). v4 auto-inherits the request config; the message catalogue
-            is small, so it is not scoped further yet. */}
-          <NextIntlClientProvider>
+          {/* Supplies locale + messages to client components. Only the namespaces client
+            components read (`lib/i18n/client-messages.ts`): without `messages` next-intl
+            serialises the whole catalogue into every page's RSC payload. */}
+          <NextIntlClientProvider messages={pickClientMessages(await getMessages())}>
             {/* T-032 PR3: the document shell only. Header, footer, the skip link and the
               single `<main>` moved into `(site)/layout.tsx`, so a reading page cannot ship
               without them and the three fullscreen play screens opt out by living in a

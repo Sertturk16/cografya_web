@@ -66,6 +66,10 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   of which says `v2`. `type AppPathname` derives from it. English segments are `/turkiye/...`, not
   `/turkey/...` — the table's own recorded decision, which the V2 entries had contradicted.
 - `i18n/request.ts` pins `timeZone: "UTC"` (the API publishes instants in UTC).
+- Client components get only `CLIENT_MESSAGE_NAMESPACES` (`lib/i18n/client-messages.ts`, picked
+  in the locale layout's `NextIntlClientProvider`), not the whole catalogue. A new client
+  `useTranslations("X")` needs `X` added there; `client-messages.test.ts` walks the client import
+  closure and fails on a missing or stale entry, or on `useMessages`/computed namespaces.
 - `i18n/navigation.ts` is the only source of `Link`/`redirect`/`getPathname`.
 - `proxy.ts` (Next 16 name for middleware) wraps `createMiddleware(routing)`; the matcher
   excludes `api`, `_next`, files with extensions and metadata-image leaf segments.

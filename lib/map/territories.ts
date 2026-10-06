@@ -11,12 +11,12 @@
  * here: hand-authored, typed, server-only, and read by `WorldMapSection` exactly like the
  * generated shape table next to it.
  *
- * It is deliberately NOT in `messages/{tr,en}.json` either. `NextIntlClientProvider` in the
- * locale layout inherits the WHOLE catalogue and serialises it into the client payload of
- * every page, so 43 territory labels there would ship on the home page, the game and every
- * province page. This module is imported by a server component only: its strings reach the
- * browser once, as the `data-*` of the `/dunya` map, and nowhere else. UI chrome (the stat
- * labels) stays in the message catalogue where it belongs.
+ * It is deliberately NOT in `messages/{tr,en}.json` either. When this was written,
+ * `NextIntlClientProvider` serialised the WHOLE catalogue into every page's client payload, so
+ * 43 territory labels there would have shipped on every page (it now picks the client
+ * namespaces, `lib/i18n/client-messages.ts`). This module is imported by a server component
+ * only: its strings reach the browser once, as the `data-*` of the `/dunya` map, and nowhere
+ * else. UI chrome (the stat labels) stays in the message catalogue where it belongs.
  *
  * ## Content authority — do not edit the copy here
  *
