@@ -1501,6 +1501,23 @@ export interface components {
              */
             updatedAt: string;
         };
+        ApiErrorDto: {
+            /**
+             * @description HTTP status code, repeated in the body by the framework default error shape.
+             * @example 404
+             */
+            statusCode: number;
+            /**
+             * @description A single message, or one message per failed field when request validation rejects several at once.
+             * @example Not Found
+             */
+            message: string | string[];
+            /**
+             * @description The status reason phrase. Present only when the exception was raised with an explicit message; an argument-less `NotFoundException` omits this key entirely.
+             * @example Not Found
+             */
+            error?: string;
+        };
         CountryListItemDto: {
             /**
              * @description ISO 3166-1 alpha-2 kodu (stable, unique).
@@ -3455,23 +3472,6 @@ export interface components {
              */
             marketingConsent: boolean;
         };
-        ApiErrorDto: {
-            /**
-             * @description HTTP status code, repeated in the body by the framework default error shape.
-             * @example 404
-             */
-            statusCode: number;
-            /**
-             * @description A single message, or one message per failed field when request validation rejects several at once.
-             * @example Not Found
-             */
-            message: string | string[];
-            /**
-             * @description The status reason phrase. Present only when the exception was raised with an explicit message; an argument-less `NotFoundException` omits this key entirely.
-             * @example Not Found
-             */
-            error?: string;
-        };
         VerifyEmailRequestDto: {
             /**
              * Format: email
@@ -4181,12 +4181,14 @@ export interface operations {
                     "application/json": components["schemas"]["ProvinceDetailDto"];
                 };
             };
-            /** @description No province matches the given slug. */
+            /** @description errors.province.notFound: no province matches the given slug. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4248,12 +4250,14 @@ export interface operations {
                     "application/json": components["schemas"]["CountryDetailDto"];
                 };
             };
-            /** @description No country matches the given slug. */
+            /** @description errors.country.notFound: no country matches the given slug. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4296,12 +4300,14 @@ export interface operations {
                     "application/json": components["schemas"]["RegionDetailDto"];
                 };
             };
-            /** @description No region matches the given slug. */
+            /** @description errors.region.notFound: no region matches the given slug. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4360,12 +4366,14 @@ export interface operations {
                     "application/json": components["schemas"]["MarineOverviewDto"];
                 };
             };
-            /** @description The marine feature is not enabled on this deployment. */
+            /** @description errors.marine.notFound: the marine feature is not enabled on this deployment. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4394,14 +4402,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
-            /** @description No marine point matches the slug, or the marine feature is disabled. */
+            /** @description errors.marine.notFound: no marine point matches the slug, or the marine feature is disabled. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4430,14 +4442,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
-            /** @description The province has no marine reference point (inland), or the marine feature is disabled. */
+            /** @description errors.marine.notFound: the province has no marine reference point (inland), or the marine feature is disabled. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4504,14 +4520,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
-            /** @description No province carries this plate code. */
+            /** @description errors.airQuality.provinceNotFound: no province carries this plate code. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4542,7 +4562,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4571,14 +4593,18 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
-            /** @description No book matches the given slug. */
+            /** @description errors.book.notFound: no book matches the given slug. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4610,12 +4636,14 @@ export interface operations {
                     "application/json": components["schemas"]["EarthquakeListDto"];
                 };
             };
-            /** @description A query parameter is out of range, malformed, or not recognised — unknown parameters are rejected rather than ignored. Also returned when fromUtc is later than toUtc, when either omits its timezone, or when the window spans more than 366 days. */
+            /** @description A query parameter is out of range, malformed, or not recognised — unknown parameters are rejected rather than ignored; or either of fromUtc/toUtc omits its timezone. Also errors.earthquake.windowReversed (fromUtc is later than toUtc) and errors.earthquake.windowTooLong (the window spans more than 366 days). */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4669,19 +4697,23 @@ export interface operations {
                     "application/json": components["schemas"]["EarthquakeListDto"];
                 };
             };
-            /** @description plateCode is not exactly two digits, or a query parameter is out of range, malformed or not recognised. */
+            /** @description plateCode is not exactly two digits, or a query parameter is out of range, malformed or not recognised; or errors.earthquake.windowReversed / errors.earthquake.windowTooLong as on the hub list. */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
-            /** @description No province carries this plate code. */
+            /** @description errors.earthquake.provinceNotFound: no province carries this plate code. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4711,26 +4743,32 @@ export interface operations {
                     "application/json": components["schemas"]["ElevationProfileDto"];
                 };
             };
-            /** @description A coordinate is outside the Türkiye frame, missing or malformed; a query parameter is not recognised (unknown parameters are rejected, not ignored); or the two endpoints collapse to the same point once rounded. */
+            /** @description A coordinate is outside the Türkiye frame, missing or malformed; a query parameter is not recognised (unknown parameters are rejected, not ignored); or errors.elevation.endpointsCoincide: the two endpoints collapse to the same point once rounded. */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
-            /** @description The elevation feature is not enabled on this deployment. */
+            /** @description errors.elevation.notFound: the elevation feature is not enabled on this deployment. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
             /** @description The per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
             429: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4759,7 +4797,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
@@ -4814,6 +4854,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Accepted, no body; the same answer whether or not the address already existed. */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -4893,6 +4934,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Accepted, no body; the same answer for any address. */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -5003,6 +5045,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Logged out, or the token was not recognised. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -5032,6 +5075,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Accepted, no body; the same answer for any address. */
             202: {
                 headers: {
                     [name: string]: unknown;
@@ -5061,6 +5105,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description Password replaced; every session was revoked. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -5091,6 +5136,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description The token is still usable. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -5318,6 +5364,7 @@ export interface operations {
             };
         };
         responses: {
+            /** @description The account and every row tied to it were deleted. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -5568,21 +5615,27 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
-            /** @description No cover is available for this id, for any reason. */
+            /** @description errors.videoCover.notFound: no cover is available for this id, for any reason. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
             /** @description The per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
             429: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ApiErrorDto"];
+                };
             };
         };
     };
