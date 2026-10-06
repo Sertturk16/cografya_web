@@ -479,7 +479,6 @@
     "checkingSessionLabel": "Checking your session",
     "saveSuccess": "Measurement saved to your cloud archive.",
     "signInHint": "Sign in to save your measurements to the cloud archive.",
-    "sessionExpired": "Your session has expired. <link>Sign in again</link> to continue.",
     "listRetry": "Try again",
     "listLoadHint": "Click to load",
     "untitled": "Untitled measurement",

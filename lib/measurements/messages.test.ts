@@ -44,9 +44,8 @@ const MEASUREMENTS_KEYS = [
   "checkingSessionLabel",
   "saveSuccess",
   "signInHint",
-  // T-080: an expired session during a save or delete (rich text, `<link>` to the login page),
-  // and the retry action of a failed list load.
-  "sessionExpired",
+  // T-080: the retry action of a failed list load. (An expired session during a save or delete
+  // has no copy since T-112: the workbench opens the auth dialog instead.)
   "listRetry",
   // T-081: the workbench's saved-list row, moved out of inline Turkish.
   "listLoadHint",

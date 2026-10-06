@@ -211,6 +211,28 @@ export function gateOnAuthSession(
     .then((settled) => (options.isCancelled?.() === true ? "cancelled" : dispatch(settled)));
 }
 
+export interface SignInAgainDeps {
+  readonly store: Pick<AuthSessionStore, "set">;
+  readonly requestAuth: (intent: AuthIntent) => string;
+}
+
+/**
+ * A request sent as a signed-in reader came back 401 (T-112): the session is gone. Moves the
+ * store to `"anonymous"` and opens the auth dialog, returning the request id the caller holds to
+ * resume its action once the reader signs in again, the same resume a guest press gets.
+ *
+ * THE ORDER IS LOAD-BEARING. The dialog resolves an open request at once while the store says
+ * `"authenticated"` (its T-162 safety net in `v2-auth-dialog.tsx`); opening it first would close
+ * it unseen and resume the action straight into another 401.
+ */
+export function signInAgain(
+  intent: AuthIntent,
+  deps: SignInAgainDeps = { store, requestAuth },
+): string {
+  deps.store.set("anonymous");
+  return deps.requestAuth(intent);
+}
+
 /**
  * {@link gateOnAuthSession} for a single control: `waiting` drives the control's loading state,
  * a second press while waiting is ignored, an unmount cancels the wait, and both callbacks are

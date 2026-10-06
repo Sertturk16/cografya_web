@@ -479,7 +479,6 @@
     "checkingSessionLabel": "Oturumun kontrol ediliyor",
     "saveSuccess": "Ölçüm hesabına kaydedildi.",
     "signInHint": "Ölçümlerini hesabına kaydetmek için giriş yap.",
-    "sessionExpired": "Oturumun sona erdi. Devam etmek için <link>yeniden giriş yap</link>.",
     "listRetry": "Tekrar dene",
     "listLoadHint": "Haritaya yüklemek için tıkla",
     "untitled": "İsimsiz Ölçüm",

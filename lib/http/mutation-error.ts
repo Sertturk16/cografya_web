@@ -6,7 +6,9 @@
  * Three kinds, because three fixes differ:
  *
  * - `session-expired`: the BFF answered 401. The session cookie is gone or the api refused it.
- *   Clicking again cannot help; signing in again does, so the copy links to the login page.
+ *   Clicking again cannot help; signing in again does. The measurement workbench opens the auth
+ *   dialog and repeats the action after sign-in (T-112); the favourite button links to the login
+ *   page.
  * - `quota-exceeded`: a 403 whose body carries the domain's quota code. Clicking again cannot help
  *   either; the fix (delete something) is specific to the domain.
  * - `failed`: everything else (the api or the network down, a timeout, a body the BFF refused,

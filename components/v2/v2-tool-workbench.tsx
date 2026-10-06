@@ -49,7 +49,8 @@ import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { useAuthSession, useSessionGate } from "@/lib/auth/use-session.client";
+import { signInAgain, useAuthSession, useSessionGate } from "@/lib/auth/use-session.client";
+import { consumeResolved, useAuthModalState } from "@/lib/auth/auth-modal.client";
 import {
   fetchMeasurements,
   saveMeasurement,
@@ -66,8 +67,8 @@ import {
 import {
   DELETE_ERROR_MESSAGE_KEY,
   SAVE_ERROR_MESSAGE_KEY,
-  type DeleteMeasurementErrorCode,
-  type SaveMeasurementErrorCode,
+  type ShownDeleteErrorCode,
+  type ShownSaveErrorCode,
 } from "@/lib/measurements/save-error";
 import {
   Compass,
@@ -269,33 +270,9 @@ function zoomPanOfView(
   };
 }
 
-/** Every `Measurements` key a failed save, delete or list load can show. */
-type MeasurementErrorMessageKey =
-  | (typeof SAVE_ERROR_MESSAGE_KEY)[SaveMeasurementErrorCode]
-  | (typeof DELETE_ERROR_MESSAGE_KEY)[DeleteMeasurementErrorCode];
-
-/**
- * The copy for a failed save or delete. `sessionExpired` is rich text whose `<link>` goes to the
- * login page: an expired session is fixed by signing in, not by clicking again. The login page has
- * no return-path parameter today (it always lands on `/`), so the link carries none.
- */
-export function MeasurementErrorText({
-  messageKey,
-}: {
-  readonly messageKey: MeasurementErrorMessageKey;
-}) {
-  const t = useTranslations("Measurements");
-  if (messageKey === "sessionExpired") {
-    return t.rich("sessionExpired", {
-      link: (chunks) => (
-        <Link href="/giris" className="font-semibold underline underline-offset-2">
-          {chunks}
-        </Link>
-      ),
-    });
-  }
-  return t(messageKey);
-}
+/** What a sign-in started from the workbench repeats once the reader is back (T-112). */
+type MeasurementAuthAction =
+  { readonly kind: "save" } | { readonly kind: "delete"; readonly id: string };
 
 interface V2ToolWorkbenchProps {
   /** The one tool this page runs. Nothing inside the page switches it (T-125): each tool has its
@@ -305,9 +282,6 @@ interface V2ToolWorkbenchProps {
   provinceAreas?: readonly ProvinceArea[];
   downloadName?: string;
 }
-
-/** The measurement save gate has no resume: a guest's press only opens the auth dialog. */
-const ignoreAuthRequest = () => {};
 
 /**
  * The save button's text (T-167): "Kaydediliyor…" only once the save request itself runs. A press
@@ -377,7 +351,7 @@ export function V2ToolWorkbench({
     readonly key: number;
     readonly ok: boolean;
   } | null>(null);
-  const [deleteFailure, setDeleteFailure] = React.useState<DeleteMeasurementErrorCode | null>(null);
+  const [deleteFailure, setDeleteFailure] = React.useState<ShownDeleteErrorCode | null>(null);
   const [saveSuccess, setSaveSuccess] = React.useState<boolean>(false);
   const [isSaving, setIsSaving] = React.useState<boolean>(false);
   // State flips on the next render; the ref closes the window in which a second click could
@@ -387,7 +361,7 @@ export function V2ToolWorkbench({
   // undo, clear, a preset, a tool switch) replaces `points` or the type, so the message goes away
   // without an effect having to watch for it.
   const [saveFailure, setSaveFailure] = React.useState<{
-    readonly code: SaveMeasurementErrorCode;
+    readonly code: ShownSaveErrorCode;
     readonly points: readonly PointWithSvg[];
     readonly type: MeasurementType;
   } | null>(null);
@@ -1221,11 +1195,28 @@ export function V2ToolWorkbench({
     }
   };
 
+  // The one action waiting for the auth dialog, with the request that opened it: a guest's save
+  // press, or a save or delete the BFF answered 401 (T-112). A newer request replaces it, and a
+  // dismissed dialog never resolves its request, so nothing then repeats.
+  const modal = useAuthModalState();
+  const awaitingSignInRef = React.useRef<{
+    readonly requestId: string;
+    readonly action: MeasurementAuthAction;
+  } | null>(null);
+  const holdForSignIn = (requestId: string, action: MeasurementAuthAction) => {
+    awaitingSignInRef.current = { requestId, action };
+  };
+  // A 401: the session the page believed in is gone. The reader signs in again on the page, with
+  // the measurement still drawn, and the action repeats; a link to the login page lost it.
+  const askToSignInAgain = (action: MeasurementAuthAction) => {
+    holdForSignIn(signInAgain("measurement"), action);
+  };
+
   // Save measurement to cloud archive (/api/measurements). Runs for a signed-in reader only:
-  // the press goes through the session gate below.
-  const saveMeasurementNow = async () => {
-    if (!canSave) return;
-    if (saveInFlightRef.current) return;
+  // the press goes through the session gate below. Resolves `true` when the measurement saved.
+  const saveMeasurementNow = async (): Promise<boolean> => {
+    if (!canSave) return false;
+    if (saveInFlightRef.current) return false;
 
     const title =
       saveTitle.trim() ||
@@ -1241,6 +1232,7 @@ export function V2ToolWorkbench({
     setIsSaving(true);
     setSaveFailure(null);
     setSaveSuccess(false);
+    let saved = false;
     try {
       const pending = pendingSaveRef.current;
       const clientMeasurementId =
@@ -1268,6 +1260,9 @@ export function V2ToolWorkbench({
         setSaveTitle("");
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 2500);
+        saved = true;
+      } else if (res.code === "session-expired") {
+        askToSignInAgain({ kind: "save" });
       } else {
         setSaveFailure({ code: res.code, points, type: measurementType });
       }
@@ -1278,15 +1273,16 @@ export function V2ToolWorkbench({
       saveInFlightRef.current = false;
       setIsSaving(false);
     }
+    return saved;
   };
 
   // A press while the session check runs waits for it (T-162/T-165): a signed-in reader gets the
-  // save, a guest the auth dialog. The gate reads `saveMeasurementNow` at settle time, so the save
-  // sees the points and title of that moment.
+  // save, a guest the auth dialog and the save once signed in. The gate reads `saveMeasurementNow`
+  // at settle time, so the save sees the points and title of that moment.
   const saveGate = useSessionGate(
     "measurement",
     () => void saveMeasurementNow(),
-    ignoreAuthRequest,
+    (requestId) => holdForSignIn(requestId, { kind: "save" }),
   );
   const handleSaveMeasurement = () => {
     if (!canSave || saveInFlightRef.current) return;
@@ -1315,17 +1311,40 @@ export function V2ToolWorkbench({
     focusOnMapPoints(restored.map((p) => ({ x: p.svgX, y: p.svgY })));
   };
 
-  // Delete saved measurement
-  const handleDeleteSaved = async (id: string, e: React.MouseEvent | React.KeyboardEvent) => {
-    e.stopPropagation();
+  // Delete saved measurement. Resolves `true` when the measurement is gone.
+  const deleteMeasurementNow = async (id: string): Promise<boolean> => {
     setDeleteFailure(null);
     const res = await removeMeasurement(id);
     if (res.ok) {
       setSavedList((prev) => prev.filter((item) => item.id !== id));
+    } else if (res.code === "session-expired") {
+      askToSignInAgain({ kind: "delete", id });
     } else {
       setDeleteFailure(res.code);
     }
+    return res.ok;
   };
+  const handleDeleteSaved = (id: string, e: React.MouseEvent | React.KeyboardEvent) => {
+    e.stopPropagation();
+    void deleteMeasurementNow(id);
+  };
+
+  // Signed in again: repeat the held action, once, and only for the request it opened.
+  const resumeAfterSignIn = React.useEffectEvent((action: MeasurementAuthAction) => {
+    const run = action.kind === "save" ? saveMeasurementNow() : deleteMeasurementNow(action.id);
+    // Signing in also started the list fetch above, which can answer after this write and
+    // overwrite it; a reload once the write is done shows the list as it now is.
+    void run.then((done) => {
+      if (done) setListReloadKey((key) => key + 1);
+    });
+  });
+  React.useEffect(() => {
+    const held = awaitingSignInRef.current;
+    if (held === null || modal.resolvedRequestId !== held.requestId) return;
+    if (!consumeResolved(held.requestId)) return;
+    awaitingSignInRef.current = null;
+    resumeAfterSignIn(held.action);
+  }, [modal.resolvedRequestId]);
 
   // PNG Export Handler
   const handleExportPng = () => {
@@ -1971,7 +1990,7 @@ export function V2ToolWorkbench({
               )}
               {visibleSaveFailure && (
                 <p role="alert" className="text-[11px] text-destructive font-medium">
-                  <MeasurementErrorText messageKey={SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure]} />
+                  {tMeasurements(SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure])}
                 </p>
               )}
               {saveSuccess && (
@@ -2028,7 +2047,7 @@ export function V2ToolWorkbench({
               )}
               {deleteFailure && (
                 <p role="alert" className="text-[11px] text-destructive font-medium">
-                  <MeasurementErrorText messageKey={DELETE_ERROR_MESSAGE_KEY[deleteFailure]} />
+                  {tMeasurements(DELETE_ERROR_MESSAGE_KEY[deleteFailure])}
                 </p>
               )}
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">

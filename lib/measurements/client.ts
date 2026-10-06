@@ -193,8 +193,8 @@ export type RemoveMeasurementResult =
 
 /** `DELETE` — unconditionally idempotent remove, no request body. The BFF answers 204 on
  *  every genuine success, never 200 (plan §5.2's unconditional-204 design, matching the
- *  api exactly). A failure carries a code so a 401 can say "sign in again" instead of "try
- *  again" (`deleteErrorCodeFromResponse`). Same `AbortController` +
+ *  api exactly). A failure carries a code so a 401 can ask the reader to sign in again instead
+ *  of saying "try again" (`deleteErrorCodeFromResponse`). Same `AbortController` +
  *  `MEASUREMENTS_WRITE_TIMEOUT_MS` treatment as `saveMeasurement` above — a fresh controller
  *  per call, `clearTimeout` unconditional in `finally`. */
 export async function removeMeasurement(id: string): Promise<RemoveMeasurementResult> {

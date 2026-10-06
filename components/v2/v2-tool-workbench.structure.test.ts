@@ -186,7 +186,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       expect(press).toContain("if (!canSave || saveInFlightRef.current) return;");
       expect(press).toContain("saveGate.run();");
       const save = sliceFrom("const saveMeasurementNow = ", "\n  };");
-      expect(save).toContain("if (!canSave) return;");
+      expect(save).toContain("if (!canSave) return false;");
       expect(save + press).not.toContain("points.length === 0");
     });
 
@@ -277,9 +277,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
 
     it("renders the failure through the shared message map, as an alert", () => {
       expect(code).toContain('from "@/lib/measurements/save-error"');
-      const at = code.indexOf(
-        "<MeasurementErrorText messageKey={SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure]} />",
-      );
+      const at = code.indexOf("{tMeasurements(SAVE_ERROR_MESSAGE_KEY[visibleSaveFailure])}");
       expect(at, "the failure copy is not rendered").toBeGreaterThan(-1);
       const element = code.slice(code.lastIndexOf("<p", at), at);
       expect(element).toContain('role="alert"');
@@ -294,7 +292,7 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
 
     it("cannot double-submit while a save is in flight", () => {
       const body = handler();
-      expect(body).toContain("if (saveInFlightRef.current) return;");
+      expect(body).toContain("if (saveInFlightRef.current) return false;");
       expect(body).toContain("saveInFlightRef.current = true;");
       expect(body).toMatch(
         /finally \{\s*saveInFlightRef\.current = false;\s*setIsSaving\(false\);/,
@@ -337,8 +335,9 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
   /**
    * T-080: the same silent-failure class T-077 closed for a save, in the three places it was left
    * open — a failed delete, a failed first load of the saved list, and a 401 during a save or
-   * delete reported as "try again" when the fix is to sign in again. The render of each message is
-   * in `v2-tool-workbench.errors.test.tsx`; this pins the wiring.
+   * delete reported as "try again" when the fix is to sign in again. Since T-112 that 401 opens
+   * the auth dialog and repeats the action after sign-in; the session half is tested in
+   * `lib/auth/session-store.test.ts` (`signInAgain`), this pins the wiring.
    */
   describe("delete, list-load and expired-session failures (T-080)", () => {
     const code = stripComments(source);
@@ -358,16 +357,14 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
     }
 
     it("records a failed delete instead of dropping it, and renders it as an alert", () => {
-      const handler = sliceFrom("const handleDeleteSaved = ", "\n  };");
+      const handler = sliceFrom("const deleteMeasurementNow = ", "\n  };");
       expect(handler).toContain("setDeleteFailure(null);");
       expect(handler).toMatch(
         /if \(res\.ok\) \{[\s\S]*\} else \{\s*setDeleteFailure\(res\.code\);/,
       );
-      expect(
-        alertAround(
-          "<MeasurementErrorText messageKey={DELETE_ERROR_MESSAGE_KEY[deleteFailure]} />",
-        ),
-      ).toContain('role="alert"');
+      expect(alertAround("{tMeasurements(DELETE_ERROR_MESSAGE_KEY[deleteFailure])}")).toContain(
+        'role="alert"',
+      );
     });
 
     it("shows a failed list load with a retry, and the retry refetches", () => {
@@ -381,10 +378,42 @@ describe("V2ToolWorkbench structural contract (TEST124-I2, A11Y124-I5)", () => {
       expect(code).toContain("(activeSavedList.length > 0 || listLoadFailed) && (");
     });
 
-    it("routes an expired session to the login page, not to a retry", () => {
-      const helper = sliceFrom("export function MeasurementErrorText(", "return t(messageKey);");
-      expect(helper).toContain('if (messageKey === "sessionExpired")');
-      expect(helper).toContain('<Link href="/giris"');
+    it("a 401 on a save or delete opens the auth dialog for that action, never an error line", () => {
+      const save = sliceFrom("const saveMeasurementNow = ", "\n  };");
+      expect(save).toMatch(
+        /\} else if \(res\.code === "session-expired"\) \{\s*askToSignInAgain\(\{ kind: "save" \}\);\s*\} else \{\s*setSaveFailure\(/,
+      );
+      const remove = sliceFrom("const deleteMeasurementNow = ", "\n  };");
+      expect(remove).toMatch(
+        /\} else if \(res\.code === "session-expired"\) \{\s*askToSignInAgain\(\{ kind: "delete", id \}\);\s*\} else \{\s*setDeleteFailure\(/,
+      );
+      // No way out to the login page: it would leave the measurement behind (T-112).
+      expect(code).not.toContain("/giris");
+    });
+
+    it("asks through signInAgain, which moves the session to anonymous before the dialog opens", () => {
+      const ask = sliceFrom("const askToSignInAgain = ", "\n  };");
+      expect(ask).toContain('holdForSignIn(signInAgain("measurement"), action);');
+    });
+
+    it("a guest's save press waits for the same sign-in as a 401 does", () => {
+      expect(code).toMatch(
+        /useSessionGate\(\s*"measurement",\s*\(\) => void saveMeasurementNow\(\),\s*\(requestId\) => holdForSignIn\(requestId, \{ kind: "save" \}\),?\s*\)/,
+      );
+    });
+
+    it("repeats the held action once, for its own request, then reloads the list", () => {
+      const resume = sliceFrom("const held = awaitingSignInRef.current;", "}, [");
+      expect(resume).toContain(
+        "if (held === null || modal.resolvedRequestId !== held.requestId) return;",
+      );
+      expect(resume).toContain("if (!consumeResolved(held.requestId)) return;");
+      expect(resume).toContain("awaitingSignInRef.current = null;");
+      expect(resume).toContain("resumeAfterSignIn(held.action);");
+      expect(code).toContain("}, [modal.resolvedRequestId]);");
+      // Signing in also starts a list fetch that can answer after the repeated write.
+      const event = sliceFrom("const resumeAfterSignIn = React.useEffectEvent(", "\n  });");
+      expect(event).toMatch(/if \(done\) setListReloadKey\(\(key\) => key \+ 1\);/);
     });
 
     it("bounds the title input by the same constant the BFF schema enforces", () => {
