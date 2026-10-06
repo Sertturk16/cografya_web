@@ -4,7 +4,9 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { searchAnnouncement } from "@/lib/search/announcement";
 import { comboboxKeyAction } from "@/lib/search/combobox-keys";
+import { KIND_LABEL_KEY } from "@/lib/search/kind-label";
 import type { SearchPanelState } from "@/lib/search/panel-state";
+import type { SearchEntityKind } from "@/lib/search/types";
 
 interface SearchComboboxOptions {
   /** The panel is showing (the header's dialog is open, the hero's suggestions are up). */
@@ -26,8 +28,13 @@ interface SearchComboboxOptions {
  * - `listboxProps` on the `role="listbox"` `<ul>`, whose `<li>` wrappers are
  *   `role="presentation"` so the options are its OWNED elements; without that the intervening
  *   listitem breaks the chain and the "1 of 8" position announcements never happen.
- * - `optionProps(index)` on each option: a real `<a href>` (middle-click keeps working) with
- *   `role="option"` and `tabIndex={-1}`, so the combobox stays a single tab stop.
+ * - `optionProps(index, hit)` on each option: a real `<a href>` (middle-click keeps working) with
+ *   `role="option"` and `tabIndex={-1}`, so the combobox stays a single tab stop. Its
+ *   `aria-label` is "name, kind" ("Ege Bölgesi, Bölge", T-170): without it the name is computed
+ *   from the row's text, and the place name and the kind badge ran together as "Ege
+ *   BölgesiBölge". A label rather than a visually hidden separator: the name is then exactly
+ *   this string in every browser, however the row's flex children and the header's
+ *   CSS-uppercased badge get flattened into text.
  * - `announcement` in a polite `role="status"` region, on a 250 ms debounce: WCAG 4.1.3 without
  *   narrating every keystroke ({@link searchAnnouncement} decides what it says).
  *
@@ -106,11 +113,12 @@ export function useSearchCombobox({
       "aria-activedescendant": expanded && activeIndex >= 0 ? optionId(activeIndex) : undefined,
     } as const,
     listboxProps: { ref: listRef, id: listboxId, role: "listbox" } as const,
-    optionProps: (index: number) =>
+    optionProps: (index: number, hit: { readonly name: string; readonly kind: SearchEntityKind }) =>
       ({
         id: optionId(index),
         role: "option",
         tabIndex: -1,
+        "aria-label": `${hit.name}, ${t(KIND_LABEL_KEY[hit.kind])}`,
         "aria-selected": index === activeIndex,
         onMouseEnter: () => setActiveIndex(index),
       }) as const,
