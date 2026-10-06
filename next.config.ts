@@ -61,6 +61,15 @@ const nextConfig: NextConfig = {
     ];
   },
 
+  // A URL that matches no route renders `app/global-not-found.tsx` as a whole document. The
+  // root layout is `app/[locale]/layout.tsx`, so without this flag Next wraps the root
+  // `app/not-found.tsx` in its built-in `<html><body>` layout and the page's own `<html>` ends up
+  // nested inside it: invalid markup, and a hydration mismatch on every unknown URL. Next's docs
+  // name a root layout under a top-level dynamic segment as this flag's use case.
+  experimental: {
+    globalNotFound: true,
+  },
+
   // The flag route reads `flag-icons`' manifest/SVGs and local overrides from disk during
   // prerendering and first on-demand generation (`lib/geo/flag-set.ts`). Declaring all three
   // inputs here makes that server-only dependency explicit for output tracing instead of
