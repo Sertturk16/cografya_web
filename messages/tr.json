@@ -476,6 +476,7 @@
     "minPointsHint": "Kaydetmek için en az {count} nokta ekle.",
     "maxPointsHint": "Kaydetmek için en fazla {count} nokta olabilir. Fazla noktaları geri al.",
     "savingLabel": "Kaydediliyor…",
+    "checkingSessionLabel": "Oturumun kontrol ediliyor",
     "saveSuccess": "Ölçüm hesabına kaydedildi.",
     "signInHint": "Ölçümlerini hesabına kaydetmek için giriş yap.",
     "sessionExpired": "Oturumun sona erdi. Devam etmek için <link>yeniden giriş yap</link>.",
@@ -924,6 +925,7 @@
     "addLabel": "Favoriye Ekle",
     "addedLabel": "Favorilerde",
     "savingLabel": "Kaydediliyor",
+    "checkingSessionLabel": "Oturumun kontrol ediliyor",
     "sessionExpired": "Oturumun sona erdi. <link>Yeniden giriş yap</link>."
   },
   "Deniz": {

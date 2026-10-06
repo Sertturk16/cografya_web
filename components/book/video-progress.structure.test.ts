@@ -123,6 +123,14 @@ describe("the login gate (§5.3.2)", () => {
     expect(playable.match(/openVideo\(/g)).toHaveLength(1);
   });
 
+  it("marks İzle busy while a press waits for the session check (T-167)", () => {
+    const playable = playableBranch(clickHandler());
+    const gate = playable.indexOf("gateOnAuthSession({");
+    const waiting = playable.indexOf("onWaiting: () => setPressPending(orderNo)", gate);
+    expect(gate).toBeGreaterThan(-1);
+    expect(waiting).toBeGreaterThan(gate);
+  });
+
   it("never opens the auth modal itself — a `checking` press waits in the gate instead (T-162)", () => {
     expect(BENCH).not.toMatch(/\brequestAuth\(/);
     expect(BENCH).not.toContain('authState !== "authenticated") { applyFragmentAndSelect');
@@ -197,9 +205,9 @@ describe("the sign-in CTA's reserved box (§5.3.4)", () => {
     expect(VIDEO.slice(externalBranchEnd)).toContain("SIGN_IN_CTA");
   });
 
-  it("always renders the paragraph — an empty node when authenticated, never an omitted one", () => {
+  it("always renders the paragraph — text for a guest only, an empty node otherwise (T-165)", () => {
     expect(VIDEO).toContain(
-      '<p className={SIGN_IN_CTA}>{authState === "authenticated" ? null : signInCtaText}</p>',
+      '<p className={SIGN_IN_CTA}>{authState === "anonymous" ? signInCtaText : null}</p>',
     );
   });
 
@@ -216,12 +224,10 @@ describe("the sign-in CTA's reserved box (§5.3.4)", () => {
     expect(cta, "SIGN_IN_CTA lost its :empty rule").toContain("empty:bg-transparent");
   });
 
-  it("swaps the İzle button's own accessible name for a signed-out reader", () => {
-    // Nested inside a `resolving` check now (P2 plan §5.3, §10's loading state) — the ternary
+  it("swaps the İzle button's own accessible name for a guest only, not while checking", () => {
+    // Nested inside a `busy` check now (P2 plan §5.3, §10's loading state, T-167) — the ternary
     // text itself, not the exact `aria-label={…}` wrapper, is what this invariant is about.
-    expect(VIDEO).toContain(
-      'authState === "authenticated" ? watchAriaLabel : watchAriaSignedOutLabel',
-    );
+    expect(VIDEO).toContain('authState === "anonymous" ? watchAriaSignedOutLabel : watchAriaLabel');
   });
 });
 

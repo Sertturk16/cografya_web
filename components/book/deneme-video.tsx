@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AuthSessionState } from "@/lib/auth/use-session.client";
 import { ownOriginPath } from "@/lib/seo/site";
 import { fetchVideoIdentity, VIDEO_IDENTITY_FETCH_TIMEOUT_MS } from "@/lib/video-identity/client";
@@ -221,7 +221,7 @@ export function DenemeVideo({
   sessionReadyAnnounceText,
   watchOnYoutubeLabel,
   watchOnYoutubeAriaLabel,
-  watchOnYoutubeLoading,
+  pressPending,
   watchLoadingLabel,
   watchLoadingAriaLabel,
   onPlaybackTime,
@@ -246,9 +246,9 @@ export function DenemeVideo({
   title: string;
   watchLabel: string;
   watchAriaLabel: string;
-  /** Used instead of `watchAriaLabel` while `authState !== "authenticated"` — the button's
-   *  actual behaviour differs (it redirects to `/kayit` rather than opening a player), so its
-   *  accessible name says so (§5.3.4/§8). */
+  /** Used instead of `watchAriaLabel` for a guest (`authState === "anonymous"`) — the button's
+   *  actual behaviour differs (it opens the auth dialog rather than a player), so its accessible
+   *  name says so (§5.3.4/§8). Never while the session check runs (T-165). */
   watchAriaSignedOutLabel: string;
   /** AK-48's own framing: visible before the play control is pressed, gone once signed in
    *  (§5.3.4) — rendered here, in a reserved slot, never toggled in and out of a laid-out area. */
@@ -264,13 +264,15 @@ export function DenemeVideo({
   sessionReadyAnnounceText: string;
   watchOnYoutubeLabel: string;
   watchOnYoutubeAriaLabel: string;
-  /** Whether the EXTERNAL-state "watch on YouTube" control's own identity fetch is in flight
-   *  for this video (§10, P2 plan §5.3) — owned by `VideoBench`'s own local state, never
-   *  `active-video.ts`'s store (an external video never gets a player). */
-  watchOnYoutubeLoading: boolean;
+  /** A press on this video's control is in flight before the store knows about it — owned by
+   *  `VideoBench`'s own local state, never `active-video.ts`'s store: İzle waiting for the
+   *  session check (T-167), or the EXTERNAL-state "watch on YouTube" control waiting for the
+   *  check or its own identity fetch (§10, P2 plan §5.3; an external video never gets a
+   *  player). */
+  pressPending: boolean;
   /** Shared loading copy for BOTH controls this file renders — the İzle button while its own
-   *  identity fetch (below) is in flight, and the external control while `watchOnYoutubeLoading`
-   *  is true. One pair of strings because both describe the same fact: the video is being
+   *  identity fetch (below) is in flight or `pressPending` is true, and the external control while
+   *  `pressPending` is true. One pair of strings because both describe the same fact: the video is being
    *  prepared to open. */
   watchLoadingLabel: string;
   watchLoadingAriaLabel: string;
@@ -297,6 +299,14 @@ export function DenemeVideo({
     active !== null &&
     active.orderNo === video.orderNo &&
     active.videoId === null;
+  // İzle's loading state: its identity fetch, or a press waiting for the session check (T-167).
+  const busy = resolving || pressPending;
+  // The announcement below speaks only after this reader was shown the guest prompt: a reader
+  // who is signed in from the start (`checking` → `authenticated`) was never told anything to
+  // take back (T-165). Adjusted during render, the idiom `video-bench.tsx` uses for its fetch key.
+  const [sawGuest, setSawGuest] = useState(false);
+  if (authState === "anonymous" && !sawGuest) setSawGuest(true);
+  const signedInAfterGuest = sawGuest && authState === "authenticated";
   // Saving requires a genuinely loaded, genuinely authenticated player (§5.5). In practice
   // `isActive` alone already implies `authState === "authenticated"`, since the click gate
   // (`video-bench.tsx`) never calls `openVideo` for anyone else — this check is the belt the
@@ -642,7 +652,7 @@ export function DenemeVideo({
      (`video-bench.tsx`'s `openExternalWatch`), fetched only on a click or a key press, opened
      in a new tab only once the fetch answers. This control never sets `active` in the bench
      store — an external video never gets a player — so its own loading flag
-     (`watchOnYoutubeLoading`) is `VideoBench`'s own local state, threaded down as a prop. */
+     (`pressPending`) is `VideoBench`'s own local state, threaded down as a prop. */
   if (!video.playable) {
     return (
       <div className={THUMB_BOX}>
@@ -656,11 +666,11 @@ export function DenemeVideo({
             variant="outline"
             className={WATCH_BUTTON}
             data-player-open=""
-            aria-busy={watchOnYoutubeLoading}
-            aria-disabled={watchOnYoutubeLoading}
-            aria-label={watchOnYoutubeLoading ? watchLoadingAriaLabel : watchOnYoutubeAriaLabel}
+            aria-busy={pressPending}
+            aria-disabled={pressPending}
+            aria-label={pressPending ? watchLoadingAriaLabel : watchOnYoutubeAriaLabel}
           >
-            {watchOnYoutubeLoading ? watchLoadingLabel : watchOnYoutubeLabel}
+            {pressPending ? watchLoadingLabel : watchOnYoutubeLabel}
           </Button>
         </span>
       </div>
@@ -719,37 +729,36 @@ export function DenemeVideo({
           variant="primary"
           className={WATCH_BUTTON}
           data-player-open=""
-          aria-busy={resolving}
-          aria-disabled={resolving}
+          aria-busy={busy}
+          aria-disabled={busy}
           aria-label={
-            resolving
+            busy
               ? watchLoadingAriaLabel
-              : authState === "authenticated"
-                ? watchAriaLabel
-                : watchAriaSignedOutLabel
+              : authState === "anonymous"
+                ? watchAriaSignedOutLabel
+                : watchAriaLabel
           }
         >
-          {resolving ? watchLoadingLabel : watchLabel}
+          {busy ? watchLoadingLabel : watchLabel}
         </Button>
       </span>
       {/* THE SIGN-IN CTA (§5.3.4) — reserved, never toggled in and out of a laid-out area.
           Absolutely positioned inside `.thumbBox` (see `.signInCta` in the CSS module), so its
           own presence/absence never changes `.frame`'s height in any of the three `authState`
-          values: `checking`/`anonymous` render the sentence, `authenticated` renders an empty
-          node in the same slot. `external` videos (the branch above, `!video.playable`) redirect
+          values: `anonymous` renders the sentence, `checking` and `authenticated` render an empty
+          node in the same slot (T-165: a signed-in reader is not told to sign in while the check
+          runs). `external` videos (the branch above, `!video.playable`) redirect
           to YouTube regardless of auth state and are out of this gate's scope — this line exists
           only in the `rich`/`typographic` branch, which is this one. */}
-      <p className={SIGN_IN_CTA}>{authState === "authenticated" ? null : signInCtaText}</p>
+      <p className={SIGN_IN_CTA}>{authState === "anonymous" ? signInCtaText : null}</p>
       {/* THE ANNOUNCEMENT (WCAG 4.1.3, PR #90 review `A11Y90-I2`) — visually hidden, so it adds
           no visible band and does not touch the CLS guarantee the box above already holds; carries
-          text ONLY on the one transition that changes what a reader was just told (`checking`/
-          `anonymous` → `authenticated`, the only direction that flips a stated fact from "sign-up
-          required" to gone). `checking` and `anonymous` share this same empty value, so the
-          `useAuthSession()` mount ("checking" both on the server and on first client paint, per
-          its own docblock) never fires the live region on first paint — only a REAL later
-          resolution does. */}
+          text ONLY on the one transition that changes what a reader was just told (`anonymous` →
+          `authenticated`, the only direction that flips a stated fact from "sign-up required" to
+          gone). Since T-165 `checking` shows no prompt, so `checking` → `authenticated` (a reader
+          signed in from the start) announces nothing either: `signedInAfterGuest` above. */}
       <p aria-live="polite" className="sr-only">
-        {authState === "authenticated" ? sessionReadyAnnounceText : ""}
+        {signedInAfterGuest ? sessionReadyAnnounceText : ""}
       </p>
     </div>
   );

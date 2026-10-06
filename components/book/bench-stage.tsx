@@ -76,7 +76,7 @@ export function BenchStage({
   authState,
   progress,
   onSaveWatched,
-  externalResolvingOrderNo,
+  pressPendingOrderNo,
   autoNext,
   onToggleAutoNext,
   onGo,
@@ -91,7 +91,8 @@ export function BenchStage({
   authState: AuthSessionState;
   progress: VideoProgressValue | null | "loading";
   onSaveWatched: (watched: boolean) => Promise<{ readonly ok: boolean }>;
-  externalResolvingOrderNo: number | null;
+  /** The video whose İzle or "watch on YouTube" press is in flight (`VideoBench`'s state). */
+  pressPendingOrderNo: number | null;
   autoNext: boolean;
   onToggleAutoNext: () => void;
   onGo: (orderNo: number) => void;
@@ -150,7 +151,7 @@ export function BenchStage({
           sessionReadyAnnounceText={t("sessionReadyAnnounce")}
           watchOnYoutubeLabel={t("watchOnYoutube")}
           watchOnYoutubeAriaLabel={t("watchOnYoutubeAria", { label })}
-          watchOnYoutubeLoading={externalResolvingOrderNo === video.orderNo}
+          pressPending={pressPendingOrderNo === video.orderNo}
           watchLoadingLabel={t("watchLoading")}
           watchLoadingAriaLabel={t("watchLoadingAria", { label })}
           onPlaybackTime={(second) => onPlaybackTime(video.orderNo, second)}

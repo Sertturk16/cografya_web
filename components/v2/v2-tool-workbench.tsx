@@ -43,13 +43,13 @@ import { TOOL_PRESETS, type ToolMode, type ToolPreset } from "@/lib/tools/tool-p
 import type { MeasurementType } from "@/lib/api/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { useAuthSession } from "@/lib/auth/use-session.client";
-import { requestAuth } from "@/lib/auth/auth-modal.client";
+import { useAuthSession, useSessionGate } from "@/lib/auth/use-session.client";
 import {
   fetchMeasurements,
   saveMeasurement,
@@ -304,6 +304,28 @@ interface V2ToolWorkbenchProps {
   provincePoints?: readonly ProvincePoint[];
   provinceAreas?: readonly ProvinceArea[];
   downloadName?: string;
+}
+
+/** The measurement save gate has no resume: a guest's press only opens the auth dialog. */
+const ignoreAuthRequest = () => {};
+
+/**
+ * The save button's text (T-167): "Kaydediliyor…" only once the save request itself runs. A press
+ * made while the session check runs keeps "Kaydet" beside a spinner whose status label says the
+ * session is being checked; a longer visible text would squeeze the title field at 320px.
+ */
+export function measurementSaveLabelKey({
+  saving,
+  waiting,
+  saved,
+}: {
+  readonly saving: boolean;
+  readonly waiting: boolean;
+  readonly saved: boolean;
+}): "savingLabel" | "savedLabel" | "saveLabel" {
+  if (saving) return "savingLabel";
+  if (saved && !waiting) return "savedLabel";
+  return "saveLabel";
 }
 
 export function V2ToolWorkbench({
@@ -1199,15 +1221,11 @@ export function V2ToolWorkbench({
     }
   };
 
-  // Save measurement to cloud archive (/api/measurements)
-  const handleSaveMeasurement = async () => {
+  // Save measurement to cloud archive (/api/measurements). Runs for a signed-in reader only:
+  // the press goes through the session gate below.
+  const saveMeasurementNow = async () => {
     if (!canSave) return;
     if (saveInFlightRef.current) return;
-
-    if (authState !== "authenticated") {
-      requestAuth("measurement");
-      return;
-    }
 
     const title =
       saveTitle.trim() ||
@@ -1260,6 +1278,19 @@ export function V2ToolWorkbench({
       saveInFlightRef.current = false;
       setIsSaving(false);
     }
+  };
+
+  // A press while the session check runs waits for it (T-162/T-165): a signed-in reader gets the
+  // save, a guest the auth dialog. The gate reads `saveMeasurementNow` at settle time, so the save
+  // sees the points and title of that moment.
+  const saveGate = useSessionGate(
+    "measurement",
+    () => void saveMeasurementNow(),
+    ignoreAuthRequest,
+  );
+  const handleSaveMeasurement = () => {
+    if (!canSave || saveInFlightRef.current) return;
+    saveGate.run();
   };
 
   // Restore saved measurement
@@ -1902,22 +1933,31 @@ export function V2ToolWorkbench({
                   variant="primary"
                   className="h-10 px-4 text-xs font-bold text-white shrink-0 shadow-xs"
                   onClick={handleSaveMeasurement}
-                  disabled={!canSave}
+                  disabled={!canSave || saveGate.waiting}
                   isLoading={isSaving}
+                  aria-busy={isSaving || saveGate.waiting}
                   aria-describedby={canSave ? undefined : saveHintId}
                   leftIcon={
-                    saveSuccess ? (
+                    saveGate.waiting ? (
+                      <Spinner
+                        size="default"
+                        label={tMeasurements("checkingSessionLabel")}
+                        className="text-white"
+                      />
+                    ) : saveSuccess ? (
                       <BookmarkCheck className="size-4 text-white" />
                     ) : (
                       <Bookmark className="size-4 text-white" />
                     )
                   }
                 >
-                  {isSaving
-                    ? tMeasurements("savingLabel")
-                    : saveSuccess
-                      ? tMeasurements("savedLabel")
-                      : tMeasurements("saveLabel")}
+                  {tMeasurements(
+                    measurementSaveLabelKey({
+                      saving: isSaving,
+                      waiting: saveGate.waiting,
+                      saved: saveSuccess,
+                    }),
+                  )}
                 </Button>
               </div>
               {!canSave && (
@@ -1943,7 +1983,7 @@ export function V2ToolWorkbench({
                   {tMeasurements("saveSuccess")}
                 </p>
               )}
-              {authState !== "authenticated" && (
+              {authState === "anonymous" && (
                 <p className="text-[11px] text-muted-foreground mt-1.5">
                   {tMeasurements("signInHint")}
                 </p>

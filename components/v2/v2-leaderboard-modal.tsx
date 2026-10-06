@@ -17,7 +17,7 @@ import {
   type LeaderboardListRecord,
 } from "@/lib/game-rounds/client";
 import { getGameRoundModeTitle } from "@/lib/game/round-mode-tag";
-import { useAuthSession } from "@/lib/auth/use-session.client";
+import { type AuthSessionState, useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth } from "@/lib/auth/auth-modal.client";
 import { Trophy, ChevronLeft, ChevronRight, Lock, Sparkles } from "lucide-react";
 import { formatDay } from "@/lib/text/format-date";
@@ -28,6 +28,29 @@ interface V2LeaderboardModalProps {
   readonly onOpenChange: (open: boolean) => void;
 }
 
+export type LeaderboardBody = "sign-in" | "loading" | "failed" | "empty" | "table";
+
+/**
+ * Which body the modal shows. While the session check runs the table is "loading", never the
+ * sign-in panel: a signed-in reader who opens the modal in that moment is not a guest (T-165).
+ */
+export function leaderboardBody({
+  authState,
+  loading,
+  error,
+  hasItems,
+}: {
+  readonly authState: AuthSessionState;
+  readonly loading: boolean;
+  readonly error: string | null;
+  readonly hasItems: boolean;
+}): LeaderboardBody {
+  if (authState === "anonymous") return "sign-in";
+  if (authState === "checking" || loading) return "loading";
+  if (error === "failed") return "failed";
+  return hasItems ? "table" : "empty";
+}
+
 export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2LeaderboardModalProps) {
   const [authState] = useAuthSession();
   const [data, setData] = React.useState<LeaderboardListRecord | null>(null);
@@ -36,13 +59,13 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
   const [loadedKey, setLoadedKey] = React.useState<{ mode: string; page: number } | null>(null);
 
   const modeTitle = getGameRoundModeTitle(mode);
-  const isUnauthenticated = authState !== "authenticated";
-  const displayError = isUnauthenticated ? "unauthenticated" : error;
-  const displayData = isUnauthenticated ? null : data;
-  const loading =
-    isOpen &&
-    !isUnauthenticated &&
-    (!loadedKey || loadedKey.mode !== mode || loadedKey.page !== page);
+  const displayData = authState === "authenticated" ? data : null;
+  const body = leaderboardBody({
+    authState,
+    loading: isOpen && (!loadedKey || loadedKey.mode !== mode || loadedKey.page !== page),
+    error,
+    hasItems: displayData !== null && displayData.items.length > 0,
+  });
 
   React.useEffect(() => {
     if (!isOpen || authState !== "authenticated") return;
@@ -104,7 +127,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto min-h-[320px] -mx-6 px-6 py-2">
-          {displayError === "unauthenticated" ? (
+          {body === "sign-in" ? (
             <div className="h-full min-h-[280px] flex flex-col items-center justify-center text-center p-8 space-y-4 rounded-2xl bg-muted/20 border border-dashed border-border">
               <div className="p-3 rounded-full bg-primary/10 text-primary">
                 <Lock className="size-8" />
@@ -122,7 +145,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                 Giriş Yap veya Kayıt Ol
               </Button>
             </div>
-          ) : loading ? (
+          ) : body === "loading" ? (
             <div
               role="status"
               className="h-full min-h-[280px] flex flex-col items-center justify-center gap-3 text-muted-foreground"
@@ -130,7 +153,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
               <Spinner size="lg" decorative className="text-primary" />
               <span className="text-sm font-medium">Tablo yükleniyor…</span>
             </div>
-          ) : displayError === "failed" ? (
+          ) : body === "failed" ? (
             <div className="h-full min-h-[280px] flex flex-col items-center justify-center text-center p-8 text-muted-foreground space-y-2">
               <p className="text-sm font-medium text-foreground">Sıralama yüklenemedi</p>
               <p className="text-xs">Bağlantıda bir sorun çıktı. Birazdan yeniden dene.</p>
@@ -138,7 +161,7 @@ export function V2LeaderboardModal({ mode, isOpen, onOpenChange }: V2Leaderboard
                 Tekrar Dene
               </Button>
             </div>
-          ) : !displayData || displayData.items.length === 0 ? (
+          ) : body === "empty" || displayData === null ? (
             <div className="h-full min-h-[280px] flex flex-col items-center justify-center text-center p-8 rounded-2xl bg-muted/20 border border-dashed border-border space-y-3">
               <div className="p-3 rounded-full bg-muted text-muted-foreground">
                 <Trophy className="size-8 opacity-40" />

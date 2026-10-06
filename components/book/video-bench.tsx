@@ -499,8 +499,9 @@ export function VideoBench({
     }
   }, [statuses, bookProgress]);
 
-  /** The external-state "watch on YouTube" control's in-flight orderNo, or `null` (§10). */
-  const [externalResolving, setExternalResolving] = useState<number | null>(null);
+  /** The orderNo whose İzle or "watch on YouTube" press is in flight, or `null`: waiting for the
+   *  session check (T-167), or, for the external control, its identity fetch (§10). */
+  const [pressPending, setPressPending] = useState<number | null>(null);
 
   /**
    * The external-state control's flow (§10, P2 plan §5.3): gated like İzle, resolving to an
@@ -508,8 +509,8 @@ export function VideoBench({
    * a known trade: `noopener` prevents writing a pre-opened tab's location.
    */
   async function openExternalWatch(video: BenchVideo): Promise<void> {
-    if (externalResolving === video.orderNo) return;
-    setExternalResolving(video.orderNo);
+    if (pressPending === video.orderNo) return;
+    setPressPending(video.orderNo);
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), VIDEO_IDENTITY_FETCH_TIMEOUT_MS);
     try {
@@ -517,7 +518,7 @@ export function VideoBench({
       if (videoId !== null) window.open(watchUrl(videoId), "_blank", "noopener,noreferrer");
     } finally {
       clearTimeout(timeout);
-      setExternalResolving(null);
+      setPressPending(null);
     }
   }
 
@@ -551,17 +552,17 @@ export function VideoBench({
       // same way İzle is, resolving to an outbound tab instead of an in-page player.
       if (!trigger.hasAttribute("data-player-open")) return;
       event.preventDefault();
-      if (externalResolving === orderNo) return;
+      if (pressPending === orderNo) return;
       // While the session check runs, the control shows its resolving state (T-162).
       void gateOnAuthSession({
         intent: "video",
         onAuthenticated: () => void openExternalWatch(video),
         onAuthRequested: (requestId) => {
-          setExternalResolving(null);
+          setPressPending(null);
           authResume.current = { orderNo, second: 0 };
           authRequestId.current = requestId;
         },
-        onWaiting: () => setExternalResolving(orderNo),
+        onWaiting: () => setPressPending(orderNo),
         isCancelled: () => !mountedRef.current,
       });
       return;
@@ -578,23 +579,28 @@ export function VideoBench({
     }
 
     event.preventDefault();
+    if (pressPending === orderNo) return;
 
     // THE LOGIN GATE (§5.3.2/§5.3.3). A press while the session check is still running waits for
-    // it instead of treating the reader as a guest (T-162).
+    // it instead of treating the reader as a guest (T-162), and İzle shows its loading state
+    // meanwhile (T-167).
     const fragment = trigger.getAttribute("href");
     void gateOnAuthSession({
       intent: "video",
       onAuthenticated: () => {
+        setPressPending(null);
         // İzle has no href of its own, so it addresses the video; a marker addresses itself.
         if (fragment !== null) window.history.replaceState(window.history.state, "", fragment);
         notifyHash();
         openVideo(orderNo, second);
       },
       onAuthRequested: (requestId) => {
+        setPressPending(null);
         applyFragmentAndSelect(orderNo, fragment);
         authResume.current = { orderNo, second };
         authRequestId.current = requestId;
       },
+      onWaiting: () => setPressPending(orderNo),
       isCancelled: () => !mountedRef.current,
     });
   };
@@ -648,7 +654,7 @@ export function VideoBench({
             authState={authState}
             progress={progress}
             onSaveWatched={saveWatched}
-            externalResolvingOrderNo={externalResolving}
+            pressPendingOrderNo={pressPending}
             autoNext={autoNext}
             onToggleAutoNext={toggleAutoNext}
             onGo={goTo}

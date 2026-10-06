@@ -476,6 +476,7 @@
     "minPointsHint": "Add at least {count, plural, one {# point} other {# points}} to save.",
     "maxPointsHint": "You can save at most {count, plural, one {# point} other {# points}}. Undo the extra ones.",
     "savingLabel": "Saving…",
+    "checkingSessionLabel": "Checking your session",
     "saveSuccess": "Measurement saved to your cloud archive.",
     "signInHint": "Sign in to save your measurements to the cloud archive.",
     "sessionExpired": "Your session has expired. <link>Sign in again</link> to continue.",
@@ -924,6 +925,7 @@
     "addLabel": "Add to favorites",
     "addedLabel": "In favorites",
     "savingLabel": "Saving",
+    "checkingSessionLabel": "Checking your session",
     "sessionExpired": "Session expired. <link>Sign in again</link>."
   },
   "Deniz": {

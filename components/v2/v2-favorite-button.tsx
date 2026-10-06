@@ -36,6 +36,23 @@ export function FavoriteFailureText({ code }: { readonly code: FavoriteMutationE
   return t("saveError");
 }
 
+/**
+ * What the busy spinner says (T-167). A press made while the session check runs waits for it
+ * before anything is saved, so it says the session is being checked; "Kaydediliyor" only once
+ * the save request itself runs.
+ */
+export function favoriteBusyLabelKey({
+  pending,
+  waiting,
+}: {
+  readonly pending: boolean;
+  readonly waiting: boolean;
+}): "savingLabel" | "checkingSessionLabel" | null {
+  if (pending) return "savingLabel";
+  if (waiting) return "checkingSessionLabel";
+  return null;
+}
+
 interface V2FavoriteButtonProps {
   readonly target: FavoriteTargetParam;
   variant?: "default" | "compact" | "iconOnly";
@@ -110,7 +127,12 @@ export function V2FavoriteButton({
     authRequestId.current = requestId;
   }, []);
   const sessionGate = useSessionGate("favorite", toggleNow, onAuthRequested);
-  const busy = pending || sessionGate.waiting;
+  const busyLabelKey = favoriteBusyLabelKey({ pending, waiting: sessionGate.waiting });
+  const busy = busyLabelKey !== null;
+  // The lock and the "giriş yap" name are a guest's only. While the session check runs the
+  // button reads as a plain "add" (T-165): a press then waits for the check either way.
+  const guest = authState === "anonymous";
+  const ariaLabel = favorited ? t("removeAria") : guest ? t("signInRequiredAria") : t("addAria");
 
   const handleClick = () => {
     if (busy) return;
@@ -136,13 +158,8 @@ export function V2FavoriteButton({
         size="icon-sm"
         role={authState === "authenticated" ? "switch" : undefined}
         aria-checked={authState === "authenticated" ? favorited : undefined}
-        aria-label={
-          favorited
-            ? t("removeAria")
-            : authState === "authenticated"
-              ? t("addAria")
-              : t("signInRequiredAria")
-        }
+        aria-label={ariaLabel}
+        aria-busy={busy}
         disabled={busy}
         onClick={handleClick}
         className={`rounded-full transition-all duration-300 ${
@@ -151,8 +168,8 @@ export function V2FavoriteButton({
             : "text-muted-foreground hover:text-foreground"
         } ${className}`}
       >
-        {busy ? (
-          <Spinner size="default" label={t("savingLabel")} className="text-muted-foreground" />
+        {busyLabelKey !== null ? (
+          <Spinner size="default" label={t(busyLabelKey)} className="text-muted-foreground" />
         ) : (
           <Heart
             className={`size-4 transition-transform duration-200 ${
@@ -172,13 +189,8 @@ export function V2FavoriteButton({
         size="sm"
         role={authState === "authenticated" ? "switch" : undefined}
         aria-checked={authState === "authenticated" ? favorited : undefined}
-        aria-label={
-          favorited
-            ? t("removeAria")
-            : authState === "authenticated"
-              ? t("addAria")
-              : t("signInRequiredAria")
-        }
+        aria-label={ariaLabel}
+        aria-busy={busy}
         disabled={busy}
         onClick={handleClick}
         className={`rounded-xl h-9 px-3 text-xs font-semibold gap-2 transition-all duration-300 shadow-2xs ${
@@ -187,17 +199,17 @@ export function V2FavoriteButton({
             : "bg-card/80 hover:bg-card border-border text-foreground"
         } ${className}`}
       >
-        {busy ? (
-          <Spinner size="sm" label={t("savingLabel")} className="text-muted-foreground" />
+        {busyLabelKey !== null ? (
+          <Spinner size="sm" label={t(busyLabelKey)} className="text-muted-foreground" />
         ) : favorited ? (
           <Heart className="size-3.5 fill-current animate-in zoom-in-50 duration-200" />
-        ) : authState === "authenticated" ? (
-          <Heart className="size-3.5 hover:scale-110 transition-transform" />
-        ) : (
+        ) : guest ? (
           <div className="flex items-center gap-1">
             <Heart className="size-3.5" />
             <Lock className="size-2.5 text-muted-foreground" />
           </div>
+        ) : (
+          <Heart className="size-3.5 hover:scale-110 transition-transform" />
         )}
 
         <span>{favorited ? t("addedLabel") : t("addLabel")}</span>
