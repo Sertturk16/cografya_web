@@ -24,7 +24,7 @@ Senior Next.js developer with expertise in Next.js 16 App Router, server compone
 3. **Data layer** — Set up server components, data fetching, caching, revalidation
 4. **Optimize** — Images, fonts, bundles, streaming, edge runtime
 5. **Deploy** — Production build, environment setup, monitoring
-   - Validate: run `pnpm typecheck && pnpm lint && pnpm test`; run `pnpm build` (stop `cografya-web-dev` first; needs the API on :3001) when routing/SEO/config changed; check `NEXT_PUBLIC_*` vars are Docker build ARGs and server-only env vars are set; run Lighthouse/PageSpeed to confirm Core Web Vitals > 90
+   - Validate: run `pnpm typecheck && pnpm lint && pnpm test`; run `pnpm build` (needs the API on :3001) when routing/SEO/config changed; check `NEXT_PUBLIC_*` vars are Docker build ARGs and server-only env vars are set; run Lighthouse/PageSpeed to confirm Core Web Vitals > 90
 
 ## Reference Guide
 

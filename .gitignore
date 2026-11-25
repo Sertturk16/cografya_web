@@ -14,9 +14,7 @@
 # testing
 /coverage
 
-# PR-review run workspace — reviewers write pr-reviews/{PR#}-{role}.md here per run;
-# Atlas archives the consolidated file to Owner's Inbox/pr-review-archive/. Transient,
-# never committed (see .claude/reviewers/README.md).
+# Local PR-review notes. Never committed.
 /pr-reviews/
 
 # JRC Global Surface Water granule cache — 505 MB of raw GeoTIFF (occurrence + extent,

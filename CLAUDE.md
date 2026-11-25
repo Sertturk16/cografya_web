@@ -17,9 +17,9 @@ Read on demand, not every session:
 ## Commands
 
 ```bash
-pnpm dev                                  # rarely needed: cografya-web-dev already serves :3000 from this tree
+pnpm dev                                  # dev server on :3000 (host, Turbopack); needs the API on :3001
 pnpm typecheck && pnpm lint && pnpm test  # gate before every commit
-pnpm build                                # docker stop cografya-web-dev FIRST (shares .next); needs the API on :3001
+pnpm build                                # needs the API on :3001; can run beside `pnpm dev` (dev writes .next/dev)
 pnpm contract:sync                        # after ANY API DTO/route change: generate, copy spec, codegen
 pnpm design:tokens                        # after changing tokens in app/globals.css (docs/design.md frontmatter)
 pnpm generate:map | generate:world-map | generate:water | generate:tr-context   # map artifacts
@@ -37,7 +37,9 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 - Href typing: never `as any`. When next-intl's typed `Link` rejects a computed href, use
   `as unknown as React.ComponentProps<typeof Link>["href"]`.
 - Import `Link`, `redirect`, `usePathname`, `useRouter`, `getPathname` from
-  `@/i18n/navigation`, never from `next/link` or `next/navigation`.
+  `@/i18n/navigation`, never from `next/link` or `next/navigation`. Exception: `useRouter` from
+  `next/navigation` where an already-resolved path is pushed, only in the files listed in
+  `lib/forms/navigation-import-discipline.test.ts`. `notFound` comes from `next/navigation`.
 - Every route needs an entry in `i18n/routing.ts` `pathnames` (TR and EN).
 - Reads from the API go through `apiGet` in `lib/api/client.ts` (server-only, ISR 3600 s,
   attaches the internal token). Mutations and authenticated reads go through
@@ -45,7 +47,8 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
   path: `lib/auth/session.ts` and `lib/profile/profile.server.ts` read the access cookie in
   server pages and fetch the API `no-store`. No `fetch` to the API from client code.
 - Types from the contract: alias `components["schemas"][...]` once in `lib/api/types.ts`,
-  never reference `schema.ts` shapes at call sites.
+  never reference `schema.ts` shapes at call sites. One file still does
+  (`lib/earthquake/binding-sentence.ts`); do not copy it.
 - Generated files (`lib/api/schema.ts`, `lib/map/*.generated.ts`) are never hand-edited; each
   has a `*:check` CI drift gate. A new one goes in BOTH `.prettierignore` and ESLint
   `globalIgnores`.
@@ -69,8 +72,8 @@ pnpm generate:map | generate:world-map | generate:water | generate:tr-context   
 - impeccable finds `docs/design.md` only as a sibling of `docs/product.md`; keep both there.
   Never let it create a `DESIGN.md`/`PRODUCT.md` elsewhere or re-theme Terra. `docs/design.md`
   overrides its advice; voice and visual rules stay out of `docs/product.md`.
-- No worktrees here (root `CLAUDE.md`). Establish a baseline with `git show <sha>:<path>` or
-  `git stash`.
+- Never create a git worktree inside this repo (a parallel checkout lives outside it). For a
+  baseline in this checkout use `git show <sha>:<path>` or `git stash`.
 
 ## Done means
 
