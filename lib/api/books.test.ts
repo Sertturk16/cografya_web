@@ -4,7 +4,7 @@ import {
   BOOK_LIST_PAGE_1,
   BOOK_LIST_PAGE_2,
 } from "@/test/fixtures/books/book-fixtures";
-import { getBookBySlug, getBooks, getBooksResilient, isBookSlugShape } from "./books";
+import { getBookBySlug, getBooks, getBooksResilient, hasBooks, isBookSlugShape } from "./books";
 import { isProductionBuild } from "./provinces";
 import type { BookDetail } from "./types";
 
@@ -200,6 +200,31 @@ describe("getBooksResilient — the build-vs-runtime split", () => {
   });
 });
 
+describe("hasBooks — the switch for every book entry point", () => {
+  it("answers true when the catalogue lists a book", async () => {
+    apiAnswersInOrder(ok(SINGLE_COMPLETE_PAGE));
+    await expect(hasBooks()).resolves.toBe(true);
+  });
+
+  it("answers false for an empty catalogue", async () => {
+    apiAnswersInOrder(ok({ page: 1, pageSize: 100, total: 0, hasMore: false, items: [] }));
+    await expect(hasBooks()).resolves.toBe(false);
+  });
+
+  it("answers false instead of throwing when the list fails at runtime", async () => {
+    // `getBooksResilient` re-throws here; this one feeds the layout of every page, so it must
+    // not. The warning is what keeps the hidden links from looking like an empty catalogue.
+    vi.mocked(isProductionBuild).mockReturnValue(false);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(notOk(502))),
+    );
+
+    await expect(hasBooks()).resolves.toBe(false);
+    expect(console.warn).toHaveBeenCalledWith(expect.stringContaining("[books]"));
+  });
+});
+
 describe("getBookBySlug", () => {
   it("returns the payload on a 200", async () => {
     apiAnswersInOrder(ok(BOOK_DETAIL));
@@ -325,7 +350,7 @@ describe("getBookBySlug — thumbnail address resolution", () => {
 // so a guard under `app/` is one CI cannot see.
 describe("isBookSlugShape", () => {
   it.each([
-    ["today's real slug shape", "ayt-cografya-konu-ozetli-brans-denemeleri"],
+    ["a long multi-word slug", "ornek-yayinevi-cografya-soru-bankasi"],
     ["digits", "deneme-2026"],
     ["a single character", "a"],
     // The api's own pattern is a deliberate SUPERSET of the seed's write-time gate: it

@@ -40,6 +40,21 @@ describe("readPrerenderFloors", () => {
     expect(failures).toEqual([]);
   });
 
+  it("does not fail the books row with no book pages — an empty catalogue is a healthy build", () => {
+    const noBooks = {
+      routes: Object.fromEntries(
+        Object.keys(healthyManifest().routes)
+          .filter((path) => !/\/(kitaplar|books)\//.test(path))
+          .map((path) => [path, {}]),
+      ),
+    };
+    // Only the books row is under test: the synthetic manifest sits exactly on the `total`
+    // floor, so dropping its two book pages would fail `total` for a reason a real build does
+    // not have (its flag routes and static pages leave room above the floor).
+    const books = readPrerenderFloors(noBooks).find((r) => r.label === "books");
+    expect(books).toMatchObject({ kind: "floor", expected: 0, actual: 0 });
+  });
+
   it("counts the 81 provinces in both locales", () => {
     const provinces = readPrerenderFloors(healthyManifest()).find((r) => r.label === "provinces");
     expect(provinces).toMatchObject({ kind: "exact", expected: 162, actual: 162 });

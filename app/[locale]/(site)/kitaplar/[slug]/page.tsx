@@ -70,7 +70,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     //
     // The trailing chrome label is gone rather than localized: it said "V2 Kitaplar", naming a
     // route prefix T-032 PR3 retired, and it sat in front of the root layout's own
-    // `%s · Coğrafya Gurmesi` template — two brand suffixes for one title.
+    // `%s · <brand>` template — two brand suffixes for one title.
     title: book.metaTitleTr,
     description: book.metaDescriptionTr,
     openGraphType: "article",
@@ -257,7 +257,7 @@ export default async function V2BookDetailPage({ params }: PageProps) {
             </div>
           )}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {/* NO `|| "Murat Karagöz, Murat Çakır"`. That fallback printed two real people as the
+            {/* NO hard-coded author fallback. One printed two real people's names as the
                 authors of whichever book arrived without an author list — the same invention as
                 `|| "Dünya Bankası"` on the country page, except the subject is a person. An em
                 dash would be no better: a "Yazarlar" cell is itself the claim, so the cell goes.

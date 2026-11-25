@@ -147,10 +147,9 @@ export async function getBooks(): Promise<BookListItem[]> {
  * build, and re-throw at RUNTIME so a transient api blip makes Next keep serving the last
  * good static artifact instead of caching an empty hub.
  *
- * At build, `[]` must not become a silent hole, and that is an obligation W1 INHERITS
- * rather than a behaviour that exists today: the hub it builds is required to answer
- * `notFound()` on an empty list instead of rendering a heading with nothing under it, so a
- * degraded build shows up as a 404 rather than as a thin page. No hub exists yet.
+ * At build, `[]` reads exactly like an empty catalogue, which is a real state: the hub then
+ * renders its "no books yet" message under `noindex` and the sitemap drops its row
+ * (`lib/seo/book-sitemap.ts`), so a degraded build costs the book pages, not a thin indexed one.
  *
  * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
  */
@@ -165,6 +164,28 @@ export const getBooksResilient = cache(async (): Promise<BookListItem[]> => {
       return [];
     }
     throw error;
+  }
+});
+
+/**
+ * Whether the catalogue lists at least one book. Every book entry point outside the book pages
+ * reads this one answer: the header and footer links, the home page's books link, the book
+ * benefit on `/giris` and `/kayit`, the search index's `/kitaplar` row and the hub's own
+ * indexability. They hide while the catalogue is empty and come back with the first book, with
+ * no code change.
+ *
+ * Never throws. It feeds the site chrome of every page, so a books outage may cost the links but
+ * never the page: an empty list and a failed fetch both answer `false`. That is the one place
+ * this differs from {@link getBooksResilient}, whose list it reads (and shares per request).
+ *
+ * Wrapped in React cache() — see lib/api/request-dedupe.test.ts.
+ */
+export const hasBooks = cache(async (): Promise<boolean> => {
+  try {
+    return (await getBooksResilient()).length > 0;
+  } catch (error) {
+    console.warn(`[books] catalogue check failed; hiding the book entry points. ${String(error)}`);
+    return false;
   }
 });
 

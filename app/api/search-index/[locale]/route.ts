@@ -4,6 +4,7 @@ import { getPathname } from "@/i18n/navigation";
 import { hasLocale } from "next-intl";
 import { routing } from "@/i18n/routing";
 import { CONTENT_REVALIDATE_SECONDS } from "@/lib/api/client";
+import { hasBooks } from "@/lib/api/books";
 import { getCountries } from "@/lib/api/countries";
 import { getProvinces } from "@/lib/api/provinces";
 import { buildSearchIndex } from "@/lib/search/index-source";
@@ -62,7 +63,11 @@ export async function GET(_request: Request, ctx: { params: Promise<{ locale: st
   // resilience wrapper needed (dropped for the same reason `lib/reference/reference.server.ts`
   // dropped its own, see T-020). Each api source fails ALONE: a province outage drops the
   // provinces and keeps countries, regions, continents, seas, tools and pages searchable.
-  const [provinces, countries] = await Promise.allSettled([getProvinces(), getCountries()]);
+  // `hasBooks` never rejects: a books outage only keeps `/kitaplar` out of this response.
+  const [[provinces, countries], booksListed] = await Promise.all([
+    Promise.allSettled([getProvinces(), getCountries()]),
+    hasBooks(),
+  ]);
   const incomplete = provinces.status === "rejected" || countries.status === "rejected";
   if (incomplete) {
     console.warn(
@@ -80,6 +85,7 @@ export async function GET(_request: Request, ctx: { params: Promise<{ locale: st
     entries: buildSearchIndex({
       provinces: provinces.status === "fulfilled" ? provinces.value : null,
       countries: countries.status === "fulfilled" ? countries.value : null,
+      hasBooks: booksListed,
       locale,
       // Paths resolved through the routing table here, on the server, so the client never
       // needs to know how any URL is spelled in either locale.

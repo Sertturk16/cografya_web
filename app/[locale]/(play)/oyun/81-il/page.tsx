@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getPathname } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
+import { hasBooks } from "@/lib/api/books";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
 import { buildGameShapes, toTargetEntries } from "@/lib/game/map-shapes";
 import { getRegionLabels } from "@/components/game/region-labels";
@@ -68,11 +69,11 @@ export default async function V2ProvinceModePage({ params }: PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("Game");
-  const regionLabels = await getRegionLabels(locale);
+  const [regionLabels, showBooks] = await Promise.all([getRegionLabels(locale), hasBooks()]);
 
   return (
     <>
-      <V2Header />
+      <V2Header showBooks={showBooks} />
       <V2LiveTicker />
       <PlaySuspense>
         <ProvinceGame locale={locale} modeName={t("mode2Name")} regionLabels={regionLabels} />

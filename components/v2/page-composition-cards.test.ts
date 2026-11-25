@@ -582,7 +582,9 @@ function handDrawnReport(pick: (counts: { cards: number; wells: number }) => num
 // same kind of on-map chip as the tool and game pages' own.
 // 192 → **190** in T-128: the book page's hero card and the bench's progress card left with the
 // workbench rewrite; the resume card that replaced the latter is a `rounded-lg` control, counted.
-export const HAND_DRAWN_CARDS = 190;
+// 190 → **189** when `/hesabim`'s video tab became conditional on a book existing: its
+// "İzlediğin Video Yok" empty state could no longer render, and its icon tile left with it.
+export const HAND_DRAWN_CARDS = 189;
 
 /**
  * 160 → **161**, and nothing was drawn to cause it.
@@ -616,7 +618,8 @@ export const HAND_DRAWN_CARDS = 190;
 // 147 → **146** in T-128: the book page's cover box left with the hero.
 // 146 → **145** with the OGM CBS link: the "other tools" row's two link wells became one,
 // rendered from a list.
-export const HAND_DRAWN_WELLS = 145;
+// 145 → **144**: the same unreachable `/hesabim` video empty state, a dashed `bg-muted/20` well.
+export const HAND_DRAWN_WELLS = 144;
 
 /** Distinct class strings across both populations. See {@link handDrawnSpellings} for why.
  *

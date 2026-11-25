@@ -417,7 +417,7 @@ describe("T9 — Cache-Control: no-store on every branch", () => {
 });
 
 describe("handleGetBookProgress (PR-B / UYE-P3)", () => {
-  const VALID_SLUG = "ayt-cografya-denemeleri";
+  const VALID_SLUG = "ornek-kitap";
 
   function validBookProgressBody() {
     return {

@@ -39,7 +39,7 @@ const TOOLS = [
   { id: "alan", pathname: AREA_TOOL.pathname },
 ] as const;
 
-/** The section hubs a reader can find by name. */
+/** The section hubs a reader can find by name. `kitaplar` joins only while a book exists. */
 const PAGES = [
   { id: "turkiye", pathname: "/turkiye" },
   { id: "dunya", pathname: "/dunya" },
@@ -72,6 +72,9 @@ export interface BuildSearchIndexArgs {
   readonly provinces: readonly ProvinceListItem[] | null;
   /** `null` when the api source failed: only that kind drops out of the index. */
   readonly countries: readonly CountryListItem[] | null;
+  /** Whether the book catalogue lists a book; `/kitaplar` is findable only then, the same rule
+   *  the header and footer links follow. */
+  readonly hasBooks: boolean;
   readonly locale: Locale;
   /** The localized path for a route, i.e. `getPathname` bound to this locale. */
   readonly pathOf: (href: IndexHref) => string;
@@ -80,7 +83,7 @@ export interface BuildSearchIndexArgs {
 }
 
 export function buildSearchIndex(args: BuildSearchIndexArgs): SearchIndexRecord[] {
-  const { provinces, countries, locale, pathOf, text } = args;
+  const { provinces, countries, hasBooks, locale, pathOf, text } = args;
   const isEnglish = locale === "en";
 
   const withKeywords = (
@@ -133,7 +136,7 @@ export function buildSearchIndex(args: BuildSearchIndexArgs): SearchIndexRecord[
         text(`tools.${tool.id}.keywords`),
       ),
     ),
-    ...PAGES.map((page) =>
+    ...PAGES.filter((page) => hasBooks || page.id !== "kitaplar").map((page) =>
       withKeywords(
         text(`pages.${page.id}.name`),
         pathOf(page.pathname),

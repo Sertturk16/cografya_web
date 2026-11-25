@@ -324,7 +324,7 @@ describe("buildWatchedTogglePayload — the full-state-replace hazard (§5.6)", 
 });
 
 describe("fetchBookProgress (PR-B / UYE-P3)", () => {
-  const SLUG = "ayt-cografya-denemeleri";
+  const SLUG = "ornek-kitap";
 
   it("resolves the book progress value on a well-formed 200 with resume", async () => {
     vi.stubGlobal(

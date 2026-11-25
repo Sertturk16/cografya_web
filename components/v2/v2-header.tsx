@@ -38,7 +38,17 @@ import { requestAuth } from "@/lib/auth/auth-modal.client";
 import { submitAuth } from "@/lib/auth/submit.client";
 import { activeNavSection } from "@/lib/nav/active-section";
 
-export function V2Header() {
+interface V2HeaderProps {
+  /**
+   * Whether the book catalogue lists a book (`hasBooks()` in `lib/api/books.ts`, read by the
+   * server layout or page that renders this header). The Kitaplar links hide while it is
+   * empty and come back with the first book. Defaults to hidden, which is what an error
+   * boundary with no data to ask gets.
+   */
+  readonly showBooks?: boolean;
+}
+
+export function V2Header({ showBooks = false }: V2HeaderProps) {
   const locale = useLocale() as Locale;
   const pathname = usePathname();
   const router = useRouter();
@@ -389,9 +399,11 @@ export function V2Header() {
           <DesktopNavLink href="/dunya-analizi" active={isWorldAnalysisActive}>
             Dünya Analizi
           </DesktopNavLink>
-          <DesktopNavLink href="/kitaplar" active={isKitaplarActive}>
-            Kitaplar
-          </DesktopNavLink>
+          {showBooks && (
+            <DesktopNavLink href="/kitaplar" active={isKitaplarActive}>
+              Kitaplar
+            </DesktopNavLink>
+          )}
         </div>
 
         {/* Right Side Actions & Mobile Trigger */}
@@ -672,7 +684,7 @@ export function V2Header() {
                   {/* Category 3: Etkileşim & Kitaplar */}
                   <div className="space-y-2">
                     <span className="text-[11px] font-bold text-muted-foreground tracking-wider uppercase">
-                      Oyun, Araçlar ve Kitaplar
+                      {showBooks ? "Oyun, Araçlar ve Kitaplar" : "Oyun ve Araçlar"}
                     </span>
                     <div className="space-y-1">
                       <Link
@@ -716,18 +728,20 @@ export function V2Header() {
                         </div>
                         <span className="ml-2 shrink-0 text-xs text-muted-foreground">MEB</span>
                       </Link>
-                      <Link
-                        href="/kitaplar"
-                        onClick={() => setMobileOpen(false)}
-                        className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
-                      >
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <BookOpen className="size-4 text-primary" />
-                          <span className="truncate text-sm font-semibold text-foreground">
-                            Kitaplar
-                          </span>
-                        </div>
-                      </Link>
+                      {showBooks && (
+                        <Link
+                          href="/kitaplar"
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-between p-2.5 rounded-xl hover:bg-muted transition-colors"
+                        >
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <BookOpen className="size-4 text-primary" />
+                            <span className="truncate text-sm font-semibold text-foreground">
+                              Kitaplar
+                            </span>
+                          </div>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>

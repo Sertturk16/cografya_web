@@ -3,25 +3,19 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardHeader, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-export function V2LearningPaths() {
+interface V2LearningPathsProps {
+  /** Whether the book catalogue lists a book (`hasBooks()`); the "Tüm Kitaplar" link and the
+   *  section's "Deneme Çöz" promise follow it. */
+  readonly showBooks: boolean;
+}
+
+export function V2LearningPaths({ showBooks }: V2LearningPathsProps) {
   const publications = [
-    {
-      id: "ayt-deneme",
-      title: "AYT Coğrafya Konu Özetli Branş Denemeleri",
-      description:
-        "40 branş denemesi, hepsi yalnız coğrafya sorusu. Denemelerin çözüm videolarını burada izlersin.",
-      features: [
-        "Videoda istediğin sorunun çözümüne atla",
-        "Kaldığın yerden devam et",
-        "İzlediğin denemeleri işaretle",
-      ],
-      href: "/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri",
-      cta: "Kitabı İncele",
-    },
     {
       id: "dilsiz-harita",
       title: "Dilsiz Harita Oyunu",
@@ -59,17 +53,18 @@ export function V2LearningPaths() {
       <div className="border-b border-border pb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-primary">
-            Deneme Çöz, Oyna, Ölç
+            {showBooks ? "Deneme Çöz, Oyna, Ölç" : "Oyna ve Ölç"}
           </h2>
         </div>
-        <Link href="/kitaplar">
-          <Button variant="ghost" size="sm" rightIcon={<ArrowRight className="size-4" />}>
+        {showBooks && (
+          <Link href="/kitaplar" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
             Tüm Kitaplar
-          </Button>
-        </Link>
+            <ArrowRight className="size-4" />
+          </Link>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {publications.map((item) => (
           <Card
             key={item.id}

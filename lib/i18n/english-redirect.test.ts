@@ -16,7 +16,7 @@ import {
 const SLUGS: Record<ApiSlugRoute, Record<string, string>> = {
   "/dunya/[slug]": { germany: "almanya", "united-arab-emirates": "birlesik-arap-emirlikleri" },
   "/turkiye/[slug]": { istanbul: "istanbul", mugla: "mugla" },
-  "/kitaplar/[slug]": { "ayt-cografya": "ayt-cografya" },
+  "/kitaplar/[slug]": { "ornek-kitap": "ornek-kitap" },
 };
 
 const resolve: SlugResolver = async (route, enSlug) => SLUGS[route][enSlug] ?? null;
@@ -53,7 +53,7 @@ describe("turkishPathFor — representative URLs", () => {
     ["/en/sea/black-sea", "/deniz/karadeniz"],
     ["/en/sea/coastal-types", "/deniz/kiyi-tipleri"],
     ["/en/game/provinces-by-region/ege", "/oyun/bolge-bolge-il/ege"],
-    ["/en/books/ayt-cografya", "/kitaplar/ayt-cografya"],
+    ["/en/books/ornek-kitap", "/kitaplar/ornek-kitap"],
     ["/en/tools/distance", "/araclar/mesafe-olcme"],
     ["/en/earthquakes/fault-lines", "/deprem/fay-hatlari"],
     ["/en/reset-password/new", "/sifre-sifirlama/yeni"],
@@ -111,7 +111,7 @@ describe("every routing.pathnames entry has a way back", () => {
     "/turkiye/bolge/[slug]": { en: "marmara", tr: "marmara" },
     "/dunya/kita/[slug]": { en: "europe", tr: "avrupa" },
     "/oyun/bolge-bolge-il/[bolge]": { en: "ege", tr: "ege" },
-    "/kitaplar/[slug]": { en: "ayt-cografya", tr: "ayt-cografya" },
+    "/kitaplar/[slug]": { en: "ornek-kitap", tr: "ornek-kitap" },
     "/design-system/[category]": { en: "tokens", tr: "tokens" },
   };
 

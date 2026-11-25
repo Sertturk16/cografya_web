@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@/i18n/navigation";
-import { Map, Layers, BookOpen } from "lucide-react";
+import { Map, Layers, BookOpen, Info } from "lucide-react";
 import { badgeVariants } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
@@ -47,7 +47,13 @@ const SOURCE_BADGE = cn(
   "min-h-6 text-[10px] font-mono border-border transition-colors hover:border-primary/50 hover:text-primary",
 );
 
-export function V2Footer() {
+interface V2FooterProps {
+  /** Whether the book catalogue lists a book (`hasBooks()`, read by the `(site)` layout). The
+   *  Kitaplar link and the blurb's mention of book videos follow it. */
+  readonly showBooks?: boolean;
+}
+
+export function V2Footer({ showBooks = false }: V2FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -70,8 +76,10 @@ export function V2Footer() {
 
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-sm">
               81 il ve 199 ülke için sayfalar, dört denizde su sıcaklığı ve dalga, AFAD&apos;ın
-              kaydettiği son depremler. Yanında harita oyunları, ölçüm araçları ve video çözümlü
-              denemeler.
+              kaydettiği son depremler.{" "}
+              {showBooks
+                ? "Yanında harita oyunları, ölçüm araçları ve kitapların çözüm videoları."
+                : "Yanında harita oyunları ve ölçüm araçları."}
             </p>
 
             <nav
@@ -188,15 +196,21 @@ export function V2Footer() {
           {/* Col 5: Yayınlar & Kurumsal */}
           <div className="space-y-3">
             <h3 className="font-heading font-bold text-sm text-foreground flex items-center gap-1.5">
-              <BookOpen className="size-4 text-accent" />
-              Yayınlar ve Hesap
+              {showBooks ? (
+                <BookOpen className="size-4 text-accent" />
+              ) : (
+                <Info className="size-4 text-accent" />
+              )}
+              {showBooks ? "Yayınlar ve Hesap" : "Site ve Hesap"}
             </h3>
             <ul className="space-y-2 text-xs text-muted-foreground">
-              <li>
-                <Link href="/kitaplar" className="hover:text-accent transition-colors block">
-                  Kitaplar
-                </Link>
-              </li>
+              {showBooks && (
+                <li>
+                  <Link href="/kitaplar" className="hover:text-accent transition-colors block">
+                    Kitaplar
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/hakkimizda" className="hover:text-accent transition-colors block">
                   Hakkımızda

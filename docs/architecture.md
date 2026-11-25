@@ -170,7 +170,18 @@ noindex | trOnly`) that decides which locales a page is indexable in.
   is a local override. Both are in `outputFileTracingIncludes` and copied by the
   Dockerfile.
 
-## Book page (`/kitaplar/[slug]`)
+## Books (`/kitaplar`, `/kitaplar/[slug]`)
+
+- The catalogue is empty today. `hasBooks()` (`lib/api/books.ts`, `cache()`-wrapped, never
+  throws: an empty list and a failed fetch both answer `false`) is the one switch for every
+  entry point outside the book pages: the header and footer links (a `showBooks` prop from the
+  `(site)` and `(embed)` layouts and the `(play)` pages), the home page's books link, the video
+  benefit on `/giris` and `/kayit`, and the search index's `/kitaplar` row. `/hesabim` hides
+  its video tab from its own book list. The first published book brings all of them back with
+  no code change.
+- The hub stays reachable by URL. With no book it renders a "Henüz kitap yok" state and is
+  `noindex` (`bookHubSurface()` in `lib/seo/book-sitemap.ts`), and the sitemap drops its row;
+  with a book it is `trOnly` and listed.
 
 - One model for every book kind: Book → group (`groupTitleTr`) → video → marker (etiket).
   `contentKind` picks the composed nouns; the pure rules are in `lib/book/workbench-model.ts`.

@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
-import { getBooksResilient } from "@/lib/api/books";
+import { getBooksResilient, hasBooks } from "@/lib/api/books";
 import type { BookListItem } from "@/lib/api/types";
 import { collectionPageJsonLd, itemListJsonLd, JsonLd } from "@/lib/seo/json-ld";
+import { bookHubSurface } from "@/lib/seo/book-sitemap";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2BooksHub } from "@/components/v2/v2-books-hub";
@@ -21,11 +22,11 @@ import { Card } from "@/components/ui/card";
 /**
  * 3600s, not the previous 86400: the fix round that dropped this page's `notFound()` on an
  * empty catalogue (`58a2c6d`, "render graceful empty state for books") left the degrade
- * window at 24h. A build-time api outage still bakes an empty book list into this route —
- * `V2BooksHub` below now renders an honest "henüz kitap yayımlanmadı" state for that case
- * (see its own comment) rather than the old misleading "no search results" copy, so the
- * degrade is legible, but a whole day of it is still needlessly long. 3600s matches this
- * repo's own reference-list precedent (`lib/api/client.ts`'s `CONTENT_REVALIDATE_SECONDS`).
+ * window at 24h. An empty catalogue is a real state (no book is published today), and a
+ * build-time api outage bakes the same empty list into this route; either way the page renders
+ * its "no books yet" state under `noindex`, and the first book should not wait a day to show.
+ * 3600s matches this repo's own reference-list precedent (`lib/api/client.ts`'s
+ * `CONTENT_REVALIDATE_SECONDS`).
  */
 export const revalidate = 3600;
 
@@ -48,29 +49,24 @@ async function loadBooks(locale: Locale) {
   };
 }
 
+const HUB_DESCRIPTION =
+  "Coğrafya kitaplarının video çözümleri; her sorunun videoda başladığı an işaretli. Kitabı adına ya da yayınevine göre ara, çözüm videolarını aç.";
+
 export async function generateMetadata({ params }: V2KitaplarPageProps): Promise<Metadata> {
   const { locale } = await params;
 
-  // Fixed editorial copy (no book-level count is published — see the comment below), so
-  // this never depends on the catalogue fetch succeeding. Previously this bailed to `{}`
-  // whenever `getBooksResilient()` came back empty (a real, reachable state: any build-time
-  // api hiccup degrades the catalogue to `[]`, see the `revalidate` comment above) — Next
-  // then fell back to the root layout's `title.default`, the SITE'S OWN homepage title, on
-  // a page that is not the homepage. A page-specific title must hold regardless of whether
-  // the catalogue itself loaded.
+  // Fixed editorial copy (no book-level count is published), so the title never depends on
+  // the catalogue: bailing to `{}` on an empty list once made Next fall back to the SITE'S
+  // OWN homepage title on a page that is not the homepage.
   return buildMetadata({
     locale,
-    // T-032 PR3: this page lived under `/v2`, whose layout marked the whole tree
-    // `noindex`. It now serves the canonical URL, so it carries the surface its V1
-    // counterpart did — `app/sitemap.ts` already publishes this URL, and a `noindex`
-    // page in the sitemap is a SEO-POLICY B6 6.8 blocker.
-    surface: "trOnly",
+    // `trOnly` while a book is listed — the surface `app/sitemap.ts` publishes this URL
+    // with — and `noindex` while the catalogue is empty and the sitemap leaves it out, so an
+    // empty hub is never an indexed thin page (`lib/seo/book-sitemap.ts`).
+    surface: bookHubSurface(await hasBooks()),
     hrefForLocale: () => "/kitaplar",
-    title: "Video Çözümlü Coğrafya Kitapları — AYT Branş Denemeleri",
-    // No book-level count is published any more (P0 generic-catalogue cut-over,
-    // `DEC 2026-09-10c` md.1) — fixed editorial copy, no interpolated numbers.
-    description:
-      "Coğrafya deneme kitaplarının video çözümleri; her sorunun videoda başladığı an işaretli. Kitabı adına ya da yayınevine göre ara, çözüm videolarını aç.",
+    title: "Coğrafya Kitaplarının Video Çözümleri",
+    description: HUB_DESCRIPTION,
   });
 }
 
@@ -91,7 +87,9 @@ async function BooksCatalogue({ locale }: { locale: Locale }) {
   const { books, items } = await loadBooks(locale);
   return (
     <>
-      <JsonLd schema={[itemListJsonLd({ name: "Video Çözümlü Kitaplar", items })]} />
+      {books.length > 0 && (
+        <JsonLd schema={[itemListJsonLd({ name: "Video Çözümlü Kitaplar", items })]} />
+      )}
       <V2BooksHub books={books} locale={locale} />
     </>
   );
@@ -100,21 +98,26 @@ async function BooksCatalogue({ locale }: { locale: Locale }) {
 export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
+  // Awaited here rather than behind Suspense: it decides the page's robots surface, which the
+  // breadcrumb trail below has to agree with. The layout already read it for the header, and
+  // `hasBooks` is `cache()`-wrapped, so this costs no second request.
+  const booksVisible = await hasBooks();
 
   return (
     <>
-      {/* Structured Data / JSON-LD */}
-      <JsonLd
-        schema={[
-          collectionPageJsonLd({
-            name: "Video Çözümlü Coğrafya Kitapları",
-            description:
-              "Coğrafya deneme kitaplarının video çözümleri; her sorunun videoda başladığı an işaretli. Kitabı adına ya da yayınevine göre ara, çözüm videolarını aç.",
-            path: "/kitaplar",
-            locale,
-          }),
-        ]}
-      />
+      {/* Structured Data / JSON-LD — only for the indexable, listing state */}
+      {booksVisible && (
+        <JsonLd
+          schema={[
+            collectionPageJsonLd({
+              name: "Video Çözümlü Coğrafya Kitapları",
+              description: HUB_DESCRIPTION,
+              path: "/kitaplar",
+              locale,
+            }),
+          ]}
+        />
+      )}
 
       <V2LiveTicker />
 
@@ -127,7 +130,7 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
               { label: "Kitaplar", path: "/kitaplar" },
             ]}
             locale={locale}
-            surface="trOnly"
+            surface={bookHubSurface(booksVisible)}
           />
 
           <Card variant="feature">
@@ -135,10 +138,14 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
               tier="hub"
               heading="Kitaplar ve Çözüm Videoları"
               lede={
-                <>
-                  Deneme kitaplarının çözüm videoları burada. Videonun altındaki soru numaralarından
-                  birine tıklarsan video o sorunun çözümüne atlar.
-                </>
+                booksVisible ? (
+                  <>
+                    Coğrafya kitaplarının çözüm videoları burada. Videonun altındaki soru
+                    numaralarından birine tıklarsan video o sorunun çözümüne atlar.
+                  </>
+                ) : (
+                  <>Coğrafya kitaplarının çözüm videoları bu sayfada yayımlanacak.</>
+                )
               }
             />
 
@@ -159,21 +166,19 @@ export default async function V2KitaplarPage({ params }: V2KitaplarPageProps) {
                 with only two tiles. `StatGrid` has no per-tile escape hatch and `StatTile` has
                 no `className` worth spending one on, so this grid takes `columns="2"` — two
                 tracks at every width, which is the same rendering by the honest route. */}
-            <StatGrid columns="2" gutter="hero">
-              {/* NO `books.length > 0 ? … : null`. An earlier round had one, and it was the
-                  clearest case against the whole idea: this page deliberately does NOT
-                  `notFound()` on an empty catalogue, so zero books is a LEGITIMATE READING, and
-                  rendering "Katalog boş / Yayın listesi gelmedi" over it invents a fetch failure
-                  that did not happen — T-024's defect with the sign flipped. `dev` printed
-                  "0 Kitap" and so does this. See `turkiye/page.tsx` for the rule all four
-                  data-backed tiles now share — including that the `absent` copy below is
-                  type-required and currently unreachable (`books.length` is a number by
-                  construction), so it is not shipped user-facing text. */}
-              <Suspense fallback={<StatTileSkeleton />}>
-                <BooksCountTile />
-              </Suspense>
-              <StatTile label="Videoları izlemek için" fact="Ücretsiz üyelik" tone="primary" />
-            </StatGrid>
+            {/* The strip shows only while a book is listed. With none, "0 kitap" and a
+                membership tile for videos that do not exist say nothing the empty state below
+                does not; the page is `noindex` in that state and the catalogue says so in
+                words. The `absent` copy is type-required and unreachable (`books.length` is a
+                number by construction), so it is not shipped user-facing text. */}
+            {booksVisible && (
+              <StatGrid columns="2" gutter="hero">
+                <Suspense fallback={<StatTileSkeleton />}>
+                  <BooksCountTile />
+                </Suspense>
+                <StatTile label="Videoları izlemek için" fact="Ücretsiz üyelik" tone="primary" />
+              </StatGrid>
+            )}
           </Card>
         </div>
 

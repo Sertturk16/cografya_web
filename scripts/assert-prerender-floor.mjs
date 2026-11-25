@@ -13,7 +13,9 @@
  * A single total is satisfiable while a whole category is missing. The counts below are
  * therefore per route family, and the structural ones are pinned EXACTLY: Türkiye has 81
  * provinces and 7 regions, and the showcase has 7 categories, so those numbers moving is
- * news either way. Country and book counts are floors, because seeds are added over time.
+ * news either way. Country and book counts are floors, because seeds are added over time. The
+ * book floor is 0: the catalogue is empty today and may stay so, so the row only reports how
+ * many book pages a build made.
  *
  * All figures measured from `.next/prerender-manifest.json` on 2026-09-19, with both locales
  * served; the rules below store them per locale.
@@ -51,7 +53,7 @@ const RULES = [
     perLocale: 14,
     pattern: /^\/(tr|en)\/(dunya\/kita|world\/continent)\/[^/]+$/,
   },
-  { label: "books", kind: "floor", perLocale: 1, pattern: /^\/(tr|en)\/(kitaplar|books)\/[^/]+$/ },
+  { label: "books", kind: "floor", perLocale: 0, pattern: /^\/(tr|en)\/(kitaplar|books)\/[^/]+$/ },
   {
     label: "design-system",
     kind: "exact",

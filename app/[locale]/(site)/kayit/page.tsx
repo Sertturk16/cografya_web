@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
+import { hasBooks } from "@/lib/api/books";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { FormCardSkeleton } from "@/components/patterns/page-skeleton";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
@@ -50,7 +51,10 @@ async function RegisterCard({ locale }: { locale: Locale }) {
 export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "Auth" });
+  const [t, showBookVideos] = await Promise.all([
+    getTranslations({ locale, namespace: "Auth" }),
+    hasBooks(),
+  ]);
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
     { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
@@ -84,7 +88,7 @@ export default async function V2RegisterPage({ params }: V2RegisterPageProps) {
 
           {/* Value Proposition & Feature Showcase */}
           <div className="lg:col-span-6 xl:col-span-7">
-            <V2AuthBenefitsPlate mode="register" />
+            <V2AuthBenefitsPlate mode="register" showBookVideos={showBookVideos} />
           </div>
         </div>
       </PageContainer>

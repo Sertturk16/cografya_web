@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { getPathname } from "@/i18n/navigation";
 import type { BookListItem } from "@/lib/api/types";
-import { bookSitemapEntries } from "./book-sitemap";
+import { bookHubSurface, bookSitemapEntries } from "./book-sitemap";
 import { absoluteUrl } from "./site";
 
 /**
- * INVARIANT GUARDS for the book tier's sitemap composition (→ PR #62 review `TEST62-I1`).
+ * INVARIANT GUARDS for the book tier's sitemap composition.
  *
- * The rule these protect is the conditional one: `/kitaplar` answers `notFound()` on an empty
- * catalogue, so its `<url>` may not appear in the sitemap in that state (§B6 6.8 — a 404 URL
- * in a sitemap is a BLOCKER). Until this file existed the predicate lived in `app/`, outside
+ * The rule these protect is the conditional one: `/kitaplar` is `noindex` on an empty
+ * catalogue, so its `<url>` may not appear in the sitemap in that state (a `noindex` URL in a
+ * sitemap is a blocker). Until this file existed the predicate lived in `app/`, outside
  * vitest's collection, and the failure it guards against is silent: a later "consistency"
- * refactor that moves `/kitaplar` into `staticEntries()` makes `/sitemap.xml` advertise a 404
- * with all three CI jobs green.
+ * refactor that moves `/kitaplar` into `staticEntries()` makes `/sitemap.xml` advertise a
+ * `noindex` page with all three CI jobs green.
  *
  * The empty branch is not an edge case here — it is the path EVERY api-less CI build takes.
  *
@@ -83,5 +83,16 @@ describe("bookSitemapEntries", () => {
 
     expect(entries[0]?.url).toBe(hubUrl);
     expect(entries[0]?.lastModified).toEqual(new Date("2026-03-04T05:06:07.000Z"));
+  });
+});
+
+describe("bookHubSurface", () => {
+  it("is the hub row's own surface while a book exists, and noindex while none does", () => {
+    // The pair the sitemap rule above depends on: the row ships exactly when the page is
+    // indexable, and it ships with the surface the page declares.
+    const hubRow = bookSitemapEntries([book()]).find((entry) => entry.url === hubUrl);
+    expect(hubRow).toBeDefined();
+    expect(bookHubSurface(true)).toBe("trOnly");
+    expect(bookHubSurface(false)).toBe("noindex");
   });
 });

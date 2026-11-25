@@ -1,36 +1,36 @@
 import type { MetadataRoute } from "next";
 import type { BookListItem } from "@/lib/api/types";
+import type { ContentSurface } from "./indexing";
 import { sitemapEntriesFor } from "./sitemap-entries";
 
 /**
  * The book tier's `<url>` set: the `/kitaplar` hub plus one entry per book, `"trOnly"` (both
  * English twins are permanently `noindex`, so each logical page owes exactly one URL).
  *
- * ## Why it lives here and not in `app/sitemap.ts` (→ PR #62 review `TEST62-I1`)
+ * ## Why it lives here and not in `app/sitemap.ts`
  *
- * The rule below is SEO POLICY, not data orchestration: an empty catalogue must produce no
- * hub `<url>`, because the hub answers `notFound()` on an empty list and §B6 6.8 rates a 404
- * URL in the sitemap a BLOCKER. `vitest.config.ts` collects `lib/**` and `components/**`
- * only, so the same predicate written inside `app/` is a rule CI cannot see — and the empty
- * branch is the exact path every api-less CI build takes. `app/sitemap.ts`'s own docblock
+ * The rule below is an SEO rule, not data orchestration: an empty catalogue must produce no
+ * hub `<url>`, because the hub is `noindex` on an empty list ({@link bookHubSurface}) and a
+ * `noindex` URL in the sitemap is a blocker. `vitest.config.ts` collects `lib/**` and
+ * `components/**` only, so the same predicate written inside `app/` is a rule CI cannot see —
+ * and the empty branch is the exact path every api-less CI build takes. `app/sitemap.ts`'s own docblock
  * already said entry-building rules belong in `lib/seo/`; this is that split, applied to the
  * one builder that had grown a conditional.
  *
- * The predicate is now stated ONCE for the sitemap. `app/[locale]/(site)/kitaplar/page.tsx` states
- * the same `books.length === 0` condition for the page's own 404, which is deliberate rather
- * than duplicated: one decides a page's status code and the other decides a URL's presence,
- * and they are joined by reading the SAME list, not by sharing a helper.
+ * The predicate is stated twice on purpose, side by side in this file: `bookSitemapEntries`
+ * decides the hub row's presence and {@link bookHubSurface} the hub page's own robots tag. Both
+ * read the same catalogue, so the row exists exactly while the page is indexable.
  *
  * ## Two things that differ from the province and country builders
  *
  * **The hub travels with its books instead of sitting in `staticEntries()`** — the conditional
  * above is only expressible where the list is in hand, so an api outage at build drops the hub
- * and its books together, which is exactly right: it drops precisely the URLs that will 404.
+ * and its books together, which is exactly right: it drops precisely the URLs that are
+ * `noindex` or 404 on that build.
  *
  * **No detail fetch.** The sibling builders resolve every entity to its detail record for one
  * field — `updatedAt` — because their list DTOs do not carry it. `BookListItemDto` does
- * (→ DEC 2026-08-15i md.4, added for this reason), so a real `lastmod` (`ENGINEERING.md`
- * §4 #7, §B6 6.9 — never the build clock) costs no extra request and an unbounded catalogue
+ * (added for this reason), so a real `lastmod` (never the build clock) costs no extra request and an unbounded catalogue
  * never becomes an N+1. That is also why this function is pure: it needs nothing but the list.
  */
 export function bookSitemapEntries(books: BookListItem[]): MetadataRoute.Sitemap {
@@ -57,4 +57,14 @@ export function bookSitemapEntries(books: BookListItem[]): MetadataRoute.Sitemap
       ),
     ),
   ];
+}
+
+/**
+ * The `/kitaplar` hub's surface: `trOnly` while the catalogue lists a book (the surface its
+ * sitemap row above is built with) and `noindex` while it is empty, when the page only says
+ * that no book is published yet. The page passes it to `buildMetadata` and to its breadcrumb
+ * trail, so the robots tag and the BreadcrumbList JSON-LD cannot disagree.
+ */
+export function bookHubSurface(hasBooks: boolean): ContentSurface {
+  return hasBooks ? "trOnly" : "noindex";
 }

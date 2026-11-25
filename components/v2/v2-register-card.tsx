@@ -540,7 +540,7 @@ export function V2RegisterCard({
           </h2>
           <p className="text-xs sm:text-sm text-muted-foreground">
             {step === "identity"
-              ? "Oyun puanlarını kaydet, kitapların video çözümlerini izle, ölçümlerini ve favorilerini sakla."
+              ? "Oyun puanlarını kaydet, ölçümlerini ve favorilerini sakla."
               : step === "details"
                 ? DETAILS_SUBTITLE[declared.accountRole as Exclude<AccountRole, "ENTHUSIAST">]
                 : `${email} adresine gönderdiğimiz 6 haneli kodu gir.`}
