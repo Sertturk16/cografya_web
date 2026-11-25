@@ -35,8 +35,7 @@ solutions; no book is published today.
   `/en/*` redirects to Turkish.
 - Sections: `/turkiye` (81 provinces, 7 regions), `/dunya` (countries, continents), `/deniz`
   (sea conditions, 4 basins, coast types), `/deprem` (AFAD earthquakes, fault lines,
-  preparedness), `/dunya-analizi` (world wind and ocean-current map,
-  earth.nullschool.net embedded under the site header), `/kitaplar` (books, video solutions; empty
+  preparedness), `/kitaplar` (books, video solutions; empty
   today, so every link to it is hidden), `/araclar` (distance, coordinate, area;
   no sign-up), `/oyun` (map games, sub-brand "Kâşif"), accounts, legal.
 - An account adds favourites, saved game rounds, saved measurements and, once a book is

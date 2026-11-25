@@ -22,7 +22,7 @@ import { StatTile } from "@/components/patterns/stat-tile";
 import { MarineDataNotice } from "@/components/marine/marine-data-notice";
 import { Breadcrumbs } from "@/components/patterns/breadcrumbs";
 import { LinkCallout } from "@/components/patterns/link-callout";
-import { Home, Layers, Wind } from "lucide-react";
+import { Home, Layers } from "lucide-react";
 import { marineBlockValues, oldestValidAt, maxGridDistanceKm } from "@/lib/marine/vintage";
 import { marineShowsValues } from "@/lib/marine/overview";
 import { V2EnWorkInProgressNotice } from "@/components/v2/v2-en-work-in-progress-notice";
@@ -299,17 +299,6 @@ export default async function V2DenizPage({ params }: V2DenizPageProps) {
         >
           Kuzey Anadolu Fayı, Marmara&apos;nın dibindeki derin çukurların içinden geçer. Ege&apos;de
           ise yer kabuğu gerilip açılıyor.
-        </LinkCallout>
-
-        <LinkCallout
-          tone="primary"
-          icon={Wind}
-          title="Rüzgâr ve Okyanus Akıntıları"
-          href="/dunya-analizi"
-          action="Haritayı Aç"
-        >
-          Dünya genelinde rüzgârı, dalgaları ve akıntıları haritada izle. Harita
-          earth.nullschool.net&apos;ten gelir ve sayfamızın içinde açılır.
         </LinkCallout>
 
         {/* SECTION 4: MEASUREMENT LAYERS CATALOGUE */}

@@ -20,10 +20,7 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   fails if any page carries its own `id="main-content"`.
 - **`(embed)`**: header plus one viewport-filling third-party iframe, no
   footer. Its layout is `h-dvh` with a single `<main>` (`flex-1`); the page positions the frame
-  `absolute inset-0` inside it. One member today, `/dunya-analizi` ("Dünya Analizi", `noindex`): the
-  earth.nullschool.net frame (`components/v2/v2-world-map-frame.tsx`, which explains why its URL
-  carries `?kiosk`), linked from the header, the mobile drawer, the footer and a callout on
-  `/deniz`. The group has its own `error.tsx`, like the other two; all three render
+  `absolute inset-0` inside it. One member today, `/araclar/ogm-cbs` (`noindex`). The group has its own `error.tsx`, like the other two; all three render
   `components/v2/v2-route-error.tsx`.
   `components/v2/auth-dialog-reachability.test.ts` lists the groups on disk.
 - `app/[locale]/design-system/**` is in NONE of these groups: internal tooling that brings its own

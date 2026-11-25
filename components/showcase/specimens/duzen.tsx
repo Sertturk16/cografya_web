@@ -51,7 +51,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Home, Layers, Wind } from "lucide-react";
+import { Home, Layers } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHero } from "@/components/patterns/page-hero";
 import { BreadcrumbsNav } from "@/components/patterns/breadcrumbs-nav";
@@ -372,15 +372,6 @@ export function DuzenSpecimens() {
             action="Fay Hatlarına Bak"
           >
             Kuzey Anadolu Fayı, Marmara&apos;nın dibindeki derin çukurların içinden geçer.
-          </LinkCallout>
-          <LinkCallout
-            tone="primary"
-            icon={Wind}
-            title="Rüzgâr ve Okyanus Akıntıları"
-            href="/dunya-analizi"
-            action="Haritayı Aç"
-          >
-            Dünya genelinde rüzgârı, dalgaları ve akıntıları haritada izle.
           </LinkCallout>
         </div>
       </Specimen>
