@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     }),
     title:
       locale === "tr"
-        ? // No ` | Coğrafya Gurmesi`: the root layout's `%s · Coğrafya Gurmesi` template adds it,
+        ? // No ` | geograp`: the root layout's `%s · geograp` template adds it,
           // and the EN arm below never carried it — so the brand appeared twice in TR and once
           // in EN, from one title expression.
           `${continent.nameTr} Kıtası: Coğrafyası, İklimi ve Ülkeleri`

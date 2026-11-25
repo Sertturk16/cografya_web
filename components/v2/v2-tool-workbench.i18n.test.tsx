@@ -37,7 +37,7 @@ const ASCII_TURKISH_WORDS =
 /** Literal text the scan accepts, each with its reason. */
 const SOURCE_ALLOWLIST: readonly string[] = [
   // The brand, stamped on the exported PNG beside the licence credits. Not translated on any page.
-  "Coğrafya Gurmesi · ",
+  "geograp · ",
 ];
 
 /** JSX attributes a reader sees or hears; a string literal with letters there is inline copy. */

@@ -128,7 +128,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       params: { slug: slugForLocale(country, l) },
     }),
     // No ` | V2 Dünya Atlası` — the retired route prefix, plus a second brand suffix on top of the
-    // root layout's `%s · Coğrafya Gurmesi` template. See the province page for the same fix.
+    // root layout's `%s · geograp` template. See the province page for the same fix.
     title: t("metaTitle", { name }),
     description: t(descriptionKey, descriptionParams),
     openGraphType: "article",

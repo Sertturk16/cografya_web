@@ -15,7 +15,7 @@ import { stripComments } from "@/lib/test-support/strip-comments";
  *
  * It did not. The watermark read
  *
- *     "Coğrafya Gurmesi · WGS84 / MEB & MTA Tabanlı Ölçüm"
+ *     "<site name> · WGS84 / MEB & MTA Tabanlı Ölçüm"
  *
  * and both halves of that were wrong in opposite directions. **MEB and MTA supply nothing here** —
  * the measurement is WGS84 haversine / L'Huilier arithmetic in `lib/map/`, and a search for either
@@ -58,7 +58,7 @@ describe("the measurement image's credit", () => {
   });
 
   it("names no institution the measurement does not use", () => {
-    // Not a general "no institution names" rule — `Coğrafya Gurmesi` is ours and belongs there.
+    // Not a general "no institution names" rule — `geograp` is ours and belongs there.
     // These two are pinned by name because they were there, and because a plausible-sounding
     // official acronym is the hardest kind of false credit to notice.
     expect(watermark).not.toMatch(/\bMEB\b/);

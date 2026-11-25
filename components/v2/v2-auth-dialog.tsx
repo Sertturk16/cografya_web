@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { V2LoginCard } from "./v2-login-card";
 import { V2RegisterCard } from "./v2-register-card";
+import { BrandImage } from "./brand-image";
+import { siteConfig } from "@/lib/seo/site";
 import { X, LogIn, UserPlus } from "lucide-react";
 
 export function V2AuthDialog() {
@@ -74,9 +76,7 @@ export function V2AuthDialog() {
           {/* Custom Header Bar with Clean Terra Styling & Close Button (shrink-0) */}
           <div className="relative px-5 pt-4.5 pb-3 sm:px-5.5 sm:pt-5 sm:pb-3 bg-card border-b border-border/80 space-y-3 shrink-0">
             <div className="flex items-center justify-between">
-              <span className="font-heading font-bold text-base text-primary">
-                Coğrafya <span className="text-primary">Gurmesi</span>
-              </span>
+              <BrandImage kind="wordmark" width={81} height={16} />
               <button
                 type="button"
                 onClick={dismissAuth}
@@ -85,7 +85,7 @@ export function V2AuthDialog() {
               >
                 <X className="size-4" />
               </button>
-              <DialogTitle className="sr-only">Coğrafya Gurmesi Hesabı</DialogTitle>
+              <DialogTitle className="sr-only">{siteConfig.name} hesabı</DialogTitle>
               <DialogDescription className="sr-only">
                 Giriş yap ya da yeni hesap oluştur.
               </DialogDescription>

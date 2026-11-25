@@ -122,9 +122,7 @@ export function V2LoginCard({
         </div>
         <div className="space-y-1.5">
           <h3 className="font-heading text-xl font-bold text-foreground">Zaten Giriş Yaptın</h3>
-          <p className="text-xs text-muted-foreground">
-            Coğrafya Gurmesi hesabın bu tarayıcıda açık.
-          </p>
+          <p className="text-xs text-muted-foreground">geograp hesabın bu tarayıcıda açık.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           <Link href="/" className="w-full sm:w-auto">

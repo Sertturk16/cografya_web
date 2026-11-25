@@ -2,10 +2,8 @@
 
 <!-- impeccable:product-schema 1 -->
 
-Coğrafya Gurmesi (cografyagurmesi.com): a free Turkish geography platform from the publishing
-brand Coğrafya Gurmesi Yayınları, founded by two geography teachers, Murat Çakır and Murat
-Karagöz. Voice and copy rules live in `docs/copy.md`; the visual system (Terra) lives in
-`docs/design.md`. This file holds neither.
+geograp (geograp.com): a free Turkish geography platform. Voice and copy rules live in
+`docs/copy.md`; the visual system (Terra) lives in `docs/design.md`. This file holds neither.
 
 ## Platform
 
@@ -17,20 +15,18 @@ web
   under 18.
 - **Secondary:** curious adults looking something up (a province, a recent earthquake, sea
   conditions), teachers and parents. Account types record Öğrenci / Öğretmen / Veli / Coğrafya
-  meraklısı only so the owners know their audience; the type grants nothing.
-- The owners ("hocalar") are the two teachers; they are not a user surface.
+  meraklısı only so the site knows its audience; the type grants nothing.
 
 ## Product Purpose
 
-Make geography study free and reachable for everyone. Success, as the owners define it: the
-Coğrafya Gurmesi name becomes a known, trusted geography source among students and teachers;
-the books and the YouTube channel draw on that trust.
+Make geography study free and reachable for everyone. Success: geograp becomes a known,
+trusted geography source among students and teachers.
 
 ## Positioning
 
 Everything a geography student needs in one place, and all of it free, membership included:
-province, region, country and continent atlases, live earthquake and sea data, the authors'
-own AYT practice exams with question-by-question video solutions, measuring tools, and
+province, region, country and continent atlases, live earthquake and sea data, AYT
+practice exams with question-by-question video solutions, measuring tools, and
 blank-map games.
 
 ## Operating Context
@@ -47,21 +43,21 @@ blank-map games.
 
 ## Capabilities and Constraints
 
-- No prices, premium tier or subscription anywhere. Books are the publisher's product; the
-  site shows an outbound purchase link and never a price.
+- No prices, premium tier or subscription anywhere. Books are a third-party publisher's
+  product; the site shows an outbound purchase link and never a price.
 - Strictly necessary cookies only: no analytics, advertising or tracking.
 - Earthquake, marine and air data can be delayed or incomplete; the site is not a source for
   navigation, disaster response, engineering or legal use.
-- Open decision: the legal data controller's identity, address and phone (T-104, blocked on
-  the owners).
+- Open decision: the legal data controller's identity, address and phone (T-185).
 
 ## Brand Commitments
 
-- Name "Coğrafya Gurmesi"; publisher "Coğrafya Gurmesi Yayınları"; logo
-  `public/brand/mark.svg` (lockups beside it in `public/brand/`); footer line "Ücretsiz, açık coğrafya eğitim platformu."
-- Teaching approach the owners stand behind: real-life examples and interpretive questions
-  over memorised patterns, focus on the map and region questions students find hardest,
-  ÖSYM-style questions without needless detail.
+- Name "geograp", lowercase as the wordmark spells it; domain geograp.com; logo
+  `public/brand/mark.svg` (wordmark and lockups beside it in `public/brand/`); footer line
+  "Ücretsiz, açık coğrafya eğitim platformu."
+- Teaching approach: reading the map over memorised patterns, with the most weight on the map
+  and region topics students find hardest.
+- The former partner brand and its people are not named anywhere on the site.
 - Removed claims that must not return: "KVKK ve GDPR uyumlu", MEB curriculum alignment,
   "doğrulanmış"/"bilimsel" as praise, invented precision.
 
@@ -70,7 +66,6 @@ blank-map games.
 - Data sources credited on the site: AFAD, TÜİK, HGM, MGM, İçişleri, OpenStreetMap (ODbL),
   Natural Earth, JRC Global Surface Water, Copernicus Marine, ECMWF, C3S ERA5-Land, ACAG
   PM2.5 (with the WHO 2021 guideline), flag-icons.
-- The authors' books and YouTube video solutions.
 - None: testimonials, user or traffic numbers, press, awards, partner logos. Do not invent
   them.
 

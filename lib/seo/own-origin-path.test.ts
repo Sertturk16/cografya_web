@@ -10,7 +10,7 @@ import { getSiteUrl, ownOriginPath } from "./site";
  * `NEXT_PUBLIC_SITE_URL` in its build args — `docker-compose.prod.yml` passed it as a runtime
  * environment variable, which a Next client bundle never reads — so `lib/env.ts`'s
  * `http://localhost:3000` default was baked into the shipped JavaScript. Every book cover on
- * `https://cografyagurmesi.com` was therefore an `<img src="http://localhost:3000/api/video-cover/…">`,
+ * `https://geograp.com` was therefore an `<img src="http://localhost:3000/api/video-cover/…">`,
  * and Chromium met a public HTTPS page reaching into the visitor's own machine: Private Network
  * Access, and the "wants to access other apps and services on this device" prompt a reader
  * reported.

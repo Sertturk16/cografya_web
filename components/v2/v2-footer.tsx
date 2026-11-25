@@ -1,11 +1,12 @@
 import * as React from "react";
-import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { Map, Layers, BookOpen } from "lucide-react";
 import { badgeVariants } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { MARINE_SOURCES_ANCHOR } from "@/lib/marine/attribution-anchor";
 import { V2FooterAccountLinks } from "./v2-footer-account-links";
+import { BrandImage } from "./brand-image";
+import { siteConfig } from "@/lib/seo/site";
 
 /**
  * The source badges are the FOOTER HALF of the central-attribution decision.
@@ -57,26 +58,10 @@ export function V2Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5 group inline-flex">
               <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform">
-                {/* Decorative: the site name is the link's text right beside it. */}
-                <Image
-                  src="/brand/mark.svg"
-                  alt=""
-                  width={34}
-                  height={40}
-                  className="object-contain dark:hidden"
-                />
-                <Image
-                  src="/brand/mark-dark.svg"
-                  alt=""
-                  width={34}
-                  height={40}
-                  className="hidden object-contain dark:block"
-                />
+                <BrandImage kind="mark" width={34} height={40} />
               </div>
-              <div className="flex flex-col">
-                <span className="font-heading text-lg font-bold tracking-tight text-primary leading-none">
-                  Coğrafya <span className="text-primary">Gurmesi</span>
-                </span>
+              <div className="flex flex-col gap-1">
+                <BrandImage kind="wordmark" alt={siteConfig.name} width={96} height={19} />
                 <span className="text-[10px] text-muted-foreground font-medium">
                   Türkiye ve dünya atlası
                 </span>
@@ -243,7 +228,7 @@ export function V2Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p className="m-0">© {currentYear} Coğrafya Gurmesi</p>
+          <p className="m-0">© {currentYear} geograp</p>
           {/* Below `sm` a 2×2 grid, so no link breaks inside itself and none is left alone on a
               row; from `sm` the dotted row. The dots are `hidden` on phones, which also keeps
               them out of the grid. `min-h-6` is the 24 px touch target (docs/design.md). */}
