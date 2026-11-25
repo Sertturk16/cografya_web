@@ -8,9 +8,10 @@ import type { components } from "./schema";
  * rename is a one-line change here.
  *
  * Contract source of truth: the api repo (`@nestjs/swagger`). To pull a newer
- * contract: copy `cografya_api/openapi/openapi.json` → `openapi/openapi.json`
- * (coordinated through Atlas), then `pnpm codegen`. `pnpm codegen:check` fails if
- * the committed `schema.ts` has drifted from the committed spec.
+ * contract run `pnpm contract:sync`: it regenerates the spec in the sibling
+ * `cografya_api` checkout, copies it to `openapi/openapi.json` and runs
+ * `pnpm codegen`. `pnpm codegen:check` fails if the committed `schema.ts` has
+ * drifted from the committed spec.
  */
 export type ProvinceListItem = components["schemas"]["ProvinceListItemDto"];
 export type ProvinceDetail = components["schemas"]["ProvinceDetailDto"];

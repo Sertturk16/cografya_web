@@ -10,10 +10,10 @@ sweep) and `docs/design.md` are the authority; where this file disagrees, they w
 
 ## Steps
 
-1. **A server for THIS tree.** The docs prefer a fresh production build (`docker stop
-cografya-web-dev`, `pnpm build`, `pnpm start`); `cografya-web-dev` on :3000 serves the
-   workspace checkout and is what you usually have. Confirm the route answers 200. Any other
-   checkout: its own server on another port and `--base-url`. The API must answer on :3001.
+1. **A server for THIS tree.** The docs prefer a fresh production build (`pnpm build`,
+   then `pnpm start` on a port `pnpm dev` is not using); `pnpm dev` on :3000 from this checkout is what you usually
+   have. Check which checkout the server on :3000 runs from before trusting it, and confirm the
+   route answers 200. Any other checkout: its own server on another port and `--base-url`. The API must answer on :3001.
    Before believing a red sweep, check the named selector exists in the source (stale `.next`).
 2. **Routes.** List every route the change reaches and find the sweep ids covering them in
    `lib/overflow-sweep/routes.ts`. A new route: decide out loud whether it is a variant of a

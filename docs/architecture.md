@@ -231,29 +231,26 @@ Details and the open dark-mode bugs: `docs/design.md`.
 
 ## Known gaps (recorded, not fixed)
 
-- **The dev server on `:3000` is the `cografya-web-dev` container, bind-mounting this tree at
-  `/app`; its `.next` is a named volume, and it hot-reloads host edits.** Two consequences a
-  host `pnpm dev` does not announce: it silently takes `:3002` because `:3000` is held, so
-  anything you point at `:3000` is still the container; and the tree then has two Turbopack
-  watchers. Under load — `pnpm sweep:overflow` drives hundreds of page loads — the container has been
-  observed writing `/app/.next/dev/prerender-manifest.json` twice without truncating, leaving a
-  valid document followed by the tail of a second one. Next parses that manifest on every
-  request, so **every route 500s with a `JSON.parse` "unexpected non-whitespace character"
-  error that names no file of yours.** `docker restart cografya-web-dev` regenerates it. The
-  signature to recognise: every route fails, including ones your change cannot reach, and the
-  same byte offset repeats in each error.
+- **The dev server is `pnpm dev` on the host (`:3000`, Turbopack, output in `.next/dev`).**
+  It holds `.next/dev/lock`, so a second `pnpm dev` from the same tree exits with "Another next
+  dev server is already running in this directory" instead of starting a second watcher.
+  `pnpm build` locks `.next/lock` and leaves `.next/dev` alone, so it can run beside the dev
+  server. Two Turbopack watchers on one `.next/dev` (before the lock, a container and a host
+  server shared it) were observed under load writing `.next/dev/prerender-manifest.json` twice
+  without truncating; **every route then 500s with a `JSON.parse` "unexpected non-whitespace
+  character" error that names no file of yours**, the same byte offset in each. Restarting
+  `pnpm dev` regenerates the manifest.
   **Deep dynamic routes can 404 after a dev-server self-restart.** Next restarts the dev process
   when its heap nears the limit (log: `approaching the used memory threshold`) and rebuilds the
   route table from the watcher's first scan event; Next 16's 5 ms `aggregateTimeout` lets a
   stalled scan drop the deepest folders (vercel/next.js#96139). The depth-5 pages —
   `turkiye/bolge/[slug]`, `dunya/kita/[slug]`, `oyun/bolge-bolge-il/[bolge]` — then serve Next's
   built-in not-found page, with no `generate-params:` in the request's log line, until a file
-  under `app/` changes. Repair: `touch` any `page.tsx` under `app/` (or
-  `docker restart cografya-web-dev`). Not a cache problem: deleting `.next` caches does not help,
-  and polling would not either, since file events do reach the container. Production builds read
-  the routes from disk and are unaffected.
-  Turbopack dev keeps the fetch Data Cache at `/app/.next/dev/cache/fetch-cache` inside the
-  container; purge that path to see a Suspense fallback with the API paused.
+  under `app/` changes. Repair: `touch` any `page.tsx` under `app/` (or restart `pnpm dev`). Not
+  a cache problem: deleting `.next` caches does not help, and polling would not either, since
+  file events do arrive. Production builds read the routes from disk and are unaffected.
+  Turbopack dev keeps the fetch Data Cache at `.next/dev/cache/fetch-cache`; purge that path to
+  see a Suspense fallback with the API paused.
 
 - `NEXT_PUBLIC_SITE_URL` is a Docker build `ARG` and is inlined into the client bundle at build
   (T-069: a runtime-only value left the `localhost` default in shipped JavaScript); the

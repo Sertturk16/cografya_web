@@ -13,7 +13,7 @@ Read before writing a component, a test, or a commit.
 - `cn()` from `lib/utils.ts` for class merging. `lucide-react` for icons. Toasts via
   `sonner` (`components/ui/sonner.tsx`).
 - Comments explain a measured reason. Do not cite `ENGINEERING.md`, `CONVENTIONS.md`,
-  `DEC ...` ids or reviewer tags; those documents are gone (`../CLAUDE.md`).
+  `DEC ...` ids or reviewer tags; those documents are gone.
 
 ## Building a V2 page
 
