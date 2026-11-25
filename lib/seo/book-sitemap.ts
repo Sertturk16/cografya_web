@@ -31,7 +31,8 @@ import { sitemapEntriesFor } from "./sitemap-entries";
  * **No detail fetch.** The sibling builders resolve every entity to its detail record for one
  * field — `updatedAt` — because their list DTOs do not carry it. `BookListItemDto` does
  * (added for this reason), so a real `lastmod` (never the build clock) costs no extra request
- * and an unbounded catalogue never becomes an N+1. That is also why this function is pure: it needs nothing but the list.
+ * and an unbounded catalogue never becomes an N+1. That is also why this function is pure: it
+ * needs nothing but the list.
  */
 export function bookSitemapEntries(books: BookListItem[]): MetadataRoute.Sitemap {
   if (books.length === 0) return [];
