@@ -131,19 +131,17 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
       </div>
 
       {/* Two DISTINCT empty states, not one message doing double duty. `books.length === 0`
-          means the catalogue itself is empty — most likely a build-time api outage baked an
-          empty list into this ISR route (`lib/api/books.ts`'s `getBooksResilient`) — and
-          telling a reader to "try a different search term" would be actively misleading
-          since no search ran and the search box itself is hidden (`books.length > 1` above).
-          Only `filteredBooks.length === 0 && books.length > 0` is a genuine no-match case. */}
+          means the catalogue itself is empty — no book is published yet (or a build-time api
+          outage baked an empty list into this ISR route) — so it says that plainly rather than
+          reading like an outage, and telling a reader to "try a different search term" would be
+          misleading since no search ran and the search box itself is hidden (`books.length > 1`
+          above). Only `filteredBooks.length === 0 && books.length > 0` is a no-match case. */}
       {books.length === 0 && (
         <div className="p-12 text-center rounded-3xl border border-dashed border-border bg-card/50 space-y-3">
           <BookOpen className="size-10 text-muted-foreground mx-auto" />
-          <h4 className="font-heading font-bold text-base text-foreground">
-            Listede şu an kitap yok
-          </h4>
+          <h3 className="font-heading font-bold text-base text-foreground">Henüz Kitap Yok</h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Biraz sonra sayfayı yenileyip yeniden bak.
+            İlk kitap eklendiğinde burada listelenecek.
           </p>
         </div>
       )}
@@ -151,9 +149,9 @@ export function V2BooksHub({ books, locale }: V2BooksHubProps) {
       {books.length > 0 && filteredBooks.length === 0 && (
         <div className="p-12 text-center rounded-3xl border border-dashed border-border bg-card/50 space-y-3">
           <BookOpen className="size-10 text-muted-foreground mx-auto" />
-          <h4 className="font-heading font-bold text-base text-foreground">
-            Bu aramayla eşleşen kitap yok
-          </h4>
+          <h3 className="font-heading font-bold text-base text-foreground">
+            Bu Aramayla Eşleşen Kitap Yok
+          </h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             Başka bir kelime dene ya da aramayı temizleyip tüm listeye dön.
           </p>

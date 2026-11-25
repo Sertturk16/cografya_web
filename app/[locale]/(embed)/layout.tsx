@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { hasBooks } from "@/lib/api/books";
 import { V2Header } from "@/components/v2/v2-header";
 
 // Same `LayoutProps` shape as `(site)/layout.tsx`: no `readonly`, `locale` a plain string.
@@ -22,7 +23,7 @@ interface EmbedLayoutProps {
 export default async function EmbedLayout({ children, params }: EmbedLayoutProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("Common");
+  const [t, showBooks] = await Promise.all([getTranslations("Common"), hasBooks()]);
 
   return (
     <div className="flex h-dvh flex-col bg-background text-foreground">
@@ -32,7 +33,7 @@ export default async function EmbedLayout({ children, params }: EmbedLayoutProps
       >
         {t("skipToContent")}
       </a>
-      <V2Header />
+      <V2Header showBooks={showBooks} />
       <main id="main-content" tabIndex={-1} className="relative min-h-0 flex-1">
         {children}
       </main>

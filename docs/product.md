@@ -25,9 +25,9 @@ trusted geography source among students and teachers.
 ## Positioning
 
 Everything a geography student needs in one place, and all of it free, membership included:
-province, region, country and continent atlases, live earthquake and sea data, AYT
-practice exams with question-by-question video solutions, measuring tools, and
-blank-map games.
+province, region, country and continent atlases, live earthquake and sea data, measuring
+tools, and blank-map games. The site can also carry books with question-by-question video
+solutions; no book is published today.
 
 ## Operating Context
 
@@ -36,15 +36,17 @@ blank-map games.
 - Sections: `/turkiye` (81 provinces, 7 regions), `/dunya` (countries, continents), `/deniz`
   (sea conditions, 4 basins, coast types), `/deprem` (AFAD earthquakes, fault lines,
   preparedness), `/dunya-analizi` (world wind and ocean-current map,
-  earth.nullschool.net embedded under the site header), `/kitaplar` (books, video solutions), `/araclar` (distance, coordinate, area;
+  earth.nullschool.net embedded under the site header), `/kitaplar` (books, video solutions; empty
+  today, so every link to it is hidden), `/araclar` (distance, coordinate, area;
   no sign-up), `/oyun` (map games, sub-brand "Kâşif"), accounts, legal.
-- An account adds favourites, saved game rounds, saved measurements and video progress.
-  Watching a video solution requires an account; everything else is open.
+- An account adds favourites, saved game rounds, saved measurements and, once a book is
+  published, video progress. Watching a video solution requires an account; everything else is
+  open.
 
 ## Capabilities and Constraints
 
-- No prices, premium tier or subscription anywhere. Books are a third-party publisher's
-  product; the site shows an outbound purchase link and never a price.
+- No prices, premium tier or subscription anywhere. A book is its publisher's product; the
+  site shows an outbound purchase link and never a price.
 - Strictly necessary cookies only: no analytics, advertising or tracking.
 - Earthquake, marine and air data can be delayed or incomplete; the site is not a source for
   navigation, disaster response, engineering or legal use.

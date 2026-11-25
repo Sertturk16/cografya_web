@@ -23,7 +23,7 @@ describe("activeNavSection", () => {
     ["/deprem", "telemetry"],
     ["/oyun/iller", "interactive"],
     ["/araclar", "interactive"],
-    ["/kitaplar/ayt-cografya", "books"],
+    ["/kitaplar/ornek-kitap", "books"],
   ] as const)("%s lights %s", (pathname, section) => {
     expect(activeNavSection(pathname)).toBe(section);
   });

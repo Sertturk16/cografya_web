@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { getPathname } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
+import { hasBooks } from "@/lib/api/books";
 import { getMapSummaryResilient } from "@/lib/api/provinces";
 import type { GeographicRegion } from "@/lib/api/types";
 import { viewBoxForPaths } from "@/lib/game/map-bbox";
@@ -93,12 +94,12 @@ export default async function V2RegionalProvinceModePage({ params }: PageProps) 
   const region = regionFromSlug(bolge);
   if (!region) notFound();
 
-  const regionLabels = await getRegionLabels(locale);
+  const [regionLabels, showBooks] = await Promise.all([getRegionLabels(locale), hasBooks()]);
   const regionName = regionLabels[region];
 
   return (
     <>
-      <V2Header />
+      <V2Header showBooks={showBooks} />
       <V2LiveTicker />
       <PlaySuspense>
         <RegionalProvinceGame

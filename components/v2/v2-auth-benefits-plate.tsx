@@ -5,9 +5,15 @@ import { Star, Trophy, Layers, Video } from "lucide-react";
 
 interface V2AuthBenefitsPlateProps {
   mode?: "login" | "register";
+  /** Whether the book catalogue lists a book (`hasBooks()`); the video benefit is listed only
+   *  then, so the plate never promises videos the site does not have. */
+  showBookVideos?: boolean;
 }
 
-export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlateProps) {
+export function V2AuthBenefitsPlate({
+  mode = "register",
+  showBookVideos = false,
+}: V2AuthBenefitsPlateProps) {
   const benefits = [
     {
       icon: <Star className="size-4 text-primary" />,
@@ -24,11 +30,15 @@ export function V2AuthBenefitsPlate({ mode = "register" }: V2AuthBenefitsPlatePr
       title: "Kayıtlı ölçümler",
       desc: "Harita araçlarıyla Haversine formülüyle ölçtüğün mesafeleri ve küre üstünde hesaplanan alanları hesabına kaydet, istediğin zaman listeden bul.",
     },
-    {
-      icon: <Video className="size-4 text-primary" />,
-      title: "Kitap çözüm videoları",
-      desc: "AYT Coğrafya branş denemelerinin çözüm videolarını izle. Nerede kaldığın kaydedilir, bitirdiğin denemeyi işaretleyebilirsin.",
-    },
+    ...(showBookVideos
+      ? [
+          {
+            icon: <Video className="size-4 text-primary" />,
+            title: "Kitap çözüm videoları",
+            desc: "Kitapların çözüm videolarını izle. Nerede kaldığın kaydedilir, bitirdiğin videoyu işaretleyebilirsin.",
+          },
+        ]
+      : []),
   ];
 
   return (

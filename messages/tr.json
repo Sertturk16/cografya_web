@@ -107,7 +107,7 @@
       },
       "kitaplar": {
         "name": "Kitaplar",
-        "keywords": "deneme çözüm videosu kitap"
+        "keywords": "kitap çözüm videosu video çözüm"
       }
     }
   },
@@ -133,8 +133,8 @@
   "Home": {
     "metaTitle": "geograp — Türkiye ve Dünya Coğrafyası",
     "metaDescription": "Türkiye'nin 81 ili ve dünya ülkeleri için ücretsiz, kaynaklı coğrafya sayfaları ve haritalar. Öğrendiklerini harita oyunuyla sına.",
-    "heading": "Coğrafyayı Haritalarla, Denemelerle ve Oyunlarla Çalış",
-    "lede": "Türkiye'nin illeri ve dünya ülkeleri için sayfalar, video çözümlü AYT denemeleri, son depremler ve deniz durumu, mesafe ve alan ölçme araçları, dilsiz harita oyunları. YKS'ye hazırlanırken de bir yeri merak ettiğinde de işine yarar.",
+    "heading": "Coğrafyayı Haritalarla ve Oyunlarla Çalış",
+    "lede": "Türkiye'nin illeri ve dünya ülkeleri için sayfalar, son depremler ve deniz durumu, mesafe ve alan ölçme araçları, dilsiz harita oyunları. YKS'ye hazırlanırken de bir yeri merak ettiğinde de işine yarar.",
     "ctaMap": "Türkiye Haritası",
     "ctaAbout": "Platform Hakkında",
     "statProvincesLabel": "İl",
@@ -235,9 +235,9 @@
     "metaDescription": "geograp platformunun kullanım şartları: hizmet kapsamı, üyelik kuralları, telif hakları ve adil kullanım.",
     "heading": "Kullanım Şartları",
     "lede": "geograp'ı kullanarak aşağıdaki şartları kabul etmiş olursun. Bu metin platformun hizmet kapsamını, üyelik kurallarını, telif haklarını ve adil kullanım kurallarını açıklar.",
-    "updated": "Son güncelleme: 24 Eylül 2026",
+    "updated": "Son güncelleme: 25 Kasım 2026",
     "scopeHeading": "1. Hizmet Kapsamı",
-    "scopeBody": "geograp; coğrafya öğrenmek ve YKS, KPSS gibi sınavlara hazırlanmak için haritalar, harita oyunları, il ve ülke sayfaları, harita üzerinde ölçüm araçları ve video çözümlü branş denemeleri sunan bir eğitim sitesidir. Sitedeki harita, deprem, deniz ve hava kalitesi verileri ile istatistikler bilgilendirme ve eğitim amaçlıdır; seyrüsefer, afet müdahalesi, mühendislik ya da hukuki işlem gibi kritik kullanımlar için kaynak alınamaz. Deprem, deniz ve hava kalitesi verileri ilgili kurumların yayınlarından türetilir ve gecikmeli veya eksik olabilir.",
+    "scopeBody": "geograp; coğrafya öğrenmek ve YKS, KPSS gibi sınavlara hazırlanmak için haritalar, harita oyunları, il ve ülke sayfaları, harita üzerinde ölçüm araçları sunan bir eğitim sitesidir; sitede kitapların video çözümleri de yayımlanabilir. Sitedeki harita, deprem, deniz ve hava kalitesi verileri ile istatistikler bilgilendirme ve eğitim amaçlıdır; seyrüsefer, afet müdahalesi, mühendislik ya da hukuki işlem gibi kritik kullanımlar için kaynak alınamaz. Deprem, deniz ve hava kalitesi verileri ilgili kurumların yayınlarından türetilir ve gecikmeli veya eksik olabilir.",
     "membershipHeading": "2. Üyelik ve Hesap Güvenliği",
     "membershipBody": "Üyelik sırasında verdiğin bilgilerin (ad, soyad, telefon, e-posta) doğru ve güncel olduğunu kabul edersin. Hesabının şifresinin gizliliğinden ve hesabınla yapılan tüm işlemlerden sen sorumlusun. Hesaplar üçüncü kişilere devredilemez, ödünç verilemez ve ticari amaçla paylaşılamaz. Hesabının izinsiz kullanıldığını fark edersen gecikmeden bize bildirmen gerekir.",
     "ipHeading": "3. Fikri Mülkiyet ve Telif Hakları",
@@ -257,7 +257,7 @@
     "metaDescription": "geograp'ın hangi kişisel verileri, hangi amaçla ve ne kadar süre işlediği; verilerin aktarıldığı sağlayıcılar ve KVKK kapsamındaki hakların.",
     "heading": "Gizlilik ve KVKK Aydınlatma Metni",
     "lede": "Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu'nun (KVKK) 10. maddesi uyarınca, geograp'ı kullanırken kişisel verilerinin nasıl işlendiğini anlatır.",
-    "updated": "Son güncelleme: 1 Ekim 2026",
+    "updated": "Son güncelleme: 25 Kasım 2026",
     "authoritative": "Bu metnin Türkçe sürümü bağlayıcıdır.",
     "controllerHeading": "1. Veri Sorumlusu",
     "controllerBody": "Kişisel verilerin, veri sorumlusu sıfatıyla aşağıda bilgileri yer alan geograp tarafından işlenir. Bu bilgiler aynı zamanda 5651 sayılı Kanun kapsamındaki içerik sağlayıcı bilgileridir.",
@@ -1128,9 +1128,9 @@
   },
   "Kitaplar": {
     "metaTitle": "Coğrafya Kitaplarının Video Çözümleri",
-    "metaDescription": "Coğrafya deneme kitaplarının soru bazlı video çözümleri. Her kitabın yayınevi, sınav izi ve sayfa sayısı listede.",
+    "metaDescription": "Coğrafya kitaplarının soru bazlı video çözümleri. Her kitabın yayınevi, sınav izi ve sayfa sayısı listede.",
     "heading": "Coğrafya Kitapları",
-    "lede": "Video çözümler yayıncının kendi kanalında yayımlanıyor."
+    "lede": "Kitapların çözüm videoları soru soru işaretli; istediğin sorunun çözümüne atlarsın."
   },
   "BookDetail": {
     "kunyeHeading": "{title} Künyesi",

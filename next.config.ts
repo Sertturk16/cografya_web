@@ -93,7 +93,7 @@ const nextConfig: NextConfig = {
   },
 
   // next/image conventions (CONVENTIONS §6 #9 / ENGINEERING §4 #9). Local images live in
-  // `/public` — `public/kitaplar/` (the book covers) and `public/marka/` (the YouTube
+  // `/public` — `public/kitaplar/` (the book covers, none today) and `public/marka/` (the YouTube
   // branding mark) — and are always rendered through `next/image` with explicit width/height
   // (or `fill` + a fixed-size container) to hold CLS < 0.1. The trap belongs to `public/`
   // itself and not to one directory in it: a file placed anywhere under it is served AHEAD

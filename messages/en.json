@@ -107,7 +107,7 @@
       },
       "kitaplar": {
         "name": "Books",
-        "keywords": "practice exam solution video book"
+        "keywords": "book solution video"
       }
     }
   },
@@ -134,7 +134,7 @@
     "metaTitle": "geograp — Geography of Türkiye and the World",
     "metaDescription": "Free, sourced geography pages and maps for the 81 provinces of Türkiye and the countries of the world. Test yourself with the free map game.",
     "heading": "Everything You Need for Geography, on One Platform",
-    "lede": "The Türkiye and world atlas, video-solved practice exams, live earthquake & sea telemetry, GIS analysis tools and interactive map games — from exam preparation to geography itself, all on one screen.",
+    "lede": "The Türkiye and world atlas, live earthquake & sea telemetry, GIS analysis tools and interactive map games — from exam preparation to geography itself, all on one screen.",
     "ctaMap": "Explore the Map",
     "ctaAbout": "About the Platform",
     "statProvincesLabel": "{count, plural, one {Province} other {Provinces}}",
@@ -235,9 +235,9 @@
     "metaDescription": "Terms of use for the geograp platform: service scope, membership rules, copyright and fair use.",
     "heading": "Terms of Use",
     "lede": "By using geograp you accept the terms below. They describe what the platform offers, the rules of membership, the copyright that covers its content, and the rules of fair use.",
-    "updated": "Last updated: 24 September 2026",
+    "updated": "Last updated: 25 November 2026",
     "scopeHeading": "1. Scope of the Service",
-    "scopeBody": "geograp is an education site for learning geography and preparing for Turkish exams such as YKS and KPSS: maps, map games, province and country pages, measurement tools on the map, and practice exams with video solutions. Its maps, earthquake, marine and air quality data and statistics are published for learning and information only; they are not a source for navigation, disaster response, engineering or legal purposes. Earthquake, marine and air quality figures are derived from the publications of the institutions that produce them and may be delayed or incomplete.",
+    "scopeBody": "geograp is an education site for learning geography and preparing for Turkish exams such as YKS and KPSS: maps, map games, province and country pages, and measurement tools on the map; it may also publish video solutions for books. Its maps, earthquake, marine and air quality data and statistics are published for learning and information only; they are not a source for navigation, disaster response, engineering or legal purposes. Earthquake, marine and air quality figures are derived from the publications of the institutions that produce them and may be delayed or incomplete.",
     "membershipHeading": "2. Membership and Account Security",
     "membershipBody": "You confirm that the details you give when registering (first name, last name, phone number, e-mail address) are correct and current. You are responsible for keeping your password confidential and for everything done through your account. Accounts may not be transferred, lent or shared commercially. Tell us without delay if you notice your account being used without your permission.",
     "ipHeading": "3. Intellectual Property and Copyright",
@@ -257,7 +257,7 @@
     "metaDescription": "Which personal data geograp processes, why and for how long; the providers it is shared with and your rights under Turkish data protection law (KVKK).",
     "heading": "Privacy and KVKK Notice",
     "lede": "This notice, given under Article 10 of Turkey's Personal Data Protection Law No. 6698 (KVKK), explains how your personal data is processed when you use geograp.",
-    "updated": "Last updated: 1 October 2026",
+    "updated": "Last updated: 25 November 2026",
     "authoritative": "The Turkish version of this notice is authoritative.",
     "controllerHeading": "1. Data Controller",
     "controllerBody": "Your personal data is processed by geograp, the data controller identified below. The same details are the content provider information required by Law No. 5651.",
@@ -1112,9 +1112,9 @@
   },
   "Kitaplar": {
     "metaTitle": "Video Solutions for Geography Books",
-    "metaDescription": "Video solutions for geography practice-test books, organised by question. Each book lists its publisher, exam track and page count.",
+    "metaDescription": "Video solutions for geography books, organised by question. Each book lists its publisher, exam track and page count.",
     "heading": "Geography Books",
-    "lede": "The video solutions are published on the publisher's own channel."
+    "lede": "Each book's solution videos are marked question by question, so you can jump to the one you need."
   },
   "BookDetail": {
     "kunyeHeading": "Publication details of {title}",

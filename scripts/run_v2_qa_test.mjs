@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 
 const BASE_URL = "http://localhost:3000";
+// No book is published today; point this at a seeded book's slug to audit a detail page.
+const BOOK_SLUG = process.env.BOOK_SLUG ?? "ornek-kitap";
 const RESULTS = [];
 
 function logResult(scenarioId, title, status, details = {}) {
@@ -388,7 +390,7 @@ async function run() {
       const page = await context.newPage();
 
       try {
-        const bookUrl = `${BASE_URL}/v2/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri`;
+        const bookUrl = `${BASE_URL}/v2/kitaplar/${BOOK_SLUG}`;
         await page.goto(bookUrl, { waitUntil: "domcontentloaded" });
         await page.waitForTimeout(1000);
 

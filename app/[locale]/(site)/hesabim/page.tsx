@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: V2MemberHubPageProps): Promis
     locale,
     pathname: "/hesabim",
     title: "Hesabım",
-    description: "Favorilerin, video ilerlemen, oyun geçmişin ve kayıtlı ölçümlerin tek yerde.",
+    description: "Favorilerin, oyun geçmişin ve kayıtlı ölçümlerin tek yerde.",
   });
 }
 

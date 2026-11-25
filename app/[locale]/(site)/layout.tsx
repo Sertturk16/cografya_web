@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { hasBooks } from "@/lib/api/books";
 import { V2Header } from "@/components/v2/v2-header";
 import { V2Footer } from "@/components/v2/v2-footer";
 
@@ -15,7 +16,7 @@ interface SiteLayoutProps {
  * The chrome every reading surface shares.
  *
  * Header, footer, the skip link and the single `<main>` live here rather than in 30 page
- * files. Before this, `V2Header` and `V2Footer` — which take no props — were copied into 37
+ * files. Before this, `V2Header` and `V2Footer` — which then took no props — were copied into 37
  * and 35 pages respectively; two omitted the footer by apparent oversight, and 24 rendered
  * their own `<main>` inside the root layout's, nesting the landmark. A page can no longer
  * ship without the chrome, and it can no longer ship with two of it.
@@ -29,7 +30,9 @@ interface SiteLayoutProps {
 export default async function SiteLayout({ children, params }: SiteLayoutProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations("Common");
+  // The book links in the chrome follow the catalogue: hidden while it is empty, back with the
+  // first book. `hasBooks` never throws and is shared per request with the page.
+  const [t, showBooks] = await Promise.all([getTranslations("Common"), hasBooks()]);
 
   return (
     <div className="flex min-h-screen flex-col justify-between bg-background text-foreground">
@@ -40,7 +43,7 @@ export default async function SiteLayout({ children, params }: SiteLayoutProps) 
         {t("skipToContent")}
       </a>
       <div>
-        <V2Header />
+        <V2Header showBooks={showBooks} />
         {/* tabIndex={-1} makes the skip-link target programmatically focusable so AT focus
             actually moves here on activation — Safari/VoiceOver do not focus a plain id
             target otherwise. Carried over from the V1 root layout unchanged. */}
@@ -48,7 +51,7 @@ export default async function SiteLayout({ children, params }: SiteLayoutProps) 
           {children}
         </main>
       </div>
-      <V2Footer />
+      <V2Footer showBooks={showBooks} />
     </div>
   );
 }

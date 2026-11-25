@@ -212,22 +212,17 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "shape covers.",
   },
   {
-    id: "book",
-    pathname: "/kitaplar/[slug]",
-    params: { slug: "ayt-cografya-konu-ozetli-brans-denemeleri" },
-    locales: ["tr", "en"],
+    id: "books-hub",
+    pathname: "/kitaplar",
+    locales: ["tr"],
     why:
-      "The book detail, and the embedded-video aspect box is why: a fixed-ratio iframe is the " +
-      "classic 320px overflow, and the stage's cover box combines `aspect-video` with a " +
-      "200px min-height, which gives it an intrinsic minimum WIDTH of ~356px inside a 280px " +
-      "column. T-033 tasks 7 and 8 converted `book-video.module.css` and " +
-      "`book-detail.module.css` and deleted both, so this shape now claims no module at all — " +
-      "but the geometry that made it worth sweeping did not leave the page. It moved into " +
-      "`FRAME`/`STAGE` in `components/book/` and into `QUESTION_GRID`/`JUMP_LIST`/`WORKBENCH` " +
-      "in the route's own page, where `components/book/book-detail-floors.test.ts` pins the " +
-      "floors and this sweep still measures the result. Both locales: the EN twin is a " +
-      "permanent `noindex` page with its own reduced composition, and it is the locale that " +
-      "BINDS the question cell's 88px floor (`Question 1` is 71.0px against `Soru 1`'s 41.0px).",
+      "The book hub, the one book route that renders with an empty catalogue. The book DETAIL " +
+      "(`/kitaplar/[slug]`) was swept here for its embedded-video aspect box, whose cover " +
+      "combines `aspect-video` with a 200px min-height (an intrinsic minimum width of ~356px " +
+      "inside a 280px column); its floors are pinned in `components/book/book-detail-floors." +
+      "test.ts`. No book is published today, so that route would only be a 404 (a LOAD " +
+      "FAILURE); add it back as its own shape, with a real slug and both locales, when the " +
+      "first book is.",
   },
   {
     id: "tool",

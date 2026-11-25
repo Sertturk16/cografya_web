@@ -55,7 +55,9 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
     // Four, not five. T-061 deleted the "profile" panel: it rendered the same values the hero
     // already summarised, read-only, and its two buttons led to a page that now redirects here.
     // Account management lives at `/hesabim/ayarlar`, which the hero links to.
-    const PANELS = ["favorites", "videos", "games", "measurements"] as const;
+    // "videos" is the fourth, and it is conditional: it renders only while the catalogue lists a
+    // book (asserted separately below), so the three here are the ones every member always sees.
+    const PANELS = ["favorites", "games", "measurements"] as const;
 
     it("routes its four member panels through the shared Tabs primitive", () => {
       expect(hubSource).toContain('from "@/components/ui/tabs"');
@@ -80,6 +82,18 @@ describe("V2MemberHub Component & /v2/hesabim Security", () => {
       // its top edge: the site's outset 3px outline lost its top side at every width (T-058).
       expect(hubSource).toMatch(
         /<TabsList[^>]*overflow-x-auto[^>]*\*:focus-visible:outline-2 \*:focus-visible:-outline-offset-2/,
+      );
+    });
+
+    it("shows the videos tab, its panel and its stat only while a book exists", () => {
+      // With an empty catalogue there is nothing to watch and `/kitaplar` is hidden, so an empty
+      // "Videolarım" would be a dead end. All three pieces hang off the same flag, and the flag
+      // is the server's book list, not a client fetch.
+      expect(hubSource).toContain("const showVideos = books.length > 0;");
+      expect(hubSource).toMatch(/\{showVideos && \(\s*<TabsTrigger\s+value="videos"/);
+      expect(hubSource).toMatch(/\{showVideos && \(\s*<TabsContent\s+value="videos"/);
+      expect(hubSource).toMatch(
+        /\{showVideos && \(\s*<div[^>]*>\s*<div[^>]*>\s*<PlayCircle[^>]*\/>\s*İzlenen video/,
       );
     });
 

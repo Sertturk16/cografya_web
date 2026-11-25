@@ -211,6 +211,7 @@ describe("acceptance queries over the built index", () => {
       buildSearchIndex({
         provinces: [province("Amasya", "amasya"), province("Konya", "konya")],
         countries: [country("Senegal", "Senegal", "senegal")],
+        hasBooks: true,
         locale,
         pathOf: (href: IndexHref) =>
           typeof href === "string" ? href : href.pathname.replace("[slug]", href.params.slug),

@@ -56,6 +56,7 @@ import {
   Users,
 } from "lucide-react";
 import { formatDay } from "@/lib/text/format-date";
+import { cn } from "@/lib/utils";
 
 const ROLE_BADGE_ICONS: Record<AccountRole, React.ComponentType<{ className?: string }>> = {
   STUDENT: User,
@@ -322,6 +323,9 @@ export function V2MemberHub({
   const totalFavoritesCount = favorites ? favorites.length : 0;
   const totalMeasurementsCount = measurements ? measurements.length : 0;
   const totalGameRoundsCount = gameRounds ? gameRounds.length : 0;
+  // The video tab and its stat exist only while the catalogue lists a book: with none there is
+  // nothing to watch, and an empty "Videolarım" would point at a hidden `/kitaplar`.
+  const showVideos = books.length > 0;
   const totalWatchedVideos = Object.values(bookProgressMap).reduce(
     (acc, cur) => acc + (cur?.watchedCount ?? 0),
     0,
@@ -376,8 +380,9 @@ export function V2MemberHub({
                 )}
               </div>
               <p className="text-xs sm:text-sm text-muted-foreground max-w-xl leading-relaxed">
-                Favorilerin, izlediğin çözüm videoları, oyun turların ve kaydettiğin ölçümler bu
-                sayfada.
+                {showVideos
+                  ? "Favorilerin, izlediğin çözüm videoları, oyun turların ve kaydettiğin ölçümler bu sayfada."
+                  : "Favorilerin, oyun turların ve kaydettiğin ölçümler bu sayfada."}
               </p>
             </div>
           </div>
@@ -396,7 +401,12 @@ export function V2MemberHub({
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-border/80">
+        <div
+          className={cn(
+            "grid grid-cols-2 gap-3 mt-6 pt-6 border-t border-border/80",
+            showVideos ? "sm:grid-cols-4" : "sm:grid-cols-3",
+          )}
+        >
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
               <Heart className="size-3.5 text-primary" />
@@ -406,15 +416,17 @@ export function V2MemberHub({
               {favoritesStatus === "loading" ? "…" : totalFavoritesCount}
             </div>
           </div>
-          <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
-            <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
-              <PlayCircle className="size-3.5 text-primary" />
-              İzlenen video
+          {showVideos && (
+            <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
+              <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
+                <PlayCircle className="size-3.5 text-primary" />
+                İzlenen video
+              </div>
+              <div className="font-heading font-bold text-xl text-foreground mt-0.5">
+                {videosStatus === "loading" ? "…" : totalWatchedVideos}
+              </div>
             </div>
-            <div className="font-heading font-bold text-xl text-foreground mt-0.5">
-              {videosStatus === "loading" ? "…" : totalWatchedVideos}
-            </div>
-          </div>
+          )}
           <div className="p-3 rounded-2xl bg-background/60 border border-border/60">
             <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 font-medium">
               <Trophy className="size-3.5 text-primary" />
@@ -469,10 +481,12 @@ export function V2MemberHub({
             </span>
           </TabsTrigger>
 
-          <TabsTrigger value="videos" className="gap-2">
-            <PlayCircle className="size-3.5" />
-            <span>Videolarım</span>
-          </TabsTrigger>
+          {showVideos && (
+            <TabsTrigger value="videos" className="gap-2">
+              <PlayCircle className="size-3.5" />
+              <span>Videolarım</span>
+            </TabsTrigger>
+          )}
 
           <TabsTrigger value="games" className="gap-2">
             <Trophy className="size-3.5" />
@@ -652,59 +666,61 @@ export function V2MemberHub({
           )}
         </TabsContent>
 
-        {/* Tab 2: Video İlerlemem Panel */}
-        <TabsContent value="videos" className="space-y-6">
-          <div>
-            <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
-              Çözüm Videolarında Nerede Kaldın
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              Bir videoyu nerede bıraktığın kendiliğinden kaydedilir. Bitirdiğin denemeyi kitap
-              sayfasında &quot;İzledim&quot; diye işaretleyebilirsin.
-            </p>
-          </div>
-
-          {videosStatus === "loading" ? (
-            <div
-              role="status"
-              className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
-            >
-              <Spinner size="lg" decorative className="text-primary" />
-              <span>Video ilerlemen yükleniyor…</span>
+        {/* Tab 2: Video İlerlemem Panel. Rendered only while a book exists, so the list below
+            always has at least one book and needs no empty state of its own. */}
+        {showVideos && (
+          <TabsContent value="videos" className="space-y-6">
+            <div>
+              <h2 className="font-heading text-lg sm:text-xl font-bold text-foreground">
+                Çözüm Videolarında Nerede Kaldın
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Bir videoyu nerede bıraktığın kendiliğinden kaydedilir. Bitirdiğin videoyu kitap
+                sayfasında &quot;İzledim&quot; diye işaretleyebilirsin.
+              </p>
             </div>
-          ) : books.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {books.map((book) => {
-                const progress = bookProgressMap[book.slugTr];
-                const total = progress?.videoCount ?? 0;
-                const watched = progress?.watchedCount ?? 0;
-                const started = progress?.startedCount ?? 0;
-                const percentage = total > 0 ? Math.round((watched / total) * 100) : 0;
-                const resume = progress?.resume;
 
-                return (
-                  <div
-                    key={book.slugTr}
-                    className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-5 flex flex-col justify-between"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
-                            <BookOpen className="size-5" />
+            {videosStatus === "loading" ? (
+              <div
+                role="status"
+                className="p-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2"
+              >
+                <Spinner size="lg" decorative className="text-primary" />
+                <span>Video ilerlemen yükleniyor…</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {books.map((book) => {
+                  const progress = bookProgressMap[book.slugTr];
+                  const total = progress?.videoCount ?? 0;
+                  const watched = progress?.watchedCount ?? 0;
+                  const started = progress?.startedCount ?? 0;
+                  const percentage = total > 0 ? Math.round((watched / total) * 100) : 0;
+                  const resume = progress?.resume;
+
+                  return (
+                    <div
+                      key={book.slugTr}
+                      className="rounded-3xl border border-border bg-card p-6 shadow-sm space-y-5 flex flex-col justify-between"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+                              <BookOpen className="size-5" />
+                            </div>
+                            <div>
+                              <h3 className="font-heading font-bold text-base text-foreground">
+                                {book.titleTr}
+                              </h3>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-heading font-bold text-base text-foreground">
-                              {book.titleTr}
-                            </h3>
-                          </div>
+                          <Badge variant="secondary" size="sm">
+                            %{percentage}
+                          </Badge>
                         </div>
-                        <Badge variant="secondary" size="sm">
-                          %{percentage}
-                        </Badge>
-                      </div>
 
-                      {/* Progress Bar.
+                        {/* Progress Bar.
                         `Progress` rather than two nested divs (T-036): the hand-drawn bar
                         carried no `role="progressbar"` and no `aria-valuenow`, so the
                         percentage next to it was the only place the number existed and a
@@ -712,83 +728,65 @@ export function V2MemberHub({
                         empty bar at 2% is gone with it — `aria-valuenow` has to be the real
                         value, and a bar that says 2% when nothing is watched is the same
                         lie in pixels. */}
-                      <div className="space-y-1.5">
-                        <Progress value={percentage} aria-label={`${book.titleTr} ilerlemesi`} />
-                        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                          <span>
-                            {watched} / {total > 0 ? total : "—"} video izlendi
-                          </span>
-                          {started > watched && <span>{started - watched} video yarıda kaldı</span>}
+                        <div className="space-y-1.5">
+                          <Progress value={percentage} aria-label={`${book.titleTr} ilerlemesi`} />
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>
+                              {watched} / {total > 0 ? total : "—"} video izlendi
+                            </span>
+                            {started > watched && (
+                              <span>{started - watched} video yarıda kaldı</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Resume Box or Empty Prompt */}
-                    <div className="pt-4 border-t border-border">
-                      {resume ? (
-                        <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="font-semibold text-foreground flex items-center gap-1.5">
-                              <Sparkles className="size-3.5 text-primary" />
-                              Son açtığın: Deneme {resume.orderNo}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {Math.floor(resume.lastPositionSeconds / 60)}:
-                              {(resume.lastPositionSeconds % 60).toString().padStart(2, "0")}
-                            </span>
+                      {/* Resume Box or Empty Prompt */}
+                      <div className="pt-4 border-t border-border">
+                        {resume ? (
+                          <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/20 space-y-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-semibold text-foreground flex items-center gap-1.5">
+                                <Sparkles className="size-3.5 text-primary" />
+                                Son açtığın: Deneme {resume.orderNo}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {Math.floor(resume.lastPositionSeconds / 60)}:
+                                {(resume.lastPositionSeconds % 60).toString().padStart(2, "0")}
+                              </span>
+                            </div>
+                            <Link
+                              href={
+                                `/kitaplar/${book.slugTr}?v=${resume.bookVideoId}` as unknown as AppNavigationHref
+                              }
+                              className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
+                            >
+                              <PlayCircle className="size-3.5" />
+                              Kaldığın Yerden Devam Et
+                            </Link>
                           </div>
-                          <Link
-                            href={
-                              `/kitaplar/${book.slugTr}?v=${resume.bookVideoId}` as unknown as AppNavigationHref
-                            }
-                            className="w-full inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs gap-1.5 cursor-pointer"
-                          >
-                            <PlayCircle className="size-3.5" />
-                            Kaldığın Yerden Devam Et
-                          </Link>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            Bu kitaptan henüz video açmadın.
-                          </span>
-                          <Link
-                            href={`/kitaplar/${book.slugTr}` as unknown as AppNavigationHref}
-                            className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-8 px-3 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs gap-1 cursor-pointer"
-                          >
-                            Kitabı Aç
-                            <ExternalLink className="size-3" />
-                          </Link>
-                        </div>
-                      )}
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              Bu kitaptan henüz video açmadın.
+                            </span>
+                            <Link
+                              href={`/kitaplar/${book.slugTr}` as unknown as AppNavigationHref}
+                              className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-8 px-3 text-xs border border-border bg-card hover:bg-muted text-foreground shadow-xs gap-1 cursor-pointer"
+                            >
+                              Kitabı Aç
+                              <ExternalLink className="size-3" />
+                            </Link>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-3xl border border-dashed border-border p-10 text-center space-y-4 max-w-xl mx-auto bg-muted/20">
-              <div className="size-12 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto text-muted-foreground">
-                <PlayCircle className="size-6" />
+                  );
+                })}
               </div>
-              <div className="space-y-1">
-                <h3 className="font-heading font-bold text-base text-foreground">
-                  İzlediğin Video Yok
-                </h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Bir kitabın çözüm videolarını izlemeye başla; nerede kaldığını ve kaç videoyu
-                  bitirdiğini buradan takip edersin.
-                </p>
-              </div>
-              <Link
-                href="/kitaplar"
-                className="inline-flex items-center justify-center font-medium transition-all duration-150 rounded-xl h-9 px-3.5 py-1.5 text-xs bg-primary text-white hover:bg-primary shadow-xs"
-              >
-                Kitaplara Göz At
-              </Link>
-            </div>
-          )}
-        </TabsContent>
+            )}
+          </TabsContent>
+        )}
 
         {/* Tab 3: Oyun Geçmişim Panel */}
         {/*

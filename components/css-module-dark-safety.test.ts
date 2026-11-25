@@ -90,8 +90,8 @@ const SURVIVING_MODULES: readonly string[] = [
  * `--color-border` hairline at **12.85:1** around it, with the ink on top frozen the other way
  * — `--color-primary-dark` on the stage caption at **2.23:1** and `--color-slate` on the künye
  * strip, the resume line, the tick times and all thirty index rows at **2.36:1**. Four of the
- * five consumers render for any visitor on
- * `/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri`; `video-progress-controls.tsx` and the
+ * five consumers render for any visitor on a book
+ * detail page (`/kitaplar/[slug]`); `video-progress-controls.tsx` and the
  * player branch of `deneme-video.tsx` need an authenticated session, so they were measured with
  * one rather than left unmeasured.
  *
@@ -109,7 +109,7 @@ const SURVIVING_MODULES: readonly string[] = [
  * This module has no vitest cover at all (it lives under `app/`, which `vitest.config.ts` does
  * not include), so deadness was established three ways instead: the importer-scoped loop, the
  * absence of any dynamic `styles[…]` access in the one importer, and a rendered-DOM census of
- * `/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri` in which not one of the eleven hashed
+ * a book detail page (`/kitaplar/[slug]`) in which not one of the eleven hashed
  * class names appears.
  *
  * 7 once the file itself went, taking the remaining 14 — the LAST module outside

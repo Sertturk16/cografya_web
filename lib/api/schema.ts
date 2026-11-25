@@ -2729,22 +2729,22 @@ export interface components {
         BookListItemDto: {
             /**
              * @description TR routing key — /kitaplar/{slugTr}.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             * @example ornek-kitap
              */
             slugTr: string;
             /**
-             * @description EN routing key — /en/books/{slugEn}. Equal to slugTr for this book because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             * @description EN routing key — /en/books/{slugEn}. Often equal to slugTr because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
+             * @example ornek-kitap
              */
             slugEn: string;
             /**
              * @description The book's full title as printed on the cover.
-             * @example AYT Coğrafya Konu Özetli Branş Denemeleri
+             * @example Örnek Kitap
              */
             titleTr: string;
             /**
              * @description Publisher, as credited. Feeds Book.publisher in the structured data.
-             * @example Coğrafya Gurmesi Yayınları
+             * @example Örnek Yayınları
              */
             publisherName: string;
             /**
@@ -2761,7 +2761,7 @@ export interface components {
             contentKind: "deneme" | "soru_bankasi" | "konu_anlatimi" | "kamp" | "tek_video";
             /**
              * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
-             * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
+             * @example /kitaplar/ornek-kitap.webp
              */
             coverImagePath: string | null;
             /**
@@ -2890,38 +2890,38 @@ export interface components {
         };
         BookAttributionDto: {
             /**
-             * @description Machine token for whom this row credits. Both rows are always present; the reader-facing grouping is the web layer's decision, not a reason to drop one.
+             * @description Machine token for whom this row credits. A closed set: adding a member is a breaking contract change.
              * @enum {string}
              */
-            providerId: "youtube" | "partner";
+            providerId: "youtube";
             /** @description Provider name as credited. Verbatim from the provenance ledger (provenance/integrations.md, "YouTube attribution — canonical strings"); never translated or shortened. */
             providerName: string;
             /** @description The required attribution line, verbatim and untranslated. Its canonical text lives in provenance/integrations.md and is byte-pinned by a spec beside the catalogue. Display is the web repo's decision; carrying it on every response removes "it was not shown" as a possibility. */
             requiredNoticeTr: string;
             /** @description Licence URL when the obligation arises from a licence, or null when it does not. Null is a statement, not a gap: inventing a plausible URL would misdescribe the terms. */
             licenceUrl: string | null;
-            /** @description Link the credit should point at — the channel or the publisher — or null. The Branding Guidelines require a YouTube logo used for attribution to link back to YouTube content or to a YouTube component. */
+            /** @description The channel page of the book's solutions channel, https://www.youtube.com/channel/{youtubeChannelId}, or null when the book has no channel. The Branding Guidelines require a YouTube logo used for attribution to link back to YouTube content or to a YouTube component. */
             channelUrl: string | null;
         };
         BookDetailDto: {
             /**
              * @description TR routing key — /kitaplar/{slugTr}.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             * @example ornek-kitap
              */
             slugTr: string;
             /**
-             * @description EN routing key — /en/books/{slugEn}. Equal to slugTr for this book because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             * @description EN routing key — /en/books/{slugEn}. Often equal to slugTr because a product name is not translated; that is a consequence, not a rule, and the two are separate columns. The EN twin is permanently noindex by owner ruling and still needs exactly one URL.
+             * @example ornek-kitap
              */
             slugEn: string;
             /**
              * @description The book's full title as printed on the cover.
-             * @example AYT Coğrafya Konu Özetli Branş Denemeleri
+             * @example Örnek Kitap
              */
             titleTr: string;
             /**
              * @description Publisher, as credited. Feeds Book.publisher in the structured data.
-             * @example Coğrafya Gurmesi Yayınları
+             * @example Örnek Yayınları
              */
             publisherName: string;
             /**
@@ -2938,7 +2938,7 @@ export interface components {
             contentKind: "deneme" | "soru_bankasi" | "konu_anlatimi" | "kamp" | "tek_video";
             /**
              * @description A path inside the web repo's own public/ directory — never a remote URL, enforced by a database constraint. The api neither receives nor serves image bytes on this leg. Null means there is no cover to render.
-             * @example /kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri.jpg
+             * @example /kitaplar/ornek-kitap.webp
              */
             coverImagePath: string | null;
             /**
@@ -2964,7 +2964,7 @@ export interface components {
             authorNames: string[];
             /**
              * @description ISBN-13, exactly 13 digits, no hyphens. Feeds Book.isbn.
-             * @example 9786259490069
+             * @example 9780000000002
              */
             isbn13: string;
             /**
@@ -2981,20 +2981,20 @@ export interface components {
             /** @description Hand-written meta description carrying a concrete fact (SEO-POLICY A2), not a generic phrase and not derived from a template. */
             metaDescriptionTr: string;
             /**
-             * @description The channel the solutions are published on. The attribution rows carry the channel address themselves in channelUrl; it is not composed from this id, so do not build a link out of it.
-             * @example UCH7D1zOgHykrHfx5Q7WERmw
+             * @description The channel the solutions are published on. The attribution row carries the channel address built from this id in channelUrl; link from there rather than composing it again.
+             * @example UCOrnek_Kanal_1234567890
              */
             youtubeChannelId: string;
             /** @description The playlist, carried for the attribution link ONLY. No code path on our side queries it: the video set is fixed by seed, so a playlist edit cannot silently change this page. */
             youtubePlaylistId: string | null;
             /**
              * @description Outbound "Satın Al" link to the seller, or null when there is none — render no button on null. **No price is published anywhere, by rule**: CONVENTIONS §4 bars pricing, and a price on a page we do not control goes stale. Always https, enforced by a database constraint, because this value becomes an href on a public page.
-             * @example https://www.kitapisler.com/cografya-gurmesi-yayinlari-ayt-cografya-konu-ozetli-brans-denemeleri_106636.html
+             * @example https://example.com/kitap/ornek-kitap
              */
             purchaseUrl: string | null;
-            /** @description Every indexed video with its etiket index, ascending by orderNo. The 180-row index must be readable and clickable without JavaScript — that is what keeps this page clear of SEO-POLICY §12.2.b. */
+            /** @description Every indexed video with its etiket index, ascending by orderNo. The index must be readable and clickable without JavaScript — that is what keeps this page clear of SEO-POLICY §12.2.b. */
             videos: components["schemas"]["BookVideoDto"][];
-            /** @description Never empty, on any response, in any data state — an empty array would be a breach of the attribution obligation rather than a degraded widget. Two rows: the YouTube source credit and the content partner credit; neither substitutes for the other. */
+            /** @description Never empty, on any response, in any data state — an empty array would be a breach of the attribution obligation rather than a degraded widget. One row today: the YouTube source credit, linking to the book's channel. */
             attribution: components["schemas"]["BookAttributionDto"][];
         };
         EarthquakeEventDto: {
@@ -3789,7 +3789,7 @@ export interface components {
         BookProgressDto: {
             /**
              * @description The resolved book's canonical TR slug (`books.slug_tr`), regardless of which locale slug the request named.
-             * @example ayt-cografya-konu-ozetli-brans-denemeleri
+             * @example ornek-kitap
              */
             bookSlugTr: string;
             /**

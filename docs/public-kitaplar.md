@@ -2,11 +2,13 @@
 
 Files under `public/kitaplar/` are served from the site root, so
 `public/kitaplar/x.webp` answers `/kitaplar/x.webp`. It was the repo's first `public/`
-directory and is no longer the only one. Today there are three:
+directory. **It holds no file today**: the book catalogue is empty, so git keeps no
+`public/kitaplar/` directory at all until the first cover is added. The rules below apply the
+moment it comes back. The directories:
 
 | Directory          | Holds                                         | Shadows a route?     |
 | ------------------ | --------------------------------------------- | -------------------- |
-| `public/kitaplar/` | book cover images                             | **yes**, `/kitaplar` |
+| `public/kitaplar/` | book cover images (none today)                | **yes**, `/kitaplar` |
 | `public/marka/`    | the YouTube branding mark (PR #65)            | no                   |
 | `public/brand/`    | `logo.png`, used by `V2Header` and `V2Footer` | no                   |
 
@@ -35,8 +37,9 @@ router, so a file placed here can answer a URL the router was meant to answer �
 and not a failing test. The page simply becomes an image.
 
 **Every file in this directory MUST carry a file extension.** Book slugs never do
-(`ayt-cografya-konu-ozetli-brans-denemeleri` — a book slug matches `^[a-z0-9-]+$`, checked
-by `BOOK_SLUG_PATTERN` in `lib/api/books.ts` and by the API's slug param), so the extension is the whole reason the two namespaces stay disjoint.
+(`ornek-kitap` — a book slug matches `^[a-z0-9-]+$`, checked by `BOOK_SLUG_PATTERN` in
+`lib/api/books.ts` and by the API's slug param), so the extension is the whole reason the two
+namespaces stay disjoint.
 
 Two rules follow, and neither is a style preference:
 
@@ -54,12 +57,10 @@ because a missing image is not an error condition anywhere in the chain.
 
 ## Files
 
-| File                                             | Dimensions |
-| ------------------------------------------------ | ---------- |
-| `ayt-cografya-konu-ozetli-brans-denemeleri.webp` | 480 × 758  |
-
-WebP with an alpha channel (transparent background), so it sits on whatever surface the
-card gives it rather than carrying its own backdrop.
+None. The one cover this directory held belonged to a former partner's book and was removed
+with that book. When a cover is added, list it here by name and dimensions. Use WebP with an
+alpha channel (transparent background), so it sits on whatever surface the card gives it rather
+than carrying its own backdrop.
 
 **Provenance is recorded outside this repository.** Every asset there has a row naming its
 origin and the terms it may be used under, kept with the project's other source records.

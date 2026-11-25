@@ -25,7 +25,7 @@ const SHARED_LOADERS: Record<string, readonly string[]> = {
     "getCountryMapSummaryResilient",
   ],
   "regions.ts": ["getRegionsResilient"],
-  "books.ts": ["getBooksResilient"],
+  "books.ts": ["getBooksResilient", "hasBooks"],
   "marine.ts": ["getMarinePointsSafe", "getMarineLayersSafe", "getMarineOverviewSafe"],
   "earthquakes.ts": ["getEarthquakeMetaSafe"],
 };

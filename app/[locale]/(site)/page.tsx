@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
+import { hasBooks } from "@/lib/api/books";
 import { getCountryMapSummaryResilient } from "@/lib/api/countries";
 import {
   getMarineOverviewSafe,
@@ -434,7 +435,9 @@ export default async function V2HomePage({ params }: V2PageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const t = await getTranslations("Home");
+  // `hasBooks` is the layout's own answer (shared per request, never throws), so awaiting it
+  // here adds no request and no wait the header has not already paid.
+  const [t, showBooks] = await Promise.all([getTranslations("Home"), hasBooks()]);
 
   // Derived, not typed: the card said "6 Kıta" while `/dunya` — the page this card links to —
   // said "7 Kıta", and the registry has seven (Antarktika included). A hardcoded count drifts
@@ -526,7 +529,7 @@ export default async function V2HomePage({ params }: V2PageProps) {
         </section>
 
         {/* SECTION 2: COĞRAFYA YAYINLARI & DİJİTAL MODÜLLER */}
-        <V2LearningPaths />
+        <V2LearningPaths showBooks={showBooks} />
 
         {/* SECTION 3: CBS & JEODEZİK MESAFE LABORATUVARI */}
         <V2InteractiveTools />

@@ -90,6 +90,29 @@ const PAGE_FOR: Record<string, string> = {
 const KNOWN_SURFACES = ["localized", "noindex", "trNarrative", "trOnly"] as const;
 
 /**
+ * Surfaces decided at request time by a named function instead of a literal, each mapped to the
+ * surface the page carries while it is ADVERTISED. `/kitaplar` is `trOnly` while it lists a
+ * book, which is exactly when `bookSitemapEntries()` publishes its row, and `noindex` while the
+ * catalogue is empty and the row is gone (`lib/seo/book-sitemap.test.ts` pins both halves).
+ * The sitemap half reads the mapped value; the breadcrumb half compares the CALL itself
+ * (`bookHubSurface()`), so a page that calls it on one side and writes a literal on the other
+ * disagrees even when the literal is the advertised value.
+ */
+const SURFACE_FUNCTIONS: Record<string, string> = { bookHubSurface: "trOnly" };
+
+/** The known surface function an expression calls, spelled `name()`, or `null`. */
+const surfaceCall = (expression: string): string | null => {
+  const callee = /^\s*([A-Za-z_$][\w$]*)\(/.exec(expression)?.[1];
+  return callee !== undefined && Object.hasOwn(SURFACE_FUNCTIONS, callee) ? `${callee}()` : null;
+};
+
+/** The `buildMetadata` surface of a page that passes a known surface function, or `null`. */
+const metadataSurfaceCall = (source: string): string | null => {
+  const call = /surface: ([A-Za-z_$][\w$]*\()/.exec(source);
+  return call === null ? null : surfaceCall(call[1]!);
+};
+
+/**
  * The surface a page file declares: the literal in its `buildMetadata` call, the tool tier's
  * shared constant, or — when it passes none — `buildMetadata`'s own default.
  *
@@ -112,6 +135,8 @@ const declaredSurface = (raw: string): string => {
   const literal = /surface: "([^"]+)"/.exec(source);
   if (literal !== null) return literal[1]!;
   if (/surface: TOOLS_SURFACE/.test(source)) return TOOLS_SURFACE;
+  const called = metadataSurfaceCall(source);
+  if (called !== null) return SURFACE_FUNCTIONS[called.slice(0, -2)]!;
   // The seven auth shells never call `buildMetadata` directly — `lib/auth/auth-metadata.ts`
   // gate G1 pins that — so they carry no `surface:` literal of their own and would otherwise
   // read as the default `"localized"`, i.e. as nine indexable pages missing from the sitemap.
@@ -344,7 +369,7 @@ const SCHEMA_LAST_ARG = /,\s*([A-Za-z0-9_$]+|"[^"]*")\s*\)$/;
 
 const pairsIn = (file: string): SurfacePair[] => {
   const source = readSource(file);
-  const metadata = declaredSurface(source);
+  const metadata = metadataSurfaceCall(stripComments(source)) ?? declaredSurface(source);
   const jsxProps = jsxElementsOf(file)
     .filter((element) => element.tag === "Breadcrumbs")
     .map((element) => element.attributes.get("surface"));
@@ -357,7 +382,10 @@ const pairsIn = (file: string): SurfacePair[] => {
   });
   return [...jsxProps, ...schemaArgs].map((token) => ({
     file,
-    jsx: token === undefined ? "(no surface prop)" : surfaceOfToken(file, token),
+    jsx:
+      token === undefined
+        ? "(no surface prop)"
+        : (surfaceCall(token) ?? surfaceOfToken(file, token)),
     metadata,
   }));
 };
@@ -442,7 +470,10 @@ describe("the page's metadata surface and its breadcrumb surface", () => {
   it("never reads a surface it cannot classify", () => {
     // Anti-vacuity. An unresolved identifier would compare equal to itself on both sides of a
     // pair and pass forever; here it fails on the token.
-    const known: readonly string[] = KNOWN_SURFACES;
+    const known: readonly string[] = [
+      ...KNOWN_SURFACES,
+      ...Object.keys(SURFACE_FUNCTIONS).map((name) => `${name}()`),
+    ];
     const unknown = pairs
       .filter((pair) => !known.includes(pair.jsx))
       .map((pair) => `${relative(pair.file)}: ${pair.jsx}`);

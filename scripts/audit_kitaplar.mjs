@@ -2,6 +2,9 @@ import { chromium } from "playwright";
 import fs from "fs";
 import path from "path";
 
+// No book is published today; point this at a seeded book's slug to audit a detail page.
+const BOOK_SLUG = process.env.BOOK_SLUG ?? "ornek-kitap";
+
 const ARTIFACTS_DIR =
   "/mnt/c/Users/sertturk16/.gemini/antigravity-ide/brain/6f7861f3-7b14-4030-a98e-f9aa6d5ac5df";
 if (!fs.existsSync(ARTIFACTS_DIR)) {
@@ -71,7 +74,7 @@ async function audit() {
   await p3_mob.close();
   await p3.close();
 
-  // 3. AUDIT V2 DETAIL (/v2/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri)
+  // 3. AUDIT V2 DETAIL (/v2/kitaplar/<BOOK_SLUG>)
   console.log("=== AUDITING V2 DETAIL (/v2/kitaplar/...) ===");
   const p4 = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   p4.on("console", (msg) => {
@@ -79,7 +82,7 @@ async function audit() {
   });
   p4.on("pageerror", (err) => report.v2_detail.errors.push(err.message));
 
-  await p4.goto("http://localhost:3000/v2/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri", {
+  await p4.goto(`http://localhost:3000/v2/kitaplar/${BOOK_SLUG}`, {
     waitUntil: "domcontentloaded",
   });
   await p4.waitForTimeout(1200);
@@ -122,7 +125,7 @@ async function audit() {
 
   // Mobile V2 Detail
   const p4_mob = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  await p4_mob.goto("http://localhost:3000/v2/kitaplar/ayt-cografya-konu-ozetli-brans-denemeleri", {
+  await p4_mob.goto(`http://localhost:3000/v2/kitaplar/${BOOK_SLUG}`, {
     waitUntil: "domcontentloaded",
   });
   await p4_mob.waitForTimeout(800);

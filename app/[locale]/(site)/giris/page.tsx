@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { AUTH_SURFACE, buildAuthMetadata } from "@/lib/auth/auth-metadata";
+import { hasBooks } from "@/lib/api/books";
 import { Breadcrumbs, type BreadcrumbTrailItem } from "@/components/patterns/breadcrumbs";
 import { V2LiveTicker } from "@/components/v2/v2-live-ticker";
 import { V2LoginCard } from "@/components/v2/v2-login-card";
@@ -36,7 +37,10 @@ export async function generateMetadata({ params }: V2LoginPageProps): Promise<Me
 export default async function V2LoginPage({ params }: V2LoginPageProps) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "Auth" });
+  const [t, showBookVideos] = await Promise.all([
+    getTranslations({ locale, namespace: "Auth" }),
+    hasBooks(),
+  ]);
 
   const breadcrumbItems: BreadcrumbTrailItem[] = [
     { label: "Ana Sayfa", href: "/", path: "/", icon: <Home className="size-3.5" /> },
@@ -72,7 +76,7 @@ export default async function V2LoginPage({ params }: V2LoginPageProps) {
 
           {/* Value Proposition & Feature Showcase */}
           <div className="lg:col-span-6 xl:col-span-7 h-full">
-            <V2AuthBenefitsPlate mode="login" />
+            <V2AuthBenefitsPlate mode="login" showBookVideos={showBookVideos} />
           </div>
         </div>
       </PageContainer>

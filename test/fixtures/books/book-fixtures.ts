@@ -176,12 +176,5 @@ export const BOOK_DETAIL: BookDetail = {
       licenceUrl: null,
       channelUrl: "https://example.invalid/fixture-channel",
     },
-    {
-      providerId: "partner",
-      providerName: "Fixture Partner",
-      requiredNoticeTr: "Fixture partner notice.",
-      licenceUrl: null,
-      channelUrl: null,
-    },
   ],
 };

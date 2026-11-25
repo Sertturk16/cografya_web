@@ -70,11 +70,14 @@ const build = (
   sources: {
     provinces?: readonly ProvinceListItem[] | null;
     countries?: readonly CountryListItem[] | null;
+    hasBooks?: boolean;
   } = {},
 ) =>
   buildSearchIndex({
     provinces: sources.provinces === undefined ? PROVINCES : sources.provinces,
     countries: sources.countries === undefined ? COUNTRIES : sources.countries,
+    // Today's catalogue is empty, so the default build is the one without `/kitaplar`.
+    hasBooks: sources.hasBooks ?? false,
     locale,
     pathOf: fakePathOf(locale),
     text: textOf(locale),
@@ -89,13 +92,29 @@ describe("buildSearchIndex", () => {
     expect([...new Set(kinds)]).toEqual(["p", "c", "r", "k", "s", "t", "g"]);
   });
 
-  it("holds the seven regions, seven continents, four seas, three tools and six pages", () => {
+  it("holds the seven regions, seven continents, four seas, three tools and five pages", () => {
     const records = build("tr");
     expect(ofKind(records, "r")).toHaveLength(7);
     expect(ofKind(records, "k")).toHaveLength(7);
     expect(ofKind(records, "s")).toHaveLength(4);
     expect(ofKind(records, "t")).toHaveLength(3);
-    expect(ofKind(records, "g")).toHaveLength(6);
+    expect(ofKind(records, "g")).toHaveLength(5);
+  });
+
+  it("lists /kitaplar only while the catalogue has a book", () => {
+    // Both directions: absent from an empty catalogue's index, present once a book exists, so
+    // the absence is not just a builder that never emits the row.
+    const pagePaths = (hasBooks: boolean) =>
+      ofKind(build("tr", { hasBooks }), "g").map(([, path]) => path);
+    expect(pagePaths(false)).not.toContain("/kitaplar");
+    expect(pagePaths(true)).toEqual([
+      "/turkiye",
+      "/dunya",
+      "/deniz",
+      "/oyun",
+      "/deprem",
+      "/kitaplar",
+    ]);
   });
 
   it("uses the Turkish province name in BOTH locales (the DTO carries no nameEn)", () => {
@@ -140,13 +159,14 @@ describe("buildSearchIndex", () => {
       "/deniz/marmara",
     ]);
     expect(paths("t")).toContain("/araclar/mesafe-olcme");
-    expect(paths("g")).toEqual(["/turkiye", "/dunya", "/deniz", "/oyun", "/deprem", "/kitaplar"]);
+    expect(paths("g")).toEqual(["/turkiye", "/dunya", "/deniz", "/oyun", "/deprem"]);
   });
 
   it("builds every path through the injected builder, never by concatenation here", () => {
     const records = buildSearchIndex({
       provinces: PROVINCES,
       countries: COUNTRIES,
+      hasBooks: true,
       locale: "tr",
       pathOf: () => "SENTINEL",
       text: textOf("tr"),
@@ -155,7 +175,7 @@ describe("buildSearchIndex", () => {
   });
 
   it("carries search keywords only on tools and pages", () => {
-    for (const record of build("tr")) {
+    for (const record of build("tr", { hasBooks: true })) {
       const hasKeywords = record.length === 4 && record[3].trim().length > 0;
       expect(hasKeywords, record[0]).toBe(record[2] === "t" || record[2] === "g");
     }
@@ -171,6 +191,6 @@ describe("buildSearchIndex", () => {
     const withoutBoth = build("tr", { provinces: null, countries: null });
     expect(ofKind(withoutBoth, "p")).toHaveLength(0);
     expect(ofKind(withoutBoth, "c")).toHaveLength(0);
-    expect(withoutBoth.length).toBe(7 + 7 + 4 + 3 + 6);
+    expect(withoutBoth.length).toBe(7 + 7 + 4 + 3 + 5);
   });
 });
