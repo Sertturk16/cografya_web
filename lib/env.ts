@@ -11,7 +11,7 @@ const clientEnvSchema = z.object({
   // Falls back to localhost for local dev; MUST be set to the real domain in prod.
   NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
   // Contact and support email address published across the site.
-  NEXT_PUBLIC_CONTACT_EMAIL: z.email().default("info@cografyagurmesi.com"),
+  NEXT_PUBLIC_CONTACT_EMAIL: z.email().default("info@geograp.com"),
   // Analytics / Search Console placeholders — declared, not wired yet.
   NEXT_PUBLIC_GA_ID: z.string().optional(),
   NEXT_PUBLIC_GSC_VERIFICATION: z.string().optional(),

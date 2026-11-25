@@ -1,4 +1,4 @@
-## Coğrafya Gurmesi (Terra) — how to build with this library
+## geograp (Terra) — how to build with this library
 
 A Turkish geography learning site: atlas pages, province and country detail pages, map tools,
 quizzes and book video solutions. Earth/topographic look: terracotta primary, olive secondary,
@@ -6,7 +6,7 @@ water-teal accent on a warm parchment page. Fraunces for headings, Nunito Sans f
 
 ### Setup
 
-- No provider or wrapper is needed; import from `window.CografyaGurmesi` and render.
+- No provider or wrapper is needed; import from `window.Geograp` and render.
   `styles.css` carries every token (light in `:root`, dark in `.dark`), the fonts and all styles.
 - Dark mode ("Night Sea", deep petrol): put `className="dark"` on the root element of the design.
 - Put page content on `bg-background`; panels on `bg-card`.
@@ -54,7 +54,7 @@ else use an inline `style` with `var(--token)` (e.g. `style={{ color: "var(--pri
 ### Example
 
 ```jsx
-const { PageContainer, Card, PageHero, Badge, StatGrid, StatTile, Button } = window.CografyaGurmesi;
+const { PageContainer, Card, PageHero, Badge, StatGrid, StatTile, Button } = window.Geograp;
 
 <PageContainer>
   <Card variant="feature">

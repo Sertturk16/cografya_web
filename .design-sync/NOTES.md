@@ -7,7 +7,7 @@
   navigation), `MapAttribution` and `page-skeleton` (next-intl translations), `FaqSection`
   (`server-only` JSON-LD), `Toaster` (next-themes).
 - **H1/H2/H3/H4 have no cards**: the converter's `isComponentName` treats all-caps names as
-  constants. They still ship in the bundle (`window.CografyaGurmesi.H1`) and conventions.md names
+  constants. They still ship in the bundle (`window.Geograp.H1`) and conventions.md names
   them. Not worth a `dts.mjs` fork.
 - **CSS is compiled, not scraped.** Run `cfg.buildCmd` (`node .design-sync/build-css.mjs`) BEFORE
   every `package-build.mjs`: it compiles `.design-sync/ds.css` (= `app/globals.css` + the next/font

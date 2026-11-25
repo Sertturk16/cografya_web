@@ -3,16 +3,15 @@ import { env } from "@/lib/env";
 /**
  * Central site identity.
  *
- * `name` is a PROVISIONAL placeholder brand — the final brand/domain is not
- * decided yet (CONVENTIONS §3; DEC 2026-07-07 K7, working title "Terraloji").
+ * `name` is the site's name, lowercase as the logo's wordmark spells it (domain geograp.com).
  * It is single-sourced here for all UI chrome (header, footer copyright, og:site_name,
  * the `%s · brand` title template): those update from this one constant. The brand
  * also appears woven into localized PROSE (meta titles/descriptions, About body) in
- * `messages/*.json` — that is crafted per-locale copy, not chrome, and a rebrand must
- * revisit it by hand rather than by token interpolation.
+ * `messages/*.json` — that is crafted per-locale copy, written out by hand rather than
+ * interpolated from this constant.
  */
 export const siteConfig = {
-  name: "Coğrafya Gurmesi",
+  name: "geograp",
 } as const;
 
 /** Absolute site origin, no trailing slash (for metadataBase + sitemap URLs). */

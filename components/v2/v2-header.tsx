@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { OGM_CBS_PATHNAME } from "@/lib/tools/tool-registry";
 import { Button } from "@/components/ui/button";
@@ -32,6 +31,8 @@ import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { SearchCombobox } from "@/components/site-search/search-combobox";
 import { ThemeToggle } from "./theme-toggle";
+import { BrandImage } from "./brand-image";
+import { siteConfig } from "@/lib/seo/site";
 import { useAuthSession } from "@/lib/auth/use-session.client";
 import { requestAuth } from "@/lib/auth/auth-modal.client";
 import { submitAuth } from "@/lib/auth/submit.client";
@@ -131,27 +132,10 @@ export function V2Header() {
         <div className="flex items-center gap-3 min-w-0 xl:shrink-0">
           <Link href="/" className="flex items-center gap-2.5 group min-w-0">
             <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
-              {/* Decorative: the site name is the link's text right beside it. */}
-              <Image
-                src="/brand/mark.svg"
-                alt=""
-                width={34}
-                height={40}
-                className="object-contain dark:hidden"
-                preload
-              />
-              <Image
-                src="/brand/mark-dark.svg"
-                alt=""
-                width={34}
-                height={40}
-                className="hidden object-contain dark:block"
-              />
+              <BrandImage kind="mark" width={34} height={40} preload />
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="font-heading text-lg font-bold tracking-tight text-primary dark:text-primary-strong leading-none truncate">
-                Coğrafya Gurmesi
-              </span>
+            <div className="flex flex-col gap-1 min-w-0">
+              <BrandImage kind="wordmark" alt={siteConfig.name} width={96} height={19} preload />
               <span className="text-[10px] text-muted-foreground font-medium truncate">
                 Türkiye ve dünya atlası
               </span>
@@ -540,23 +524,9 @@ export function V2Header() {
                 <SheetHeader className="p-5 border-b border-border">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <Image
-                        src="/brand/mark.svg"
-                        alt=""
-                        width={27}
-                        height={32}
-                        className="object-contain dark:hidden"
-                      />
-                      <Image
-                        src="/brand/mark-dark.svg"
-                        alt=""
-                        width={27}
-                        height={32}
-                        className="hidden object-contain dark:block"
-                      />
-                      <SheetTitle className="text-base font-bold text-foreground">
-                        Coğrafya <span className="text-primary">Gurmesi</span>
-                      </SheetTitle>
+                      <BrandImage kind="mark" width={27} height={32} />
+                      <BrandImage kind="wordmark" width={86} height={17} />
+                      <SheetTitle className="sr-only">{siteConfig.name}</SheetTitle>
                     </div>
                   </div>
                 </SheetHeader>

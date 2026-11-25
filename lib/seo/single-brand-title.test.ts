@@ -9,7 +9,7 @@ import { siteConfig } from "./site";
  *
  * The root layout (`app/[locale]/layout.tsx`) sets the title template `%s · <brand>`, so a
  * relative page title that already carries the brand renders it twice:
- * "Karadeniz … | Coğrafya Gurmesi · Coğrafya Gurmesi". Home, the four sea basins, the region and
+ * "Karadeniz … | geograp · geograp". Home, the four sea basins, the region and
  * continent hubs, every region page and four account pages shipped exactly that. A title that
  * must carry the brand itself opts out of the template with `titleAbsolute: true` (or Next's
  * `{ absolute }`), which is what `/` does with `Home.metaTitle`.

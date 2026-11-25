@@ -1371,7 +1371,7 @@ export function V2ToolWorkbench({
 
       // ATTRIBUTION, and it has to be the real one.
       //
-      // This line used to read "Coğrafya Gurmesi · WGS84 / MEB & MTA Tabanlı Ölçüm". Neither MEB
+      // This line used to read "<site name> · WGS84 / MEB & MTA Tabanlı Ölçüm". Neither MEB
       // nor MTA supplies anything here — the measurement is WGS84 haversine/L'Huilier arithmetic
       // in `lib/map/`, and `grep -rn 'MEB\|MTA' lib/map lib/tools` finds nothing. So it credited
       // two institutions that contributed no data, while omitting the two whose licences ask to
@@ -1387,7 +1387,7 @@ export function V2ToolWorkbench({
       ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
       ctx.font = "14px sans-serif";
       ctx.fillText(
-        `Coğrafya Gurmesi · ${tMap("attributionProvinceLabel")} ${tMap("attribution")} · ${tMap("attributionJrcEnglish")}`,
+        `geograp · ${tMap("attributionProvinceLabel")} ${tMap("attribution")} · ${tMap("attributionJrcEnglish")}`,
         20,
         canvas.height - 20,
       );

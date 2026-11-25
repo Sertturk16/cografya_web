@@ -52,11 +52,11 @@ function englishSection(): string {
 function buildLlmsTxt(): string {
   const sitemapUrl = absoluteUrl("/sitemap.xml");
 
-  return `# Coğrafya Gurmesi
+  return `# geograp
 
 > Free, open geography education platform for Türkiye and the world. ${ENGLISH_ENABLED ? "Turkish-first (TR at the root, English under /en)" : "Published in Turkish"}, with source-grounded content on the 81 provinces of Türkiye, world countries, landforms and geography concepts.
 
-Coğrafya Gurmesi is an education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs.${ENGLISH_ENABLED ? ' Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.' : ""}
+geograp is an education project. All content is free to read, grounded in authoritative sources, and passes an independent verification step before publication. Every page is served as fully server-rendered HTML. This file is a concise structural overview; use the sitemap for the complete set of indexable URLs.${ENGLISH_ENABLED ? ' Note: detail pages (provinces, countries) are currently published in Turkish only — their English counterparts are served with a "noindex" directive until English narrative content is written.' : ""}
 
 ## Main sections (Turkish, default locale)
 

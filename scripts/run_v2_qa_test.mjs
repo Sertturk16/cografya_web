@@ -61,9 +61,9 @@ async function run() {
             .locator('[role="dialog"] h2, [role="dialog"] [class*="DialogTitle"], [role="dialog"]')
             .innerText();
           const hasExpectedTitle =
-            dialogTitleText.includes("Coğrafya Gurmesi") ||
+            dialogTitleText.includes("geograp") ||
             dialogTitleText.includes("Hesap") ||
-            (await page.locator('text="Coğrafya Gurmesi Hesabı"').count()) > 0;
+            (await page.locator('text="geograp hesabı"').count()) > 0;
 
           // Close modal
           const closeBtn = page.getByRole("button", { name: "Kapat" });
@@ -234,7 +234,7 @@ async function run() {
             contentType: "application/json",
             body: JSON.stringify({
               authenticated: true,
-              user: { id: "test-qa-user", email: "qa@cografyagurmesi.com" },
+              user: { id: "test-qa-user", email: "qa@geograp.test" },
             }),
           });
         });

@@ -2,7 +2,7 @@
   "projectId": "503bd96a-8ff8-47a0-a408-d02bf9552e31",
   "shape": "package",
   "pkg": "cografya_web",
-  "globalName": "CografyaGurmesi",
+  "globalName": "Geograp",
   "entry": ".design-sync/entry.ts",
   "tsconfig": "tsconfig.json",
   "buildCmd": "node .design-sync/build-css.mjs",
