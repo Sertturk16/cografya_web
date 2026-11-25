@@ -25,7 +25,6 @@ import {
   Menu,
   Settings,
   Search,
-  Wind,
 } from "lucide-react";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/routing";
@@ -113,7 +112,6 @@ export function V2Header({ showBooks = false }: V2HeaderProps) {
   const isTelemetryActive = activeSection === "telemetry";
   const isInteractiveActive = activeSection === "interactive";
   const isKitaplarActive = activeSection === "books";
-  const isWorldAnalysisActive = activeSection === "worldAnalysis";
 
   const toggleDropdown = (name: "atlas" | "telemetry" | "interactive" | "account") => {
     setActiveDropdown((prev) => (prev === name ? null : name));
@@ -396,9 +394,6 @@ export function V2Header({ showBooks = false }: V2HeaderProps) {
             )}
           </div>
 
-          <DesktopNavLink href="/dunya-analizi" active={isWorldAnalysisActive}>
-            Dünya Analizi
-          </DesktopNavLink>
           {showBooks && (
             <DesktopNavLink href="/kitaplar" active={isKitaplarActive}>
               Kitaplar
@@ -560,28 +555,6 @@ export function V2Header({ showBooks = false }: V2HeaderProps) {
                     <Search className="size-4 text-primary" />
                     <span>İl veya Ülke Ara...</span>
                   </button>
-
-                  {/* Dünya Analizi: a direct link on desktop, so a direct row here too */}
-                  <Link
-                    href="/dunya-analizi"
-                    onClick={() => setMobileOpen(false)}
-                    aria-current={isWorldAnalysisActive ? "page" : undefined}
-                    className={`flex items-center justify-between p-2.5 rounded-xl border transition-colors ${
-                      isWorldAnalysisActive
-                        ? "bg-primary/10 border-primary/20"
-                        : "border-border/80 hover:bg-muted"
-                    }`}
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <Wind className="size-4 text-primary" />
-                      <span className="truncate text-sm font-semibold text-foreground">
-                        Dünya Analizi
-                      </span>
-                    </div>
-                    <span className="ml-2 shrink-0 text-xs text-muted-foreground">
-                      Rüzgâr, akıntı
-                    </span>
-                  </Link>
 
                   {/* Category 1: Atlas */}
                   <div className="space-y-2">

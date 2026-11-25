@@ -138,11 +138,6 @@ export function V2Footer({ showBooks = false }: V2FooterProps) {
                   Son Depremler
                 </Link>
               </li>
-              <li>
-                <Link href="/dunya-analizi" className="hover:text-primary transition-colors block">
-                  Dünya Analizi
-                </Link>
-              </li>
             </ul>
           </div>
 

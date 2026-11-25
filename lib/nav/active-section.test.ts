@@ -8,14 +8,13 @@ describe("inSection", () => {
   });
 
   it("does not match a sibling that only shares a prefix", () => {
-    expect(inSection("/dunya-analizi", "/dunya")).toBe(false);
+    expect(inSection("/dunyalar", "/dunya")).toBe(false);
     expect(inSection("/denizler", "/deniz")).toBe(false);
   });
 });
 
 describe("activeNavSection", () => {
   it.each([
-    ["/dunya-analizi", "worldAnalysis"],
     ["/dunya", "atlas"],
     ["/dunya/kita/asya", "atlas"],
     ["/turkiye/ankara", "atlas"],

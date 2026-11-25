@@ -58,6 +58,18 @@ const nextConfig: NextConfig = {
         destination: "/en/account/settings",
         permanent: true,
       },
+      // T-187: the "Dünya Analizi" page (an earth.nullschool.net frame) was removed. Its old
+      // address goes to the world atlas, the closest page of ours.
+      {
+        source: "/dunya-analizi",
+        destination: "/dunya",
+        permanent: true,
+      },
+      {
+        source: "/en/world-analysis",
+        destination: "/en/dunya",
+        permanent: true,
+      },
     ];
   },
 

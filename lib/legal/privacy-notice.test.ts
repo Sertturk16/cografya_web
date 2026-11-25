@@ -27,8 +27,6 @@ describe("Privacy namespace", () => {
       "Amazon SES",
       "Cloudflare, Inc.",
       "YouTube",
-      // The `/dunya-analizi` frame connects the visitor to this host on page open.
-      "earth.nullschool.net",
       // The `/araclar/ogm-cbs` frame connects the visitor to the Ministry's host on a wide screen.
       "OGM Materyal CBS",
     ]) {

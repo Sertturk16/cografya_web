@@ -22,7 +22,7 @@ interface SiteLayoutProps {
  * ship without the chrome, and it can no longer ship with two of it.
  *
  * The three fullscreen game screens opt out by living in the sibling `(play)` group, and the
- * header-only embed page (`/dunya-analizi`) by living in `(embed)` — a structural choice of
+ * header-only embed page (`/araclar/ogm-cbs`) by living in `(embed)` — a structural choice of
  * directory, not an omitted import somebody has to remember. The design system showcase is in
  * none of the groups: it is internal tooling that brings its own full-page chrome, so it sits
  * directly under `[locale]` and takes only the document shell.
