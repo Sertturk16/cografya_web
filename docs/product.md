@@ -58,7 +58,7 @@ blank-map games.
 ## Brand Commitments
 
 - Name "Coğrafya Gurmesi"; publisher "Coğrafya Gurmesi Yayınları"; logo
-  `public/brand/logo.png`; footer line "Ücretsiz, açık coğrafya eğitim platformu."
+  `public/brand/mark.svg` (lockups beside it in `public/brand/`); footer line "Ücretsiz, açık coğrafya eğitim platformu."
 - Teaching approach the owners stand behind: real-life examples and interpretive questions
   over memorised patterns, focus on the map and region questions students find hardest,
   ÖSYM-style questions without needless detail.

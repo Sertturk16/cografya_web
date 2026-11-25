@@ -57,12 +57,20 @@ export function V2Footer() {
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5 group inline-flex">
               <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform">
+                {/* Decorative: the site name is the link's text right beside it. */}
                 <Image
-                  src="/brand/logo.png"
-                  alt="Coğrafya Gurmesi"
-                  width={40}
+                  src="/brand/mark.svg"
+                  alt=""
+                  width={34}
                   height={40}
-                  className="object-contain"
+                  className="object-contain dark:hidden"
+                />
+                <Image
+                  src="/brand/mark-dark.svg"
+                  alt=""
+                  width={34}
+                  height={40}
+                  className="hidden object-contain dark:block"
                 />
               </div>
               <div className="flex flex-col">
