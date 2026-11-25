@@ -33,6 +33,11 @@ const ALLOWED: readonly Allowed[] = [
     why: "An SVG `rx` attribute in the generated brand glyph. SVG requires the decimal point.",
   },
   {
+    file: "lib/brand/glyph.ts",
+    line: "const scale = ((32 * MARK_FILL) / MARK_VIEWBOX.height).toFixed(5);",
+    why: "An SVG `transform` scale in the generated brand glyph. SVG requires the decimal point.",
+  },
+  {
     file: "lib/map/projection.ts",
     line: "const round = (n: number) => Number(n.toFixed(1));",
     why: "Rounds a number that becomes an SVG `viewBox`, and returns a number, not text.",

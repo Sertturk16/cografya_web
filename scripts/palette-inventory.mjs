@@ -337,8 +337,8 @@ export const INLINE_EXEMPT = [
   },
   {
     file: "lib/brand/glyph.ts",
-    count: 2,
-    why: "builds a standalone SVG string for the favicon and apple-icon, served without the stylesheet",
+    count: 3,
+    why: "builds a standalone SVG string for the OG image, which `next/og` renders without the stylesheet",
   },
   {
     file: "lib/map/base-map-svg.ts",

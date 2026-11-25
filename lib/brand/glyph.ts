@@ -1,44 +1,43 @@
+import { MARK_PATHS, MARK_VIEWBOX } from "./mark-paths";
+
 /**
- * Terra brand mark — a neutral GLOBE glyph rendered as pure vector shapes.
+ * The geograp mark on a paper plate, as a standalone SVG string for the OG image (`next/og`
+ * renders a raw `<img>`, so the page's CSS variables are out of reach and the colours are the
+ * light-theme `--accent`, `--primary` and `--color-bg` values written out).
  *
- * This is the SINGLE SOURCE for the placeholder brand mark shared by the header
- * (`components/site-header.tsx`), `app/apple-icon.tsx`, and the OG image; the
- * favicon `app/icon.svg` mirrors it BY HAND (a static file cannot import). The
- * mark is a white globe (disc + equator + one meridian) on the Terra plate —
- * deliberately geo-appropriate and non-alarming (the previous ◭ triangle read like
- * a warning sign in the favicon/OG/apple surfaces). At favicon sizes the thin grid
- * lines gracefully collapse into a clean solid disc, so it never degrades badly.
- * Still a PLACEHOLDER — swap on the pending brand decision (CONVENTIONS §3); the
- * owner approved this Terra globe for now.
+ * The static icons (`app/icon.svg`, `public/icon.svg`, `app/apple-icon.png`, `public/favicon.ico`,
+ * `public/icon-*.png`) are files built from the same mark; the favicon drops the inner diamond so
+ * the needle still reads at 16 px.
  */
 export interface GlyphOptions {
   /** Rendered pixel size (square). */
   size?: number;
-  /** Corner radius as a fraction of the side. 0 = full-bleed square (apple-icon). */
+  /** Corner radius as a fraction of the side. 0 = full-bleed square. */
   radiusRatio?: number;
-  /** Plate colour (default Terra primary). */
+  /** Plate colour (default Terra paper). */
   background?: string;
-  /** Mark colour (default on-primary white). */
-  glyph?: string;
 }
+
+const TONES = { accent: "#276b70", primary: "#b0522e" } as const;
+
+/** Share of the plate's side the mark's height fills. */
+const MARK_FILL = 0.76;
 
 export function brandGlyphSvg({
   size = 512,
   radiusRatio = 0.22,
-  background = "#b0522e",
-  glyph = "#ffffff",
+  background = "#fbf8f3",
 }: GlyphOptions = {}): string {
   const rx = (radiusRatio * 32).toFixed(2);
+  const scale = ((32 * MARK_FILL) / MARK_VIEWBOX.height).toFixed(5);
+  const cx = MARK_VIEWBOX.x + MARK_VIEWBOX.width / 2;
+  const cy = MARK_VIEWBOX.y + MARK_VIEWBOX.height / 2;
+  const paths = MARK_PATHS.map((p) => `<path fill="${TONES[p.tone]}" d="${p.d}"/>`).join("");
   // viewBox is a fixed 32×32 grid; width/height scale it to `size`.
-  // White globe disc (r=8.6, centred) carved by two Terra grid lines: a straight
-  // equator across the full diameter and a narrow vertical meridian ellipse whose
-  // poles meet the disc edge — the minimal, instantly-readable globe.
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 32 32">` +
     `<rect width="32" height="32" rx="${rx}" fill="${background}"/>` +
-    `<circle cx="16" cy="16" r="8.6" fill="${glyph}"/>` +
-    `<line x1="7.4" y1="16" x2="24.6" y2="16" stroke="${background}" stroke-width="1.5"/>` +
-    `<ellipse cx="16" cy="16" rx="3.7" ry="8.6" fill="none" stroke="${background}" stroke-width="1.5"/>` +
+    `<g transform="translate(16 16) scale(${scale}) translate(${-cx} ${-cy})">${paths}</g>` +
     `</svg>`
   );
 }

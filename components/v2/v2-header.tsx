@@ -131,13 +131,21 @@ export function V2Header() {
         <div className="flex items-center gap-3 min-w-0 xl:shrink-0">
           <Link href="/" className="flex items-center gap-2.5 group min-w-0">
             <div className="relative size-10 flex items-center justify-center group-hover:scale-105 transition-transform shrink-0">
+              {/* Decorative: the site name is the link's text right beside it. */}
               <Image
-                src="/brand/logo.png"
-                alt="Coğrafya Gurmesi"
-                width={40}
+                src="/brand/mark.svg"
+                alt=""
+                width={34}
                 height={40}
-                className="object-contain"
+                className="object-contain dark:hidden"
                 preload
+              />
+              <Image
+                src="/brand/mark-dark.svg"
+                alt=""
+                width={34}
+                height={40}
+                className="hidden object-contain dark:block"
               />
             </div>
             <div className="flex flex-col min-w-0">
@@ -533,11 +541,18 @@ export function V2Header() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <Image
-                        src="/brand/logo.png"
-                        alt="Coğrafya Gurmesi"
-                        width={32}
+                        src="/brand/mark.svg"
+                        alt=""
+                        width={27}
                         height={32}
-                        className="object-contain"
+                        className="object-contain dark:hidden"
+                      />
+                      <Image
+                        src="/brand/mark-dark.svg"
+                        alt=""
+                        width={27}
+                        height={32}
+                        className="hidden object-contain dark:block"
                       />
                       <SheetTitle className="text-base font-bold text-foreground">
                         Coğrafya <span className="text-primary">Gurmesi</span>

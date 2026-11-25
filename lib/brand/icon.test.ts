@@ -1,27 +1,47 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { brandGlyphSvg } from "./glyph";
+import { MARK_PATHS } from "./mark-paths";
 
 const ROOT = resolve(__dirname, "../..");
-const PUBLIC_ICON_PATH = resolve(ROOT, "public/icon.svg");
-const APP_ICON_PATH = resolve(ROOT, "app/icon.svg");
+const read = (path: string) => readFileSync(resolve(ROOT, path), "utf8");
+const svgPaths = (svg: string) => [...svg.matchAll(/<path fill="(#[0-9a-f]{6})" d="([^"]+)"/g)];
 
-describe("UYE-P5 — icon.svg guard (İRİS A14)", () => {
-  it("public/icon.svg exists and serves non-empty SVG for manifest and direct browser requests", () => {
-    expect(existsSync(PUBLIC_ICON_PATH), "public/icon.svg must exist to prevent 404").toBe(true);
-    const content = readFileSync(PUBLIC_ICON_PATH, "utf8");
-    expect(content).toContain("<svg");
-    expect(content).toContain("</svg>");
-    expect(content).toContain("#b0522e");
-    expect(content).toContain('r="8.6"');
+describe("brand mark", () => {
+  it("mark-paths.ts transcribes public/brand/mark.svg path for path", () => {
+    const fromFile = svgPaths(read("public/brand/mark.svg")).map((m) => m[2]);
+    expect(fromFile).toEqual(MARK_PATHS.map((p) => p.d));
   });
 
-  it("app/icon.svg mirrors the single-source brand mark per ENGINEERING.md §5", () => {
-    expect(existsSync(APP_ICON_PATH), "app/icon.svg must exist per ENGINEERING.md §5").toBe(true);
-    const content = readFileSync(APP_ICON_PATH, "utf8");
-    expect(content).toContain("<svg");
-    expect(content).toContain("</svg>");
-    expect(content).toContain("#b0522e");
-    expect(content).toContain('r="8.6"');
+  it("the dark mark draws the same paths as the light one", () => {
+    const light = svgPaths(read("public/brand/mark.svg")).map((m) => m[2]);
+    const dark = svgPaths(read("public/brand/mark-dark.svg")).map((m) => m[2]);
+    expect(dark).toEqual(light);
+  });
+
+  it("the OG glyph draws every mark path", () => {
+    const glyph = brandGlyphSvg();
+    for (const p of MARK_PATHS) expect(glyph).toContain(p.d);
+  });
+});
+
+describe("icon.svg", () => {
+  it("public/icon.svg exists (manifest and direct browser requests) and matches app/icon.svg", () => {
+    expect(
+      existsSync(resolve(ROOT, "public/icon.svg")),
+      "public/icon.svg must exist to prevent 404",
+    ).toBe(true);
+    expect(read("public/icon.svg")).toBe(read("app/icon.svg"));
+  });
+
+  it("app/icon.svg draws the mark's needle", () => {
+    const icon = read("app/icon.svg");
+    // The needle is the mark's first three paths; the favicon keeps it and drops the diamond.
+    for (const p of MARK_PATHS.slice(0, 3)) expect(icon).toContain(p.d);
+  });
+
+  it("app/icon.svg is the only app icon, so browsers get one favicon", () => {
+    expect(existsSync(resolve(ROOT, "app/icon.png"))).toBe(false);
   });
 });
