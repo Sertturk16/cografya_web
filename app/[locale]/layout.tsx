@@ -96,7 +96,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
             <V2AuthDialog />
             {/* "Kaydedilmemiş değişikliklerin var" (T-062), mounted here for the reason stated
                 above it: the guard that raises it lives in the wrapped `Link`, which renders in
-                the header of every route group (`(site)`, `(play)`, `(embed)`), so the dialog has
+                the header of every route group (`(site)`, `(play)`), so the dialog has
                 to be reachable from all of them. One mount, one store, no route group left out. */}
             <UnsavedChangesDialog />
           </NextIntlClientProvider>

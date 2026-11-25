@@ -18,7 +18,7 @@ import { useUnsavedChangesState } from "@/lib/forms/use-unsaved-changes.client";
 /**
  * "You have unsaved changes" (T-062) — rendered ONCE, in `app/[locale]/layout.tsx`.
  *
- * That is the only mount point that covers every route group: `(site)`, `(play)` and `(embed)`
+ * That is the only mount point that covers every route group: `(site)` and `(play)`
  * are groups under `[locale]`, so one instance here serves the settings page, the registration
  * wizard, the fullscreen game screens and the embedded map page alike. One per layout would be
  * three mount points and three chances to forget one.

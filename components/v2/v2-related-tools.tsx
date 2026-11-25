@@ -4,7 +4,6 @@ import {
   AREA_TOOL,
   COORDINATE_TOOL,
   DISTANCE_TOOL,
-  OGM_CBS_PATHNAME,
   TOOL_HUB_PATHNAME,
   TOOL_REGISTRY,
 } from "@/lib/tools/tool-registry";
@@ -50,13 +49,12 @@ export async function V2RelatedTools({ current }: V2RelatedToolsProps) {
   const tHub = await getTranslations("Tools.hub");
   const tBreadcrumb = await getTranslations("Breadcrumb");
 
-  // The other registered tools, then the Ministry's GIS (framed, not one of ours), then the hub.
+  // The other registered tools, then the hub.
   const links = [
     ...TOOL_REGISTRY.filter((tool) => tool.pathname !== current).map((tool) => ({
       href: tool.pathname,
       label: tHub(TOOL_NAME_KEY[tool.pathname]!),
     })),
-    { href: OGM_CBS_PATHNAME, label: "OGM Materyal CBS" },
     { href: TOOL_HUB_PATHNAME, label: tBreadcrumb("araclar") },
   ];
 

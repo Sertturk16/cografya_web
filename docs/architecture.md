@@ -10,19 +10,16 @@ Read before adding a route, a data fetch, or touching i18n / SEO / build config.
   `app/global-not-found.tsx` (behind `experimental.globalNotFound`) renders `app/not-found.tsx`
   as a whole document. Without the flag Next nests that page's `<html>` inside a built-in one
   (invalid markup, a hydration mismatch on every unknown URL).
-- **Three route groups, and they are load-bearing.** `(site)` holds the reading surfaces and its
+- **Two route groups, and they are load-bearing.** `(site)` holds the reading surfaces and its
   layout owns the chrome — skip link, `V2Header`, ONE `<main id="main-content">`, `V2Footer`.
-  `(play)` holds the fullscreen game screens and gives them the bare minimum; `(embed)` is
-  described below. `V2AuthDialog` and `UnsavedChangesDialog` mount once in the locale layout,
-  above all three. A page gets the chrome by WHERE IT LIVES, never by importing it: before T-032 PR3,
+  `(play)` holds the fullscreen game screens and gives them the bare minimum. `V2AuthDialog` and
+  `UnsavedChangesDialog` mount once in the locale layout, above both. A page gets the chrome by WHERE IT LIVES, never by importing it: before T-032 PR3,
   `V2Header` was copied into 37 pages, two had lost the footer, and 24 nested a second `<main>`
   inside the root layout's. `components/v2/v2-a11y-navigation-polish.test.ts` walks the tree and
   fails if any page carries its own `id="main-content"`.
-- **`(embed)`**: header plus one viewport-filling third-party iframe, no
-  footer. Its layout is `h-dvh` with a single `<main>` (`flex-1`); the page positions the frame
-  `absolute inset-0` inside it. One member today, `/araclar/ogm-cbs` (`noindex`). The group has its own `error.tsx`, like the other two; all three render
-  `components/v2/v2-route-error.tsx`.
-  `components/v2/auth-dialog-reachability.test.ts` lists the groups on disk.
+- Each group has its own `error.tsx`; both render `components/v2/v2-route-error.tsx`.
+  `components/v2/auth-dialog-reachability.test.ts` lists the groups on disk. (A third group,
+  `(embed)`, held third-party iframe pages under the header until T-179/T-187 removed them.)
 - `app/[locale]/design-system/**` is in NONE of these groups: internal tooling that brings its own
   full-page chrome, and it carries its own `noindex` (both in `buildMetadata` and the layout's
   `robots`) — the blanket `/v2` de-indexing that used to cover it is gone.
@@ -172,7 +169,7 @@ noindex | trOnly`) that decides which locales a page is indexable in.
 - The catalogue is empty today. `hasBooks()` (`lib/api/books.ts`, `cache()`-wrapped, never
   throws: an empty list and a failed fetch both answer `false`) is the one switch for every
   entry point outside the book pages: the header and footer links (a `showBooks` prop from the
-  `(site)` and `(embed)` layouts and the `(play)` pages), the home page's books link, the video
+  `(site)` layout and the `(play)` pages), the home page's books link, the video
   benefit on `/giris` and `/kayit`, and the search index's `/kitaplar` row. `/hesabim` hides
   its video tab from its own book list. The first published book brings all of them back with
   no code change.

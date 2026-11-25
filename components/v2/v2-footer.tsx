@@ -177,14 +177,6 @@ export function V2Footer({ showBooks = false }: V2FooterProps) {
                   Alan Hesaplama
                 </Link>
               </li>
-              <li>
-                <Link
-                  href="/araclar/ogm-cbs"
-                  className="hover:text-secondary transition-colors block"
-                >
-                  OGM Materyal CBS
-                </Link>
-              </li>
             </ul>
           </div>
 

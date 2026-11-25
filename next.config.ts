@@ -70,6 +70,18 @@ const nextConfig: NextConfig = {
         destination: "/en/dunya",
         permanent: true,
       },
+      // T-179: the OGM Materyal CBS page (a frame of the Ministry's web GIS) was removed. Its
+      // old address goes to the tools hub.
+      {
+        source: "/araclar/ogm-cbs",
+        destination: "/araclar",
+        permanent: true,
+      },
+      {
+        source: "/en/tools/ogm-gis",
+        destination: "/en/tools",
+        permanent: true,
+      },
     ];
   },
 
