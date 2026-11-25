@@ -4761,7 +4761,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
-            /** @description The per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
+            /** @description errors.elevation.tooManyRequests: the per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -5628,7 +5628,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorDto"];
                 };
             };
-            /** @description The per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
+            /** @description errors.videoCover.tooManyRequests: the per-client rate limit for this route was exceeded. Tighter than the global limit because this route can reach an external provider. */
             429: {
                 headers: {
                     [name: string]: unknown;
