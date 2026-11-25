@@ -13,9 +13,9 @@ import { sitemapEntriesFor } from "./sitemap-entries";
  * hub `<url>`, because the hub is `noindex` on an empty list ({@link bookHubSurface}) and a
  * `noindex` URL in the sitemap is a blocker. `vitest.config.ts` collects `lib/**` and
  * `components/**` only, so the same predicate written inside `app/` is a rule CI cannot see —
- * and the empty branch is the exact path every api-less CI build takes. `app/sitemap.ts`'s own docblock
- * already said entry-building rules belong in `lib/seo/`; this is that split, applied to the
- * one builder that had grown a conditional.
+ * and the empty branch is the exact path every api-less CI build takes. `app/sitemap.ts`'s own
+ * docblock already said entry-building rules belong in `lib/seo/`; this is that split, applied
+ * to the one builder that had grown a conditional.
  *
  * The predicate is stated twice on purpose, side by side in this file: `bookSitemapEntries`
  * decides the hub row's presence and {@link bookHubSurface} the hub page's own robots tag. Both
@@ -30,8 +30,8 @@ import { sitemapEntriesFor } from "./sitemap-entries";
  *
  * **No detail fetch.** The sibling builders resolve every entity to its detail record for one
  * field — `updatedAt` — because their list DTOs do not carry it. `BookListItemDto` does
- * (added for this reason), so a real `lastmod` (never the build clock) costs no extra request and an unbounded catalogue
- * never becomes an N+1. That is also why this function is pure: it needs nothing but the list.
+ * (added for this reason), so a real `lastmod` (never the build clock) costs no extra request
+ * and an unbounded catalogue never becomes an N+1. That is also why this function is pure: it needs nothing but the list.
  */
 export function bookSitemapEntries(books: BookListItem[]): MetadataRoute.Sitemap {
   if (books.length === 0) return [];
