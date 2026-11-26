@@ -28,6 +28,6 @@ export const LEGAL_CONTROLLER: LegalController = {
   legalName: null,
   address: null,
   phone: null,
-  // The one contact address the site already publishes (defaults to info@geograp.com).
+  // The one contact address the site already publishes (defaults to o.can.sertturk@gmail.com).
   email: env.NEXT_PUBLIC_CONTACT_EMAIL,
 };

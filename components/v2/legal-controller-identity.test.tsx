@@ -48,6 +48,6 @@ describe("LegalControllerIdentity (T-101)", () => {
   });
 
   it("uses the site's published contact address", () => {
-    expect(LEGAL_CONTROLLER.email).toBe("info@geograp.com");
+    expect(LEGAL_CONTROLLER.email).toBe("o.can.sertturk@gmail.com");
   });
 });
