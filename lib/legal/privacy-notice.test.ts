@@ -22,21 +22,13 @@ describe("Privacy namespace", () => {
 
   it("names every provider the site's data reaches, with its country", () => {
     const names = tr.Privacy.recipients.map((recipient) => recipient.name).join(" | ");
-    for (const provider of [
-      "Hetzner Online GmbH",
-      "Amazon SES",
-      "Cloudflare, Inc.",
-      "YouTube",
-      // The `/araclar/ogm-cbs` frame connects the visitor to the Ministry's host on a wide screen.
-      "OGM Materyal CBS",
-    ]) {
+    for (const provider of ["Hetzner Online GmbH", "Amazon SES", "Cloudflare, Inc.", "YouTube"]) {
       expect(names).toContain(provider);
     }
     const locations = tr.Privacy.recipients.map((recipient) => recipient.location).join(" | ");
     expect(locations).toContain("Avrupa Birliği");
     expect(locations).toContain("eu-north-1");
     expect(locations).toContain("ABD");
-    expect(locations).toContain("Türkiye");
   });
 
   it("states the retention periods the api enforces and the 5651 log period", () => {

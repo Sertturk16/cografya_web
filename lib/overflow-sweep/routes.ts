@@ -245,15 +245,6 @@ export const SWEEP_SHAPES: readonly SweepShape[] = [
       "guarantee it here, so the fullscreen game screen has to be measured separately.",
   },
   {
-    id: "embed-bar",
-    pathname: "/araclar/ogm-cbs",
-    locales: ["tr"],
-    why:
-      "The other `(embed)` page, with a bar of our own above the frame. Below `md` the frame is " +
-      "not rendered and the bar is the whole page, so the narrow widths measure our copy and " +
-      "button, not a third-party app.",
-  },
-  {
     id: "auth",
     pathname: "/giris",
     locales: ["tr"],

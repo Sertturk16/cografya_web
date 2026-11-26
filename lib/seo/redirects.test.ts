@@ -69,7 +69,7 @@ function parseRedirects(source: string): RedirectEntry[] {
 describe("next.config.ts redirects() — TEST119-I1 guard", () => {
   const entries = parseRedirects(CONFIG_SOURCE);
 
-  it("parses at least one entry, and exactly five today", () => {
+  it("parses at least one entry, and exactly seven today", () => {
     // Assertions further below are universally quantified over `entries`: a regex that
     // silently stopped matching (a Prettier reflow, a trailing comma, a shorthand refactor)
     // would satisfy every one of them VACUOUSLY and this file would go green while guarding
@@ -80,8 +80,21 @@ describe("next.config.ts redirects() — TEST119-I1 guard", () => {
     // One until T-061, which retired `/profil` into `/hesabim/ayarlar` and needed BOTH locale
     // spellings: `localePrefix: "as-needed"` leaves TR unprefixed and prefixes EN, and the EN
     // segment is localized too. Three until T-187 retired the "Dünya Analizi" page, again in
-    // both locale spellings.
-    expect(entries).toHaveLength(5);
+    // both locale spellings. Five until T-179 retired the OGM Materyal CBS page the same way.
+    expect(entries).toHaveLength(7);
+  });
+
+  it("carries both locale spellings of the T-179 OGM page removal, each complete", () => {
+    expect(entries).toContainEqual({
+      source: "/araclar/ogm-cbs",
+      destination: "/araclar",
+      permanent: true,
+    });
+    expect(entries).toContainEqual({
+      source: "/en/tools/ogm-gis",
+      destination: "/en/tools",
+      permanent: true,
+    });
   });
 
   it("carries both locale spellings of the T-187 world-analysis removal, each complete", () => {

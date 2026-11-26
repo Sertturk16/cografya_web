@@ -42,13 +42,12 @@ describe("V2 error boundaries", () => {
   });
 
   /**
-   * `(site)`, `(play)` and `(embed)` each need their own: a group without one falls through to
+   * `(site)` and `(play)` each need their own: a group without one falls through to
    * `app/global-error.tsx`, the unstyled last-resort shell that replaces the whole document.
    */
   const ERROR_BOUNDARIES = [
     "../../app/[locale]/(site)/error.tsx",
     "../../app/[locale]/(play)/error.tsx",
-    "../../app/[locale]/(embed)/error.tsx",
   ];
 
   /** The body all three render; the a11y and no-leak rules live in it, once. */
